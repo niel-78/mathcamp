@@ -1,32 +1,23 @@
-const express = require("express");
-const cors = require("cors");
-const mariadb = require("mariadb");
+import express from "express";
+import mysql from "mysql2";
+import cors from "cors";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// DB connection pool
-const pool = mariadb.createPool({
-    host: "localhost",
+const db = mysql.createConnection({
+    host: process.env.DB_HOST,
     user: "root",
     password: "password",
-    database: "testdb",
-    connectionLimit: 5
+    database: "mydb"
 });
 
-// Test route
-app.get("/api/users", async (req, res) => {
-    let conn;
-    try {
-        conn = await pool.getConnection();
-        const rows = await conn.query("SELECT * FROM users");
-        res.json(rows);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    } finally {
-        if (conn) conn.release();
-    }
+app.get("/users", (req, res) => {
+    db.query("SELECT * FROM users", (err, result) => {
+        if (err) return res.status(500).send(err);
+        res.json(result);
+    });
 });
 
 app.listen(3000, () => console.log("Server running on port 3000"));
