@@ -1,0 +1,17 @@
+ INFO  Accepting connections at http://localhost:5173
+ HTTP  2026-06-25 08:36:46 192.168.1.64 GET /exam
+ HTTP  2026-06-25 08:36:46 192.168.1.64 Returned 404 in 46 ms
+ HTTP  2026-06-25 08:36:53 192.168.1.64 GET /exam
+ HTTP  2026-06-25 08:36:53 192.168.1.64 Returned 404 in 9 ms
+ HTTP  2026-06-25 08:37:04 ::1 GET /exam
+ HTTP  2026-06-25 08:37:04 ::1 Returned 404 in 9 ms
+ HTTP  2026-06-25 08:37:04 ::1 GET /.well-known/appspecific/com.chrome.devtools.json
+ HTTP  2026-06-25 08:37:04 ::1 Returned 404 in 4 ms
+ HTTP  2026-06-25 08:37:04 ::1 GET /favicon.ico
+ HTTP  2026-06-25 08:37:04 ::1 Returned 404 in 1 ms
+ HTTP  2026-06-25 08:39:15 ::1 GET /exam
+ HTTP  2026-06-25 08:39:15 ::1 Returned 404 in 12 ms
+ HTTP  2026-06-25 08:39:15 ::1 GET /.well-known/appspecific/com.chrome.devtools.json
+ HTTP  2026-06-25 08:39:15 ::1 Returned 404 in 4 ms
+ HTTP  2026-06-25 08:39:15 ::1 GET /favicon.ico
+ HTTP  2026-06-25 08:39:15 ::1 Returned 404 in 1 ms

@@ -1,0 +1,13 @@
+
+.exam-container {
+    padding: 1.25rem;
+    background: #ffffff;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+
+.warning-text {
+    color: red;
+}
+

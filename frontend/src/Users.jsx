@@ -1,7 +1,6 @@
-
 import { useEffect, useState } from "react";
 
-function App() {
+function Users() {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
@@ -20,4 +19,4 @@ function App() {
   );
 }
 
-export default App;
+export default Users;
