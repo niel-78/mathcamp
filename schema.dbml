@@ -1,0 +1,46 @@
+
+Table users {
+  id int [pk]
+  name varchar
+  exam_key varchar
+}
+
+Table questions {
+  id int [pk]
+  question text
+  block_id int
+}
+
+Table options {
+  id int [pk]
+  question_id int
+  text text
+  is_correct boolean
+}
+
+Table exams {
+  id int [pk]
+  title varchar
+}
+
+Table exam_questions {
+  exam_id int
+  question_id int
+}
+
+Table answers {
+  id int [pk]
+  user_id int
+  exam_id int
+  question_id int
+  option_id int
+}
+
+
+Ref: options.question_id > questions.id
+Ref: exam_questions.exam_id > exams.id
+Ref: exam_questions.question_id > questions.id
+Ref: answers.user_id > users.id
+Ref: answers.question_id > questions.id
+Ref: answers.option_id > options.id
+

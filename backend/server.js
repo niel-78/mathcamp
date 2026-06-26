@@ -62,19 +62,63 @@ app.get("/api/questions", (req, res) => {
 });
 
 
-
 app.post("/api/answers", (req, res) => {
-    const { exam_id, question_id, answer } = req.body;
+  const { exam_id, question_id, option_id, user_id } = req.body;
 
-    db.query(
-        "INSERT INTO answers (exam_id, question_id, answer) VALUES (?, ?, ?)",
-        [exam_id, question_id, answer],
-        (err) => {
-        if (err) return res.status(500).send(err);
-            res.sendStatus(200);
-        }
-    );
+  db.query(
+    "INSERT INTO answers (exam_id, question_id, option_id) VALUES (?, ?, ?, ?)",
+    [exam_id, question_id, option_id],
+    (err) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send(err);
+      }
+
+      res.sendStatus(200);
+    }
+  );
 });
+
+
+app.get("/api/login", (req, res) => {
+  const { key } = req.query;
+
+  db.query(
+    "SELECT id, name FROM users WHERE exam_key = ?",
+    [key],
+    (err, rows) => {
+      if (err) return res.status(500).send(err);
+
+      if (rows.length === 0) {
+        return res.status(401).send("Invalid key");
+      }
+
+      res.json(rows[0]);
+    }
+  );
+});
+
+
+app.get("/api/login/:key", (req, res) => {
+  const key = req.params.key;
+
+  db.query(
+    "SELECT id, name FROM users WHERE exam_key = ?",
+    [key],
+    (err, rows) => {
+      if (err) return res.status(500).send(err);
+
+      if (rows.length === 0) {
+        return res.status(404).send("Invalid key");
+      }
+
+      res.json(rows[0]);
+    }
+  );
+});
+
+
+
 
 
 app.listen(3000, () => console.log("Server running on port 3000"));

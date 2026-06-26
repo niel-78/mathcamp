@@ -7,8 +7,11 @@ export default function ExamPage() {
     const [questions, setQuestions] = useState([]);
     const [index, setIndex] = useState(0);
     const [time, setTime] = useState(600);
-
+    const [user, setUser] = useState(null);
     const current = questions[index];
+    const path = window.location.pathname;
+    const key = path.split("/")[2];
+
 
     useEffect(() => {
         fetch("http://192.168.1.115:3000/api/questions")
@@ -63,23 +66,46 @@ export default function ExamPage() {
     }, []);
 
 
-    // ✅ när användaren klickar
-    const handleAnswer = async (answer) => {
-        await fetch("/api/answers", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            exam_id: 1,
-            question_id: current.id,
-            answer
-        })
-        });
 
-        // gå till nästa fråga
-        setIndex(i => i + 1);
+    useEffect(() => {
+        const path = window.location.pathname;
+        const key = path.split("/")[2];
+
+        fetch(`http://192.168.1.115:3000/api/login/${key}`)
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error("Invalid key");
+                }
+                return res.json();
+            })
+            .then(setUser)
+            .catch(() => {
+                alert("Ogiltig länk");
+            });
+        }, 
+    []);
+        
+
+
+
+
+    const handleAnswer = async (optionId) => {
+        await fetch("http://192.168.1.115:3000/api/answers", {
+            method: "POST",
+            headers: {
+            "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                exam_id: 1,
+                question_id: current.id,
+                option_id: optionId,
+                user_id: user.id
+        }),
+    });
+
+    setIndex(i => i + 1);
     };
+
 
     if (!current) return <h2>Klart!</h2>;
 
