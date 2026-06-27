@@ -1,3 +1,4 @@
+import requireAuth from "../middleware/auth.js";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import db from "../db.js";
@@ -50,5 +51,16 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+
+router.get("/me", requireAuth, (req, res) => {
+  console.log("✅ /me HIT");
+  res.json({
+    id: req.user.id,
+    username: req.user.username,
+    name: req.user.name
+  });
+});
+
 
 export default router;
