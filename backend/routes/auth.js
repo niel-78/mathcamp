@@ -1,11 +1,54 @@
-
+import bcrypt from "bcrypt";
+import crypto from "crypto";
+import db from "../db.js";
 import express from "express";
 
 const router = express.Router();
 
-router.post("/login", (req, res) => {
-  console.log("✅ LOGIN HIT");
-  res.json({ works: true });
+router.post("/login", async (req, res) => {
+  try {
+    const { username, password } = req.body || {};
+
+    if (!username || !password) {
+      return res.status(400).json({ error: "Missing fields" });
+    }
+
+    const [rows] = await db.query(
+      "SELECT * FROM users WHERE username = ?",
+      [username]
+    );
+
+    if (rows.length === 0) {
+      return res.status(401).json({ error: "User not found" });
+    }
+
+    const user = rows[0];
+
+    const valid = await bcrypt.compare(password, user.password_hash);
+
+    if (!valid) {
+      return res.status(401).json({ error: "Wrong password" });
+    }
+
+    const token = crypto.randomUUID();
+
+    await db.query(
+      "UPDATE users SET session_token = ? WHERE id = ?",
+      [token, user.id]
+    );
+
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        name: user.name
+      }
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 export default router;

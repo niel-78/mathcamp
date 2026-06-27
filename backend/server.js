@@ -6,14 +6,13 @@ const app = express();
 
 app.use(express.json());
 
-app.get("/", (req, res) => {
-  res.send("OK");
-});
-
-// ✅ KRITISK RAD
+// ✅ detta MÅSTE finnas
 app.use("/api", authRoutes);
 
 app.listen(3000, () => {
   console.log("🚀 SERVER STARTED");
 });
+
+
+
 
