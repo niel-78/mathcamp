@@ -1,5 +1,8 @@
 {
   "dependencies": {
-    "mathlive": "^0.110.0"
+    "bcrypt": "^6.0.0",
+    "express": "^5.2.1",
+    "mathlive": "^0.110.0",
+    "mysql2": "^3.22.5"
   }
 }

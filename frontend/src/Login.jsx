@@ -1,35 +1,53 @@
-
 import { useState } from "react";
+import { API_URL } from "./config";
 
 export default function Login({ onLogin }) {
-  const [key, setKey] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
 
-  const handleLogin = async () => {
-    const res = await fetch(
-      `http://192.168.1.115:3000/api/login?key=${key}`
-    );
+  const handleLogin = async (e) => {
+    e.preventDefault();
+
+    const res = await fetch(`${API_URL}/api/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ username, password })
+    });
+
+    const data = await res.json();
 
     if (!res.ok) {
-      alert("Fel kod");
+      alert(data.error);
       return;
     }
 
-    const user = await res.json();
-    onLogin(user);
+    // ✅ spara token
+    localStorage.setItem("token", data.token);
+
+    // ✅ sätt user i App
+    onLogin(data.user);
   };
 
   return (
-    <div>
-      <h2>Ange din kod</h2>
+    <form onSubmit={handleLogin}>
+      <h2>Login</h2>
 
       <input
-        value={key}
-        onChange={(e) => setKey(e.target.value)}
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+        placeholder="Username"
       />
 
-      <button onClick={handleLogin}>
-        Starta prov
-      </button>
-    </div>
+      <input
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="Password"
+      />
+
+      <button type="submit">Login</button>
+    </form>
   );
 }

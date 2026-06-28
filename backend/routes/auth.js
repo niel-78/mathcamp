@@ -6,7 +6,12 @@ import express from "express";
 
 const router = express.Router();
 
+
+
+
+
 router.post("/login", async (req, res) => {
+  console.log("🔥 LOGIN START");   // ✅
   try {
     const { username, password } = req.body || {};
 
@@ -18,6 +23,8 @@ router.post("/login", async (req, res) => {
       "SELECT * FROM users WHERE username = ?",
       [username]
     );
+
+    console.log("🔥 DB OK");       // ✅
 
     if (rows.length === 0) {
       return res.status(401).json({ error: "User not found" });
@@ -48,6 +55,7 @@ router.post("/login", async (req, res) => {
     });
 
   } catch (err) {
+    console.log("❌ ERROR:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -61,6 +69,15 @@ router.get("/me", requireAuth, (req, res) => {
     name: req.user.name
   });
 });
+
+
+router.get("/users", async (req, res) => {
+  res.json([
+    { username: "niklas" },
+    { username: "test" }
+  ]);
+});
+
 
 
 export default router;

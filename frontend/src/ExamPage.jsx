@@ -1,23 +1,48 @@
 import { useEffect, useState } from "react";
 import { renderLatex } from "./utils/renderLatex";
 import { isSEB } from "./utils/isSEB";
+import { API_URL } from "./config";
 import "./styles/exam.css";
 
-export default function ExamPage() {
+export default function ExamPage({ attemptId, onExit }) {
     const [questions, setQuestions] = useState([]);
     const [index, setIndex] = useState(0);
     const [time, setTime] = useState(600);
     const [user, setUser] = useState(null);
+    const [locked, setLocked] = useState(false);
     const current = questions[index];
-    const path = window.location.pathname;
-    const key = path.split("/")[2];
 
+    console.log("EXAM PAGE LOAD");
+    console.log("ATTEMPT ID:", attemptId);
 
     useEffect(() => {
-        fetch("http://192.168.1.115:3000/api/questions")
-        .then(res => res.json())
-        .then(data => setQuestions(data));
-    }, []);
+        if (!attemptId) return;
+
+        const fetchQuestions = async () => {
+            console.log("🔥 FETCH START");
+
+            const res = await fetch(
+                `${API_URL}/api/questions?attemptId=${attemptId}`,
+                {
+                    headers: {
+                        Authorization: localStorage.getItem("token")
+                    }
+                }
+            );
+
+            const data = await res.json();
+            console.log("🔥 DATA:", data);
+
+            if (!res.ok || !data.questions) {
+                alert(data.error || "No questions");
+                return;
+            }
+
+            setQuestions(data.questions);
+        };
+
+        fetchQuestions();
+    }, [attemptId]);
 
 
     useEffect(() => {
@@ -45,8 +70,12 @@ export default function ExamPage() {
     useEffect(() => {
         const handle = () => {
             if (document.hidden) {
-                fetch("/api/events", {
+                fetch(`${API_URL}/api/events`, {
                     method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: localStorage.getItem("token")
+                    },
                     body: JSON.stringify({ type: "tab_switch" })
                 });
             }
@@ -66,48 +95,45 @@ export default function ExamPage() {
     }, []);
 
 
-
-    useEffect(() => {
-        const path = window.location.pathname;
-        const key = path.split("/")[2];
-
-        fetch(`http://192.168.1.115:3000/api/login/${key}`)
-            .then(res => {
-                if (!res.ok) {
-                    throw new Error("Invalid key");
-                }
-                return res.json();
-            })
-            .then(setUser)
-            .catch(() => {
-                alert("Ogiltig länk");
-            });
-        }, 
-    []);
-        
-
-
-
-
     const handleAnswer = async (optionId) => {
-        await fetch("http://192.168.1.115:3000/api/answers", {
+        if (locked) return;
+        setLocked(true);
+
+        await fetch(`${API_URL}/api/answers`, {
             method: "POST",
             headers: {
-            "Content-Type": "application/json",
+                "Content-Type": "application/json",
+                Authorization: localStorage.getItem("token")
             },
             body: JSON.stringify({
-                exam_id: 1,
+                attempt_id: attemptId,
                 question_id: current.id,
-                option_id: optionId,
-                user_id: user.id
-        }),
-    });
+                option_id: optionId
+            }),
+        });
 
-    setIndex(i => i + 1);
+        setIndex(i => i + 1);
+        setLocked(false);
     };
 
 
-    if (!current) return <h2>Klart!</h2>;
+
+
+    if (!questions) {
+        return <p>Loading questions...</p>;
+    }
+
+    if (questions.length === 0) {
+        return <p>Inga frågor hittades</p>;
+    }
+
+    if (!current) {
+        return <h2>✅ Provet är klart!</h2>;
+    }
+
+
+
+    console.log("CURRENT:", current);
 
 
     return (
@@ -122,6 +148,11 @@ export default function ExamPage() {
 
         <h1>Prov</h1>
 
+
+        <h2>Exam started ✅</h2>
+        <p>Attempt: {attemptId}</p>
+
+
         <h2>Fråga {index + 1}</h2>
 
         <div className="question">
@@ -131,7 +162,7 @@ export default function ExamPage() {
 
         {/* ✅ visa options */}
         <div className="answers">
-            {current.options.map(opt => (
+            {current.options?.map(opt => (
             <button
                 key={opt.id}
                 className="answer-btn"
@@ -140,7 +171,7 @@ export default function ExamPage() {
                 {renderLatex(opt.text)}
             </button>
         ))}
-      </div>
+        </div>
 
             
     </div>
