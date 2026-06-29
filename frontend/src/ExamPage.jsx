@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { renderLatex } from "./utils/renderLatex";
 import { isSEB } from "./utils/isSEB";
 import { API_URL } from "./config";
@@ -7,13 +7,11 @@ import "./styles/exam.css";
 export default function ExamPage({ attemptId, onExit }) {
     const [questions, setQuestions] = useState([]);
     const [index, setIndex] = useState(0);
+    const [answers, setAnswers] = useState({});
     const [time, setTime] = useState(600);
     const [user, setUser] = useState(null);
     const [locked, setLocked] = useState(false);
     const current = questions[index];
-
-    console.log("EXAM PAGE LOAD");
-    console.log("ATTEMPT ID:", attemptId);
 
     useEffect(() => {
         if (!attemptId) return;
@@ -95,9 +93,38 @@ export default function ExamPage({ attemptId, onExit }) {
     }, []);
 
 
-    const handleAnswer = async (optionId) => {
-        if (locked) return;
-        setLocked(true);
+
+
+
+
+    const applyConfig = (value, config) => {
+        if (!config) return value;
+
+        let result = value;
+
+        if (config.mode === "numeric") {
+            result = result.replace(/[^0-9,.-]/g, "");
+        }
+
+        if (config.mode === "letters") {
+            result = result.replace(/[^a-zA-ZåäöÅÄÖ ]/g, "");
+        }
+
+        if (config.mode === "decimal") {
+            result = result.replace(/[^0-9,.-]/g, "");
+        }
+
+        if (config.maxLength) {
+            result = result.slice(0, config.maxLength);
+        }
+
+        return result;
+    };
+
+
+
+
+    const saveAnswer = async (questionId, answer) => {
 
         await fetch(`${API_URL}/api/answers`, {
             method: "POST",
@@ -107,17 +134,61 @@ export default function ExamPage({ attemptId, onExit }) {
             },
             body: JSON.stringify({
                 attempt_id: attemptId,
-                question_id: current.id,
-                option_id: optionId
-            }),
+                question_id: questionId,
+                answer: answer
+            })
         });
-
-        setIndex(i => i + 1);
-        setLocked(false);
     };
 
 
 
+
+    
+
+    const handleInput = (questionId, value) => {
+        const question = questions.find(q => q.id === questionId);
+        const config =
+            typeof question?.math_config === "string"
+            ? JSON.parse(question.math_config)
+            : question?.math_config;
+
+        const filtered = applyConfig(value, config);
+
+        setAnswers(prev => ({
+            ...prev,
+            [questionId]: filtered
+        }));
+
+        saveAnswer(questionId, filtered);  // ✅ använd rätt värde
+    };
+
+
+
+
+    const handleSingle = (questionId, optionId) => {
+        setAnswers(prev => ({
+            ...prev,
+            [questionId]: optionId
+        }));
+    };
+
+    const handleMulti = (questionId, optionId) => {
+        setAnswers(prev => {
+            const current = prev[questionId] || [];
+
+            const updated = current.includes(optionId)
+            ? current.filter(id => id !== optionId)
+            : [...current, optionId];
+
+            return {
+            ...prev,
+            [questionId]: updated
+            };
+        });
+    };
+
+    const next = () => setIndex(i => Math.min(i + 1, questions.length - 1));
+    const prev = () => setIndex(i => Math.max(i - 1, 0));
 
     if (!questions) {
         return <p>Loading questions...</p>;
@@ -130,10 +201,6 @@ export default function ExamPage({ attemptId, onExit }) {
     if (!current) {
         return <h2>✅ Provet är klart!</h2>;
     }
-
-
-
-    console.log("CURRENT:", current);
 
 
     return (
@@ -156,24 +223,117 @@ export default function ExamPage({ attemptId, onExit }) {
         <h2>Fråga {index + 1}</h2>
 
         <div className="question">
-            {renderLatex(current.question)}
+            
+            <div
+            dangerouslySetInnerHTML={{
+                __html: renderLatex(current.question)
+            }}
+            />
+
         </div>
 
 
         {/* ✅ visa options */}
         <div className="answers">
-            {current.options?.map(opt => (
-            <button
-                key={opt.id}
-                className="answer-btn"
-                onClick={() => handleAnswer(opt.id)}
-            >
-                {renderLatex(opt.text)}
-            </button>
-        ))}
+
+
+            <div className="preview">
+            {current.math_config?.mode === "text"
+                ? answers[current.id] || ""
+                : (
+                    <span
+                    dangerouslySetInnerHTML={{
+                        __html: renderLatex(answers[current.id] || "")
+                    }}
+                    />
+                )
+            }
+            </div>
+
+
+            {current.type === 1 && (
+                <input
+                    type="text"
+                    value={answers[current.id] || ""}
+                    onChange={(e) => handleInput(current.id, e.target.value)}
+                    className="answer-input"
+                />
+            )}
+            
+
+            {current.type === 2 && (
+            <div className="answers">
+                {current.options.map(opt => (
+                <button
+                    key={opt.id}
+                    className={answers[current.id] === opt.id ? "selected" : ""}
+                    onClick={() => {
+                        handleSingle(current.id, opt.id);
+                        saveAnswer(current.id, opt.id);
+                    }}
+                >
+
+                    <div
+                    dangerouslySetInnerHTML={{
+                        __html: renderLatex(opt.text)
+                    }}
+                    />
+
+                </button>
+                ))}
+            </div>
+            )}
+
+            {current.type === 3 && (
+            <div className="answers">
+                {current.options.map(opt => (
+                <button
+                    key={opt.id}
+                    className={
+                    answers[current.id]?.includes(opt.id) ? "selected" : ""
+                    }
+
+                    onClick={() => {
+                        const currentSelected = answers[current.id] || [];
+
+                        const updated = currentSelected.includes(opt.id)
+                            ? currentSelected.filter(id => id !== opt.id)
+                            : [...currentSelected, opt.id];
+
+                        handleMulti(current.id, opt.id);
+                        saveAnswer(current.id, updated);   // ✅ skicka array
+                    }}
+
+                >
+                    <div
+                        dangerouslySetInnerHTML={{
+                            __html: renderLatex(opt.text)
+                        }}
+                    />
+                </button>
+                ))}
+            </div>
+            )}
+
         </div>
 
-            
+        <div className="nav">
+        <button onClick={prev} disabled={index === 0}>
+            ← Föregående
+        </button>
+
+        <button onClick={next} disabled={index === questions.length - 1}>
+            Nästa →
+        </button>
+        </div>
+
+
+        <p>
+        ⏳ Tid: {Math.floor(time / 60)}:
+        {String(time % 60).padStart(2, "0")}
+        </p>
+
+
     </div>
 
     );

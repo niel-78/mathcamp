@@ -11,3 +11,10 @@
     color: red;
 }
 
+
+.selected {
+    background: #4caf50;
+    color: white;
+}
+
+

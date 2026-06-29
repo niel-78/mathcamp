@@ -88,6 +88,7 @@ router.post("/start-exam", requireAuth, async (req, res) => {
 
 
 
+
 router.get("/questions", requireAuth, async (req, res) => {
   try {
     const { attemptId } = req.query;
@@ -109,19 +110,40 @@ router.get("/questions", requireAuth, async (req, res) => {
       SELECT * FROM options
     `);
 
-    // ✅ koppla options till rätt fråga
-    const questionsWithOptions = questions.map(q => ({
+    // ✅ kombinera ALLT i ett steg
+    const finalQuestions = questions.map(q => ({
       ...q,
+      math_config: q.math_config
+        ? JSON.parse(q.math_config)
+        : null,
       options: options.filter(o => o.question_id === q.id)
     }));
 
-    res.json({ questions: questionsWithOptions });
+    // ✅ EN res.json
+    return res.json({ questions: finalQuestions });
 
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    return res.status(500).json({ error: err.message });
   }
 });
 
+
+
+const saveAnswer = async (questionId) => {
+  await fetch(`${API_URL}/api/answers`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: localStorage.getItem("token")
+    },
+    body: JSON.stringify({
+      attempt_id: attemptId,
+      question_id: questionId,
+      answer: answers[questionId]
+    })
+  });
+};
 
 
 export default router;   // ✅ VIKTIG RAD

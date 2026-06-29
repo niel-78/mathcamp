@@ -1,6 +1,8 @@
 import express from "express";
 import authRoutes from "./routes/auth.js";
 import examRoutes from "./routes/exam.js";
+import answersRoutes from "./routes/answers.js";
+import eventsRoutes from "./routes/events.js";
 import cors from "cors";
 
 console.log("🔥 SERVER FILE START");
@@ -28,18 +30,14 @@ app.use(express.json());
 
 app.use("/api", authRoutes);
 app.use("/api", examRoutes);
+app.use("/api", answersRoutes)
+app.use("/api", eventsRoutes);
+
+
 
 app.listen(3000, "0.0.0.0", () => {
   console.log("🚀 SERVER STARTED ON 0.0.0.0");
 });
-
-
-
-setInterval(() => {
-  console.log("⏳ alive");
-}, 3000);
-
-
 
 
 

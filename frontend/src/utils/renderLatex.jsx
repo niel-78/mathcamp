@@ -1,37 +1,36 @@
-
 import katex from "katex";
+import "katex/dist/katex.min.css";
 
-export function renderLatex(text) {
-    const parts = text.split(/(\$\$.*?\$\$|\$.*?\$)/g);
+export const renderLatex = (text) => {
+  if (!text) return "";
 
-    return parts.map((part, i) => {
-        if (part.startsWith("$$")) {
-            return (
-                <div
-                    key={i}
-                    dangerouslySetInnerHTML={{
-                    __html: katex.renderToString(part.slice(2, -2), {
-                        displayMode: true,
-                        throwOnError: false,
-                        }),
-                    }}
-                />
-            );
-        }
+  // säkerställ att det är ren text
+  const safe = String(text);
 
-        if (part.startsWith("$")) {
-            return (
-                <span
-                    key={i}
-                    dangerouslySetInnerHTML={{
-                        __html: katex.renderToString(part.slice(1, -1), {
-                        throwOnError: false,
-                        }),
-                    }}
-                />
-            );
-        }
+  // hantera $...$ manuellt
+  const regex = /\$(.*?)\$/g;
 
-        return <span key={i}>{part}</span>;
-    });
-}
+  let result = "";
+  let lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(safe)) !== null) {
+    // text före math
+    result += safe.slice(lastIndex, match.index);
+
+    try {
+      result += katex.renderToString(match[1], {
+        throwOnError: false,
+      });
+    } catch {
+      result += match[0];
+    }
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // resten av texten
+  result += safe.slice(lastIndex);
+
+  return result;
+};
