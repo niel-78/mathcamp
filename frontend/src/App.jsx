@@ -1,5 +1,6 @@
 import { useState } from "react";
-import ExamPage from "./ExamPage"
+import ExamPage from "./ExamPage";
+import Dashboard from "./Dashboard";
 import Login from "./Login";
 import { API_URL } from "./config";
 
@@ -7,7 +8,9 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [attemptId, setAttemptId] = useState(null);
   const [examKey, setExamKey] = useState("");
+  const [view, setView] = useState("start");
 
+  console.log("VIEW:", view);
 
   const startExam = async () => {
     const res = await fetch(`${API_URL}/api/start-exam`, {
@@ -27,7 +30,17 @@ export default function App() {
     }
 
     setAttemptId(data.attemptId);
+    setView("exam")
   };
+
+
+  const getResults = async () => {
+    const res = await fetch(`${API_URL}/api/result?attemptId=${attemptId}`);
+    const data = await res.json();
+
+    console.log(data.results);
+  };
+
 
 
   // ✅ LOGOUT
@@ -42,38 +55,45 @@ export default function App() {
     return <Login onLogin={setUser} />;
   }
 
-  // ✅ visa exam (sen bygger vi den)
+  if (!user) {
+    return <Login />;
+  }
 
-  if (attemptId) {
+  if (view === "exam") {
     return (
       <ExamPage
         attemptId={attemptId}
-        onExit={logout}
+        onExit={() => setView("dashboard")}
       />
     );
   }
 
+  if (view === "dashboard") {
+    return <Dashboard attemptId={attemptId} />;
+  }
 
 
-  return (
-    <div>
-      <h1>Welcome {user.username}</h1>
 
-      <input
-        placeholder="Enter exam key"
-        value={examKey}
-        onChange={(e) => setExamKey(e.target.value)}
-      />
+return (
+  <div>
+    <h1>Welcome {user.username}</h1>
 
-      <button onClick={startExam}>
-        Start Exam
-      </button>
+    <input
+      placeholder="Enter exam key"
+      value={examKey}
+      onChange={(e) => setExamKey(e.target.value)}
+    />
 
-      <button onClick={logout}>
-        Logout
-      </button>
-    </div>
-  );
+    <button onClick={startExam}>
+      Start Exam
+    </button>
+
+    <button onClick={logout}>
+      Logout
+    </button>
+  </div>
+);
+
 
 }
 

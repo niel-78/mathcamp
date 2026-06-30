@@ -144,9 +144,10 @@ CREATE TABLE attempt_questions (
 
 INSERT INTO blocks (id, name) VALUES (1, 'Taluppfattning');
 
-INSERT INTO questions VALUES (NULL,'Skriv $1\\,074\\,000$ med ord.',1,1,JSON_OBJECT('mode', 'text'));
+INSERT INTO questions VALUES (NULL,'Skriv 1 074 000 med ord.',1,1,JSON_OBJECT('mode', 'text'));
 SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'$\\text{en miljon sjuttiofyra tusen}$',1);
+
+INSERT INTO options VALUES (NULL,@q,'en miljon sjuttiofyra tusen',1);
 
 /*
 INSERT INTO questions VALUES (NULL,'Skriv $1\\,200\\,000$ med ord.',1,1);
@@ -172,12 +173,12 @@ INSERT INTO options VALUES (NULL,@q,'$\\text{en miljon femtio tusen}$',1);
 
 INSERT INTO blocks (id, name) VALUES (2, 'Taluppfattning');
 
-INSERT INTO questions VALUES (NULL,'Vilket tal är närmast $35$?',2,3,null);
+INSERT INTO questions VALUES (NULL,'Vilket tal är närmast 35.1?',2,3,null);
 SET @q = LAST_INSERT_ID();
 INSERT INTO options VALUES
-(NULL,@q,'$34$',1),
-(NULL,@q,'$36$',1),
-(NULL,@q,'$45$',0);
+(NULL,@q,'30',0),
+(NULL,@q,'40',1),
+(NULL,@q,'50',0);
 
 /*
 INSERT INTO questions VALUES (NULL,'Vilket tal är närmast $30$?',2,2);
@@ -216,9 +217,9 @@ INSERT INTO options VALUES
 
 INSERT INTO blocks (id, name) VALUES (3, 'Aritmetik');
 
-INSERT INTO questions VALUES (NULL,'$11\\cdot2+5$',3,1,JSON_OBJECT('mode', 'numeric'));
+INSERT INTO questions VALUES (NULL,'11\\cdot2+5',3,1,JSON_OBJECT('mode', 'numeric'));
 SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'$27$',1);
+INSERT INTO options VALUES (NULL,@q,'27',1);
 
 /*
 INSERT INTO questions VALUES (NULL,'$12\\cdot2+3$',3,1);
@@ -244,9 +245,9 @@ INSERT INTO options VALUES (NULL,@q,'$38$',1);
 
 INSERT INTO blocks (id, name) VALUES (4, 'Aritmetik');
 
-INSERT INTO questions VALUES (NULL,'$-3-17$',4,1,JSON_OBJECT('mode', 'numeric'));
+INSERT INTO questions VALUES (NULL,'Förenkla $a+a+a+a$',4,1,JSON_OBJECT('mode', 'algebra'));
 SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'$-20$',1);
+INSERT INTO options VALUES (NULL,@q,'4a',1);
 
 /*
 INSERT INTO questions VALUES (NULL,'$-5-10$',4,1);
@@ -314,12 +315,18 @@ INSERT INTO options VALUES (NULL,@q,'$3,8\\cdot10^{-2}$',1);
 -- BLOCK 10 (BRÅK)
 -- ======================
 
-INSERT INTO questions VALUES (NULL,'Vilket bråk är störst?',10,2);
+*/
+
+INSERT INTO blocks (id, name) VALUES (5, 'Aritmetik');
+
+INSERT INTO questions VALUES (NULL,'Vilket bråk är lika stora?',5,3,null);
 SET @q = LAST_INSERT_ID();
 INSERT INTO options VALUES
-(NULL,@q,'$\\frac{5}{2}$',1),
-(NULL,@q,'$\\frac{7}{4}$',0),
-(NULL,@q,'$\\frac{13}{6}$',0);
+(NULL,@q,'\\frac{5}{2}',0),
+(NULL,@q,'\\frac{7}{4}',1),
+(NULL,@q,'\\frac{14}{8}',1);
+
+/*
 
 -- ======================
 -- BLOCK 11 (PROCENT)
@@ -389,9 +396,7 @@ INSERT INTO options VALUES (NULL,@q,'$5b$',1);
 -- EXAM BLOCKS
 -- ======================
 
-INSERT INTO exams VALUES(1,'Förkunskapstest','ABC');
+INSERT INTO exams VALUES(1,'Test','A');
 
 INSERT INTO exam_blocks VALUES
-(1,1),(1,2),(1,3),(1,4),(1,5),(1,6),
-(1,8),(1,9),(1,10),(1,11),(1,12),
-(1,13),(1,14),(1,15),(1,16),(1,17),(1,18);
+(1,1),(1,2),(1,3),(1,4),(1,5);

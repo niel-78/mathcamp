@@ -1,5 +1,10 @@
 import { useEffect, useState, useRef } from "react";
 import { renderLatex } from "./utils/renderLatex";
+
+import { isMathExpression } from "./utils/isMathExpression";
+import { formatValue } from "./utils/formatValue";
+import { formatQuestion } from "./utils/formatQuestion";
+
 import { isSEB } from "./utils/isSEB";
 import { API_URL } from "./config";
 import "./styles/exam.css";
@@ -11,6 +16,7 @@ export default function ExamPage({ attemptId, onExit }) {
     const [time, setTime] = useState(600);
     const [user, setUser] = useState(null);
     const [locked, setLocked] = useState(false);
+    const isDone = index >= questions.length;
     const current = questions[index];
 
     useEffect(() => {
@@ -97,21 +103,34 @@ export default function ExamPage({ attemptId, onExit }) {
 
 
 
+
+
     const applyConfig = (value, config) => {
         if (!config) return value;
 
         let result = value;
 
+        // 🔵 NUMERIC (uttryck)
         if (config.mode === "numeric") {
+            result = result.replace(/[^0-9+\-*/^.,()·]/g, "");
+        }
+
+        // 🟠 DECIMAL
+        if (config.mode === "decimal") {
             result = result.replace(/[^0-9,.-]/g, "");
         }
 
+        // 🟢 LETTERS
         if (config.mode === "letters") {
             result = result.replace(/[^a-zA-ZåäöÅÄÖ ]/g, "");
         }
 
-        if (config.mode === "decimal") {
-            result = result.replace(/[^0-9,.-]/g, "");
+        // 🟣 ALGEBRA
+        if (config.mode === "algebra") {
+            result = result.replace(
+            /[^a-zA-Z0-9+\-*/^=(){}\[\]_,.·\\ ]/g,
+            ""
+            );
         }
 
         if (config.maxLength) {
@@ -120,6 +139,8 @@ export default function ExamPage({ attemptId, onExit }) {
 
         return result;
     };
+
+
 
 
 
@@ -165,20 +186,30 @@ export default function ExamPage({ attemptId, onExit }) {
 
 
 
+
     const handleSingle = (questionId, optionId) => {
         setAnswers(prev => ({
             ...prev,
             [questionId]: optionId
         }));
+
+        saveAnswer(questionId, optionId);
     };
+
+
 
     const handleMulti = (questionId, optionId) => {
         setAnswers(prev => {
             const current = prev[questionId] || [];
 
-            const updated = current.includes(optionId)
+            let updated = current.includes(optionId)
             ? current.filter(id => id !== optionId)
             : [...current, optionId];
+
+            // ✅ SANERA: bara numbers
+            updated = updated.filter(id => typeof id === "number");
+
+            saveAnswer(questionId, updated);
 
             return {
             ...prev,
@@ -187,7 +218,17 @@ export default function ExamPage({ attemptId, onExit }) {
         });
     };
 
-    const next = () => setIndex(i => Math.min(i + 1, questions.length - 1));
+
+
+
+    const next = () => {
+        if (index === questions.length - 1) {
+            onExit();   // ✅ GÅ TILL DASHBOARD
+        } else {
+            setIndex(i => i + 1);
+        }
+    };
+
     const prev = () => setIndex(i => Math.max(i - 1, 0));
 
     if (!questions) {
@@ -198,9 +239,19 @@ export default function ExamPage({ attemptId, onExit }) {
         return <p>Inga frågor hittades</p>;
     }
 
-    if (!current) {
-        return <h2>✅ Provet är klart!</h2>;
+
+    if (isDone) {
+    return (
+        <div>
+        <h2>✅ Det var sista frågan!</h2>
+
+        <button onClick={() => onExit()}>
+            Visa resultat
+        </button>
+        </div>
+    );
     }
+
 
 
     return (
@@ -222,33 +273,38 @@ export default function ExamPage({ attemptId, onExit }) {
 
         <h2>Fråga {index + 1}</h2>
 
-        <div className="question">
-            
-            <div
-            dangerouslySetInnerHTML={{
-                __html: renderLatex(current.question)
-            }}
-            />
 
-        </div>
+
+
+        <div
+            dangerouslySetInnerHTML={{
+                __html: formatQuestion(current.question)
+            }}
+        />
+
+
+
 
 
         {/* ✅ visa options */}
         <div className="answers">
 
 
+
+
             <div className="preview">
-            {current.math_config?.mode === "text"
-                ? answers[current.id] || ""
-                : (
+                {current.math_config?.mode === "text"
+                    ? answers[current.id] || ""
+                    : (
                     <span
-                    dangerouslySetInnerHTML={{
-                        __html: renderLatex(answers[current.id] || "")
-                    }}
+                        dangerouslySetInnerHTML={{
+                        __html: formatValue(answers[current.id])
+                        }}
                     />
-                )
-            }
+                    )
+                }
             </div>
+
 
 
             {current.type === 1 && (
@@ -267,17 +323,13 @@ export default function ExamPage({ attemptId, onExit }) {
                 <button
                     key={opt.id}
                     className={answers[current.id] === opt.id ? "selected" : ""}
-                    onClick={() => {
-                        handleSingle(current.id, opt.id);
-                        saveAnswer(current.id, opt.id);
-                    }}
+                    onClick={() => handleSingle(current.id, opt.id)}
                 >
-
-                    <div
-                    dangerouslySetInnerHTML={{
-                        __html: renderLatex(opt.text)
-                    }}
-                    />
+                <div
+                dangerouslySetInnerHTML={{
+                    __html: renderLatex(opt.text)
+                }}
+                />
 
                 </button>
                 ))}
@@ -290,26 +342,19 @@ export default function ExamPage({ attemptId, onExit }) {
                 <button
                     key={opt.id}
                     className={
-                    answers[current.id]?.includes(opt.id) ? "selected" : ""
+                        answers[current.id]?.includes(opt.id) ? "selected" : ""
                     }
-
                     onClick={() => {
-                        const currentSelected = answers[current.id] || [];
-
-                        const updated = currentSelected.includes(opt.id)
-                            ? currentSelected.filter(id => id !== opt.id)
-                            : [...currentSelected, opt.id];
-
                         handleMulti(current.id, opt.id);
-                        saveAnswer(current.id, updated);   // ✅ skicka array
                     }}
-
                 >
+
                     <div
-                        dangerouslySetInnerHTML={{
-                            __html: renderLatex(opt.text)
-                        }}
+                    dangerouslySetInnerHTML={{
+                        __html: formatValue(opt.text)
+                    }}
                     />
+
                 </button>
                 ))}
             </div>
@@ -322,9 +367,11 @@ export default function ExamPage({ attemptId, onExit }) {
             ← Föregående
         </button>
 
-        <button onClick={next} disabled={index === questions.length - 1}>
-            Nästa →
+
+        <button onClick={next}>
+            {index === questions.length - 1 ? "Avsluta prov" : "Nästa →"}
         </button>
+
         </div>
 
 

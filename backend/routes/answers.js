@@ -1,4 +1,3 @@
-
 import express from "express";
 import db from "../db.js";
 
@@ -7,84 +6,91 @@ const router = express.Router();
 console.log("🔥 answers route loaded");
 
 router.post("/answers", async (req, res) => {
-    console.log("🔥 /api/answers HIT");
+  const { attempt_id, question_id, answer } = req.body;
 
-    const { attempt_id, question_id, answer } = req.body;
+  try {
+    // ✅ 1. TEXT → endast om string
+    const textAnswer =
+      typeof answer === "string" ? answer : null;
 
-    console.log("BODY:", req.body);
+    // ✅ 2. INSERT + UPDATE
+    await db.execute(
+      `INSERT INTO answers (question_id, text_answer, attempt_id)
+       VALUES (?, ?, ?)
+       ON DUPLICATE KEY UPDATE text_answer = ?`,
+      [question_id, textAnswer, attempt_id, textAnswer]
+    );
 
-    try {
-        // ✅ 1. skapa / uppdatera answer
-        const [result] = await db.execute(
-            `INSERT INTO answers (question_id, text_answer, attempt_id)
-            VALUES (?, ?, ?)
-            ON DUPLICATE KEY UPDATE text_answer = ?`,
-            [
-                question_id,
-                typeof answer === "string" ? answer : null,
-                attempt_id,
-                typeof answer === "string" ? answer : null
-            ]
-        );
+    // ✅ 3. ALLTID hämta answerId (robust)
+    const [rows] = await db.execute(
+      `SELECT id FROM answers WHERE attempt_id = ? AND question_id = ?`,
+      [attempt_id, question_id]
+    );
 
-        let answerId = result.insertId;
+    const answerId = rows[0]?.id;
 
-        // ✅ Om duplicate (update), hämta befintligt id
-        if (!answerId) {
-        const [rows] = await db.execute(
-            `SELECT id FROM answers WHERE attempt_id = ? AND question_id = ?`,
-            [attempt_id, question_id]
-        );
-        
-        answerId = rows[0]?.id;
+    // 🚨 extra säkerhet
+    if (!answerId) {
+      console.error("❌ answerId missing", {
+        attempt_id,
+        question_id,
+        answer
+      });
 
-        if (!answerId) {
-        throw new Error("answerId not found");
-        }
+      return res.status(500).json({
+        error: "answerId not found"
+      });
+    }
 
-        }
+    // ✅ 4. rensa gamla val
+    await db.execute(
+      `DELETE FROM answer_options WHERE answer_id = ?`,
+      [answerId]
+    );
 
-        // ✅ 2. Rensa gamla val (för single & multi)
-        await db.execute(
-            `DELETE FROM answer_options WHERE answer_id = ?`,
-            [answerId]
-        );
-
-    // ✅ 3. Spara val beroende på typ
+    // ✅ 5. MULTI
     if (Array.isArray(answer)) {
-        // 🔵 MULTI
-        for (const optId of answer) {
-            await db.execute(
-                `INSERT INTO answer_options (answer_id, option_id)
-                VALUES (?, ?)`,
-                [answerId, optId]
-            );
-        }
 
-    } else if (typeof answer === "number") {
-        // 🟢 SINGLE
+
+      // ✅ först skapa unik array
+      const unique = [...new Set(answer)];
+
+      // ✅ sedan loopa över den
+      for (const optId of unique) {
+        if (typeof optId !== "number") continue;
+
         await db.execute(
-            `INSERT INTO answer_options (answer_id, option_id)
-            VALUES (?, ?)`,
-            [answerId, answer]
+          `INSERT IGNORE INTO answer_options (answer_id, option_id)
+          VALUES (?, ?)`,
+          [answerId, optId]
         );
+      }
+
+    }
+
+    // ✅ 6. SINGLE
+    else if (typeof answer === "number") {
+      await db.execute(
+        `INSERT INTO answer_options (answer_id, option_id)
+         VALUES (?, ?)`,
+        [answerId, answer]
+      );
     }
 
     console.log("✅ Saved!");
-    res.json({ ok: true });
+    return res.json({ ok: true });
 
-    } catch (err) {
-        console.error("🔥 REAL ERROR:", err);
-        res.status(500).json({ error: err.message });
-    }
+  } catch (err) {
+    console.error("🔥 REAL ERROR:", err);
+    return res.status(500).json({ error: err.message });
+  }
 });
 
 
-
+// ✅ debug endpoint
 router.get("/answers", async (req, res) => {
-    const [rows] = await db.query("SELECT * FROM answers");
-    res.json(rows);
+  const [rows] = await db.query("SELECT * FROM answers");
+  return res.json(rows);
 });
-
 
 export default router;

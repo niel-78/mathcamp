@@ -2,10 +2,13 @@
 -- BLOCK 1 (TEXT TAL)
 -- ======================
 
-INSERT INTO questions VALUES (NULL,'Skriv $1\\,074\\,000$ med ord.',1,1);
+INSERT INTO blocks (id, name) VALUES (1, 'Taluppfattning');
+
+INSERT INTO questions VALUES (NULL,'Skriv $1\\,074\\,000$ med ord.',1,1,JSON_OBJECT('mode', 'text'));
 SET @q = LAST_INSERT_ID();
 INSERT INTO options VALUES (NULL,@q,'$\\text{en miljon sjuttiofyra tusen}$',1);
 
+/*
 INSERT INTO questions VALUES (NULL,'Skriv $1\\,200\\,000$ med ord.',1,1);
 SET @q = LAST_INSERT_ID();
 INSERT INTO options VALUES (NULL,@q,'$\\text{en miljon tvåhundra tusen}$',1);
@@ -21,18 +24,22 @@ INSERT INTO options VALUES (NULL,@q,'$\\text{två miljoner trehundra tusen}$',1)
 INSERT INTO questions VALUES (NULL,'Skriv $1\\,050\\,000$ med ord.',1,1);
 SET @q = LAST_INSERT_ID();
 INSERT INTO options VALUES (NULL,@q,'$\\text{en miljon femtio tusen}$',1);
+*/
 
 -- ======================
 -- BLOCK 2 (TALLINJE MCQ)
 -- ======================
 
-INSERT INTO questions VALUES (NULL,'Vilket tal är närmast $35$?',2,2);
+INSERT INTO blocks (id, name) VALUES (2, 'Taluppfattning');
+
+INSERT INTO questions VALUES (NULL,'Vilket tal är närmast $35$?',2,3,null);
 SET @q = LAST_INSERT_ID();
 INSERT INTO options VALUES
-(NULL,@q,'$35$',1),
-(NULL,@q,'$25$',0),
+(NULL,@q,'$34$',1),
+(NULL,@q,'$36$',1),
 (NULL,@q,'$45$',0);
 
+/*
 INSERT INTO questions VALUES (NULL,'Vilket tal är närmast $30$?',2,2);
 SET @q = LAST_INSERT_ID();
 INSERT INTO options VALUES
@@ -61,14 +68,19 @@ INSERT INTO options VALUES
 (NULL,@q,'$45$',0),
 (NULL,@q,'$40$',0);
 
+*/
+
 -- ======================
 -- BLOCK 3 (ARITMETIK)
 -- ======================
 
-INSERT INTO questions VALUES (NULL,'$11\\cdot2+5$',3,1);
+INSERT INTO blocks (id, name) VALUES (3, 'Aritmetik');
+
+INSERT INTO questions VALUES (NULL,'$11\\cdot2+5$',3,1,JSON_OBJECT('mode', 'numeric'));
 SET @q = LAST_INSERT_ID();
 INSERT INTO options VALUES (NULL,@q,'$27$',1);
 
+/*
 INSERT INTO questions VALUES (NULL,'$12\\cdot2+3$',3,1);
 SET @q = LAST_INSERT_ID();
 INSERT INTO options VALUES (NULL,@q,'$27$',1);
@@ -84,15 +96,19 @@ INSERT INTO options VALUES (NULL,@q,'$33$',1);
 INSERT INTO questions VALUES (NULL,'$7\\cdot5+3$',3,1);
 SET @q = LAST_INSERT_ID();
 INSERT INTO options VALUES (NULL,@q,'$38$',1);
+*/
 
 -- ======================
 -- BLOCK 4 (NEGATIVA TAL)
 -- ======================
 
-INSERT INTO questions VALUES (NULL,'$-3-17$',4,1);
+INSERT INTO blocks (id, name) VALUES (4, 'Aritmetik');
+
+INSERT INTO questions VALUES (NULL,'$-3-17$',4,1,JSON_OBJECT('mode', 'numeric'));
 SET @q = LAST_INSERT_ID();
 INSERT INTO options VALUES (NULL,@q,'$-20$',1);
 
+/*
 INSERT INTO questions VALUES (NULL,'$-5-10$',4,1);
 SET @q = LAST_INSERT_ID();
 INSERT INTO options VALUES (NULL,@q,'$-15$',1);
@@ -108,7 +124,8 @@ INSERT INTO options VALUES (NULL,@q,'$-12$',1);
 INSERT INTO questions VALUES (NULL,'$-10+5$',4,1);
 SET @q = LAST_INSERT_ID();
 INSERT INTO options VALUES (NULL,@q,'$-5$',1);
-
+*/
+/*
 -- ======================
 -- BLOCK 5 (DECIMAL MCQ)
 -- ======================
@@ -227,10 +244,12 @@ INSERT INTO options VALUES (NULL,@q,'$2b+10$',1);
 INSERT INTO questions VALUES (NULL,'Area $b$ och $5$',18,1);
 SET @q = LAST_INSERT_ID();
 INSERT INTO options VALUES (NULL,@q,'$5b$',1);
-
+*/
 -- ======================
 -- EXAM BLOCKS
 -- ======================
+
+INSERT INTO exams VALUES(1,'Förkunskapstest','ABC');
 
 INSERT INTO exam_blocks VALUES
 (1,1),(1,2),(1,3),(1,4),(1,5),(1,6),
