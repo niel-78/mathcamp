@@ -270,11 +270,13 @@ INSERT INTO options VALUES (NULL,@q,'$-5$',1);
 -- ======================
 -- BLOCK 5 (DECIMAL MCQ)
 -- ======================
+*/
+INSERT INTO blocks (id, name) VALUES (6, 'Algebra');
 
-INSERT INTO questions VALUES (NULL,'Vilket tal är störst: $0,74,0,78,0,7$?',5,2);
+INSERT INTO questions VALUES (NULL,'Lös ekvationen $x^2-5x+6=0$',6,1,JSON_OBJECT('mode', 'algebra','default','x_1=a,x_2=b'));
 SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'$0,78$',1),(NULL,@q,'$0,74$',0),(NULL,@q,'$0,7$',0);
-
+INSERT INTO options VALUES (NULL,@q,'x_1=2,x_2=3',1),(NULL,@q,'x_1=3,x_2=2',1);
+/*
 INSERT INTO questions VALUES (NULL,'Vilket tal är störst: $0,65,0,68,0,6$?',5,2);
 SET @q = LAST_INSERT_ID();
 INSERT INTO options VALUES (NULL,@q,'$0,68$',1),(NULL,@q,'$0,65$',0),(NULL,@q,'$0,6$',0);
@@ -399,4 +401,4 @@ INSERT INTO options VALUES (NULL,@q,'$5b$',1);
 INSERT INTO exams VALUES(1,'Test','A');
 
 INSERT INTO exam_blocks VALUES
-(1,1),(1,2),(1,3),(1,4),(1,5);
+(1,6),(1,1),(1,2),(1,3),(1,4),(1,5);

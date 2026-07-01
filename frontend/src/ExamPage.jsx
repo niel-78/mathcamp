@@ -42,7 +42,26 @@ export default function ExamPage({ attemptId, onExit }) {
                 return;
             }
 
+            
             setQuestions(data.questions);
+            console.log(questions);
+
+            // ✅ sätt default answers direkt
+            const initialAnswers = {};
+
+            data.questions.forEach(q => {
+            let config =
+                typeof q.math_config === "string"
+                ? JSON.parse(q.math_config)
+                : q.math_config;
+
+            if (config?.default) {
+                initialAnswers[q.id] = config.default;
+            }
+            });
+
+            setAnswers(initialAnswers);
+
         };
 
         fetchQuestions();
@@ -142,9 +161,6 @@ export default function ExamPage({ attemptId, onExit }) {
 
 
 
-
-
-
     const saveAnswer = async (questionId, answer) => {
 
         await fetch(`${API_URL}/api/answers`, {
@@ -160,11 +176,6 @@ export default function ExamPage({ attemptId, onExit }) {
             })
         });
     };
-
-
-
-
-    
 
     const handleInput = (questionId, value) => {
         const question = questions.find(q => q.id === questionId);
@@ -182,8 +193,6 @@ export default function ExamPage({ attemptId, onExit }) {
 
         saveAnswer(questionId, filtered);  // ✅ använd rätt värde
     };
-
-
 
 
 
@@ -240,6 +249,7 @@ export default function ExamPage({ attemptId, onExit }) {
     }
 
 
+
     if (isDone) {
     return (
         <div>
@@ -290,11 +300,10 @@ export default function ExamPage({ attemptId, onExit }) {
         <div className="answers">
 
 
-
-
+            {/*Visa endast preview för text input som inte är text*/}
             <div className="preview">
-                {current.math_config?.mode === "text"
-                    ? answers[current.id] || ""
+                {current.type !== 1 || current.math_config.mode === 'text'
+                    ? ""
                     : (
                     <span
                         dangerouslySetInnerHTML={{
@@ -304,7 +313,6 @@ export default function ExamPage({ attemptId, onExit }) {
                     )
                 }
             </div>
-
 
 
             {current.type === 1 && (
@@ -366,6 +374,19 @@ export default function ExamPage({ attemptId, onExit }) {
         <button onClick={prev} disabled={index === 0}>
             ← Föregående
         </button>
+
+        {current.math_config?.default && (
+        <button
+            onClick={() => {
+            setAnswers(prev => ({
+                ...prev,
+                [current.id]: current.math_config.default
+            }));
+            }}
+        >
+            ↺ Återställ
+        </button>
+        )}
 
 
         <button onClick={next}>
