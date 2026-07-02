@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { API_URL } from "./config";
-import { renderLatex } from "./utils/renderLatex";
-import { formatValue } from "./utils/formatValue";
+import { API_URL } from "../../../config";
+import { formatValue } from "../../../utils/formatValue";
 
-const Dashboard = ({ attemptId }) => {
+const ResultPage = ({ attemptId }) => {
   const [results, setResults] = useState([]);
   const [score, setScore] = useState(0);
 
@@ -11,7 +10,11 @@ const Dashboard = ({ attemptId }) => {
     const loadResults = async () => {
 
       const res = await fetch(
-        `${API_URL}/api/result?attemptId=${attemptId}`
+        `${API_URL}/api/result?attemptId=${attemptId}`,{
+          headers: {
+            Authorization: localStorage.getItem("token")
+          }
+        }
       );
 
       if (!res.ok) {
@@ -37,9 +40,9 @@ const Dashboard = ({ attemptId }) => {
   }, [attemptId]);
 
 
-  return (
+  return (    
     <div>
-      <h1>Dashboard</h1>
+      <h1>Result</h1>
 
       <h2>
         Poäng: {score} / {results.length}
@@ -127,4 +130,4 @@ const Dashboard = ({ attemptId }) => {
   );
 }  
 
-export default Dashboard;
+export default ResultPage;

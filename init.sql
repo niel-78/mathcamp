@@ -29,6 +29,8 @@ CREATE TABLE users (
   -- lösenord (aldrig plaintext!)
   password_hash VARCHAR(255) NOT NULL,
 
+  role ENUM('student', 'teacher', 'admin') NOT NULL DEFAULT 'student',
+
   -- valfri visning
   name VARCHAR(255),
 
@@ -49,8 +51,8 @@ CREATE TABLE users (
 CHARACTER SET utf8mb4 
 COLLATE utf8mb4_unicode_ci;
 
-INSERT INTO users (username, password_hash, name)
-VALUES ('niklas', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas Elofsson');
+INSERT INTO users (username, password_hash, name, role)
+VALUES ('niklas', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas Elofsson' , 'student');
 
 CREATE TABLE blocks (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -77,7 +79,8 @@ CREATE TABLE options (
 CREATE TABLE exams (
   id INT AUTO_INCREMENT PRIMARY KEY,
   title VARCHAR(255),
-  exam_key VARCHAR(50) UNIQUE
+  exam_key VARCHAR(50) UNIQUE,
+  exam_config JSON DEFAULT JSON_OBJECT('timer', '1000','allowPrevious','false','randomizeQuestions',1,'randomizeOptions',1)
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE exam_blocks (
@@ -114,11 +117,11 @@ CREATE TABLE answer_options (
 ) ENGINE=InnoDB;
 
 
-
 CREATE TABLE exam_attempts (
   id VARCHAR(36) PRIMARY KEY,
   user_id INT,
   exam_id INT,
+  exam_config JSON,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
   FOREIGN KEY (user_id) REFERENCES users(id),
@@ -129,9 +132,8 @@ CREATE TABLE exam_attempts (
 CREATE TABLE attempt_questions (
   attempt_id VARCHAR(36),
   question_id INT,
-
+  order_by INT,
   PRIMARY KEY (attempt_id, question_id),
-
   FOREIGN KEY (attempt_id) REFERENCES exam_attempts(id),
   FOREIGN KEY (question_id) REFERENCES questions(id)
 ) ENGINE=InnoDB;
@@ -271,9 +273,9 @@ INSERT INTO options VALUES (NULL,@q,'$-5$',1);
 -- BLOCK 5 (DECIMAL MCQ)
 -- ======================
 */
-INSERT INTO blocks (id, name) VALUES (6, 'Algebra');
+INSERT INTO blocks (id, name) VALUES (5, 'Algebra');
 
-INSERT INTO questions VALUES (NULL,'Lös ekvationen $x^2-5x+6=0$',6,1,JSON_OBJECT('mode', 'algebra','default','x_1=a,x_2=b'));
+INSERT INTO questions VALUES (NULL,'Lös ekvationen $x^2-5x+6=0$',5,1,JSON_OBJECT('mode', 'algebra','default','x_1=a,x_2=b'));
 SET @q = LAST_INSERT_ID();
 INSERT INTO options VALUES (NULL,@q,'x_1=2,x_2=3',1),(NULL,@q,'x_1=3,x_2=2',1);
 /*
@@ -319,9 +321,9 @@ INSERT INTO options VALUES (NULL,@q,'$3,8\\cdot10^{-2}$',1);
 
 */
 
-INSERT INTO blocks (id, name) VALUES (5, 'Aritmetik');
+INSERT INTO blocks (id, name) VALUES (6, 'Aritmetik');
 
-INSERT INTO questions VALUES (NULL,'Vilket bråk är lika stora?',5,3,null);
+INSERT INTO questions VALUES (NULL,'Vilket bråk är lika stora?',6,3,null);
 SET @q = LAST_INSERT_ID();
 INSERT INTO options VALUES
 (NULL,@q,'\\frac{5}{2}',0),
@@ -398,7 +400,7 @@ INSERT INTO options VALUES (NULL,@q,'$5b$',1);
 -- EXAM BLOCKS
 -- ======================
 
-INSERT INTO exams VALUES(1,'Test','A');
+INSERT INTO exams(`id`,`title`,`exam_key`) VALUES(1,'Test','A');
 
 INSERT INTO exam_blocks VALUES
 (1,6),(1,1),(1,2),(1,3),(1,4),(1,5);

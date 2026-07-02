@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { API_URL } from "./config";
+import { useAuth } from "../Contexts/AuthContext";
+import { API_URL } from "../config";
 
-export default function Login({ onLogin }) {
+export default function Login() {
+  const { setUser } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
@@ -27,7 +29,7 @@ export default function Login({ onLogin }) {
     localStorage.setItem("token", data.token);
 
     // ✅ sätt user i App
-    onLogin(data.user);
+    setUser(data.user);
   };
 
   return (

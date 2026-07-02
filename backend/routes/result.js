@@ -4,7 +4,7 @@ import requireAuth from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.get("/result", async (req, res) => {
+router.get("/result", requireAuth, async (req, res) => {
     const { attemptId } = req.query;
 
     try {
@@ -58,7 +58,7 @@ router.get("/result", async (req, res) => {
 
                 // ✅ visa som text i UI
                 correctText = correctList.join(" / ");
-s
+
                 // ✅ NORMALIZE
                 const normalize = (str) => {
                     return str

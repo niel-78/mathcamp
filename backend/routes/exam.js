@@ -5,6 +5,27 @@ import crypto from "crypto";
 
 const router = express.Router();
 
+
+// Get array with integers
+function intArray(length){
+  var array = [length];
+  for(var i = 0; i < length; i++){
+    array[i] = i + 1;
+  }
+  return array;
+}
+
+// Fisher-Yates shuffle
+function shuffle(array) {
+  const newArray = [...array]; // kopiera (viktigt i React!)
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+}
+
+
 router.post("/start-exam", requireAuth, async (req, res) => {
   console.log("start exam påbörjas");
 
@@ -31,10 +52,13 @@ router.post("/start-exam", requireAuth, async (req, res) => {
     const exam = exams[0];
     const attemptId = crypto.randomUUID();
 
+    console.log("exam.exam_config");
+    console.log(exam.exam_config);
+
     // ✅ 1. skapa attempt
     await connection.query(
-      "INSERT INTO exam_attempts (id, user_id, exam_id) VALUES (?, ?, ?)",
-      [attemptId, req.user.id, exam.id]
+      "INSERT INTO exam_attempts (id, user_id, exam_id, exam_config) VALUES (?, ?, ?, ?)",
+      [attemptId, req.user.id, exam.id, exam.exam_config]
     );
 
     // ✅ 2. slumpa frågor
@@ -57,11 +81,25 @@ router.post("/start-exam", requireAuth, async (req, res) => {
       [exam.id]
     );
 
+    //Eventuellt slumpa ordning på frågorna
+    console.log("randomizeQuestions")
+    const parsed = JSON.parse(exam.exam_config);
+    console.log(parsed.randomizeQuestions)
+    const randomizeQuestions = parsed.randomizeQuestions;
+
+    var order_by = intArray(questions.length);
+    
+    if(randomizeQuestions){
+      order_by = shuffle(order_by);
+      console.log("slumpa uppgifterna")
+    }
+
     // ✅ 3. spara frågor
+    let index = 0;
     for (const q of questions) {
       await connection.query(
-        "INSERT INTO attempt_questions (attempt_id, question_id) VALUES (?, ?)",
-        [attemptId, q.id]
+        "INSERT INTO attempt_questions (attempt_id, question_id,order_by) VALUES (?, ? , ?)",
+        [attemptId, q.id, order_by[index++]]
       );
     }
 
@@ -71,7 +109,8 @@ router.post("/start-exam", requireAuth, async (req, res) => {
       attemptId,
       exam: {
         id: exam.id,
-        title: exam.title
+        title: exam.title,
+        examConfig: exam.exam_config
       }
     });
 
@@ -84,9 +123,6 @@ router.post("/start-exam", requireAuth, async (req, res) => {
     connection.release(); // ✅ släpp connection
   }
 });
-
-
-
 
 
 router.get("/questions", requireAuth, async (req, res) => {
@@ -103,6 +139,7 @@ router.get("/questions", requireAuth, async (req, res) => {
       FROM questions q
       JOIN attempt_questions aq ON q.id = aq.question_id
       WHERE aq.attempt_id = ?
+      ORDER BY aq.order_by ASC
     `, [attemptId]);
 
     // ✅ hämta ALLA options

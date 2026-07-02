@@ -1,26 +1,42 @@
-import { useEffect, useState, useRef } from "react";
-import { renderLatex } from "./utils/renderLatex";
+import { useEffect, useState } from "react";
+import { renderLatex } from "../../../utils/renderLatex";
+import { formatValue } from "../../../utils/formatValue";
+import { formatQuestion } from "../../../utils/formatQuestion";
+import { isSEB } from "../../../utils/isSEB";
+import { API_URL } from "../../../config";
+import "./ExamPage.css";
 
-import { isMathExpression } from "./utils/isMathExpression";
-import { formatValue } from "./utils/formatValue";
-import { formatQuestion } from "./utils/formatQuestion";
-
-import { isSEB } from "./utils/isSEB";
-import { API_URL } from "./config";
-import "./styles/exam.css";
-
-export default function ExamPage({ attemptId, onExit }) {
+export default function ExamPage({ attemptId, examConfig, onExit }) {
     const [questions, setQuestions] = useState([]);
     const [index, setIndex] = useState(0);
     const [answers, setAnswers] = useState({});
-    const [time, setTime] = useState(600);
-    const [user, setUser] = useState(null);
-    const [locked, setLocked] = useState(false);
+    const [time, setTime] = useState(0);
+    const [allowPrevious, setAllowPrevious] = useState(true);
+    const [randomizeOptions, setRandomizeOptions] = useState(true);
     const isDone = index >= questions.length;
     const current = questions[index];
 
+    // Fisher-Yates shuffle
+    function shuffle(array) {
+    const newArray = [...array]; // kopiera (viktigt i React!)
+        for (let i = newArray.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+        }
+        return newArray;
+    }
+
     useEffect(() => {
         if (!attemptId) return;
+
+        const parsed = JSON.parse(examConfig);
+        setTime(parsed.timer);
+        if(parsed.allowPrevious != undefined){
+            setAllowPrevious(parsed.allowPrevious)
+        }
+        if(parsed.randomizeOptions != undefined){
+            setRandomizeOptions(parsed.randomizeOptions)
+        }
 
         const fetchQuestions = async () => {
             console.log("🔥 FETCH START");
@@ -41,8 +57,7 @@ export default function ExamPage({ attemptId, onExit }) {
                 alert(data.error || "No questions");
                 return;
             }
-
-            
+ 
             setQuestions(data.questions);
             console.log(questions);
 
@@ -50,18 +65,26 @@ export default function ExamPage({ attemptId, onExit }) {
             const initialAnswers = {};
 
             data.questions.forEach(q => {
-            let config =
-                typeof q.math_config === "string"
-                ? JSON.parse(q.math_config)
-                : q.math_config;
+                let config =
+                    typeof q.math_config === "string"
+                    ? JSON.parse(q.math_config)
+                    : q.math_config;
 
-            if (config?.default) {
-                initialAnswers[q.id] = config.default;
-            }
+                if (config?.default) {
+                    initialAnswers[q.id] = config.default;
+                }
             });
 
             setAnswers(initialAnswers);
 
+            if(randomizeOptions){
+                console.log("randomizeOptions")
+                data.questions.forEach(q => {
+                    if(q.options.length > 1){
+                        q.shuffledOptions = shuffle(q.options)
+                    }
+                });
+            }
         };
 
         fetchQuestions();
@@ -118,12 +141,6 @@ export default function ExamPage({ attemptId, onExit }) {
     }, []);
 
 
-
-
-
-
-
-
     const applyConfig = (value, config) => {
         if (!config) return value;
 
@@ -159,8 +176,6 @@ export default function ExamPage({ attemptId, onExit }) {
         return result;
     };
 
-
-
     const saveAnswer = async (questionId, answer) => {
 
         await fetch(`${API_URL}/api/answers`, {
@@ -194,8 +209,6 @@ export default function ExamPage({ attemptId, onExit }) {
         saveAnswer(questionId, filtered);  // ✅ använd rätt värde
     };
 
-
-
     const handleSingle = (questionId, optionId) => {
         setAnswers(prev => ({
             ...prev,
@@ -204,8 +217,6 @@ export default function ExamPage({ attemptId, onExit }) {
 
         saveAnswer(questionId, optionId);
     };
-
-
 
     const handleMulti = (questionId, optionId) => {
         setAnswers(prev => {
@@ -227,9 +238,6 @@ export default function ExamPage({ attemptId, onExit }) {
         });
     };
 
-
-
-
     const next = () => {
         if (index === questions.length - 1) {
             onExit();   // ✅ GÅ TILL DASHBOARD
@@ -248,8 +256,6 @@ export default function ExamPage({ attemptId, onExit }) {
         return <p>Inga frågor hittades</p>;
     }
 
-
-
     if (isDone) {
     return (
         <div>
@@ -261,8 +267,6 @@ export default function ExamPage({ attemptId, onExit }) {
         </div>
     );
     }
-
-
 
     return (
         <div className="exam-container">
@@ -276,15 +280,10 @@ export default function ExamPage({ attemptId, onExit }) {
 
         <h1>Prov</h1>
 
-
         <h2>Exam started ✅</h2>
         <p>Attempt: {attemptId}</p>
 
-
         <h2>Fråga {index + 1}</h2>
-
-
-
 
         <div
             dangerouslySetInnerHTML={{
@@ -292,13 +291,8 @@ export default function ExamPage({ attemptId, onExit }) {
             }}
         />
 
-
-
-
-
         {/* ✅ visa options */}
         <div className="answers">
-
 
             {/*Visa endast preview för text input som inte är text*/}
             <div className="preview">
@@ -314,7 +308,6 @@ export default function ExamPage({ attemptId, onExit }) {
                 }
             </div>
 
-
             {current.type === 1 && (
                 <input
                     type="text"
@@ -324,10 +317,9 @@ export default function ExamPage({ attemptId, onExit }) {
                 />
             )}
             
-
             {current.type === 2 && (
             <div className="answers">
-                {current.options.map(opt => (
+                {(current.shuffledOptions || current.options).map(opt => (
                 <button
                     key={opt.id}
                     className={answers[current.id] === opt.id ? "selected" : ""}
@@ -346,7 +338,7 @@ export default function ExamPage({ attemptId, onExit }) {
 
             {current.type === 3 && (
             <div className="answers">
-                {current.options.map(opt => (
+                {(current.shuffledOptions || current.options).map(opt => (
                 <button
                     key={opt.id}
                     className={
@@ -371,9 +363,11 @@ export default function ExamPage({ attemptId, onExit }) {
         </div>
 
         <div className="nav">
-        <button onClick={prev} disabled={index === 0}>
-            ← Föregående
-        </button>
+        {!allowPrevious && (          
+            <button onClick={prev} disabled={index === 0}>
+                ← Föregående
+            </button>
+        )}    
 
         {current.math_config?.default && (
         <button
@@ -395,12 +389,10 @@ export default function ExamPage({ attemptId, onExit }) {
 
         </div>
 
-
         <p>
-        ⏳ Tid: {Math.floor(time / 60)}:
+        ⏳ Tid: {Math.floor(parseInt(time) / 60)}:
         {String(time % 60).padStart(2, "0")}
         </p>
-
 
     </div>
 

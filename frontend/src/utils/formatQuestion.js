@@ -1,4 +1,3 @@
-import { formatValue } from "./formatValue";
 import { renderLatex } from "./renderLatex";
 
 export const formatQuestion = (text) => {

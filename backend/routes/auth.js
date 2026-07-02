@@ -46,7 +46,8 @@ router.post("/login", async (req, res) => {
       user: {
         id: user.id,
         username: user.username,
-        name: user.name
+        name: user.name,
+        role: user.role
       }
     });
 
@@ -62,7 +63,8 @@ router.get("/me", requireAuth, (req, res) => {
   res.json({
     id: req.user.id,
     username: req.user.username,
-    name: req.user.name
+    name: req.user.name,
+    role: req.user.role
   });
 });
 
