@@ -2,6 +2,9 @@ USE mydb;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS student_groups;
+DROP TABLE IF EXISTS groups;
+DROP TABLE IF EXISTS group_exams;
 DROP TABLE IF EXISTS answer_options;
 DROP TABLE IF EXISTS answers;
 DROP TABLE IF EXISTS exam_questions;
@@ -51,8 +54,8 @@ CREATE TABLE users (
 CHARACTER SET utf8mb4 
 COLLATE utf8mb4_unicode_ci;
 
-INSERT INTO users (username, password_hash, name, role)
-VALUES ('niklas', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas Elofsson' , 'student');
+INSERT INTO users (id, username, password_hash, name, role)
+VALUES (1, 'niklas', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas Elofsson' , 'student');
 
 CREATE TABLE blocks (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -79,16 +82,107 @@ CREATE TABLE options (
 CREATE TABLE exams (
   id INT AUTO_INCREMENT PRIMARY KEY,
   title VARCHAR(255),
-  exam_key VARCHAR(50) UNIQUE,
   exam_config JSON DEFAULT JSON_OBJECT('timer', '1000','allowPrevious','false','randomizeQuestions',1,'randomizeOptions',1)
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE groups (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO groups (id, name)
+VALUES
+(1, 'Niklas grupp');
+
+CREATE TABLE group_exams (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    group_id INT NOT NULL,
+    exam_id INT NOT NULL,
+
+    group_exam_key VARCHAR(50) UNIQUE,
+    exam_config JSON DEFAULT JSON_OBJECT('timer', '1000','allowPrevious','false','randomizeQuestions',1,'randomizeOptions',1),
+
+    time_limit_minutes INT DEFAULT NULL,
+
+    shuffle_questions BOOLEAN NOT NULL DEFAULT FALSE,
+    shuffle_options BOOLEAN NOT NULL DEFAULT FALSE,
+
+    max_attempts INT NOT NULL DEFAULT 1,
+
+    show_result_immediately BOOLEAN DEFAULT TRUE,
+    passing_score DECIMAL(5,2) DEFAULT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+
+    available_from DATETIME DEFAULT NULL,
+    available_until DATETIME DEFAULT NULL,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_group_exams_group
+        FOREIGN KEY (group_id)
+        REFERENCES groups(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_group_exams_exam
+        FOREIGN KEY (exam_id)
+        REFERENCES exams(id)
+        ON DELETE CASCADE,
+
+    UNIQUE KEY unique_group_exam (group_id, exam_id)
+);
+
+CREATE TABLE student_groups (
+    user_id INT NOT NULL,
+    group_id INT NOT NULL,
+
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (user_id, group_id),
+
+    CONSTRAINT fk_student_groups_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_student_groups_group
+        FOREIGN KEY (group_id)
+        REFERENCES groups(id)
+        ON DELETE CASCADE
+);
+
+INSERT INTO student_groups (user_id, group_id)
+VALUES (1, 1);
 
 CREATE TABLE exam_blocks (
   exam_id INT,
   block_id INT,
   PRIMARY KEY (exam_id, block_id),
-  FOREIGN KEY (exam_id) REFERENCES exams(id) ON DELETE CASCADE
-) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+  FOREIGN KEY (exam_id) REFERENCES exams(id) ON DELETE CASCADE,
+  FOREIGN KEY (block_id) REFERENCES blocks(id) ON DELETE CASCADE
+) ENGINE=InnoDB 
+CHARACTER SET utf8mb4 
+COLLATE utf8mb4_unicode_ci;
+
+
+CREATE TABLE exam_attempts (
+  id VARCHAR(36) PRIMARY KEY,
+  user_id INT,
+  group_exam_id INT NOT NULL,
+  exam_config JSON,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  FOREIGN KEY (group_exam_id) REFERENCES group_exams(id)
+) ENGINE=InnoDB
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
+;
+
 
 CREATE TABLE answers (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -102,9 +196,11 @@ CREATE TABLE answers (
   FOREIGN KEY (exam_id) REFERENCES exams(id),
   FOREIGN KEY (question_id) REFERENCES questions(id),
   FOREIGN KEY (option_id) REFERENCES options(id),
+  FOREIGN KEY (attempt_id) REFERENCES exam_attempts(id) ON DELETE CASCADE,
   UNIQUE (attempt_id, question_id)
-) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
+) ENGINE=InnoDB
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE answer_options (
   answer_id INT,
@@ -116,19 +212,6 @@ CREATE TABLE answer_options (
   FOREIGN KEY (option_id) REFERENCES options(id)
 ) ENGINE=InnoDB;
 
-
-CREATE TABLE exam_attempts (
-  id VARCHAR(36) PRIMARY KEY,
-  user_id INT,
-  exam_id INT,
-  exam_config JSON,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-  FOREIGN KEY (user_id) REFERENCES users(id),
-  FOREIGN KEY (exam_id) REFERENCES exams(id)
-) ENGINE=InnoDB;
-
-
 CREATE TABLE attempt_questions (
   attempt_id VARCHAR(36),
   question_id INT,
@@ -136,7 +219,9 @@ CREATE TABLE attempt_questions (
   PRIMARY KEY (attempt_id, question_id),
   FOREIGN KEY (attempt_id) REFERENCES exam_attempts(id),
   FOREIGN KEY (question_id) REFERENCES questions(id)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
 
 
 
@@ -151,23 +236,6 @@ SET @q = LAST_INSERT_ID();
 
 INSERT INTO options VALUES (NULL,@q,'en miljon sjuttiofyra tusen',1);
 
-/*
-INSERT INTO questions VALUES (NULL,'Skriv $1\\,200\\,000$ med ord.',1,1);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'$\\text{en miljon tvåhundra tusen}$',1);
-
-INSERT INTO questions VALUES (NULL,'Skriv $900\\,000$ med ord.',1,1);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'$\\text{niohundra tusen}$',1);
-
-INSERT INTO questions VALUES (NULL,'Skriv $2\\,300\\,000$ med ord.',1,1);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'$\\text{två miljoner trehundra tusen}$',1);
-
-INSERT INTO questions VALUES (NULL,'Skriv $1\\,050\\,000$ med ord.',1,1);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'$\\text{en miljon femtio tusen}$',1);
-*/
 
 -- ======================
 -- BLOCK 2 (TALLINJE MCQ)
@@ -182,36 +250,6 @@ INSERT INTO options VALUES
 (NULL,@q,'40',1),
 (NULL,@q,'50',0);
 
-/*
-INSERT INTO questions VALUES (NULL,'Vilket tal är närmast $30$?',2,2);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES
-(NULL,@q,'$30$',1),
-(NULL,@q,'$25$',0),
-(NULL,@q,'$35$',0);
-
-INSERT INTO questions VALUES (NULL,'Vilket tal ligger mitt mellan $20$ och $40$?',2,2);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES
-(NULL,@q,'$30$',1),
-(NULL,@q,'$20$',0),
-(NULL,@q,'$40$',0);
-
-INSERT INTO questions VALUES (NULL,'Vilket tal ligger mellan $10$ och $20$?',2,2);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES
-(NULL,@q,'$15$',1),
-(NULL,@q,'$10$',0),
-(NULL,@q,'$20$',0);
-
-INSERT INTO questions VALUES (NULL,'Vilket tal är störst av $40,45,50$?',2,2);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES
-(NULL,@q,'$50$',1),
-(NULL,@q,'$45$',0),
-(NULL,@q,'$40$',0);
-
-*/
 
 -- ======================
 -- BLOCK 3 (ARITMETIK)
@@ -223,23 +261,6 @@ INSERT INTO questions VALUES (NULL,'11\\cdot2+5',3,1,JSON_OBJECT('mode', 'numeri
 SET @q = LAST_INSERT_ID();
 INSERT INTO options VALUES (NULL,@q,'27',1);
 
-/*
-INSERT INTO questions VALUES (NULL,'$12\\cdot2+3$',3,1);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'$27$',1);
-
-INSERT INTO questions VALUES (NULL,'$9\\cdot3+2$',3,1);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'$29$',1);
-
-INSERT INTO questions VALUES (NULL,'$8\\cdot4+1$',3,1);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'$33$',1);
-
-INSERT INTO questions VALUES (NULL,'$7\\cdot5+3$',3,1);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'$38$',1);
-*/
 
 -- ======================
 -- BLOCK 4 (NEGATIVA TAL)
@@ -252,23 +273,6 @@ SET @q = LAST_INSERT_ID();
 INSERT INTO options VALUES (NULL,@q,'4a',1);
 
 /*
-INSERT INTO questions VALUES (NULL,'$-5-10$',4,1);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'$-15$',1);
-
-INSERT INTO questions VALUES (NULL,'$-8+3$',4,1);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'$-5$',1);
-
-INSERT INTO questions VALUES (NULL,'$-6-6$',4,1);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'$-12$',1);
-
-INSERT INTO questions VALUES (NULL,'$-10+5$',4,1);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'$-5$',1);
-*/
-/*
 -- ======================
 -- BLOCK 5 (DECIMAL MCQ)
 -- ======================
@@ -278,129 +282,14 @@ INSERT INTO blocks (id, name) VALUES (5, 'Algebra');
 INSERT INTO questions VALUES (NULL,'Lös ekvationen $x^2-5x+6=0$',5,1,JSON_OBJECT('mode', 'algebra','default','x_1=a,x_2=b'));
 SET @q = LAST_INSERT_ID();
 INSERT INTO options VALUES (NULL,@q,'x_1=2,x_2=3',1),(NULL,@q,'x_1=3,x_2=2',1);
-/*
-INSERT INTO questions VALUES (NULL,'Vilket tal är störst: $0,65,0,68,0,6$?',5,2);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'$0,68$',1),(NULL,@q,'$0,65$',0),(NULL,@q,'$0,6$',0);
 
--- ======================
--- BLOCK 6 (DIVISION MCQ)
--- ======================
-
-INSERT INTO questions VALUES (NULL,'Vad händer när man dividerar med $0,001$?',6,2);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'Mycket större',1),(NULL,@q,'Mindre',0),(NULL,@q,'Samma',0);
-
-INSERT INTO questions VALUES (NULL,'Vad händer när man dividerar med $0,1$?',6,2);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'Större',1),(NULL,@q,'Mindre',0),(NULL,@q,'Samma',0);
-
--- ======================
--- BLOCK 8 (DECIMAL)
--- ======================
-
-INSERT INTO questions VALUES (NULL,'$0,5\\cdot36$',8,1);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'$18$',1);
-
-INSERT INTO questions VALUES (NULL,'$0,04\\cdot0,4$',8,1);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'$0,016$',1);
-
--- ======================
--- BLOCK 9 (GRUNDPOTENS)
--- ======================
-
-INSERT INTO questions VALUES (NULL,'$0,038$ i grundpotensform',9,1);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'$3,8\\cdot10^{-2}$',1);
-
--- ======================
--- BLOCK 10 (BRÅK)
--- ======================
-
-*/
-
-INSERT INTO blocks (id, name) VALUES (6, 'Aritmetik');
-
-INSERT INTO questions VALUES (NULL,'Vilket bråk är lika stora?',6,3,null);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES
-(NULL,@q,'\\frac{5}{2}',0),
-(NULL,@q,'\\frac{7}{4}',1),
-(NULL,@q,'\\frac{14}{8}',1);
-
-/*
-
--- ======================
--- BLOCK 11 (PROCENT)
--- ======================
-
-INSERT INTO questions VALUES (NULL,'$300$ kr med $50\\%$',11,2);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'$450$',1),(NULL,@q,'$400$',0),(NULL,@q,'$500$',0);
-
--- ======================
--- BLOCK 12 (PROCENTÖKNING)
--- ======================
-
-INSERT INTO questions VALUES (NULL,'$20 \\rightarrow 25$',12,2);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'$25\\%$',1),(NULL,@q,'$20\\%$',0),(NULL,@q,'$30\\%$',0);
-
--- ======================
--- BLOCK 13 (PROCENT MINSKNING)
--- ======================
-
-INSERT INTO questions VALUES (NULL,'$7\\%$ minskning av $235$',13,2);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'$235\\cdot0,93$',1),(NULL,@q,'$235\\cdot1,07$',0),(NULL,@q,'$235\\cdot0,07$',0);
-
--- ======================
--- BLOCK 14 (PROCENT)
--- ======================
-
-INSERT INTO questions VALUES (NULL,'$15\\%$ av $200$',14,1);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'$30$',1);
-
--- ======================
--- BLOCK 15 (EKVATION)
--- ======================
-
-INSERT INTO questions VALUES (NULL,'$x-3=2x+10$',15,1);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'$x=-13$',1);
-
--- ======================
--- BLOCK 16 (FÖRENKLA)
--- ======================
-
-INSERT INTO questions VALUES (NULL,'$20x+8-11-3x$',16,1);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'$17x-3$',1);
-
--- ======================
--- BLOCK 17 (OMKRETS)
--- ======================
-
-INSERT INTO questions VALUES (NULL,'Omkrets $b$ och $5$',17,1);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'$2b+10$',1);
-
--- ======================
--- BLOCK 18 (AREA)
--- ======================
-
-INSERT INTO questions VALUES (NULL,'Area $b$ och $5$',18,1);
-SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'$5b$',1);
-*/
 -- ======================
 -- EXAM BLOCKS
 -- ======================
 
-INSERT INTO exams(`id`,`title`,`exam_key`) VALUES(1,'Test','A');
+INSERT INTO exams(`id`,`title`) VALUES(1,'Test');
 
 INSERT INTO exam_blocks VALUES
-(1,6),(1,1),(1,2),(1,3),(1,4),(1,5);
+(1,1),(1,2),(1,3),(1,4),(1,5);
+
+INSERT INTO group_exams(`exam_id`,`group_id`,`group_exam_key`) VALUES(1,1,'A');

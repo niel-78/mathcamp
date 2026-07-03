@@ -37,62 +37,65 @@ router.post("/start-exam", requireAuth, async (req, res) => {
     const { examKey } = req.body;
 
     if (!examKey) {
-      return res.status(400).json({ error: "Missing exam key" });
+      return res.status(400).json({ error: "Missing group exam key" });
     }
 
-    const [exams] = await connection.query(
-      "SELECT * FROM exams WHERE exam_key = ?",
+    const [groupExams] = await connection.query(
+      "SELECT * FROM group_exams WHERE group_exam_key = ?",
       [examKey]
     );
 
-    if (exams.length === 0) {
-      return res.status(404).json({ error: "Exam not found" });
+    if (groupExams.length === 0) {
+      return res.status(404).json({ error: "Group exam not found" });
     }
 
-    const exam = exams[0];
+    const groupExam = groupExams[0];
     const attemptId = crypto.randomUUID();
 
-    console.log("exam.exam_config");
-    console.log(exam.exam_config);
 
     // ✅ 1. skapa attempt
     await connection.query(
-      "INSERT INTO exam_attempts (id, user_id, exam_id, exam_config) VALUES (?, ?, ?, ?)",
-      [attemptId, req.user.id, exam.id, exam.exam_config]
+      "INSERT INTO exam_attempts (id, user_id, group_exam_id) VALUES (?, ?, ?)",
+      [attemptId, req.user.id, groupExam.id]
     );
 
     // ✅ 2. slumpa frågor
     const [questions] = await connection.query(
       `
-      SELECT q.id
-      FROM questions q
-      JOIN (
-        SELECT block_id, MIN(id) as id
-        FROM (
-          SELECT block_id, id
-          FROM questions
-          ORDER BY RAND()
-        ) shuffled
-        GROUP BY block_id
-      ) picked ON q.id = picked.id
-      JOIN exam_blocks eb ON q.block_id = eb.block_id
-      WHERE eb.exam_id = ?
+        SELECT
+            q.id,
+            ge.shuffle_questions,
+            ge.shuffle_options,
+            ge.time_limit_minutes
+        FROM questions q
+        JOIN (
+            SELECT block_id, MIN(id) AS id
+            FROM (
+                SELECT block_id, id
+                FROM questions
+                ORDER BY RAND()
+            ) shuffled
+            GROUP BY block_id
+        ) picked ON q.id = picked.id
+        JOIN exam_blocks eb ON q.block_id = eb.block_id
+        JOIN group_exams ge ON ge.exam_id = eb.exam_id
+        WHERE ge.id = ?
       `,
-      [exam.id]
+      [groupExam.id]
     );
 
     //Eventuellt slumpa ordning på frågorna
-    console.log("randomizeQuestions")
-    const parsed = JSON.parse(exam.exam_config);
-    console.log(parsed.randomizeQuestions)
-    const randomizeQuestions = parsed.randomizeQuestions;
+    //console.log("randomizeQuestions")
+    //const parsed = JSON.parse(groupExam.exam_config);
+    //console.log(parsed.randomizeQuestions)
+    //const randomizeQuestions = parsed.randomizeQuestions;
 
     var order_by = intArray(questions.length);
-    
+    /*
     if(randomizeQuestions){
       order_by = shuffle(order_by);
       console.log("slumpa uppgifterna")
-    }
+    }*/
 
     // ✅ 3. spara frågor
     let index = 0;
@@ -101,6 +104,7 @@ router.post("/start-exam", requireAuth, async (req, res) => {
         "INSERT INTO attempt_questions (attempt_id, question_id,order_by) VALUES (?, ? , ?)",
         [attemptId, q.id, order_by[index++]]
       );
+      console.log("skapar attempt_question");
     }
 
     await connection.commit(); // ✅ COMMIT
@@ -108,9 +112,9 @@ router.post("/start-exam", requireAuth, async (req, res) => {
     res.json({
       attemptId,
       exam: {
-        id: exam.id,
-        title: exam.title,
-        examConfig: exam.exam_config
+        id: groupExam.id,
+        title: groupExam.title,
+        examConfig: groupExam.exam_config
       }
     });
 
