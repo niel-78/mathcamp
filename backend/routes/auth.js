@@ -1,4 +1,4 @@
-import requireAuth from "../middleware/auth.js";
+import requireAuth from "../middleware/requireAuth.js";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import db from "../db.js";

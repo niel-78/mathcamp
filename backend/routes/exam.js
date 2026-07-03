@@ -1,5 +1,5 @@
 import express from "express";
-import requireAuth from "../middleware/auth.js";
+import requireAuth from "../middleware/requireAuth.js";
 import db from "../db.js";
 import crypto from "crypto";
 
@@ -104,7 +104,6 @@ router.post("/start-exam", requireAuth, async (req, res) => {
         "INSERT INTO attempt_questions (attempt_id, question_id,order_by) VALUES (?, ? , ?)",
         [attemptId, q.id, order_by[index++]]
       );
-      console.log("skapar attempt_question");
     }
 
     await connection.commit(); // ✅ COMMIT

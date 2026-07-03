@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { authHeaders } from "../api/authHeaders";
 
 const AuthContext = createContext();
 
@@ -8,7 +9,7 @@ export function AuthProvider({ children }) {
 
     useEffect(() => {
         fetch("/api/me", {
-            credentials: "include",
+            headers: authHeaders()
         })
         .then(res => res.json())
         .then(data => {
@@ -21,6 +22,7 @@ export function AuthProvider({ children }) {
         });
     }, []);
 
+    const token = localStorage.getItem("token");
 
     const logout = () => {
         localStorage.removeItem("token");
@@ -29,7 +31,7 @@ export function AuthProvider({ children }) {
 
 
     return (
-        <AuthContext.Provider value={{ user, setUser, loading, logout }}>
+        <AuthContext.Provider value={{ user, setUser, loading, logout, token }}>
             {children}
         </AuthContext.Provider>
     );

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { API_URL } from "../../../config";
 import { formatValue } from "../../../utils/formatValue";
+import { authHeaders } from "../../../api/authHeaders";
 
 const ResultPage = ({ attemptId }) => {
   const [results, setResults] = useState([]);
@@ -11,9 +12,7 @@ const ResultPage = ({ attemptId }) => {
 
       const res = await fetch(
         `${API_URL}/api/result?attemptId=${attemptId}`,{
-          headers: {
-            Authorization: localStorage.getItem("token")
-          }
+          headers: authHeaders()    
         }
       );
 

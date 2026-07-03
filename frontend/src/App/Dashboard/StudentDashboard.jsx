@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { API_URL } from "../../config";
 import { useAuth } from "../../Contexts/AuthContext";
+import { authHeaders } from "../../api/authHeaders";
 import ExamPage from "./StudentDashboard/ExamPage";
 import ResultPage from "./StudentDashboard/ResultPage";
 
@@ -15,8 +16,8 @@ const StudentDashboard = () => {
     const res = await fetch(`${API_URL}/api/start-exam`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        Authorization: localStorage.getItem("token")
+          ...authHeaders(),
+          "Content-Type": "application/json"
       },
       body: JSON.stringify({ examKey })
     });

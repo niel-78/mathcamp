@@ -4,6 +4,7 @@ import { formatValue } from "../../../utils/formatValue";
 import { formatQuestion } from "../../../utils/formatQuestion";
 import { isSEB } from "../../../utils/isSEB";
 import { API_URL } from "../../../config";
+import { authHeaders } from "../../../api/authHeaders";
 import "./ExamPage.css";
 
 export default function ExamPage({ attemptId, examConfig, onExit }) {
@@ -44,9 +45,7 @@ export default function ExamPage({ attemptId, examConfig, onExit }) {
             const res = await fetch(
                 `${API_URL}/api/questions?attemptId=${attemptId}`,
                 {
-                    headers: {
-                        Authorization: localStorage.getItem("token")
-                    }
+                    headers: authHeaders()
                 }
             );
 
@@ -182,7 +181,7 @@ export default function ExamPage({ attemptId, examConfig, onExit }) {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                Authorization: localStorage.getItem("token")
+                ...authHeaders(),
             },
             body: JSON.stringify({
                 attempt_id: attemptId,

@@ -1,6 +1,9 @@
+import TeacherExams from "./TeacherDashboard/TeacherExams"
+
 function TeacherDashboard() {
 
-    return "<h1>TeacherDashboard</h1>";
+    console.log("TeacherExams");
+    return <TeacherExams />;
 }
 
 export default TeacherDashboard;

@@ -4,6 +4,7 @@ import examRoutes from "./routes/exam.js";
 import answersRoutes from "./routes/answers.js";
 import eventsRoutes from "./routes/events.js";
 import resultRoutes from "./routes/result.js";
+import teacherExamRoutes from "./routes/teacherExamRoutes.js";
 import cors from "cors";
 
 console.log("🔥 SERVER FILE START");
@@ -34,6 +35,7 @@ app.use("/api", examRoutes);
 app.use("/api", answersRoutes)
 app.use("/api", eventsRoutes);
 app.use("/api", resultRoutes);
+app.use("/api/teacher/exams", teacherExamRoutes);
 
 
 

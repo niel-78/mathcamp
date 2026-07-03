@@ -2,6 +2,7 @@ USE mydb;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS exam_teachers;
 DROP TABLE IF EXISTS student_groups;
 DROP TABLE IF EXISTS groups;
 DROP TABLE IF EXISTS group_exams;
@@ -55,7 +56,7 @@ CHARACTER SET utf8mb4
 COLLATE utf8mb4_unicode_ci;
 
 INSERT INTO users (id, username, password_hash, name, role)
-VALUES (1, 'niklas', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas Elofsson' , 'student');
+VALUES (1, 'niklas', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas Elofsson' , 'teacher');
 
 CREATE TABLE blocks (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -84,6 +85,26 @@ CREATE TABLE exams (
   title VARCHAR(255),
   exam_config JSON DEFAULT JSON_OBJECT('timer', '1000','allowPrevious','false','randomizeQuestions',1,'randomizeOptions',1)
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+
+CREATE TABLE exam_teachers (
+    exam_id INT NOT NULL,
+    teacher_id INT NOT NULL,
+
+    is_owner BOOLEAN NOT NULL DEFAULT FALSE,
+
+    granted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (exam_id, teacher_id),
+
+    FOREIGN KEY (exam_id)
+        REFERENCES exams(id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (teacher_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE
+);
 
 CREATE TABLE groups (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -288,6 +309,8 @@ INSERT INTO options VALUES (NULL,@q,'x_1=2,x_2=3',1),(NULL,@q,'x_1=3,x_2=2',1);
 -- ======================
 
 INSERT INTO exams(`id`,`title`) VALUES(1,'Test');
+
+INSERT INTO exam_teachers (exam_id,teacher_id,is_owner) VALUES (1,1,TRUE);
 
 INSERT INTO exam_blocks VALUES
 (1,1),(1,2),(1,3),(1,4),(1,5);
