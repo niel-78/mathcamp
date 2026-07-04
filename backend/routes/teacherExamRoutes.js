@@ -11,7 +11,6 @@ router.use(requireRole("teacher", "admin"));
 //GET /api/teacher/exams
 router.get("/", async (req, res) => {
     try {
-        console.log("USER:", req.user);
         const [rows] = await db.query(
             `
             SELECT
@@ -48,6 +47,18 @@ router.post("/", async (req, res) => {
         [title]
     );
 
+    await db.query(
+        `
+        INSERT INTO exam_teachers (
+            exam_id,
+            teacher_id,
+            is_owner
+        )
+        VALUES (?, ?, 1)
+        `,
+        [result.insertId, req.user.id]
+    );
+
     res.json({
         id: result.insertId
     });
@@ -62,6 +73,55 @@ router.get("/:examId", async (req, res) => {
 
     res.json(rows[0]);
 });
+
+//PUT /api/teacher/exams/:examId
+router.put("/:examId", async (req, res) => {
+    const { title } = req.body;
+    console.log("uppdatera titel")
+    await db.query(
+        `
+        UPDATE exams
+        SET title = ?
+        WHERE id = ?
+        `,
+        [title, req.params.examId]
+    );
+
+    res.sendStatus(204);
+});
+
+// DELETE /api/teacher/exams/:examId
+router.delete("/:examId", async (req, res) => {
+
+    const [rows] = await db.query(
+        `
+        SELECT *
+        FROM exam_teachers
+        WHERE exam_id = ?
+        AND teacher_id = ?
+        AND is_owner = 1
+        `,
+        [req.params.examId, req.user.id]
+    );
+
+    if (!rows.length) {
+        return res.status(403).json({
+            error: "Only owner can delete exam"
+        });
+    }
+    
+    await db.query(
+        `
+        DELETE FROM exams
+        WHERE id = ?
+        `,
+        [req.params.examId]
+    );
+
+    res.sendStatus(204);
+});
+
+
 
 //GET /api/teacher/exams/blocks
 router.get("/blocks/all", async (req, res) => {
