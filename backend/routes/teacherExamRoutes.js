@@ -148,21 +148,39 @@ router.post("/blocks", async (req, res) => {
     });
 });
 
-//POST /api/teacher/exams/:examId/blocks
+
+// POST /api/teacher/exams/:examId/blocks
 router.post("/:examId/blocks", async (req, res) => {
-    const { blockId } = req.body;
+
+    const { name } = req.body;
+
+    const [blockResult] = await db.query(
+        `
+        INSERT INTO blocks(name)
+        VALUES(?)
+        `,
+        [name]
+    );
 
     await db.query(
         `
-        INSERT INTO exam_blocks
-        (exam_id, block_id)
+        INSERT INTO exam_blocks(
+            exam_id,
+            block_id
+        )
         VALUES (?, ?)
         `,
-        [req.params.examId, blockId]
+        [
+            req.params.examId,
+            blockResult.insertId
+        ]
     );
 
-    res.sendStatus(204);
+    res.json({
+        id: blockResult.insertId
+    });
 });
+
 
 //DELETE /api/teacher/exams/:examId/blocks/:blockId
 router.delete("/:examId/blocks/:blockId", async (req, res) => {
@@ -177,6 +195,103 @@ router.delete("/:examId/blocks/:blockId", async (req, res) => {
 
     res.sendStatus(204);
 });
+
+
+// PUT /api/teacher/exams/blocks/:blockId
+router.put("/blocks/:blockId", async (req, res) => {
+
+    const { name } = req.body;
+
+    await db.query(
+        `
+        UPDATE blocks
+        SET name = ?
+        WHERE id = ?
+        `,
+        [name, req.params.blockId]
+    );
+
+    res.sendStatus(204);
+});
+
+// POST /api/teacher/exams/blocks/:blockId/questions
+router.post("/blocks/:blockId/questions", async (req, res) => {
+
+    const {
+        question,
+        type,
+        math_config
+    } = req.body;
+
+    const [result] = await db.query(
+        `
+        INSERT INTO questions(
+            question,
+            block_id,
+            type,
+            math_config
+        )
+        VALUES (?, ?, ?, ?)
+        `,
+        [
+            question,
+            req.params.blockId,
+            type,
+            JSON.stringify(math_config)
+        ]
+    );
+
+    res.json({
+        id: result.insertId
+    });
+});
+
+// DELETE /api/teacher/exams/questions/:questionId
+router.delete("/questions/:questionId", async (req, res) => {
+
+    await db.query(
+        `
+        DELETE FROM questions
+        WHERE id = ?
+        `,
+        [req.params.questionId]
+    );
+
+    res.sendStatus(204);
+});
+
+
+// PUT /api/teacher/exams/questions/:questionId
+router.put("/questions/:questionId", async (req, res) => {
+
+    const {
+        question,
+        type,
+        math_config
+    } = req.body;
+
+    await db.query(
+        `
+        UPDATE questions
+        SET
+            question = ?,
+            type = ?,
+            math_config = ?
+        WHERE id = ?
+        `,
+        [
+            question,
+            type,
+            JSON.stringify(math_config),
+            req.params.questionId
+        ]
+    );
+
+    res.sendStatus(204);
+});
+
+
+
 
 //POST /api/teacher/exams/questions
 router.post("/questions", async (req, res) => {
@@ -253,6 +368,74 @@ router.delete("/questions/:questionId", async (req, res) => {
 
     res.sendStatus(204);
 });
+
+// POST /api/teacher/exams/questions/:questionId/options
+router.post("/questions/:questionId/options", async (req, res) => {
+
+    const {
+        text,
+        is_correct
+    } = req.body;
+
+    const [result] = await db.query(
+        `
+        INSERT INTO options(
+            question_id,
+            text,
+            is_correct
+        )
+        VALUES (?, ?, ?)
+        `,
+        [
+            req.params.questionId,
+            text,
+            is_correct
+        ]
+    );
+
+    res.json({
+        id: result.insertId
+    });
+});
+
+// DELETE /api/teacher/exams/options/:optionId
+router.delete("/options/:optionId", async (req, res) => {
+
+    await db.query(
+        `
+        DELETE FROM options
+        WHERE id = ?
+        `,
+        [req.params.optionId]
+    );
+
+    res.sendStatus(204);
+});
+
+
+// PUT /api/teacher/exams/options/:optionId
+router.put("/options/:optionId", async (req, res) => {
+
+    const { text, is_correct } = req.body;
+
+    await db.query(
+        `
+        UPDATE options
+        SET
+            text = ?,
+            is_correct = ?
+        WHERE id = ?
+        `,
+        [
+            text,
+            is_correct,
+            req.params.optionId
+        ]
+    );
+
+    res.sendStatus(204);
+});
+
 
 //POST /api/teacher/exams/options
 router.post("/options", async (req, res) => {

@@ -56,7 +56,9 @@ CHARACTER SET utf8mb4
 COLLATE utf8mb4_unicode_ci;
 
 INSERT INTO users (id, username, password_hash, name, role)
-VALUES (1, 'niklas', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas Elofsson' , 'teacher');
+VALUES (1, 'student', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas Elofsson' , 'student'),
+(2, 'teacher', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas Elofsson' , 'teacher'),
+(3, 'admin', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas Elofsson' , 'admin');
 
 CREATE TABLE blocks (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -310,7 +312,7 @@ INSERT INTO options VALUES (NULL,@q,'x_1=2,x_2=3',1),(NULL,@q,'x_1=3,x_2=2',1);
 
 INSERT INTO exams(`id`,`title`) VALUES(1,'Test');
 
-INSERT INTO exam_teachers (exam_id,teacher_id,is_owner) VALUES (1,1,TRUE);
+INSERT INTO exam_teachers (exam_id,teacher_id,is_owner) VALUES (1,2,TRUE);
 
 INSERT INTO exam_blocks VALUES
 (1,1),(1,2),(1,3),(1,4),(1,5);
