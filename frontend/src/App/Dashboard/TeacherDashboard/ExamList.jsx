@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { authHeaders } from "../../../api/authHeaders";
 import { API_URL } from "../../../config";
+import "./ExamList.css";
 
 export default function ExamList({ onSelect }) {
     const [loading, setLoading] = useState(true);
@@ -82,7 +83,7 @@ export default function ExamList({ onSelect }) {
 
 
     return (
-        <div>
+        <div className="examList">
             <h2>Mina prov</h2>
 
             {exams.length === 0 && (

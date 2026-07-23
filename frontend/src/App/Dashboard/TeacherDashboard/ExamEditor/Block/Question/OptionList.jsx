@@ -1,11 +1,13 @@
+import {  useState } from "react";
 import { authHeaders } from "../../../../../../api/authHeaders";
 import { API_URL } from "../../../../../../config";
 import { formatValue } from "../../../../../../utils/formatValue";
 import { formatQuestion } from "../../../../../../utils/formatQuestion";
 import { isMathExpression } from "../../../../../../utils/isMathExpression";
+import "./OptionList.css";
 
 export default function OptionList({ options, onChanged, editMode }) {
-
+    const [editedOptions, setEditedOptions] = useState({});
     const deleteOption = async (optionId) => {
 
         if (!window.confirm("Ta bort alternativet?")) {
@@ -50,9 +52,9 @@ export default function OptionList({ options, onChanged, editMode }) {
         };
 
     return (
-        <ul>
+        <div className="OptionList">
             {options.map(option => (
-                <li key={option.id}>
+                <div className="option" key={option.id}>
                     
                     <input
                         type="checkbox"
@@ -67,22 +69,45 @@ export default function OptionList({ options, onChanged, editMode }) {
                     />
                     {
                         editMode ? (
-                            <input
-                                value={option.text}
-                                onChange={(e) =>
-                                    updateOptionText(
-                                        option.id,
-                                        e.target.value,
-                                        option.is_correct
-                                    )
-                                }
-                            />
+                            <div>
+                                <textarea
+                                    rows={3}
+                                    value={
+                                        editedOptions[option.id] ?? option.text
+                                    }
+                                    onChange={(e) =>
+                                        setEditedOptions({
+                                            ...editedOptions,
+                                            [option.id]: e.target.value
+                                        })
+                                    }
+                                    onBlur={() =>
+                                        updateOption(
+                                            option.id,
+                                            editedOptions[option.id] ?? option.text,
+                                            option.is_correct
+                                        )
+                                    }
+                                />
+                                <div
+                                    dangerouslySetInnerHTML={{
+                                        __html: formatQuestion(
+                                            editedOptions[option.id] ?? option.text
+                                        )
+                                    }}
+                                />
+
+                            </div>
                         ) : (
-                            option.text
+                            <div
+                                dangerouslySetInnerHTML={{
+                                    __html: formatValue(option.text)
+                                }}
+                            />   
                         )
                     }
-                </li>
+                </div>
             ))}
-        </ul>
+        </div>
     );
 }

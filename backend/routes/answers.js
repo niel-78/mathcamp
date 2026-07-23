@@ -3,7 +3,6 @@ import db from "../db.js";
 
 const router = express.Router();
 
-console.log("🔥 answers route loaded");
 
 router.post("/answers", async (req, res) => {
   const { attempt_id, question_id, answer } = req.body;

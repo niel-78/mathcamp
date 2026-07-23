@@ -1,4 +1,5 @@
 import express from "express";
+import path from "path";
 import authRoutes from "./routes/auth.js";
 import examRoutes from "./routes/exam.js";
 import answersRoutes from "./routes/answers.js";
@@ -37,7 +38,10 @@ app.use("/api", eventsRoutes);
 app.use("/api", resultRoutes);
 app.use("/api/teacher/exams", teacherExamRoutes);
 
-
+app.use(
+  "/uploads",
+  express.static("uploads")
+);
 
 app.listen(3000, "0.0.0.0", () => {
   console.log("🚀 SERVER STARTED ON 0.0.0.0");

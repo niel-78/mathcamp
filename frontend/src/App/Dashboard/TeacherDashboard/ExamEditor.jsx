@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { authHeaders } from "../../../api/authHeaders";
 import { API_URL } from "../../../config";
 import Block from "./ExamEditor/Block";
+import "./ExamEditor.css";
 
 function ExamEditor({examId, onClose}) {
     const [exam, setExam] = useState(null);
@@ -96,33 +97,37 @@ function ExamEditor({examId, onClose}) {
 
 
     return (
-        <>
-            {
-                editMode ? (
-                    <input
-                        value={title}
-                        onChange={(e) =>
-                            setTitle(e.target.value)
-                        }
-                        onBlur={() =>
-                            saveExam(title)
-                        }
-                    />
-                ) : (
-                    <h2>{exam.title}</h2>
-                )
-            }
+        <div className="examEditor">
 
-            <button
-                onClick={() => setEditMode(!editMode)}
-            >
-                {editMode ? "Klar" : "Redigera"}
-            </button>
+            <div className="header">
+                {
+                    editMode ? (
+                        <input
+                            value={title}
+                            onChange={(e) =>
+                                setTitle(e.target.value)
+                            }
+                            onBlur={() =>
+                                saveExam(title)
+                            }
+                        />
+                    ) : (
+                        <h2>{exam.title}</h2>
+                    )
+                }
+
+                <button
+                    onClick={() => setEditMode(!editMode)}
+                >
+                    {editMode ? "Klar" : "Redigera"}
+                </button>  
 
 
-            <button onClick={onClose}>
-                Tillbaka
-            </button>
+                <button onClick={onClose}>
+                    Tillbaka
+                </button>
+
+            </div>    
 
             {exam.blocks.map(block => (
 
@@ -137,7 +142,7 @@ function ExamEditor({examId, onClose}) {
             ))}
 
 
-            <div>
+            <div className="footer">
                 <input
                     value={newBlock}
                     placeholder="Nytt block..."
@@ -155,7 +160,7 @@ function ExamEditor({examId, onClose}) {
             </div>
 
 
-        </>
+        </div>
     );
 
 }

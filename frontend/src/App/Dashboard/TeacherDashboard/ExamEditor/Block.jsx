@@ -89,7 +89,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
 
 
     return (
-        <div>
+        <div className="block">
             <h3>{block.name}</h3>
 
             {block.questions.map(question => (

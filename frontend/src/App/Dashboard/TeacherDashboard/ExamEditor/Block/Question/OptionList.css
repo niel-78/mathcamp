@@ -1,0 +1,9 @@
+.OptionList {
+    display:flex;
+    flex-direction:column;
+}
+
+.OptionList .option{
+    display:flex;
+    flex-direction:row;
+}

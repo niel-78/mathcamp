@@ -1,0 +1,16 @@
+.examEditor {
+    background:gray;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+}
+
+.examEditor .header,.block,.footer{
+    width:70%;
+    background-color:white;
+    margin:2rem;
+    padding:1rem;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+}

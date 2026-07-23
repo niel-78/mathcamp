@@ -1,9 +1,25 @@
+import multer from "multer";
+import path from "path";
 import express from "express";
 import db from "../db.js";
+import fs from "fs";
 import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
 
 const router = express.Router();
+
+const storage = multer.diskStorage({
+    destination: "uploads/",
+    filename: (req, file, cb) => {
+        cb(
+            null,
+            Date.now() +
+            path.extname(file.originalname)
+        );
+    }
+});
+
+const upload = multer({ storage });
 
 router.use(requireAuth);
 router.use(requireRole("teacher", "admin"));
@@ -549,6 +565,18 @@ router.get("/:examId/full", async (req, res) => {
 
         for (const question of questions) {
 
+            const [media] = await db.query(
+                `
+                SELECT *
+                FROM question_media
+                WHERE question_id = ?
+                ORDER BY sort_order
+                `,
+                [question.id]
+            );
+            
+            question.media = media;
+
             const [options] = await db.query(
                 `
                 SELECT *
@@ -568,6 +596,86 @@ router.get("/:examId/full", async (req, res) => {
         ...examRows[0],
         blocks
     });
+});
+
+
+// POST /api/teacher/exams/questions/:questionId/media
+router.post(
+    "/questions/:questionId/media",
+    upload.single("file"),
+    async (req, res) => {
+
+        const mediaType =
+            req.file.mimetype.startsWith("video")
+                ? "video"
+                : "image";
+
+        const mediaUrl =
+            "/uploads/" + req.file.filename;
+
+        const [result] = await db.query(
+            `
+            INSERT INTO question_media (
+                question_id,
+                media_type,
+                media_url
+            )
+            VALUES (?, ?, ?)
+            `,
+            [
+                req.params.questionId,
+                mediaType,
+                mediaUrl
+            ]
+        );
+
+        res.json({
+            id: result.insertId,
+            media_url: mediaUrl
+        });
+    }
+);
+
+router.delete("/media/:mediaId", async (req, res) => {
+
+    const [rows] = await db.query(
+        `
+        SELECT *
+        FROM question_media
+        WHERE id = ?
+        `,
+        [req.params.mediaId]
+    );
+
+    if (!rows.length) {
+        return res.status(404).json({
+            error: "Media not found"
+        });
+    }
+
+    const filePath = path.join(
+        process.cwd(),
+        rows[0].media_url.replace(/^\//, "")
+    );
+
+    console.log("Deleting:", filePath);
+
+    try {
+        await fs.promises.unlink(filePath);
+        console.log("File deleted");
+    } catch (err) {
+        console.error("Delete failed:", err);
+    }
+
+    await db.query(
+        `
+        DELETE FROM question_media
+        WHERE id = ?
+        `,
+        [req.params.mediaId]
+    );
+
+    res.sendStatus(204);
 });
 
 

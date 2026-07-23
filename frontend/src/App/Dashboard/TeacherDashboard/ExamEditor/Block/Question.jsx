@@ -14,6 +14,7 @@ export default function Question({ question, onChanged, editMode }) {
         setQuestionText(question.question);
     }, [question.question]);
 
+    console.log(question.media);
 
     const saveQuestion = async (value) => {
 
@@ -88,9 +89,82 @@ export default function Question({ question, onChanged, editMode }) {
         onChanged();
     };
 
+    const uploadMedia = async (e) => {
+        const file = e.target.files[0];
+
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await fetch(
+            `${API_URL}/api/teacher/exams/questions/${question.id}/media`,
+            {
+                method: "POST",
+                headers: {
+                    Authorization: localStorage.getItem("token")
+                },
+                body: formData
+            }
+        );
+
+        if (response.ok) {
+            onChanged();
+        }
+    };
+
+    const deleteMedia = async (mediaId) => {
+
+        console.log("DELETE MEDIA", mediaId);
+
+        if (!window.confirm("Ta bort filen?")) {
+            return;
+        }
+
+        await fetch(
+            `${API_URL}/api/teacher/exams/media/${mediaId}`,
+            {
+                method: "DELETE",
+                headers: {
+                    Authorization: localStorage.getItem("token")
+                }
+            }
+        );
+
+        onChanged();
+    };
+
 
     return (
         <div>
+
+            {question.media?.map((m) => (
+                <div key={m.id}>
+                    {m.media_type === "image" ? (
+                        <img
+                            src={`${API_URL}${m.media_url}`}
+                            alt=""
+                            style={{maxWidth:"50%",
+                                    maxHeight:"50%",
+                                    objectFit: "contain"
+                                }}
+
+                        >
+                        </img>
+                    ) : (<p>Not image</p>)}
+
+                {editMode && (
+                    <button
+                        onClick={ () =>
+                                deleteMedia(m.id)
+                        }
+                    >
+                        Ta bort media
+                    </button>    
+                )}
+
+                    </div>
+                ))}
 
             {
                 editMode ? (
@@ -103,19 +177,28 @@ export default function Question({ question, onChanged, editMode }) {
                             saveQuestion(questionText)
                         }
                     />
+
                 ) : (
                     <div
                         dangerouslySetInnerHTML={{
                             __html: formatQuestion(question.question)
                         }}
-                    />
+                    />    
                 )
             }
 
+            {editMode && (
+                <input
+                    type="file"
+                    accept="image/*,video/*"
+                    onChange={uploadMedia}
+                />
+            )}
 
             <OptionList
                 options={question.options}
                 onChanged={onChanged}
+                editMode={editMode}
             />
 
 
