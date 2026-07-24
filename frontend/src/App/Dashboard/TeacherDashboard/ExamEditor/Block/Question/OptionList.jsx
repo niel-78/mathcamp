@@ -8,6 +8,7 @@ import "./OptionList.css";
 
 export default function OptionList({ options, onChanged, editMode }) {
     const [editedOptions, setEditedOptions] = useState({});
+    
     const deleteOption = async (optionId) => {
 
         if (!window.confirm("Ta bort alternativet?")) {
@@ -52,24 +53,33 @@ export default function OptionList({ options, onChanged, editMode }) {
         };
 
     return (
-        <div className="OptionList">
+        <div className="options">
             {options.map(option => (
                 <div className="option" key={option.id}>
                     
-                    <input
-                        type="checkbox"
-                        checked={option.is_correct}
-                        onChange={() =>
-                            updateOption(
-                                option.id,
-                                option.text,
-                                !option.is_correct
-                            )
-                        }
-                    />
+                    {editMode && (
+                        <input
+                            type="checkbox"
+                            checked={option.is_correct}
+                            onChange={() =>
+                                updateOption(
+                                    option.id,
+                                    option.text,
+                                    !option.is_correct
+                                )
+                            }
+                        />
+                    )}    
                     {
                         editMode ? (
                             <div>
+                                <div
+                                    dangerouslySetInnerHTML={{
+                                        __html: formatQuestion(
+                                            editedOptions[option.id] ?? option.text
+                                        )
+                                    }}
+                                />
                                 <textarea
                                     rows={3}
                                     value={
@@ -89,23 +99,24 @@ export default function OptionList({ options, onChanged, editMode }) {
                                         )
                                     }
                                 />
-                                <div
-                                    dangerouslySetInnerHTML={{
-                                        __html: formatQuestion(
-                                            editedOptions[option.id] ?? option.text
-                                        )
-                                    }}
-                                />
-
                             </div>
                         ) : (
-                            <div
-                                dangerouslySetInnerHTML={{
-                                    __html: formatValue(option.text)
-                                }}
-                            />   
+                            <div>
+                                <span
+                                    dangerouslySetInnerHTML={{
+                                        __html: formatValue(option.text)
+                                    }}
+                                />
+                                {option.is_correct && (" (korrekt)")}
+                            </div>    
                         )
                     }
+
+                    {editMode && (
+                        <button onClick={() => deleteOption(option.id)}>
+                            Ta bort alternativ
+                        </button>
+                    )}         
                 </div>
             ))}
         </div>

@@ -1,0 +1,31 @@
+.question {
+    display:flex;
+    flex-direction:column;
+    align-items:start;
+    margin-bottom:1rem;
+}
+
+.question .question-media-list{
+    display:flex;
+    flex-direction:column;
+}
+
+.question .question-media-list .question-media{
+    display:flex;
+    flex-direction:row;
+    flex-wrap:wrap;
+}
+
+.question .question-text{
+    align-self:start;
+    margin-top:1rem;
+    margin-bottom:1rem;
+    background-color:lightgray;
+}
+
+.question .question-options .buttons{
+    display:flex;
+    flex-direction:row;
+}
+
+

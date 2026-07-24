@@ -1,0 +1,21 @@
+.block {
+    display:flex;
+    flex-direction:column;
+    align-items:start;
+}
+
+.block .block-header{
+    background:inherit;
+}
+
+.block .new-question{
+    display:flex;
+    flex-direction:column;
+    margin-top:1rem;
+    margin-bottom:1rem;
+}
+
+.block .block-options{
+    margin-top:1rem;
+    margin-bottom:1rem;
+}

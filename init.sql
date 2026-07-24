@@ -2,6 +2,7 @@ USE mydb;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS question_media;
 DROP TABLE IF EXISTS exam_teachers;
 DROP TABLE IF EXISTS student_groups;
 DROP TABLE IF EXISTS groups;
@@ -194,6 +195,7 @@ VALUES (1, 1);
 CREATE TABLE exam_blocks (
   exam_id INT,
   block_id INT,
+  order_by INT,
   PRIMARY KEY (exam_id, block_id),
   FOREIGN KEY (exam_id) REFERENCES exams(id) ON DELETE CASCADE,
   FOREIGN KEY (block_id) REFERENCES blocks(id) ON DELETE CASCADE
@@ -325,6 +327,6 @@ INSERT INTO exams(`id`,`title`) VALUES(1,'Test');
 INSERT INTO exam_teachers (exam_id,teacher_id,is_owner) VALUES (1,2,TRUE);
 
 INSERT INTO exam_blocks VALUES
-(1,1),(1,2),(1,3),(1,4),(1,5);
+(1,1,1),(1,2,2),(1,3,3),(1,4,4),(1,5,5);
 
 INSERT INTO group_exams(`exam_id`,`group_id`,`group_exam_key`) VALUES(1,1,'A');

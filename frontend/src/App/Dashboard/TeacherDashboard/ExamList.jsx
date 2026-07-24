@@ -57,6 +57,29 @@ export default function ExamList({ onSelect }) {
         onSelect(exam.id);
     };
 
+    const copyExam = async (examToCopy) => {
+
+        console.log(examToCopy);
+
+        const res = await fetch(
+            `${API_URL}/api/teacher/exams/${examToCopy.id}/copy`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...authHeaders()
+                },
+                body: JSON.stringify({
+                    title: examToCopy.name + " (kopia)"
+                })
+            }
+        );
+
+        const exam = await res.json();
+
+        onSelect(exam.id);
+    };
+
 
     const deleteExam = async (examId) => {
 
@@ -103,6 +126,9 @@ export default function ExamList({ onSelect }) {
                             {exam.is_owner && (
                                 <span> (Ägare)</span>
                             )}
+                        </button>
+                        <button onClick={ () => {copyExam(exam)}}>
+                            Kopiera prov
                         </button>
                         {exam.is_owner && (
                             <button

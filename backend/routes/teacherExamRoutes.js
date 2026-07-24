@@ -164,6 +164,35 @@ router.post("/blocks", async (req, res) => {
     });
 });
 
+//uppdatera nummer
+router.put(
+    "/:examId/blocks/:blockId/order",
+    async (req, res) => {
+
+        console.log("ORDER ROUTE HIT!!");
+        console.log(req.params);
+        console.log(req.body);
+        
+        const { order_by } = req.body;
+
+        await db.query(
+            `
+            UPDATE exam_blocks
+            SET order_by = ?
+            WHERE exam_id = ?
+            AND block_id = ?
+            `,
+            [
+                order_by,
+                req.params.examId,
+                req.params.blockId
+            ]
+        );
+
+        res.sendStatus(204);
+    }
+);
+
 
 // POST /api/teacher/exams/:examId/blocks
 router.post("/:examId/blocks", async (req, res) => {
@@ -178,17 +207,30 @@ router.post("/:examId/blocks", async (req, res) => {
         [name]
     );
 
+    const [rows] = await db.query(
+        `
+        SELECT COALESCE(MAX(order_by), 0) + 1 AS nextOrder
+        FROM exam_blocks
+        WHERE exam_id = ?
+        `,
+        [req.params.examId]
+    );
+
+    const orderBy = rows[0].nextOrder;
+
     await db.query(
         `
         INSERT INTO exam_blocks(
             exam_id,
-            block_id
+            block_id,
+            order_by
         )
-        VALUES (?, ?)
+        VALUES (?, ?, ?)
         `,
         [
             req.params.examId,
-            blockResult.insertId
+            blockResult.insertId,
+            orderBy
         ]
     );
 
@@ -543,11 +585,12 @@ router.get("/:examId/full", async (req, res) => {
 
     const [blocks] = await db.query(
         `
-        SELECT b.*
+        SELECT b.*, eb.order_by
         FROM blocks b
         JOIN exam_blocks eb
             ON eb.block_id = b.id
         WHERE eb.exam_id = ?
+        ORDER BY eb.order_by
         `,
         [req.params.examId]
     );
@@ -595,6 +638,186 @@ router.get("/:examId/full", async (req, res) => {
     res.json({
         ...examRows[0],
         blocks
+    });
+});
+
+router.post("/:examId/copy", async (req, res) => {
+
+    console.log("COPY ROUTE HIT");
+
+    const [examRows] = await db.query(
+        `
+        SELECT *
+        FROM exams
+        WHERE id = ?
+        `,
+        [req.params.examId]
+    );
+
+    if (!examRows.length) {
+        return res.status(404).json({
+            error: "Exam not found"
+        });
+    }
+
+    const exam = examRows[0];
+
+    const [newExam] = await db.query(
+        `
+        INSERT INTO exams(title)
+        VALUES(?)
+        `,
+        [`${exam.title} (kopia)`]
+    );
+
+    const newExamId = newExam.insertId;
+
+        await db.query(
+        `
+        INSERT INTO exam_teachers(
+            exam_id,
+            teacher_id,
+            is_owner
+        )
+        VALUES (?, ?, 1)
+        `,
+        [newExamId, req.user.id]
+    );
+
+    const [blocks] = await db.query(
+        `
+        SELECT b.*, eb.order_by
+        FROM blocks b
+        JOIN exam_blocks eb
+            ON eb.block_id = b.id
+        WHERE eb.exam_id = ?
+        `,
+        [req.params.examId]
+    );
+
+    for (const block of blocks) {
+
+        const [newBlock] = await db.query(
+            `
+            INSERT INTO blocks(name)
+            VALUES(?)
+            `,
+            [block.name]
+        );
+
+    const newBlockId = newBlock.insertId;
+
+        await db.query(
+            `
+            INSERT INTO exam_blocks(
+                exam_id,
+                block_id,
+                order_by
+            )
+            VALUES (?, ?, ?)
+            `,
+            [
+                newExamId,
+                newBlockId,
+                block.order_by
+            ]
+        );
+
+        const [questions] = await db.query(
+            `
+            SELECT *
+            FROM questions
+            WHERE block_id = ?
+            `,
+            [block.id]
+        );
+
+        for (const question of questions) {
+
+            const [newQuestion] = await db.query(
+                `
+                INSERT INTO questions(
+                    question,
+                    block_id,
+                    type,
+                    math_config
+                )
+                VALUES (?, ?, ?, ?)
+                `,
+                [
+                    question.question,
+                    newBlockId,
+                    question.type,
+                    question.math_config
+                ]
+            );
+
+            const newQuestionId =
+                newQuestion.insertId;
+
+
+            const [media] = await db.query(
+                `
+                SELECT *
+                FROM question_media
+                WHERE question_id = ?
+                `,
+                [question.id]
+            );
+
+            for (const m of media) {
+
+                await db.query(
+                    `
+                    INSERT INTO question_media(
+                        question_id,
+                        media_type,
+                        media_url,
+                        sort_order
+                    )
+                    VALUES (?, ?, ?, ?)
+                    `,
+                    [
+                        newQuestionId,
+                        m.media_type,
+                        m.media_url,
+                        m.sort_order
+                    ]
+                );
+            }
+
+            const [options] = await db.query(
+                `
+                SELECT *
+                FROM options
+                WHERE question_id = ?
+                `,
+                [question.id]
+            );
+
+            for (const option of options) {
+
+                await db.query(
+                    `
+                    INSERT INTO options(
+                        question_id,
+                        text,
+                        is_correct
+                    )
+                    VALUES (?, ?, ?)
+                    `,
+                    [
+                        newQuestionId,
+                        option.text,
+                        option.is_correct
+                    ]
+                );
+            }
+        }
+    }
+
+    res.json({
+        id: newExamId
     });
 });
 

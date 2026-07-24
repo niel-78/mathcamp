@@ -134,7 +134,7 @@ function ExamEditor({examId, onClose}) {
                 <Block
                     key={block.id}
                     block={block}
-                    examId={exam.id}
+                    exam={exam}
                     onChanged={loadExam}
                     editMode={editMode}
                 />
@@ -143,20 +143,39 @@ function ExamEditor({examId, onClose}) {
 
 
             <div className="footer">
-                <input
-                    value={newBlock}
-                    placeholder="Nytt block..."
-                    onChange={(e) => setNewBlock(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                            createBlock();
-                        }
-                    }}
-                />
 
-                <button onClick={createBlock}>
-                    Lägg till block
+                {editMode && (
+                    <div className="editor-options">
+
+                        <input
+                            value={newBlock}
+                            placeholder="Nytt block..."
+                            onChange={(e) => setNewBlock(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    createBlock();
+                                }
+                            }}
+                        />
+
+                        <button onClick={createBlock}>
+                            Lägg till block
+                        </button>
+
+                    </div>
+                )}
+
+                <button
+                    onClick={() => setEditMode(!editMode)}
+                >
+                    {editMode ? "Klar" : "Redigera"}
+                </button>  
+
+
+                <button onClick={onClose}>
+                    Tillbaka
                 </button>
+
             </div>
 
 
