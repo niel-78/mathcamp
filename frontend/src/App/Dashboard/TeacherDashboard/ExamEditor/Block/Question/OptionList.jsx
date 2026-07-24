@@ -4,7 +4,6 @@ import { API_URL } from "../../../../../../config";
 import { formatValue } from "../../../../../../utils/formatValue";
 import { formatQuestion } from "../../../../../../utils/formatQuestion";
 import { isMathExpression } from "../../../../../../utils/isMathExpression";
-import "./OptionList.css";
 
 export default function OptionList({ options, onChanged, editMode }) {
     const [editedOptions, setEditedOptions] = useState({});
@@ -53,72 +52,152 @@ export default function OptionList({ options, onChanged, editMode }) {
         };
 
     return (
-        <div className="options">
+        <div className="space-y-3">
+
             {options.map(option => (
-                <div className="option" key={option.id}>
-                    
-                    {editMode && (
-                        <input
-                            type="checkbox"
-                            checked={option.is_correct}
-                            onChange={() =>
-                                updateOption(
-                                    option.id,
-                                    option.text,
-                                    !option.is_correct
-                                )
-                            }
-                        />
-                    )}    
-                    {
-                        editMode ? (
-                            <div>
-                                <div
-                                    dangerouslySetInnerHTML={{
-                                        __html: formatQuestion(
-                                            editedOptions[option.id] ?? option.text
-                                        )
-                                    }}
-                                />
-                                <textarea
-                                    rows={3}
-                                    value={
-                                        editedOptions[option.id] ?? option.text
-                                    }
-                                    onChange={(e) =>
-                                        setEditedOptions({
-                                            ...editedOptions,
-                                            [option.id]: e.target.value
-                                        })
-                                    }
-                                    onBlur={() =>
-                                        updateOption(
-                                            option.id,
-                                            editedOptions[option.id] ?? option.text,
-                                            option.is_correct
-                                        )
-                                    }
-                                />
-                            </div>
-                        ) : (
-                            <div>
-                                <span
-                                    dangerouslySetInnerHTML={{
-                                        __html: formatValue(option.text)
-                                    }}
-                                />
-                                {option.is_correct && (" (korrekt)")}
-                            </div>    
-                        )
-                    }
+
+                <div
+                    key={option.id}
+                    className="
+                        border
+                        rounded-lg
+                        p-4
+                        bg-white
+                    "
+                >
 
                     {editMode && (
-                        <button onClick={() => deleteOption(option.id)}>
-                            Ta bort alternativ
-                        </button>
-                    )}         
+                        <label className="flex items-center gap-2 mb-2">
+
+                            <input
+                                type="checkbox"
+                                checked={option.is_correct}
+                                onChange={() =>
+                                    updateOption(
+                                        option.id,
+                                        option.text,
+                                        !option.is_correct
+                                    )
+                                }
+                            />
+
+                            <span>
+                                Rätt svar
+                            </span>
+
+                        </label>
+                    )}
+
+                    {editMode ? (
+
+                        <div>
+
+                            <div
+                                className="
+                                    math-preview
+                                    mb-2
+                                "
+                                dangerouslySetInnerHTML={{
+                                    __html: formatQuestion(
+                                        editedOptions[option.id] ??
+                                        option.text
+                                    )
+                                }}
+                            />
+
+                            <textarea
+                                rows={3}
+                                className="input-standard"
+                                value={
+                                    editedOptions[option.id] ??
+                                    option.text
+                                }
+                                onChange={(e) =>
+                                    setEditedOptions({
+                                        ...editedOptions,
+                                        [option.id]:
+                                            e.target.value
+                                    })
+                                }
+                                onBlur={() =>
+                                    updateOption(
+                                        option.id,
+                                        editedOptions[option.id] ??
+                                        option.text,
+                                        option.is_correct
+                                    )
+                                }
+                            />
+
+                        </div>
+
+                    ) : (
+
+                        <div className="flex gap-2 items-start">
+
+                            <div
+                                className="math-content flex-1"
+                                dangerouslySetInnerHTML={{
+                                    __html: formatValue(
+                                        option.text
+                                    )
+                                }}
+                            />
+
+                            {option.is_correct ? 
+                                <span
+                                    className="
+                                        bg-green-100
+                                        text-green-800
+                                        text-sm
+                                        px-2
+                                        py-1
+                                        rounded
+                                    "
+                                >
+                                    Korrekt
+                                </span>
+                                :
+                                <span
+                                    className="
+                                        bg-red-100
+                                        text-red-800
+                                        text-sm
+                                        px-2
+                                        py-1
+                                        rounded
+                                    "
+                                >
+                                    Felaktigt
+                                </span>
+                            }
+
+                        </div>
+
+                    )}
+
+                    {editMode && (
+
+                        <div className="mt-3">
+
+                            <button
+                                className="btn-danger"
+                                onClick={() =>
+                                    deleteOption(option.id)
+                                }
+                            >
+                                Ta bort alternativ
+                            </button>
+
+                        </div>
+
+                    )}
+
                 </div>
+
             ))}
+
         </div>
-    );
+        
+    )    
 }

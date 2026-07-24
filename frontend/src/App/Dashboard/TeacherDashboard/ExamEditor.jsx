@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { authHeaders } from "../../../api/authHeaders";
 import { API_URL } from "../../../config";
 import Block from "./ExamEditor/Block";
-import "./ExamEditor.css";
 
 function ExamEditor({examId, onClose}) {
     const [exam, setExam] = useState(null);
@@ -97,12 +96,14 @@ function ExamEditor({examId, onClose}) {
 
 
     return (
-        <div className="examEditor">
+        <div className="card">
 
-            <div className="header">
-                {
-                    editMode ? (
+            <div className="flex justify-between items-center mb-6">
+
+                <div>
+                    {editMode ? (
                         <input
+                            className="input-standard"
                             value={title}
                             onChange={(e) =>
                                 setTitle(e.target.value)
@@ -112,45 +113,67 @@ function ExamEditor({examId, onClose}) {
                             }
                         />
                     ) : (
-                        <h2>{exam.title}</h2>
-                    )
-                }
+                        <h2 className="text-2xl font-bold">
+                            {exam.title}
+                        </h2>
+                    )}
+                </div>
 
-                <button
-                    onClick={() => setEditMode(!editMode)}
-                >
-                    {editMode ? "Klar" : "Redigera"}
-                </button>  
+                <div className="flex gap-2">
 
+                    <button
+                        className="btn-action"
+                        onClick={() =>
+                            setEditMode(!editMode)
+                        }
+                    >
+                        {editMode
+                            ? "Klar"
+                            : "Redigera"}
+                    </button>
 
-                <button onClick={onClose}>
-                    Tillbaka
-                </button>
+                    <button
+                        className="btn-primary"
+                        onClick={onClose}
+                    >
+                        Tillbaka
+                    </button>
 
-            </div>    
+                </div>
 
-            {exam.blocks.map(block => (
+            </div>
 
-                <Block
-                    key={block.id}
-                    block={block}
-                    exam={exam}
-                    onChanged={loadExam}
-                    editMode={editMode}
-                />
+            <div className="space-y-4">
 
-            ))}
+                {exam.blocks.map(block => (
 
+                    <Block
+                        key={block.id}
+                        block={block}
+                        exam={exam}
+                        onChanged={loadExam}
+                        editMode={editMode}
+                    />
 
-            <div className="footer">
+                ))}
+
+            </div>
+
+            <div className="mt-6 border-t pt-6">
 
                 {editMode && (
-                    <div className="editor-options">
+
+                    <div className="flex gap-2">
 
                         <input
+                            className="input-standard"
                             value={newBlock}
                             placeholder="Nytt block..."
-                            onChange={(e) => setNewBlock(e.target.value)}
+                            onChange={(e) =>
+                                setNewBlock(
+                                    e.target.value
+                                )
+                            }
                             onKeyDown={(e) => {
                                 if (e.key === "Enter") {
                                     createBlock();
@@ -158,30 +181,42 @@ function ExamEditor({examId, onClose}) {
                             }}
                         />
 
-                        <button onClick={createBlock}>
+                        <button
+                            className="btn-primary"
+                            onClick={createBlock}
+                        >
                             Lägg till block
                         </button>
 
                     </div>
+
                 )}
 
-                <button
-                    onClick={() => setEditMode(!editMode)}
-                >
-                    {editMode ? "Klar" : "Redigera"}
-                </button>  
+                <div className="flex justify-end gap-2 mt-4">
 
+                    <button
+                        className="btn-action"
+                        onClick={() =>
+                            setEditMode(!editMode)
+                        }
+                    >
+                        {editMode
+                            ? "Klar"
+                            : "Redigera"}
+                    </button>
 
-                <button onClick={onClose}>
-                    Tillbaka
-                </button>
+                    <button
+                        className="btn-primary"
+                        onClick={onClose}
+                    >
+                        Tillbaka
+                    </button>
+
+                </div>
 
             </div>
 
-
         </div>
-    );
-
+    )
 }
-
 export default ExamEditor;

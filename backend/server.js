@@ -6,12 +6,13 @@ import answersRoutes from "./routes/answers.js";
 import eventsRoutes from "./routes/events.js";
 import resultRoutes from "./routes/result.js";
 import teacherExamRoutes from "./routes/teacherExamRoutes.js";
+import teacherGroupRoutes from "./routes/teacherGroupRoutes.js";
+import teacherStudentRoutes from "./routes/teacherUserRoutes.js";
 import cors from "cors";
 
 console.log("🔥 SERVER FILE START");
 
 const app = express();
-
 
 const allowedOrigins = [
   "http://localhost:5173",
@@ -37,6 +38,8 @@ app.use("/api", answersRoutes)
 app.use("/api", eventsRoutes);
 app.use("/api", resultRoutes);
 app.use("/api/teacher/exams", teacherExamRoutes);
+app.use("/api/teacher/groups", teacherGroupRoutes);
+app.use("/api/teacher/users",teacherStudentRoutes);
 
 app.use(
   "/uploads",

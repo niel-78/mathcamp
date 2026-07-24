@@ -5,7 +5,6 @@ import { API_URL } from "../../../../../config";
 import { formatValue } from "../../../../../utils/formatValue";
 import { formatQuestion } from "../../../../../utils/formatQuestion";
 import { isMathExpression } from "../../../../../utils/isMathExpression";
-import "./Question.css";
 
 export default function Question({ question, onChanged, editMode }) {
     const [newOption, setNewOption] = useState("");
@@ -138,126 +137,151 @@ export default function Question({ question, onChanged, editMode }) {
 
 
     return (
-        <div className="question">
 
-            <div className="question-media-list">
+        <div className="card">
 
-                {question.media?.map((m) => (
-                    <div key={m.id} className="question-media">
-                        {m.media_type === "image" ? (
-                            <img
-                                src={`${API_URL}${m.media_url}`}
-                                alt=""
-                                style={{maxWidth:"50%",
-                                        maxHeight:"50%",
-                                        objectFit: "contain"
-                                    }}
+            <div className="space-y-4">
 
-                            >
-                            </img>
-                        ) : (<p>Not image</p>)}
+                <div className="space-y-2">
 
                     {editMode && (
-                        <button
-                            onClick={ () =>
-                                    deleteMedia(m.id)
-                            }
-                        >
-                            Ta bort media
-                        </button>    
+                        <input
+                            className="input-standard"
+                            type="file"
+                            accept="image/*,video/*"
+                            onChange={uploadMedia}
+                        />
                     )}
 
-                        </div>
-                    ))}
+                </div>
 
-                {editMode && (
-                    <input
-                        type="file"
-                        accept="image/*,video/*"
-                        onChange={uploadMedia}
-                    />
-                )}        
-            </div>    
+                {editMode ? (
 
-            {
-                editMode ? (
-                    <div className="question-text">
+                    <div>
+
                         <div
+                            className="math-content"
                             dangerouslySetInnerHTML={{
-                                __html: formatQuestion(questionText)
+                                __html: formatQuestion(
+                                    questionText
+                                )
                             }}
                         />
+
                         <textarea
                             rows={3}
+                            className="input-standard"
                             value={questionText}
                             onChange={(e) =>
-                                setQuestionText(e.target.value)
+                                setQuestionText(
+                                    e.target.value
+                                )
                             }
                             onBlur={() =>
-                                saveQuestion(questionText)
+                                saveQuestion(
+                                    questionText
+                                )
                             }
                         />
+
                     </div>
 
                 ) : (
-                    <div 
-                        className="question-text"
-                        dangerouslySetInnerHTML={{
-                            __html: formatQuestion(question.question)
-                        }}
-                    />    
-                )
-            }
-
-            <OptionList
-                options={question.options}
-                onChanged={onChanged}
-                editMode={editMode}
-            />
-
-            {editMode && (
-                <div className="question-options">
 
                     <div
+                        className="math-content"
                         dangerouslySetInnerHTML={{
-                            __html: formatValue(newOption)
+                            __html: formatQuestion(
+                                question.question
+                            )
                         }}
                     />
 
-                    <input 
-                        type="checkbox"
-                        checked={newOptionCorrect}
-                        onChange={ (e) => 
-                            setNewOptionCorrect(e.target.checked)
-                        }
-                    />   
-                    <textarea
-                        rows={3}
-                        type="text"
-                        placeholder="Nytt alternativ..."
-                        value={newOption}
-                        onChange={(e) => setNewOption(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                                createOption();
+                )}
+
+                <OptionList
+                    options={question.options}
+                    onChanged={onChanged}
+                    editMode={editMode}
+                />
+
+                {editMode && (
+
+                    <div className="border-t pt-4">
+
+                        <div
+                            className="math-content"
+                            dangerouslySetInnerHTML={{
+                                __html: formatValue(
+                                    newOption
+                                )
+                            }}
+                        />
+
+                        <label className="flex items-center gap-2 mb-2">
+
+                            <input
+                                type="checkbox"
+                                checked={newOptionCorrect}
+                                onChange={(e) =>
+                                    setNewOptionCorrect(
+                                        e.target.checked
+                                    )
+                                }
+                            />
+
+                            <span>
+                                Rätt svar
+                            </span>
+
+                        </label>
+
+                        <textarea
+                            rows={3}
+                            className="
+                                input-standard
+                                mb-2
+                            "
+                            placeholder="Nytt alternativ..."
+                            value={newOption}
+                            onChange={(e) =>
+                                setNewOption(
+                                    e.target.value
+                                )
                             }
-                        }}
-                    />
+                            onKeyDown={(e) => {
+                                if (
+                                    e.key === "Enter"
+                                ) {
+                                    createOption();
+                                }
+                            }}
+                        />
 
-                    <div className="buttons">    
+                        <div className="flex gap-2">
 
-                        <button onClick={createOption}>
-                            Lägg till alternativ
-                        </button>
+                            <button
+                                className="btn-primary"
+                                onClick={createOption}
+                            >
+                                Lägg till alternativ
+                            </button>
 
-                        <button onClick={deleteQuestion}>
-                            Ta bort fråga
-                        </button>
-                    </div>        
+                            <button
+                                className="btn-danger"
+                                onClick={deleteQuestion}
+                            >
+                                Ta bort fråga
+                            </button>
 
-                </div>
-            )}        
-            
+                        </div>
+
+                    </div>
+
+                )}
+
+            </div>
+
         </div>
-    );
+    )    
 }

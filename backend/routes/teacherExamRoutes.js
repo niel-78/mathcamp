@@ -635,9 +635,19 @@ router.get("/:examId/full", async (req, res) => {
         block.questions = questions;
     }
 
+    const [groupExams] = await db.query(
+        `
+        SELECT *
+        FROM group_exams
+        WHERE exam_id = ?
+        `,
+        [req.params.examId]
+    );
+
     res.json({
         ...examRows[0],
-        blocks
+        blocks,
+        groupExams
     });
 });
 

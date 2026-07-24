@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { authHeaders } from "../../../api/authHeaders";
 import { API_URL } from "../../../config";
-import "./ExamList.css";
 
 export default function ExamList({ onSelect }) {
     const [loading, setLoading] = useState(true);
@@ -12,7 +11,6 @@ export default function ExamList({ onSelect }) {
     }, []);
 
     const loadExams = async () => {
-        console.log("load exams");
         try {
             const res = await fetch(
                 `${API_URL}/api/teacher/exams`,
@@ -106,46 +104,52 @@ export default function ExamList({ onSelect }) {
 
 
     return (
-        <div className="examList">
-            <h2>Mina prov</h2>
+    <div className="card">
 
-            {exams.length === 0 && (
-                <p>Du har inga prov.</p>
-            )}
+        <h2>Mina prov</h2>
 
-            <ul>
-                {exams.map(exam => (
-                    <li key={exam.id}>
+        <div className="flex gap-2 mb-4">
 
+            <button
+                className="btn-primary"
+                onClick={createExam}
+            >
+                Skapa prov
+            </button>
 
-                        <button
-                            key={exam.id}
-                            onClick={() => onSelect(exam.id)}
-                        >
-                            {exam.title}
-                            {exam.is_owner && (
-                                <span> (Ägare)</span>
-                            )}
-                        </button>
-                        <button onClick={ () => {copyExam(exam)}}>
-                            Kopiera prov
-                        </button>
-                        {exam.is_owner && (
-                            <button
-                                onClick={() => deleteExam(exam.id)}
-                            >
-                                Ta bort
-                            </button>
-                        )}
-    
-                    </li>
-                ))}
-                <li key="ny">
-                    <button onClick={createExam}>
-                        Nytt prov
-                    </button>
-                </li>
-            </ul>
         </div>
-    );
+
+        <table className="table">
+
+            <thead>
+                <tr>
+                    <th>Titel</th>
+                    <th>Ägare</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {exams.map(exam => (
+                    <tr
+                        key={exam.id}
+                        onClick={() =>
+                            onSelect(exam.id)
+                        }
+                    >
+                        <td>{exam.title}</td>
+
+                        <td>
+                            {exam.is_owner
+                                ? "Ja"
+                                : "Nej"}
+                        </td>
+                    </tr>
+                ))}
+
+            </tbody>
+
+        </table>
+
+    </div>)
 }

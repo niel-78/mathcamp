@@ -4,7 +4,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 DROP TABLE IF EXISTS question_media;
 DROP TABLE IF EXISTS exam_teachers;
-DROP TABLE IF EXISTS student_groups;
+DROP TABLE IF EXISTS group_students;
 DROP TABLE IF EXISTS groups;
 DROP TABLE IF EXISTS group_exams;
 DROP TABLE IF EXISTS answer_options;
@@ -37,7 +37,8 @@ CREATE TABLE users (
   role ENUM('student', 'teacher', 'admin') NOT NULL DEFAULT 'student',
 
   -- valfri visning
-  name VARCHAR(255),
+  first_name VARCHAR(255),
+  last_name VARCHAR(255),
 
   -- för koppling till prov
   user_key VARCHAR(100) UNIQUE,
@@ -56,10 +57,13 @@ CREATE TABLE users (
 CHARACTER SET utf8mb4 
 COLLATE utf8mb4_unicode_ci;
 
-INSERT INTO users (id, username, password_hash, name, role)
-VALUES (1, 'student', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas Elofsson' , 'student'),
-(2, 'teacher', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas Elofsson' , 'teacher'),
-(3, 'admin', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas Elofsson' , 'admin');
+INSERT INTO users (id, username, password_hash, first_name, last_name, role)
+VALUES (1, 'student', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas', 'Elofsson' , 'student'),
+(2, 'teacher', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas', 'Elofsson' , 'teacher'),
+(3, 'admin', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas', 'Elofsson' , 'admin'),
+(4, 'Abba', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Abba', 'Babby' , 'student'),
+(5, 'Betty', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Betty', 'Blue' , 'student'),
+(6, 'Calle', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Calle', 'Arvidsson' , 'student');
 
 CREATE TABLE blocks (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -123,6 +127,7 @@ CREATE TABLE groups (
     id INT AUTO_INCREMENT PRIMARY KEY,
 
     name VARCHAR(100) NOT NULL,
+    archived BOOLEAN NOT NULL DEFAULT FALSE,
     description TEXT,
 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -130,7 +135,7 @@ CREATE TABLE groups (
 
 INSERT INTO groups (id, name)
 VALUES
-(1, 'Niklas grupp');
+(1, 'Niklas grupp'),(2, 'Joines grupp');
 
 CREATE TABLE group_exams (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -170,7 +175,7 @@ CREATE TABLE group_exams (
     UNIQUE KEY unique_group_exam (group_id, exam_id)
 );
 
-CREATE TABLE student_groups (
+CREATE TABLE group_students (
     user_id INT NOT NULL,
     group_id INT NOT NULL,
 
@@ -178,19 +183,19 @@ CREATE TABLE student_groups (
 
     PRIMARY KEY (user_id, group_id),
 
-    CONSTRAINT fk_student_groups_user
+    CONSTRAINT fk_group_students_user
         FOREIGN KEY (user_id)
         REFERENCES users(id)
         ON DELETE CASCADE,
 
-    CONSTRAINT fk_student_groups_group
+    CONSTRAINT fk_group_students_group
         FOREIGN KEY (group_id)
         REFERENCES groups(id)
         ON DELETE CASCADE
 );
 
-INSERT INTO student_groups (user_id, group_id)
-VALUES (1, 1);
+INSERT INTO group_students (user_id, group_id)
+VALUES (1, 1),(4, 2),(5, 2),(6, 2);
 
 CREATE TABLE exam_blocks (
   exam_id INT,

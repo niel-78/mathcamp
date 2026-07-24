@@ -3,7 +3,6 @@ import Question from "./Block/Question";
 import { authHeaders } from "../../../../api/authHeaders";
 import { formatValue } from "../../../../utils/formatValue";
 import { API_URL } from "../../../../config";
-import "./Block.css";
 
 export default function Block({ block, exam, onChanged, editMode }) {
     const [newQuestion, setNewQuestion] = useState("");
@@ -184,34 +183,56 @@ export default function Block({ block, exam, onChanged, editMode }) {
     );
 
     return (
-        <div className="block">
- 
-            <div className="block-header">
-                <h3>{block.order_by}. {block.name}</h3>
-            </div>    
+        <div className="card">
 
-            {block.questions.map(question => (
-                <Question
-                    key={question.id}
-                    question={question}
-                    onChanged={onChanged}
-                    editMode={editMode}
-                />
+            <div className="flex justify-between items-center mb-4">
 
-            ))}
+                <h3 className="text-xl font-semibold">
+                    {block.order_by}. {block.name}
+                </h3>
+
+            </div>
+
+            <div className="space-y-4">
+
+                {block.questions.map(question => (
+                    <Question
+                        key={question.id}
+                        question={question}
+                        onChanged={onChanged}
+                        editMode={editMode}
+                    />
+                ))}
+
+            </div>
 
             {editMode && (
-                <div className="new-question">
+                <div className="mt-6 border-t pt-4">
+
                     <div
+                        className="
+                            mb-2
+                            p-3
+                            bg-gray-50
+                            rounded-lg
+                        "
                         dangerouslySetInnerHTML={{
                             __html: formatValue(newQuestion)
                         }}
-                    />   
+                    />
+
                     <textarea
                         rows={3}
+                        className="
+                            input-standard
+                            resize-y
+                            mb-2
+                        "
                         value={newQuestion}
                         placeholder="Ny fråga..."
-                        onChange={(e) => setNewQuestion(e.target.value)}
+                        onChange={(e) =>
+                            setNewQuestion(e.target.value)
+                        }
                         onKeyDown={(e) => {
                             if (e.key === "Enter") {
                                 createQuestion();
@@ -219,37 +240,56 @@ export default function Block({ block, exam, onChanged, editMode }) {
                         }}
                     />
 
-                    <button onClick={createQuestion}>
+                    <button
+                        className="btn-primary"
+                        onClick={createQuestion}
+                    >
                         Lägg till fråga
                     </button>
+
                 </div>
-            )}    
+            )}
 
             {editMode && (
-                <div className="block-options">
+                <div className="flex gap-2 mt-4">
 
                     {canMoveUp && (
-                        <button onClick={() => moveUp(block)}>
+                        <button
+                            className="btn-action"
+                            onClick={() => moveUp(block)}
+                        >
                             Flytta upp
                         </button>
-                    )}    
+                    )}
 
                     {canMoveDown && (
-                        <button onClick={() => moveDown(block)}>
+                        <button
+                            className="btn-action"
+                            onClick={() => moveDown(block)}
+                        >
                             Flytta ner
                         </button>
-                    )}    
+                    )}
 
-                    <button onClick={() => renameBlock(block)}>
+                    <button
+                        className="btn-action"
+                        onClick={() => renameBlock(block)}
+                    >
                         Byt namn
                     </button>
 
-                    <button onClick={() => deleteBlock(block)}>
+                    <button
+                        className="btn-danger"
+                        onClick={() => deleteBlock(block)}
+                    >
                         Ta bort block
                     </button>
-                </div>
 
-            )}    
+                </div>
+            )}
+
         </div>
-    );
+
+
+    )    
 }

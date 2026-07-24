@@ -5,7 +5,6 @@ import { formatQuestion } from "../../../utils/formatQuestion";
 import { isSEB } from "../../../utils/isSEB";
 import { API_URL } from "../../../config";
 import { authHeaders } from "../../../api/authHeaders";
-import "./ExamPage.css";
 
 export default function ExamPage({ attemptId, examConfig, onExit }) {
     const [questions, setQuestions] = useState([]);
