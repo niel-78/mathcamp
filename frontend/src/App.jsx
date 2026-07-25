@@ -1,6 +1,6 @@
 import Login from "./App/Login";
-import Dashboard from "./App/Dashboard";
-import { useAuth } from "./Contexts/AuthContext";
+import Dashboard from "@/App/Dashboard";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function App() {
   const { user, loading } = useAuth()

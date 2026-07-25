@@ -1,9 +1,8 @@
 import {  useState } from "react";
-import { authHeaders } from "../../../../../../api/authHeaders";
-import { API_URL } from "../../../../../../config";
-import { formatValue } from "../../../../../../utils/formatValue";
-import { formatQuestion } from "../../../../../../utils/formatQuestion";
-import { isMathExpression } from "../../../../../../utils/isMathExpression";
+import { authHeaders } from "@/api/authHeaders";
+import { API_URL } from "@/config";
+import { formatValue } from "@/utils/formatValue";
+import { formatQuestion } from "@/utils/formatQuestion";
 
 export default function OptionList({ options, onChanged, editMode }) {
     const [editedOptions, setEditedOptions] = useState({});
@@ -19,7 +18,7 @@ export default function OptionList({ options, onChanged, editMode }) {
             {
                 method: "DELETE",
                 headers: {
-                    Authorization: localStorage.getItem("token")
+                    Authorization: authHeaders
                 }
             }
         );
@@ -39,7 +38,7 @@ export default function OptionList({ options, onChanged, editMode }) {
                     method: "PUT",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: localStorage.getItem("token")
+                        Authorization: authHeaders
                     },
                     body: JSON.stringify({
                         text,

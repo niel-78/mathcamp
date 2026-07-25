@@ -1,8 +1,8 @@
 import { useState } from "react";
+import { authHeaders } from "@/api/authHeaders";
+import { formatValue } from "@/utils/formatValue";
+import { API_URL } from "@/config";
 import Question from "./Block/Question";
-import { authHeaders } from "../../../../api/authHeaders";
-import { formatValue } from "../../../../utils/formatValue";
-import { API_URL } from "../../../../config";
 
 export default function Block({ block, exam, onChanged, editMode }) {
     const [newQuestion, setNewQuestion] = useState("");
@@ -65,7 +65,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
             return;
         }
 
-        await fetch(
+        const response = await fetch(
             `${API_URL}/api/teacher/exams/blocks/${block.id}/questions`,
             {
                 method: "POST",
@@ -83,9 +83,11 @@ export default function Block({ block, exam, onChanged, editMode }) {
             }
         );
 
+        const data = await response.json();
+
         setNewQuestion("");
 
-        onChanged();
+        onChanged(data.id);
     };
 
     const moveUp = async (block) => {
@@ -206,7 +208,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
 
             </div>
 
-            {editMode && (
+            {!editMode && (
                 <div className="mt-6 border-t pt-4">
 
                     <div

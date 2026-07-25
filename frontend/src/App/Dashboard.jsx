@@ -1,4 +1,4 @@
-import AdminDashboard from "./Dashboard/AdminDashboard";
+import AdminDashboard from "@/App/Dashboard/AdminDashboard";
 import TeacherDashboard from "./Dashboard/TeacherDashboard";
 import StudentDashboard from "./Dashboard/StudentDashboard";
 

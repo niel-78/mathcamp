@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { authHeaders } from "../../../api/authHeaders";
-import { API_URL } from "../../../config";
+import { authHeaders } from "@/api/authHeaders";
+import { API_URL } from "@/config";
 
 export default function ExamList({ onSelect }) {
     const [loading, setLoading] = useState(true);

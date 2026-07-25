@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { renderLatex } from "../../../utils/renderLatex";
-import { formatValue } from "../../../utils/formatValue";
-import { formatQuestion } from "../../../utils/formatQuestion";
-import { isSEB } from "../../../utils/isSEB";
-import { API_URL } from "../../../config";
-import { authHeaders } from "../../../api/authHeaders";
+import { renderLatex } from "@/utils/renderLatex";
+import { formatValue } from "@/utils/formatValue";
+import { formatQuestion } from "@/utils/formatQuestion";
+import { isSEB } from "@/utils/isSEB";
+import { API_URL } from "@/config";
+import { authHeaders } from "@/api/authHeaders";
 
 export default function ExamPage({ attemptId, examConfig, onExit }) {
     const [questions, setQuestions] = useState([]);
@@ -57,7 +57,6 @@ export default function ExamPage({ attemptId, examConfig, onExit }) {
             }
  
             setQuestions(data.questions);
-            console.log(questions);
 
             // ✅ sätt default answers direkt
             const initialAnswers = {};

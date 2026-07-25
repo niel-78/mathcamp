@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { API_URL } from "../../../config";
-import { formatValue } from "../../../utils/formatValue";
-import { authHeaders } from "../../../api/authHeaders";
+import { API_URL } from "@/config";
+import { formatValue } from "@/utils/formatValue";
+import { authHeaders } from "@/api/authHeaders";
 
 const ResultPage = ({ attemptId }) => {
   const [results, setResults] = useState([]);

@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { authHeaders } from "../../../api/authHeaders";
-import { API_URL } from "../../../config";
+import { useEffect, useState, useRef } from "react";
+import { authHeaders } from "@/api/authHeaders";
+import { API_URL } from "@/config";
 import Block from "./ExamEditor/Block";
 
 function ExamEditor({examId, onClose}) {
@@ -9,6 +9,7 @@ function ExamEditor({examId, onClose}) {
     const [newBlock, setNewBlock] = useState("");
     const [editMode, setEditMode] = useState(false);
     const [title, setTitle] = useState("");
+    const blockRef = useRef(null);
 
     useEffect(() => {
         loadExam();
@@ -86,6 +87,11 @@ function ExamEditor({examId, onClose}) {
         setNewBlock("");
 
         loadExam();
+
+        setTimeout(() => {
+            blockRef.current?.focus();
+        }, 0);
+
     };
 
 
@@ -161,11 +167,12 @@ function ExamEditor({examId, onClose}) {
 
             <div className="mt-6 border-t pt-6">
 
-                {editMode && (
+                {!editMode && (
 
                     <div className="flex gap-2">
 
                         <input
+                            ref={blockRef}
                             className="input-standard"
                             value={newBlock}
                             placeholder="Nytt block..."

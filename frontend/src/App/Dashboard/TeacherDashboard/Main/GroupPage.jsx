@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { API_URL } from "../../../config";
-import { authHeaders } from "../../../api/authHeaders";
+import { API_URL } from "@/config";
+import { authHeaders } from "@/api/authHeaders";
 import StudentList from "./GroupPage/StudentList";
 import GroupExamList from "./GroupPage/GroupExamList";
 

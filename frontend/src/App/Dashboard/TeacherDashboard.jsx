@@ -1,27 +1,44 @@
 import { useState } from "react";
-import ExamList from "./TeacherDashboard/ExamList";
-import ExamEditor from "./TeacherDashboard/ExamEditor";
-import GroupPage from "./TeacherDashboard/GroupPage";
+import LeftCol from "./TeacherDashboard/LeftCol";
+import Main from "./TeacherDashboard/Main";
 
-function TeacherDashboard() {
-    const [selectedExam, setSelectedExam] = useState(null);
+export default function TeacherDashboard() {
+
+    const [tabs, setTabs] = useState([]);
+    const [activeTab, setActiveTab] = useState(null);
+
+
+    const openTab = (tab) => {
+        const exists = tabs.find(
+            t => t.id === tab.id
+        );
+
+        if (exists) {
+            setActiveTab(tab.id);
+            return;
+        }
+
+        setTabs(prev => [...prev, tab]);
+        setActiveTab(tab.id);
+    };
 
     return (
-        <>
-            <GroupPage/>
-            {!selectedExam ? (
-                <ExamList
-                    onSelect={setSelectedExam}
-                />
-            ) : (
-                <ExamEditor
-                    examId={selectedExam}
-                    onClose={() => setSelectedExam(null)}
-                />
-            )}
-        </>
+        <div className="grid grid-cols-[300px_1fr] h-screen">
+
+            <LeftCol
+                tabs={tabs}
+                openTab={openTab}
+                setTabs={setTabs}
+                setActiveTab={setActiveTab}
+            />
+
+            <Main
+                tabs={tabs}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                setTabs={setTabs}
+            />
+
+        </div>
     );
-
 }
-
-export default TeacherDashboard;

@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { API_URL } from "../../config";
-import { useAuth } from "../../Contexts/AuthContext";
-import { authHeaders } from "../../api/authHeaders";
+import { API_URL } from "@/config";
+import { useAuth } from "@/contexts/AuthContext";
+import { authHeaders } from "@/api/authHeaders";
 import ExamPage from "./StudentDashboard/ExamPage";
 import ResultPage from "./StudentDashboard/ResultPage";
 

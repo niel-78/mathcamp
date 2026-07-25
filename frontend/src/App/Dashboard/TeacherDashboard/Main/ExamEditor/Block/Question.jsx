@@ -1,15 +1,16 @@
-import {  useEffect, useState } from "react";
+import {  useEffect, useState, useRef } from "react";
+import { authHeaders } from "@/api/authHeaders";
+import { API_URL } from "@/config";
+import { formatValue } from "@/utils/formatValue";
+import { formatQuestion } from "@/utils/formatQuestion";
+import { isMathExpression } from "@/utils/isMathExpression";
 import OptionList from "./Question/OptionList";
-import { authHeaders } from "../../../../../api/authHeaders";
-import { API_URL } from "../../../../../config";
-import { formatValue } from "../../../../../utils/formatValue";
-import { formatQuestion } from "../../../../../utils/formatQuestion";
-import { isMathExpression } from "../../../../../utils/isMathExpression";
 
 export default function Question({ question, onChanged, editMode }) {
     const [newOption, setNewOption] = useState("");
-    const [newOptionCorrect, setNewOptionCorrect] = useState(false);
+    const [newOptionCorrect, setNewOptionCorrect] = useState(true);
     const [questionText, setQuestionText] = useState(question.question);
+    const optionRef = useRef(null);
 
     useEffect(() => {
         setQuestionText(question.question);
@@ -52,7 +53,7 @@ export default function Question({ question, onChanged, editMode }) {
             {
                 method: "DELETE",
                 headers: {
-                    Authorization: localStorage.getItem("token")
+                    Authorization: authHeaders
                 }
             }
         );
@@ -61,8 +62,6 @@ export default function Question({ question, onChanged, editMode }) {
     };
 
     const createOption = async () => {
-
-        console.log(newOption)
 
         if (!newOption.trim()) {
             return;
@@ -74,7 +73,7 @@ export default function Question({ question, onChanged, editMode }) {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: localStorage.getItem("token")
+                    Authorization: authHeaders
                 },
                 body: JSON.stringify({
                     text: newOption,
@@ -88,6 +87,11 @@ export default function Question({ question, onChanged, editMode }) {
         setNewOptionCorrect(false)
 
         onChanged();
+
+        setTimeout( () => {
+            optionRef.current?.focus();
+            optionRef.current?.select();
+        }, 0)
     };
 
     const uploadMedia = async (e) => {
@@ -205,7 +209,7 @@ export default function Question({ question, onChanged, editMode }) {
                     editMode={editMode}
                 />
 
-                {editMode && (
+                {!editMode && (
 
                     <div className="border-t pt-4">
 
@@ -238,6 +242,7 @@ export default function Question({ question, onChanged, editMode }) {
 
                         <textarea
                             rows={3}
+                            ref={optionRef}
                             className="
                                 input-standard
                                 mb-2
