@@ -1,5 +1,6 @@
 import TabBar from "./Main/TabBar";
 import GroupStudentsTab from "./Main/GroupStudentsTab";
+import CentralContentTab from "./Main/CentralContentTab";
 
 
 import ExamEditor from "./Main/ExamEditor";
@@ -13,7 +14,6 @@ export default function Main({
 }) {
 
     const currentTab = tabs.find(t => t.id === activeTab);
-
 
     return (
         <div className="flex flex-col">
@@ -47,6 +47,21 @@ export default function Main({
                     />
                     
                 )}
+
+                {currentTab?.type === "central-content" && (
+                    <CentralContentTab
+                        centralContentId={
+                            currentTab.centralContentId
+                        }
+                        centralContentTitle={
+                            currentTab.centralContentTitle
+                        }
+                        levelCode={
+                            currentTab.levelCode
+                        }
+                    />
+                )}
+
 
             </div>
 

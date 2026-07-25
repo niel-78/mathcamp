@@ -13,6 +13,10 @@ export default function LeftCol( {openTab} ) {
     });
     const [expandedGroups, setExpandedGroups] = useState({});
     const [subjects, setSubjects] = useState([]);
+    const [expandedSubjects, setExpandedSubjects] = useState({});
+    const [expandedLevels, setExpandedLevels] = useState({});
+    const [expandedAreas, setExpandedAreas] = useState({});
+        
 
     useEffect(() => {
         loadGroups();
@@ -49,7 +53,6 @@ export default function LeftCol( {openTab} ) {
         );
 
         const data = await response.json();
-        console.log(data);
         setSubjects(data);
     };
 
@@ -68,6 +71,29 @@ export default function LeftCol( {openTab} ) {
             [groupId]: !prev[groupId],
         }));
     };
+
+    const toggleSubject = (subjectId) => {
+        setExpandedSubjects(prev => ({
+            ...prev,
+            [subjectId]: !prev[subjectId],
+        }));
+    };
+
+    const toggleLevel = (levelId) => {
+        setExpandedLevels(prev => ({
+            ...prev,
+            [levelId]: !prev[levelId],
+        }));
+    };
+
+    const toggleArea = (areaId) => {
+        setExpandedAreas(prev => ({
+            ...prev,
+            [areaId]: !prev[areaId],
+        }));
+    };
+
+    
 
     return (
         <div className="border-r p-4">
@@ -154,15 +180,109 @@ export default function LeftCol( {openTab} ) {
 
                     {subjects.map(subject => (
 
-                        <div
-                            key={subject.id}
-                            className="
-                                p-1
-                                cursor-pointer
-                                hover:bg-gray-100
-                            "
-                        >
-                            {subject.name}
+                        <div key={subject.id}>
+
+                            <div
+                                className="tree-folder"
+                                onClick={() =>
+                                    toggleSubject(subject.id)
+                                }
+                            >
+                                {expandedSubjects[subject.id]
+                                    ? "▼"
+                                    : "▶"}
+                                {" "}
+                                {subject.name}
+                            </div>
+
+                            {expandedSubjects[subject.id] && (
+
+                                <div className="ml-4">
+
+                                    {subject.levels.map(level => (
+
+                                        <div key={level.id}>
+
+                                            <div
+                                                className="tree-folder"
+                                                onClick={() =>
+                                                    toggleLevel(level.id)
+                                                }
+                                            >
+                                                {expandedLevels[level.id]
+                                                    ? "▼"
+                                                    : "▶"}
+                                                {" "}
+                                                {level.name}
+                                            </div>
+
+                                            {expandedLevels[level.id] && (
+
+                                                <div className="ml-4">
+
+                                                    {level.areas.map(area => (
+
+                                                        <div
+                                                            key={area.id}
+                                                        >
+
+                                                            <div
+                                                                className="tree-folder"
+                                                                onClick={() =>
+                                                                    toggleArea(area.id)
+                                                                }
+                                                            >
+                                                                {expandedAreas[area.id]
+                                                                    ? "▼"
+                                                                    : "▶"}
+                                                                {" "}
+                                                                {area.title}
+                                                            </div>
+
+                                                            {expandedAreas[area.id] && (
+
+                                                                <div className="ml-4">
+
+                                                                    {area.centralContent.map(item => (
+
+                                                                    <div
+                                                                        key={item.id}
+                                                                        className="tree-file cursor-pointer"
+                                                                        onClick={() =>
+                                                                            openTab({
+                                                                                id: `cc-${item.id}`,
+                                                                                type: "central-content",
+                                                                                title: level.code,
+                                                                                centralContentId: item.id,
+                                                                                centralContentTitle: item.content,
+                                                                                levelCode: level.code
+                                                                            })
+                                                                        }                                                                            >
+                                                                        {item.content}
+                                                                    </div>
+
+                                                                    ))}
+
+                                                                </div>
+
+                                                            )}
+
+                                                        </div>
+
+                                                    ))}
+
+                                                </div>
+
+                                            )}
+
+                                        </div>
+
+                                    ))}
+
+                                </div>
+
+                            )}
+
                         </div>
 
                     ))}

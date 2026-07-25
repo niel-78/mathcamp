@@ -5,6 +5,7 @@ import examRoutes from "./routes/exam.js";
 import answersRoutes from "./routes/answers.js";
 import eventsRoutes from "./routes/events.js";
 import resultRoutes from "./routes/result.js";
+import subjectRoute from "./routes/subjectRoute.js";
 import teacherExamRoutes from "./routes/teacherExamRoutes.js";
 import teacherGroupRoutes from "./routes/teacherGroupRoutes.js";
 import teacherStudentRoutes from "./routes/teacherUserRoutes.js";
@@ -37,9 +38,12 @@ app.use("/api", examRoutes);
 app.use("/api", answersRoutes)
 app.use("/api", eventsRoutes);
 app.use("/api", resultRoutes);
+app.use("/api", subjectRoute);
 app.use("/api/teacher/exams", teacherExamRoutes);
 app.use("/api/teacher/groups", teacherGroupRoutes);
 app.use("/api/teacher/users",teacherStudentRoutes);
+
+
 
 app.use(
   "/uploads",

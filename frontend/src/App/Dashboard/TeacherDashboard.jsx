@@ -1,4 +1,9 @@
 import { useState } from "react";
+import {
+    ResizablePanelGroup,
+    ResizablePanel,
+    ResizableHandle,
+} from "@/components/ui/resizable";
 import LeftCol from "./TeacherDashboard/LeftCol";
 import Main from "./TeacherDashboard/Main";
 
@@ -23,22 +28,37 @@ export default function TeacherDashboard() {
     };
 
     return (
-        <div className="grid grid-cols-[300px_1fr] h-screen">
 
-            <LeftCol
-                tabs={tabs}
-                openTab={openTab}
-                setTabs={setTabs}
-                setActiveTab={setActiveTab}
-            />
+        <div className="h-screen">
+            <ResizablePanelGroup
+                direction="horizontal"
+                className="h-full w-full"
+            >
+                <ResizablePanel 
+                    defaultSize={20}
+                >
+                    <div className="h-full overflow-y-auto">
+                        <LeftCol 
+                            tabs={tabs}
+                            openTab={openTab}
+                            setTabs={setTabs}
+                            setActiveTab={setActiveTab}/>
+                    </div>       
+                </ResizablePanel>
 
-            <Main
-                tabs={tabs}
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-                setTabs={setTabs}
-            />
+                <ResizableHandle className="w-1 bg-gray-300" />
 
+                <ResizablePanel
+                    defaultSize={80} 
+                >
+                    <Main 
+                        tabs={tabs}
+                        activeTab={activeTab}
+                        setActiveTab={setActiveTab}
+                        setTabs={setTabs}/>
+                </ResizablePanel>
+            </ResizablePanelGroup>
         </div>
+
     );
 }
