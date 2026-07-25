@@ -7,13 +7,16 @@ export default function LeftCol( {openTab} ) {
     const [groups, setGroups] = useState([]);
     const [show, setShow] = useState({
         groups: false,
+        subjects: false,
         exams: false,
         courses: false,
     });
     const [expandedGroups, setExpandedGroups] = useState({});
+    const [subjects, setSubjects] = useState([]);
 
     useEffect(() => {
         loadGroups();
+        loadSubjects();
     }, []);
 
     const loadGroups = async () => {
@@ -32,6 +35,25 @@ export default function LeftCol( {openTab} ) {
 
         setGroups(data);
     };
+
+    const loadSubjects = async () => {
+
+        const response = await fetch(
+            `${API_URL}/api/subjects/full`,
+            {
+                headers: {
+                    Authorization:
+                        localStorage.getItem("token")
+                }
+            }
+        );
+
+        const data = await response.json();
+        console.log(data);
+        setSubjects(data);
+    };
+
+    
 
     const toggle = (name) => {
         setShow(prev => ({
@@ -115,6 +137,38 @@ export default function LeftCol( {openTab} ) {
                     ))}
 
                 </ul>
+            )}
+
+
+            <button className="tree-folder" 
+                onClick={() =>
+                    toggle("subjects")
+                }
+            >
+                {show.subjects ? "▼" : "▶"} Ämnen
+            </button>
+
+            {show.subjects && (
+
+                <div className="ml-4">
+
+                    {subjects.map(subject => (
+
+                        <div
+                            key={subject.id}
+                            className="
+                                p-1
+                                cursor-pointer
+                                hover:bg-gray-100
+                            "
+                        >
+                            {subject.name}
+                        </div>
+
+                    ))}
+
+                </div>
+
             )}
 
             <button className="tree-folder"
