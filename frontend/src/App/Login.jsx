@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { API_URL } from "@/config";
+import { toast } from "sonner";
 
 export default function Login() {
     const { setUser } = useAuth();
@@ -10,22 +11,31 @@ export default function Login() {
     const handleLogin = async (e) => {
         e.preventDefault();
 
-    const res = await fetch(`${API_URL}/api/login`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ username, password })
-    });
+        const res = await fetch(`${API_URL}/api/login`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ username, password })
+        });
 
-    const data = await res.json();
+        const data = await res.json();
 
-    if (!res.ok) {
-        alert(data.error);
-        return;
-    }
+        if (!res.ok) {
+            toast.error(data.error);
+            return;
+        }
+
         localStorage.setItem("token", data.token);
         setUser(data.user);
+        toast.success("Inloggning lyckades");
+
+        /**
+        toast.info("Sparar...");
+        toast.success("Sparat");
+        toast.error("Kunde inte spara"); 
+        */
+
     };
 
     return (

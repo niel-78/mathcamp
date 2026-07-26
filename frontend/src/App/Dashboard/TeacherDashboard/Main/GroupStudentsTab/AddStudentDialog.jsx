@@ -87,7 +87,7 @@ export default function AddStudentDialog({
                         />
 
                         <Input
-                            placeholder="E-post"
+                            placeholder="Användarnamn"
                             value={username}
                             onChange={(e) =>
                                 setUsername(e.target.value)

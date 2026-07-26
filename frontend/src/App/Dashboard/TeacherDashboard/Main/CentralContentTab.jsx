@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { API_URL } from "@/config";
+import MathContent from "@/components/ui/MathContent";
 
 export default function CentralContentTab({
     centralContentId,
     centralContentTitle,
-    levelCode
+    levelCode,
+    openTab
 }) {
 
     const [blocks, setBlocks] = useState([]);
@@ -71,35 +73,35 @@ export default function CentralContentTab({
 
                     <div
                         key={block.id}
-                        className="border rounded p-4"
+                        className="
+                            border
+                            rounded
+                            p-4
+                            cursor-pointer
+                            hover:bg-slate-50
+                        "
+                        onClick={() =>
+                            openTab({
+                                id: `block-${block.id}`,
+                                type: "block",
+                                title: block.name,
+                                block: block
+                            })
+                        }
                     >
 
                         <h3 className="font-semibold mb-3">
                             {block.name}
                         </h3>
 
-                        <div className="space-y-2">
+                        {block.questions?.length > 0 && (
 
-                            {block.questions?.map(
-                                question => (
+                            <MathContent
+                                value={block.questions[0].question}
+                                className="p-2"
+                            />
 
-                                    <div
-                                        key={question.id}
-                                        className="
-                                            border
-                                            rounded
-                                            p-2
-                                        "
-                                    >
-                                        {
-                                            question.question_text
-                                        }
-                                    </div>
-
-                                )
-                            )}
-
-                        </div>
+                        )}
 
                     </div>
 

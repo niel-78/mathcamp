@@ -55,7 +55,8 @@ export default function TeacherDashboard() {
                         tabs={tabs}
                         activeTab={activeTab}
                         setActiveTab={setActiveTab}
-                        setTabs={setTabs}/>
+                        setTabs={setTabs}
+                        openTab={openTab}/>
                 </ResizablePanel>
             </ResizablePanelGroup>
         </div>

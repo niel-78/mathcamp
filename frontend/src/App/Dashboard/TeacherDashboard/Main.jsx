@@ -1,6 +1,7 @@
 import TabBar from "./Main/TabBar";
 import GroupStudentsTab from "./Main/GroupStudentsTab";
 import CentralContentTab from "./Main/CentralContentTab";
+import BlockTab from "./Main/CentralContentTab/BlockTab";
 
 
 import ExamEditor from "./Main/ExamEditor";
@@ -10,7 +11,8 @@ export default function Main({
     tabs,
     activeTab,
     setActiveTab,
-    setTabs
+    setTabs,
+    openTab
 }) {
 
     const currentTab = tabs.find(t => t.id === activeTab);
@@ -26,20 +28,6 @@ export default function Main({
             />
 
             <div className="p-4 flex-1 overflow-auto">
-
-                {currentTab?.type === "exam" && (
-                    <ExamEditor
-                        examId={currentTab.entityId}
-                    />
-                )}
-
-                {currentTab?.type === "group" && (
-                    <GroupPage
-                        groupId={
-                            currentTab.entityId
-                        }
-                    />
-                )}
 
                 {currentTab?.type === "group-students" && (
                     <GroupStudentsTab
@@ -59,7 +47,16 @@ export default function Main({
                         levelCode={
                             currentTab.levelCode
                         }
+                        openTab={openTab}
                     />
+                )}
+
+                {    currentTab?.type === "block" && (
+
+                        <BlockTab
+                            block={currentTab.block}
+                        />
+
                 )}
 
 

@@ -94,7 +94,6 @@ export default function LeftCol( {openTab} ) {
     };
 
     
-
     return (
         <div className="border-r p-4">
 

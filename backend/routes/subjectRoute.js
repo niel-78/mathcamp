@@ -137,11 +137,6 @@ router.get(
 
         try {
 
-            console.log(
-                "centralContentId:",
-                req.params.id
-            );
-
             const [blocks] = await db.query(
                 `
                 SELECT DISTINCT
@@ -150,11 +145,50 @@ router.get(
                 JOIN block_central_content bcc
                     ON b.id = bcc.block_id
                 WHERE bcc.central_content_id = ?
+                ORDER BY b.name
                 `,
                 [req.params.id]
             );
 
-            console.log(blocks);
+            for (const block of blocks) {
+
+                const [questions] = await db.query(
+                    `
+                    SELECT *
+                    FROM questions
+                    WHERE block_id = ?
+                    `,
+                    [block.id]
+                );
+
+                for (const question of questions) {
+
+                    const [media] = await db.query(
+                        `
+                        SELECT *
+                        FROM question_media
+                        WHERE question_id = ?
+                        ORDER BY sort_order
+                        `,
+                        [question.id]
+                    );
+
+                    question.media = media;
+
+                    const [options] = await db.query(
+                        `
+                        SELECT *
+                        FROM options
+                        WHERE question_id = ?
+                        `,
+                        [question.id]
+                    );
+
+                    question.options = options;
+                }
+
+                block.questions = questions;
+            }
 
             res.json(blocks);
 
