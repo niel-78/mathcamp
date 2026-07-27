@@ -29,6 +29,10 @@ export default function Main({
 
             <div className="p-4 flex-1 overflow-auto">
 
+                {currentTab?.type === "groups" && (
+                    <GroupsTab />
+                )}
+
                 {currentTab?.type === "group-students" && (
                     <GroupStudentsTab
                         groupId={currentTab.groupId}

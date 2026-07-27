@@ -15,3 +15,4 @@
  HTTP  2026-06-25 08:39:15 ::1 Returned 404 in 4 ms
  HTTP  2026-06-25 08:39:15 ::1 GET /favicon.ico
  HTTP  2026-06-25 08:39:15 ::1 Returned 404 in 1 ms
+nohup: serve: No such file or directory
