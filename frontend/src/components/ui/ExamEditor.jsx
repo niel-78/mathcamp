@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { authHeaders } from "@/api/authHeaders";
 import { API_URL } from "@/config";
-import Block from "./ExamEditor/Block";
+import BlockEditor from "@/components/ui/BlockEditor";
 
 function ExamEditor({examId, onClose}) {
     const [exam, setExam] = useState(null);
@@ -64,38 +64,6 @@ function ExamEditor({examId, onClose}) {
     };
 
 
-    const createBlock = async () => {
-
-        if (!newBlock.trim()) {
-            return;
-        }
-
-        await fetch(
-            `${API_URL}/api/teacher/exams/${exam.id}/blocks`,
-            {
-                method: "POST",
-                headers: {
-                    ...authHeaders(),
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    name: newBlock
-                })
-            }
-        );
-
-        setNewBlock("");
-
-        loadExam();
-
-        setTimeout(() => {
-            blockRef.current?.focus();
-        }, 0);
-
-    };
-
-
-
     if(!exam){
         return <p>Laddar...</p>;
     }
@@ -153,12 +121,12 @@ function ExamEditor({examId, onClose}) {
 
                 {exam.blocks.map(block => (
 
-                    <Block
+                    <BlockEditor
                         key={block.id}
                         block={block}
-                        exam={exam}
-                        onChanged={loadExam}
+                        examId={exam.id}
                         editMode={editMode}
+                        onChanged={loadExam}
                     />
 
                 ))}

@@ -16,6 +16,7 @@ export default function LeftCol( {openTab} ) {
         subjects: false,
         exams: false,
         courses: false,
+        books: false,
     });
     const [expandedGroups, setExpandedGroups] = useState({});
     const [subjects, setSubjects] = useState([]);
@@ -32,12 +33,16 @@ export default function LeftCol( {openTab} ) {
     const [passwordDialog, setPasswordDialog] = useState(null);
     const [renameStudentDialog, setRenameStudentDialog] = useState(null);
     const [archiveStudentDialog, setArchiveStudentDialog] = useState(null);
-
-
+    const [books, setBooks] = useState([]);
+    const [expandedBooks, setExpandedBooks] = useState({});
+    const [expandedChapters, setExpandedChapters] = useState({});
+    const [expandedSubchapters, setExpandedSubchapters] = useState({});
+    
 
     useEffect(() => {
         loadGroups();
         loadSubjects();
+        loadBooks();
     }, []);
 
     useEffect(() => {
@@ -111,6 +116,19 @@ export default function LeftCol( {openTab} ) {
         const data = await response.json();
         setSubjects(data);
     };
+
+    const loadBooks = async () => {
+
+        const response = await fetch(
+            `${API_URL}/api/books`
+        );
+
+        const data = await response.json();
+
+        setBooks(data);
+
+    };
+
 
     const toggle = (name) => {
         setShow(prev => ({
@@ -540,6 +558,12 @@ export default function LeftCol( {openTab} ) {
                     </ul>
                 )}
 
+                <button className="tree-folder"
+                        onClick={() => toggle("exams")}
+                >
+                    {show.exams ? "▼" : "▶"} Prov
+                </button>
+
 
                 <button className="tree-folder" 
                     onClick={() =>
@@ -667,18 +691,197 @@ export default function LeftCol( {openTab} ) {
                 )}
 
                 <button className="tree-folder"
-                        onClick={() => toggle("exams")}
+                    onClick={() => toggle("books")}
                 >
-                    {show.exams ? "▼" : "▶"} Prov
+                    {show.books ? "▼" : "▶"} Böcker
                 </button>
 
-                <button className="tree-folder"
-                        onClick={() => toggle("courses")}
-                >
-                    {show.courses ? "▼" : "▶"} Kurser
-                </button>
+                {show.books && (
 
-            </div>
+                    <div className="ml-4">
+
+                        {books.map(book => (
+
+                            <div key={book.id}>
+
+                                <div
+                                    className="tree-folder"
+                                    onClick={() =>
+                                        setExpandedBooks(prev => ({
+                                            ...prev,
+                                            [book.id]:
+                                                !prev[book.id]
+                                        }))
+                                    }
+                                >
+                                    {expandedBooks[book.id]
+                                        ? "▼"
+                                        : "▶"}
+
+                                    {" "}
+
+                                    {book.title}
+                                </div>
+
+                                {expandedBooks[book.id] && (
+
+                                    <div className="ml-4">
+
+                                        {book.chapters.map(chapter => (
+
+                                            <div key={chapter.id}>
+
+                                                <div
+                                                    className="tree-folder"
+                                                    onClick={() =>
+                                                        setExpandedChapters(prev => ({
+                                                            ...prev,
+                                                            [chapter.id]:
+                                                                !prev[chapter.id]
+                                                        }))
+                                                    }
+                                                >
+                                                    {expandedChapters[chapter.id]
+                                                        ? "▼"
+                                                        : "▶"}
+
+                                                    {" "}
+
+                                                    {chapter.chapter_number}
+
+                                                    {" "}
+
+                                                    {chapter.title}
+                                                </div>
+
+                                                {expandedChapters[chapter.id] && (
+
+                                                    <div className="ml-4">
+
+                                                        {chapter.subchapters.map(
+                                                            subchapter => (
+
+                                                                <div
+                                                                    key={subchapter.id}
+                                                                >
+
+                                                                    <div
+                                                                        className="tree-folder"
+                                                                        onClick={() =>
+                                                                            setExpandedSubchapters(
+                                                                                prev => ({
+                                                                                    ...prev,
+                                                                                    [subchapter.id]:
+                                                                                        !prev[
+                                                                                            subchapter.id
+                                                                                        ]
+                                                                                })
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        {
+                                                                            expandedSubchapters[
+                                                                                subchapter.id
+                                                                            ]
+                                                                                ? "▼"
+                                                                                : "▶"
+                                                                        }
+
+                                                                        {" "}
+
+                                                                        {
+                                                                            subchapter.subchapter_number
+                                                                        }
+
+                                                                        {" "}
+
+                                                                        {
+                                                                            subchapter.title
+                                                                        }
+
+                                                                    </div>
+
+                                                                    {
+                                                                        expandedSubchapters[
+                                                                            subchapter.id
+                                                                        ] && (
+
+                                                                            <div className="ml-4">
+
+                                                                                {subchapter.sections.map(
+                                                                                    section => (
+
+                                                                                        <div
+                                                                                            key={
+                                                                                                section.id
+                                                                                            }
+                                                                                            className="
+                                                                                                tree-file
+                                                                                                cursor-pointer
+                                                                                            "
+                                                                                            onClick={() =>
+                                                                                                openTab({
+                                                                                                    id:
+                                                                                                        `book-section-${section.id}`,
+                                                                                                    type:
+                                                                                                        "book-section",
+                                                                                                    title:
+                                                                                                        section.title,
+                                                                                                    sectionId:
+                                                                                                        section.id
+                                                                                                })
+                                                                                            }
+                                                                                        >
+                                                                                            {
+                                                                                                <>    
+                                                                                                    {section.title}
+                                                                                                    <span className="text-slate-500 ml-2">
+                                                                                                        ({section.page_number}
+                                                                                                        {section.end_page > section.page_number
+                                                                                                            ? `-${section.end_page}`
+                                                                                                            : ""}
+                                                                                                        )
+                                                                                                    </span>
+                                                                                                </>    
+                                                                                                
+                                                                                            }
+                                                                                        </div>
+
+                                                                                    )
+                                                                                )}
+
+                                                                            </div>
+
+                                                                        )
+                                                                    }
+
+                                                                </div>
+
+                                                            )
+                                                        )}
+
+                                                    </div>
+
+                                                )}
+
+                                            </div>
+
+                                        ))}
+
+                                    </div>
+
+                                )}
+
+                            </div>
+
+                        ))}
+
+                    </div>
+
+                )}
+
+
+            </div>    
 
             <ArchiveGroupDialog
                 group={archiveDialog}
@@ -748,6 +951,5 @@ export default function LeftCol( {openTab} ) {
                 }
             />
         </>
-    );
-    
-}
+    )
+}                

@@ -1,12 +1,12 @@
 import TabBar from "./Main/TabBar";
+import StartPage from "./Main/StartPage";
+import ExamList from "./Main/ExamList";
+import BlockLibrary from "./Main/BlockLibrary";
 import GroupStudentsTab from "./Main/GroupStudentsTab";
 import CentralContentTab from "./Main/CentralContentTab";
 import BlockTab from "./Main/CentralContentTab/BlockTab";
 import StudentTab from "./Main/StudentTab";
-
-
-import ExamEditor from "./Main/ExamEditor";
-import GroupPage from "./Main/GroupPage";
+import BookSectionTab from "./Main/BookSectionTab";
 
 export default function Main({
     tabs,
@@ -30,6 +30,23 @@ export default function Main({
 
             <div className="p-4 flex-1 overflow-auto">
 
+                {currentTab?.type === "home" && (
+                    <StartPage
+                        openTab={openTab}
+                    />
+                )}
+
+                {currentTab?.type === "exams" && (
+                    <ExamList
+                        openTab={openTab}
+                    />
+                )}
+
+                {currentTab?.type === "blocks" && (
+                    <BlockLibrary
+                        openTab={openTab}
+                    />
+                )}
                 {currentTab?.type === "groups" && (
                     <GroupsTab />
                 )}
@@ -74,6 +91,15 @@ export default function Main({
 
                 )}
 
+                {    currentTab?.type === "book" && (
+
+
+                    <BookSectionTab
+                        sectionId={currentTab.sectionId}
+                    />
+
+
+                )}
 
             </div>
 

@@ -9,8 +9,15 @@ import Main from "./TeacherDashboard/Main";
 
 export default function TeacherDashboard() {
 
-    const [tabs, setTabs] = useState([]);
-    const [activeTab, setActiveTab] = useState(null);
+    const [tabs, setTabs] = useState([
+        {
+            id: "home",
+            title: "Start",
+            type: "home"
+        }
+    ]);
+    const [activeTab, setActiveTab] = useState("home");
+
 
 
     const openTab = (tab) => {
@@ -26,6 +33,7 @@ export default function TeacherDashboard() {
         setTabs(prev => [...prev, tab]);
         setActiveTab(tab.id);
     };
+
 
     return (
 

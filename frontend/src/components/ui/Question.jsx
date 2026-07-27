@@ -3,8 +3,7 @@ import { authHeaders } from "@/api/authHeaders";
 import { API_URL } from "@/config";
 import { formatValue } from "@/utils/formatValue";
 import { formatQuestion } from "@/utils/formatQuestion";
-import { isMathExpression } from "@/utils/isMathExpression";
-import OptionList from "./Question/OptionList";
+import OptionList from "@/components/ui/OptionList";
 
 export default function Question({ question, onChanged, editMode }) {
     const [newOption, setNewOption] = useState("");

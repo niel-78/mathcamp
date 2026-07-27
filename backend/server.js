@@ -6,9 +6,11 @@ import answersRoutes from "./routes/answers.js";
 import eventsRoutes from "./routes/events.js";
 import resultRoutes from "./routes/result.js";
 import subjectRoute from "./routes/subjectRoute.js";
+import bookRoutes from "./routes/bookRoutes.js";
 import teacherExamRoutes from "./routes/teacherExamRoutes.js";
 import teacherGroupRoutes from "./routes/teacherGroupRoutes.js";
 import teacherStudentRoutes from "./routes/teacherStudentRoutes.js";
+import teacherBlocksRoutes from "./routes/teacherBlocksRoutes.js";
 import cors from "cors";
 
 console.log("🔥 SERVER FILE START");
@@ -39,9 +41,11 @@ app.use("/api", answersRoutes)
 app.use("/api", eventsRoutes);
 app.use("/api", resultRoutes);
 app.use("/api", subjectRoute);
+app.use("/api/books", bookRoutes);
 app.use("/api/teacher/exams", teacherExamRoutes);
 app.use("/api/teacher/groups", teacherGroupRoutes);
 app.use("/api/teacher/students", teacherStudentRoutes);
+app.use("/api/teacher/blocks", teacherBlocksRoutes);
 
 
 

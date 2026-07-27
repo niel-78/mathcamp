@@ -1,25 +1,9 @@
-import multer from "multer";
-import path from "path";
 import express from "express";
 import db from "../db.js";
-import fs from "fs";
 import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
 
 const router = express.Router();
-
-const storage = multer.diskStorage({
-    destination: "uploads/",
-    filename: (req, file, cb) => {
-        cb(
-            null,
-            Date.now() +
-            path.extname(file.originalname)
-        );
-    }
-});
-
-const upload = multer({ storage });
 
 router.use(requireAuth);
 router.use(requireRole("teacher", "admin"));
@@ -53,7 +37,6 @@ router.get("/", async (req, res) => {
     }
 });
 
-
 //POST /api/teacher/exams
 router.post("/", async (req, res) => {
     const { title } = req.body;
@@ -79,6 +62,7 @@ router.post("/", async (req, res) => {
         id: result.insertId
     });
 });
+
 
 //GET /api/teacher/exams/:examId
 router.get("/:examId", async (req, res) => {
@@ -137,433 +121,6 @@ router.delete("/:examId", async (req, res) => {
     res.sendStatus(204);
 });
 
-
-
-//GET /api/teacher/exams/blocks
-router.get("/blocks/all", async (req, res) => {
-    const [rows] = await db.query(`
-        SELECT *
-        FROM blocks
-        ORDER BY name
-    `);
-
-    res.json(rows);
-});
-
-//POST /api/teacher/exams/blocks
-router.post("/blocks", async (req, res) => {
-    const { name } = req.body;
-
-    const [result] = await db.query(
-        "INSERT INTO blocks(name) VALUES(?)",
-        [name]
-    );
-
-    res.json({
-        id: result.insertId
-    });
-});
-
-//uppdatera nummer
-router.put(
-    "/:examId/blocks/:blockId/order",
-    async (req, res) => {
-
-        console.log("ORDER ROUTE HIT!!");
-        console.log(req.params);
-        console.log(req.body);
-        
-        const { order_by } = req.body;
-
-        await db.query(
-            `
-            UPDATE exam_blocks
-            SET order_by = ?
-            WHERE exam_id = ?
-            AND block_id = ?
-            `,
-            [
-                order_by,
-                req.params.examId,
-                req.params.blockId
-            ]
-        );
-
-        res.sendStatus(204);
-    }
-);
-
-
-// POST /api/teacher/exams/:examId/blocks
-router.post("/:examId/blocks", async (req, res) => {
-
-    const { name } = req.body;
-
-    const [blockResult] = await db.query(
-        `
-        INSERT INTO blocks(name)
-        VALUES(?)
-        `,
-        [name]
-    );
-
-    const [rows] = await db.query(
-        `
-        SELECT COALESCE(MAX(order_by), 0) + 1 AS nextOrder
-        FROM exam_blocks
-        WHERE exam_id = ?
-        `,
-        [req.params.examId]
-    );
-
-    const orderBy = rows[0].nextOrder;
-
-    await db.query(
-        `
-        INSERT INTO exam_blocks(
-            exam_id,
-            block_id,
-            order_by
-        )
-        VALUES (?, ?, ?)
-        `,
-        [
-            req.params.examId,
-            blockResult.insertId,
-            orderBy
-        ]
-    );
-
-    res.json({
-        id: blockResult.insertId
-    });
-});
-
-
-//DELETE /api/teacher/exams/:examId/blocks/:blockId
-router.delete("/:examId/blocks/:blockId", async (req, res) => {
-    await db.query(
-        `
-        DELETE FROM exam_blocks
-        WHERE exam_id = ?
-        AND block_id = ?
-        `,
-        [req.params.examId, req.params.blockId]
-    );
-
-    res.sendStatus(204);
-});
-
-
-// PUT /api/teacher/exams/blocks/:blockId
-router.put("/blocks/:blockId", async (req, res) => {
-
-    const { name } = req.body;
-
-    await db.query(
-        `
-        UPDATE blocks
-        SET name = ?
-        WHERE id = ?
-        `,
-        [name, req.params.blockId]
-    );
-
-    res.sendStatus(204);
-});
-
-// POST /api/teacher/exams/blocks/:blockId/questions
-router.post("/blocks/:blockId/questions", async (req, res) => {
-
-    const {
-        question,
-        type,
-        math_config
-    } = req.body;
-
-    const [result] = await db.query(
-        `
-        INSERT INTO questions(
-            question,
-            block_id,
-            type,
-            math_config
-        )
-        VALUES (?, ?, ?, ?)
-        `,
-        [
-            question,
-            req.params.blockId,
-            type,
-            JSON.stringify(math_config)
-        ]
-    );
-
-    res.json({
-        id: result.insertId
-    });
-});
-
-// DELETE /api/teacher/exams/questions/:questionId
-router.delete("/questions/:questionId", async (req, res) => {
-
-    await db.query(
-        `
-        DELETE FROM questions
-        WHERE id = ?
-        `,
-        [req.params.questionId]
-    );
-
-    res.sendStatus(204);
-});
-
-
-// PUT /api/teacher/exams/questions/:questionId
-router.put("/questions/:questionId", async (req, res) => {
-
-    const {
-        question,
-        type,
-        math_config
-    } = req.body;
-
-    await db.query(
-        `
-        UPDATE questions
-        SET
-            question = ?,
-            type = ?,
-            math_config = ?
-        WHERE id = ?
-        `,
-        [
-            question,
-            type,
-            JSON.stringify(math_config),
-            req.params.questionId
-        ]
-    );
-
-    res.sendStatus(204);
-});
-
-
-
-
-//POST /api/teacher/exams/questions
-router.post("/questions", async (req, res) => {
-
-    const {
-        question,
-        block_id,
-        type,
-        math_config
-    } = req.body;
-
-    const [result] = await db.query(
-        `
-        INSERT INTO questions(
-            question,
-            block_id,
-            type,
-            math_config
-        )
-        VALUES (?, ?, ?, ?)
-        `,
-        [
-            question,
-            block_id,
-            type,
-            JSON.stringify(math_config)
-        ]
-    );
-
-    res.json({
-        id: result.insertId
-    });
-});
-
-//PUT /api/teacher/exams/questions/:questionId
-router.put("/questions/:questionId", async (req, res) => {
-
-    const {
-        question,
-        type,
-        math_config
-    } = req.body;
-
-    await db.query(
-        `
-        UPDATE questions
-        SET
-            question = ?,
-            type = ?,
-            math_config = ?
-        WHERE id = ?
-        `,
-        [
-            question,
-            type,
-            JSON.stringify(math_config),
-            req.params.questionId
-        ]
-    );
-
-    res.sendStatus(204);
-});
-
-//DELETE /api/teacher/exams/questions/:questionId
-router.delete("/questions/:questionId", async (req, res) => {
-
-    await db.query(
-        `
-        DELETE FROM questions
-        WHERE id = ?
-        `,
-        [req.params.questionId]
-    );
-
-    res.sendStatus(204);
-});
-
-// POST /api/teacher/exams/questions/:questionId/options
-router.post("/questions/:questionId/options", async (req, res) => {
-
-    const {
-        text,
-        is_correct
-    } = req.body;
-
-    const [result] = await db.query(
-        `
-        INSERT INTO options(
-            question_id,
-            text,
-            is_correct
-        )
-        VALUES (?, ?, ?)
-        `,
-        [
-            req.params.questionId,
-            text,
-            is_correct
-        ]
-    );
-
-    res.json({
-        id: result.insertId
-    });
-});
-
-// DELETE /api/teacher/exams/options/:optionId
-router.delete("/options/:optionId", async (req, res) => {
-
-    await db.query(
-        `
-        DELETE FROM options
-        WHERE id = ?
-        `,
-        [req.params.optionId]
-    );
-
-    res.sendStatus(204);
-});
-
-
-// PUT /api/teacher/exams/options/:optionId
-router.put("/options/:optionId", async (req, res) => {
-
-    const { text, is_correct } = req.body;
-
-    await db.query(
-        `
-        UPDATE options
-        SET
-            text = ?,
-            is_correct = ?
-        WHERE id = ?
-        `,
-        [
-            text,
-            is_correct,
-            req.params.optionId
-        ]
-    );
-
-    res.sendStatus(204);
-});
-
-
-//POST /api/teacher/exams/options
-router.post("/options", async (req, res) => {
-
-    const {
-        question_id,
-        text,
-        is_correct
-    } = req.body;
-
-    const [result] = await db.query(
-        `
-        INSERT INTO options(
-            question_id,
-            text,
-            is_correct
-        )
-        VALUES (?, ?, ?)
-        `,
-        [
-            question_id,
-            text,
-            is_correct
-        ]
-    );
-
-    res.json({
-        id: result.insertId
-    });
-});
-
-//PUT /api/teacher/exams/options/:optionId
-router.put("/options/:optionId", async (req, res) => {
-
-    const {
-        text,
-        is_correct
-    } = req.body;
-
-    await db.query(
-        `
-        UPDATE options
-        SET
-            text = ?,
-            is_correct = ?
-        WHERE id = ?
-        `,
-        [
-            text,
-            is_correct,
-            req.params.optionId
-        ]
-    );
-
-    res.sendStatus(204);
-});
-
-//DELETE /api/teacher/exams/options/:optionId
-router.delete("/options/:optionId", async (req, res) => {
-
-    await db.query(
-        `
-        DELETE FROM options
-        WHERE id = ?
-        `,
-        [req.params.optionId]
-    );
-
-    res.sendStatus(204);
-});
 
 //GET /api/teacher/exams/:examId/full
 router.get("/:examId/full", async (req, res) => {
@@ -651,6 +208,7 @@ router.get("/:examId/full", async (req, res) => {
     });
 });
 
+//GET /api/teacher/exams/:examId/copy
 router.post("/:examId/copy", async (req, res) => {
 
     console.log("COPY ROUTE HIT");
@@ -832,84 +390,93 @@ router.post("/:examId/copy", async (req, res) => {
 });
 
 
-// POST /api/teacher/exams/questions/:questionId/media
-router.post(
-    "/questions/:questionId/media",
-    upload.single("file"),
-    async (req, res) => {
+// POST /api/teacher/exams/:examId/blocks
+router.post("/:examId/blocks", async (req, res) => {
 
-        const mediaType =
-            req.file.mimetype.startsWith("video")
-                ? "video"
-                : "image";
+    const { name } = req.body;
 
-        const mediaUrl =
-            "/uploads/" + req.file.filename;
-
-        const [result] = await db.query(
-            `
-            INSERT INTO question_media (
-                question_id,
-                media_type,
-                media_url
-            )
-            VALUES (?, ?, ?)
-            `,
-            [
-                req.params.questionId,
-                mediaType,
-                mediaUrl
-            ]
-        );
-
-        res.json({
-            id: result.insertId,
-            media_url: mediaUrl
-        });
-    }
-);
-
-router.delete("/media/:mediaId", async (req, res) => {
+    const [blockResult] = await db.query(
+        `
+        INSERT INTO blocks(name)
+        VALUES(?)
+        `,
+        [name]
+    );
 
     const [rows] = await db.query(
         `
-        SELECT *
-        FROM question_media
-        WHERE id = ?
+        SELECT COALESCE(MAX(order_by), 0) + 1 AS nextOrder
+        FROM exam_blocks
+        WHERE exam_id = ?
         `,
-        [req.params.mediaId]
+        [req.params.examId]
     );
 
-    if (!rows.length) {
-        return res.status(404).json({
-            error: "Media not found"
-        });
-    }
-
-    const filePath = path.join(
-        process.cwd(),
-        rows[0].media_url.replace(/^\//, "")
-    );
-
-    console.log("Deleting:", filePath);
-
-    try {
-        await fs.promises.unlink(filePath);
-        console.log("File deleted");
-    } catch (err) {
-        console.error("Delete failed:", err);
-    }
+    const orderBy = rows[0].nextOrder;
 
     await db.query(
         `
-        DELETE FROM question_media
-        WHERE id = ?
+        INSERT INTO exam_blocks(
+            exam_id,
+            block_id,
+            order_by
+        )
+        VALUES (?, ?, ?)
         `,
-        [req.params.mediaId]
+        [
+            req.params.examId,
+            blockResult.insertId,
+            orderBy
+        ]
+    );
+
+    res.json({
+        id: blockResult.insertId
+    });
+});
+
+//DELETE /api/teacher/exams/:examId/blocks/:blockId
+router.delete("/:examId/blocks/:blockId", async (req, res) => {
+    await db.query(
+        `
+        DELETE FROM exam_blocks
+        WHERE exam_id = ?
+        AND block_id = ?
+        `,
+        [req.params.examId, req.params.blockId]
     );
 
     res.sendStatus(204);
 });
+
+
+//PUT /api/teacher/exams/:examId/blocks/:blockId/order
+router.put("/:examId/blocks/:blockId/order",
+    async (req, res) => {
+
+        console.log("ORDER ROUTE HIT!!");
+        console.log(req.params);
+        console.log(req.body);
+        
+        const { order_by } = req.body;
+
+        await db.query(
+            `
+            UPDATE exam_blocks
+            SET order_by = ?
+            WHERE exam_id = ?
+            AND block_id = ?
+            `,
+            [
+                order_by,
+                req.params.examId,
+                req.params.blockId
+            ]
+        );
+
+        res.sendStatus(204);
+    }
+);
 
 
 export default router
