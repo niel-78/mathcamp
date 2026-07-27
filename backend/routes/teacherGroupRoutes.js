@@ -101,6 +101,7 @@ router.get("/:groupId/full", async (req, res) => {
     });
 });
 
+
 // POST /api/teacher/groups
 router.post("/", async (req, res) => {
 
@@ -260,9 +261,7 @@ router.post("/:groupId/students", async (req, res) => {
 });
 
 // DELETE /api/teacher/groups/:groupId/students/:userId
-router.delete(
-    "/:groupId/students/:userId",
-    async (req, res) => {
+router.delete("/:groupId/students/:userId", async (req, res) => {
 
         await db.query(
             `
@@ -303,6 +302,5 @@ router.post("/:groupId/exams", async (req, res) => {
 
     res.sendStatus(201);
 });
-
 
 export default router

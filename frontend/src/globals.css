@@ -75,6 +75,7 @@
     @apply bg-blue-100 text-blue-800 font-medium;
 }
 
+
 @theme inline {
 
     --font-heading: var(--font-sans);

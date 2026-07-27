@@ -3,6 +3,10 @@ import { API_URL } from "@/config";
 import CreateGroupDialog from "./LeftCol/CreateGroupDialog";
 import RenameGroupDialog from "./LeftCol/RenameGroupDialog";
 import ArchiveGroupDialog from "./LeftCol/ArchiveGroupDialog";
+import CreateStudentDialog from "./LeftCol/CreateStudentDialog";
+import RenameStudentDialog from "./LeftCol/RenameStudentDialog";
+import ResetPasswordDialog from "./LeftCol/ResetPasswordDialog";
+import ArchiveStudentDialog from "./LeftCol/ArchiveStudentDialog";
 
 export default function LeftCol( {openTab} ) {
 
@@ -22,6 +26,13 @@ export default function LeftCol( {openTab} ) {
     const [showCreateGroupDialog,setShowCreateGroupDialog] = useState(false);
     const [renameDialog, setRenameDialog] = useState(null);
     const [archiveDialog, setArchiveDialog] = useState(null);
+    const [groupStudents, setGroupStudents] = useState({});
+    const [expandedStudents, setExpandedStudents] = useState({});
+    const [createStudentDialog, setCreateStudentDialog] = useState(null);
+    const [passwordDialog, setPasswordDialog] = useState(null);
+    const [renameStudentDialog, setRenameStudentDialog] = useState(null);
+    const [archiveStudentDialog, setArchiveStudentDialog] = useState(null);
+
 
 
     useEffect(() => {
@@ -64,6 +75,27 @@ export default function LeftCol( {openTab} ) {
         setGroups(data);
     };
 
+    const loadStudents = async (groupId) => {
+
+        const response = await fetch(
+            `${API_URL}/api/teacher/groups/${groupId}/full`,
+            {
+                headers: {
+                    Authorization:
+                        localStorage.getItem("token")
+                }
+            }
+        );
+
+        const data = await response.json();
+
+        setGroupStudents((prev) => ({
+            ...prev,
+            [groupId]: data.students,
+        }));
+
+    };
+
     const loadSubjects = async () => {
 
         const response = await fetch(
@@ -80,25 +112,6 @@ export default function LeftCol( {openTab} ) {
         setSubjects(data);
     };
 
-    const archiveGroup = async (groupId) => {
-
-        const response = await fetch(
-            `${API_URL}/api/teacher/groups/${groupId}/archive`,
-            {
-                method: "PUT",
-                headers: {
-                    Authorization:
-                        localStorage.getItem("token")
-                }
-            }
-        );
-
-        if (response.ok) {
-            loadGroups();
-        }
-
-    };
-
     const toggle = (name) => {
         setShow(prev => ({
             ...prev,
@@ -112,6 +125,32 @@ export default function LeftCol( {openTab} ) {
             [groupId]: !prev[groupId],
         }));
     };
+
+    const toggleStudents = async (groupId) => {
+        if (!groupStudents[groupId]) {
+            const response = await fetch(
+                `${API_URL}/api/teacher/groups/${groupId}/full`,
+                {
+                    headers: {
+                        Authorization: localStorage.getItem("token"),
+                    },
+                }
+            );
+
+            const data = await response.json();
+
+            setGroupStudents((prev) => ({
+                ...prev,
+                [groupId]: data.students,
+            }));
+        }
+
+        setExpandedStudents((prev) => ({
+            ...prev,
+            [groupId]: !prev[groupId],
+        }));
+    };
+
 
     const toggleSubject = (subjectId) => {
         setExpandedSubjects(prev => ({
@@ -136,8 +175,216 @@ export default function LeftCol( {openTab} ) {
 
     return (
         <>
-            <div className="border-r p-4">
+            
+            {
+                contextMenu && (
 
+                    <div
+                        className="
+                            fixed
+                            bg-white
+                            border
+                            rounded
+                            shadow-lg
+                            z-50
+                            min-w-40
+                        "
+                        style={{
+                            left: contextMenu.x,
+                            top: contextMenu.y
+                        }}
+                    >
+
+                        {contextMenu.type === "groups" && (
+
+                            <button
+                                className="
+                                    block
+                                    w-full
+                                    p-2
+                                    text-left
+                                    hover:bg-slate-100
+                                "
+                                onClick={() => {
+
+                                    setShowCreateGroupDialog(true);
+                                    setContextMenu(null);
+
+                                }}
+                            >
+                                Ny grupp
+                            </button>
+
+                        )}
+
+                        {contextMenu.type === "group" && (
+
+                            <>
+                                <div className="px-3 py-2 text-sm text-gray-500 border-b">
+                                    {contextMenu.groupName}
+                                </div>
+
+                                <button
+                                    className="
+                                        block
+                                        w-full
+                                        p-2
+                                        text-left
+                                        hover:bg-slate-100
+                                    "
+                                    onClick={() => {
+
+                                        setRenameDialog({
+                                            id: contextMenu.groupId,
+                                            name: contextMenu.groupName
+                                        });
+
+                                        setContextMenu(null);
+
+                                    }}
+                                >
+                                    Byt namn
+                                </button>
+
+                                <button
+                                    className="
+                                        block
+                                        w-full
+                                        p-2
+                                        text-left
+                                        hover:bg-slate-100
+                                    "
+                                    onClick={() => {
+
+                                        setArchiveDialog({
+                                            id: contextMenu.groupId,
+                                            name: contextMenu.groupName
+                                        });
+
+                                        setContextMenu(null);
+
+                                    }}
+                                >
+                                    Arkivera
+                                </button>
+                            </>
+
+                        )}
+
+                        {contextMenu?.type === "students" && (
+
+                            <button
+                                className="
+                                    block
+                                    w-full
+                                    p-2
+                                    text-left
+                                    hover:bg-slate-100
+                                "
+                                onClick={() => {
+
+                                    setCreateStudentDialog({
+                                        groupId: contextMenu.groupId,
+                                        groupName: contextMenu.groupName
+                                    });
+
+                                    setContextMenu(null);
+
+                                }}
+                            >
+                                Lägg till elev
+                            </button>
+
+                        )}
+
+                        {contextMenu?.type === "student" && (
+
+                            <>
+                                <div className="px-3 py-2 text-sm text-gray-500 border-b">
+                                    {contextMenu.firstName} {contextMenu.lastName}
+                                </div>
+
+                                <button
+                                    className="
+                                        block
+                                        w-full
+                                        p-2
+                                        text-left
+                                        hover:bg-slate-100
+                                    "
+                                    onClick={() => {
+                                        setPasswordDialog({
+                                            id: contextMenu.userId,
+                                            name: `${contextMenu.firstName} ${contextMenu.lastName}`
+                                        });
+
+                                        setContextMenu(null);
+
+                                    }}
+                                >
+                                    Nytt lösenord
+                                </button>
+
+                                <button
+                                    className="
+                                        block
+                                        w-full
+                                        p-2
+                                        text-left
+                                        hover:bg-slate-100
+                                    "
+                                    onClick={() => {
+
+                                        setRenameStudentDialog({
+                                            id: contextMenu.userId,
+                                            groupId: contextMenu.groupId,
+                                            firstName: contextMenu.firstName,
+                                            lastName: contextMenu.lastName
+                                        });
+
+                                        setContextMenu(null);
+
+                                    }}
+                                >
+                                    Byt namn
+                                </button>
+
+                                <button
+                                    className="
+                                        block
+                                        w-full
+                                        p-2
+                                        text-left
+                                        hover:bg-slate-100
+                                    "
+                                    onClick={() => {
+
+                                        setArchiveStudentDialog({
+                                            userId: contextMenu.userId,
+                                            groupId: contextMenu.groupId,
+                                            name: `${contextMenu.firstName} ${contextMenu.lastName}`
+                                        });
+
+                                        setContextMenu(null);
+
+                                    }}
+                                >
+                                    Arkivera
+                                </button>
+                            </>
+
+                        )}
+
+
+
+                    </div>
+
+                )
+            }
+            
+            
+            
+            <div className="border-r p-4">
 
                 <button className="tree-folder" 
                         onClick={() => {
@@ -154,109 +401,6 @@ export default function LeftCol( {openTab} ) {
                 >    
                     {show.groups ? "▼" : "▶"} Grupper
                 </button>
-
-
-                {
-                    contextMenu && (
-
-                        <div
-                            className="
-                                fixed
-                                bg-white
-                                border
-                                rounded
-                                shadow-lg
-                                z-50
-                                min-w-40
-                            "
-                            style={{
-                                left: contextMenu.x,
-                                top: contextMenu.y
-                            }}
-                        >
-
-                            {contextMenu.type === "groups" && (
-
-                                <button
-                                    className="
-                                        block
-                                        w-full
-                                        p-2
-                                        text-left
-                                        hover:bg-slate-100
-                                    "
-                                    onClick={() => {
-
-                                        setShowCreateGroupDialog(true);
-                                        setContextMenu(null);
-
-                                    }}
-                                >
-                                    Ny grupp
-                                </button>
-
-                            )}
-
-                            {contextMenu.type === "group" && (
-
-                                <>
-                                    <div className="px-3 py-2 text-sm text-gray-500 border-b">
-                                        {contextMenu.groupName}
-                                    </div>
-
-                                    <button
-                                        className="
-                                            block
-                                            w-full
-                                            p-2
-                                            text-left
-                                            hover:bg-slate-100
-                                        "
-                                        onClick={() => {
-
-                                            setRenameDialog({
-                                                id: contextMenu.groupId,
-                                                name: contextMenu.groupName
-                                            });
-
-                                            setContextMenu(null);
-
-                                        }}
-                                    >
-                                        Byt namn
-                                    </button>
-
-                                    <button
-                                        className="
-                                            block
-                                            w-full
-                                            p-2
-                                            text-left
-                                            hover:bg-slate-100
-                                        "
-                                        onClick={() => {
-
-                                            setArchiveDialog({
-                                                id: contextMenu.groupId,
-                                                name: contextMenu.groupName
-                                            });
-
-                                            setContextMenu(null);
-
-                                        }}
-                                    >
-                                        Arkivera
-                                    </button>
-                                </>
-
-                            )}
-
-                        </div>
-
-                    )
-                }
-
-
 
                 {show.groups && (
                     <ul>
@@ -305,19 +449,84 @@ export default function LeftCol( {openTab} ) {
                                         <div className="tree-file">
                                             Resultat
                                         </div>
+
+                                        <div>
+
                                         <div
-                                            className="tree-file"
+                                            className="tree-file cursor-pointer"
                                             onClick={() =>
-                                                openTab({
-                                                    id: `group-${group.id}-students`,
-                                                    type: "group-students",
-                                                    title: `${group.name} - Elever`,
-                                                    groupId: group.id
-                                                })
+                                                toggleStudents(group.id)
                                             }
+                                            onContextMenu={(e) => {
+
+                                                e.preventDefault();
+
+                                                setContextMenu({
+                                                    type: "students",
+                                                    groupId: group.id,
+                                                    groupName: group.name,
+                                                    x: e.clientX,
+                                                    y: e.clientY
+                                                });
+
+                                            }}
                                         >
+                                            {expandedStudents[group.id]
+                                                ? "▼"
+                                                : "▶"}
+
+                                            {" "}
                                             Elever
                                         </div>
+
+                                            {expandedStudents[group.id] && (
+
+                                                <div className="ml-4">
+
+                                                    {(groupStudents[group.id] || [])
+                                                        .map(student => (
+
+                                                            <div
+                                                                key={student.id}
+                                                                className="
+                                                                    tree-file
+                                                                    cursor-pointer
+                                                                "
+                                                                onClick={() =>
+                                                                    openTab({
+                                                                        id: `student-${student.id}`,
+                                                                        type: "student",
+                                                                        title: `${student.first_name} ${student.last_name}`,
+                                                                        studentId: student.id
+                                                                    })
+                                                                }
+                                                                onContextMenu={(e) => {
+
+                                                                    e.preventDefault();
+
+                                                                    setContextMenu({
+                                                                        type: "student",
+                                                                        userId: student.id,
+                                                                        firstName: student.first_name,
+                                                                        lastName: student.last_name,
+                                                                        groupId: group.id,
+                                                                        x: e.clientX,
+                                                                        y: e.clientY
+                                                                    });
+
+                                                                }}
+                                                            >
+                                                                {student.first_name} {student.last_name}
+                                                            </div>
+
+                                                    ))}
+
+                                                </div>
+
+                                            )}
+
+                                        </div>
+
                                         <div className="tree-file">
                                             Inställningar
                                         </div>
@@ -492,6 +701,51 @@ export default function LeftCol( {openTab} ) {
                     setRenameDialog(null)
                 }
                 onRenamed={loadGroups}
+            />
+            <CreateStudentDialog
+                group={createStudentDialog}
+                open={!!createStudentDialog}
+                onOpenChange={() =>
+                    setCreateStudentDialog(null)
+                }
+                onCreated={() =>
+                    loadStudents(
+                        createStudentDialog.groupId
+                    )
+                }
+            />
+            <RenameStudentDialog
+                student={renameStudentDialog}
+                open={!!renameStudentDialog}
+                onOpenChange={() =>
+                    setRenameStudentDialog(null)
+                }
+                onRenamed={() =>
+                    loadStudents(
+                        renameStudentDialog.groupId
+                    )
+                }
+            />
+
+            <ResetPasswordDialog
+                student={passwordDialog}
+                open={!!passwordDialog}
+                onOpenChange={() =>
+                    setPasswordDialog(null)
+                }
+            />
+
+            <ArchiveStudentDialog
+                student={archiveStudentDialog}
+                open={!!archiveStudentDialog}
+                onOpenChange={() =>
+                    setArchiveStudentDialog(null)
+                }
+                onArchived={() =>
+                    loadStudents(
+                        archiveStudentDialog.groupId
+                    )
+                }
             />
         </>
     );

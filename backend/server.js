@@ -8,7 +8,7 @@ import resultRoutes from "./routes/result.js";
 import subjectRoute from "./routes/subjectRoute.js";
 import teacherExamRoutes from "./routes/teacherExamRoutes.js";
 import teacherGroupRoutes from "./routes/teacherGroupRoutes.js";
-import teacherStudentRoutes from "./routes/teacherUserRoutes.js";
+import teacherStudentRoutes from "./routes/teacherStudentRoutes.js";
 import cors from "cors";
 
 console.log("🔥 SERVER FILE START");
@@ -41,7 +41,8 @@ app.use("/api", resultRoutes);
 app.use("/api", subjectRoute);
 app.use("/api/teacher/exams", teacherExamRoutes);
 app.use("/api/teacher/groups", teacherGroupRoutes);
-app.use("/api/teacher/users",teacherStudentRoutes);
+app.use("/api/teacher/students", teacherStudentRoutes);
+
 
 
 

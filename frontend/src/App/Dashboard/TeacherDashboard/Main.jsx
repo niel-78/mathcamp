@@ -2,6 +2,7 @@ import TabBar from "./Main/TabBar";
 import GroupStudentsTab from "./Main/GroupStudentsTab";
 import CentralContentTab from "./Main/CentralContentTab";
 import BlockTab from "./Main/CentralContentTab/BlockTab";
+import StudentTab from "./Main/StudentTab";
 
 
 import ExamEditor from "./Main/ExamEditor";
@@ -38,6 +39,16 @@ export default function Main({
                         groupId={currentTab.groupId}
                     />
                     
+                )}
+
+                {
+                currentTab?.type === "student" && (
+
+                    <StudentTab
+                        studentId={currentTab.studentId}
+                        groupId={currentTab.groupId}
+                    />
+
                 )}
 
                 {currentTab?.type === "central-content" && (

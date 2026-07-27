@@ -1,0 +1,117 @@
+import { API_URL } from "@/config";
+import { toast } from "sonner";
+
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+export default function ArchiveStudentDialog({
+    student,
+    open,
+    onOpenChange,
+    onArchived
+}) {
+
+    const archiveStudent = async () => {
+
+        const response = await fetch(
+            `${API_URL}/api/teacher/groups/${student.groupId}/students/${student.userId}`,
+            {
+                method: "DELETE",
+                headers: {
+                    Authorization:
+                        localStorage.getItem("token")
+                }
+            }
+        );
+
+        if (!response.ok) {
+
+            toast.error(
+                "Kunde inte arkivera eleven"
+            );
+
+            return;
+        }
+
+        toast.success(
+            "Eleven arkiverades"
+        );
+
+        onOpenChange(false);
+
+        onArchived?.();
+
+    };
+
+    return (
+
+        <AlertDialog
+            open={open}
+            onOpenChange={onOpenChange}
+        >
+
+            <AlertDialogContent>
+
+                <AlertDialogHeader>
+
+                    <AlertDialogTitle>
+                        Arkivera elev
+                    </AlertDialogTitle>
+
+                    <AlertDialogDescription>
+
+                        Är du säker på att du vill
+                        arkivera eleven
+
+                        {" "}
+
+                        <strong>
+                            {student?.name}
+                        </strong>
+
+                        ?
+
+                        <br />
+                        <br />
+
+                        Eleven tas bort från gruppen
+                        men inga resultat raderas.
+
+                    </AlertDialogDescription>
+
+                </AlertDialogHeader>
+
+                <AlertDialogFooter>
+
+                    <AlertDialogCancel>
+                        Avbryt
+                    </AlertDialogCancel>
+
+                    <AlertDialogAction
+                        className="
+                            bg-red-600
+                            text-white
+                            hover:bg-red-700
+                        "
+                        onClick={archiveStudent}
+                    >
+                        Arkivera
+                    </AlertDialogAction>
+
+                </AlertDialogFooter>
+
+            </AlertDialogContent>
+
+        </AlertDialog>
+
+    );
+
+}
