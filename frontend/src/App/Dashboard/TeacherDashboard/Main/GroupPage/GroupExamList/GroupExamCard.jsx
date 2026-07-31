@@ -1,4 +1,6 @@
 import { API_URL } from "@/config";
+import { authHeaders } from "@/api/authHeaders";
+
 
 export default function GroupExamCard({ groupExam, onChanged }) {
 
@@ -14,8 +16,7 @@ export default function GroupExamCard({ groupExam, onChanged }) {
                 headers: {
                     "Content-Type":
                         "application/json",
-                    Authorization:
-                        localStorage.getItem("token")
+                        ...authHeaders()
                 },
                 body: JSON.stringify({
                     ...groupExam,

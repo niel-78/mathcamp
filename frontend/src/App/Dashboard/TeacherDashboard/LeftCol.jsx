@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { API_URL } from "@/config";
+import { authHeaders } from "@/api/authHeaders";
+import UserProfile from "@/components/ui/UserProfile";
 import CreateGroupDialog from "./LeftCol/CreateGroupDialog";
 import RenameGroupDialog from "./LeftCol/RenameGroupDialog";
 import ArchiveGroupDialog from "./LeftCol/ArchiveGroupDialog";
@@ -68,10 +70,7 @@ export default function LeftCol( {openTab} ) {
         const response = await fetch(
             `${API_URL}/api/teacher/groups`,
             {
-                headers: {
-                    Authorization:
-                        localStorage.getItem("token")
-                }
+                headers: authHeaders()
             }
         );
 
@@ -85,10 +84,7 @@ export default function LeftCol( {openTab} ) {
         const response = await fetch(
             `${API_URL}/api/teacher/groups/${groupId}/full`,
             {
-                headers: {
-                    Authorization:
-                        localStorage.getItem("token")
-                }
+                headers: authHeaders()
             }
         );
 
@@ -106,10 +102,7 @@ export default function LeftCol( {openTab} ) {
         const response = await fetch(
             `${API_URL}/api/subjects/full`,
             {
-                headers: {
-                    Authorization:
-                        localStorage.getItem("token")
-                }
+                headers: authHeaders()
             }
         );
 
@@ -149,9 +142,7 @@ export default function LeftCol( {openTab} ) {
             const response = await fetch(
                 `${API_URL}/api/teacher/groups/${groupId}/full`,
                 {
-                    headers: {
-                        Authorization: localStorage.getItem("token"),
-                    },
+                    headers:authHeaders()
                 }
             );
 
@@ -193,7 +184,7 @@ export default function LeftCol( {openTab} ) {
 
     return (
         <>
-            
+            <UserProfile />
             {
                 contextMenu && (
 

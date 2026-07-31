@@ -93,9 +93,7 @@ export default function ExamList({ onSelect }) {
             `${API_URL}/api/teacher/exams/${examId}`,
             {
                 method: "DELETE",
-                headers: {
-                    Authorization: localStorage.getItem("token")
-                }
+                headers: authHeaders()
             }
         );
 

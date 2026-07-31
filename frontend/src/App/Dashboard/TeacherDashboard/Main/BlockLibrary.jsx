@@ -30,11 +30,8 @@ export default function BlockLibrary() {
             <h2>Frågebank</h2>
 
             {blocks.map(block => (
-                <BlockEditor
-                    key={block.id}
-                    block={block}
-                    onChanged={loadBlocks}
-                />
+                <p>{block.questions[0].question}
+                ({block.questions.length})</p>
             ))}
         </>
     );

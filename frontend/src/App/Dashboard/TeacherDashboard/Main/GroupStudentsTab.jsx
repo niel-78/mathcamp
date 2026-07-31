@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { API_URL } from "@/config";
+import { authHeaders } from "@/api/authHeaders";
 import AddStudentDialog from "./GroupStudentsTab/AddStudentDialog";
 import EditStudentDialog from "./GroupStudentsTab/EditStudentDialog";
 import DeleteStudentDialog from "./GroupStudentsTab/DeleteStudentDialog";
@@ -23,10 +24,7 @@ export default function GroupStudentsTab( {groupId} ) {
         const response = await fetch(
             `${API_URL}/api/teacher/groups/${groupId}/full`,
             {
-                headers: {
-                    Authorization:
-                        localStorage.getItem("token")
-                }
+                headers: authHeaders()
             }
         );
 

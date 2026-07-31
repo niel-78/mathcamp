@@ -1,3 +1,4 @@
+import { authHeaders } from "@/api/authHeaders";
 import Question from "@/components/ui/Question";
 
 export default function BlockEditor({
@@ -41,7 +42,7 @@ export default function BlockEditor({
         <div className="block-editor">
 
             <h3>{block.name}</h3>
-            {console.log(block)}
+
             {block.questions.map(question => (
                 <Question
                     key={question.id}

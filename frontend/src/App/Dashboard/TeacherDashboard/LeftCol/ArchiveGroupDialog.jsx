@@ -1,4 +1,5 @@
 import { API_URL } from "@/config";
+import { authHeaders } from "@/api/authHeaders";
 
 import {
     AlertDialog,
@@ -25,8 +26,7 @@ export default function ArchiveGroupDialog({
             {
                 method: "PUT",
                 headers: {
-                    Authorization:
-                        localStorage.getItem("token")
+                    Authorization: authHeaders()
                 }
             }
         );

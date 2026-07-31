@@ -29,10 +29,7 @@ export default function GroupPage() {
         const response = await fetch(
             `${API_URL}/api/teacher/groups/${group.id}/full`,
             {
-                headers: {
-                    Authorization:
-                        localStorage.getItem("token")
-                }
+                headers: authHeaders()
             }
         );
 
@@ -69,8 +66,7 @@ export default function GroupPage() {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization:
-                        localStorage.getItem("token")
+                    ...authHeaders()
                 },
                 body: JSON.stringify({
                     name
@@ -96,10 +92,7 @@ export default function GroupPage() {
             `${API_URL}/api/teacher/groups/${groupId}/archive`,
             {
                 method: "PUT",
-                headers: {
-                    Authorization:
-                        localStorage.getItem("token")
-                }
+                headers: authHeaders()
             }
         );
 
@@ -122,10 +115,7 @@ export default function GroupPage() {
             `${API_URL}/api/teacher/groups/${groupId}`,
             {
                 method: "DELETE",
-                headers: {
-                    Authorization:
-                        localStorage.getItem("token")
-                }
+                headers: authHeaders()
             }
         );
 
@@ -150,8 +140,7 @@ export default function GroupPage() {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization:
-                        localStorage.getItem("token")
+                    ...authHeaders()
                 },
                 body: JSON.stringify({
                     name

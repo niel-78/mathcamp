@@ -24,7 +24,6 @@ function ExamEditor({examId, onClose}) {
 
 
     const loadExam = async () => {
-        console.log("load exam");
         try {
             const res = await fetch(
                 `${API_URL}/api/teacher/exams/${examId}/full`,

@@ -1,4 +1,4 @@
-import {  useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { authHeaders } from "@/api/authHeaders";
 import { API_URL } from "@/config";
 import { formatValue } from "@/utils/formatValue";
@@ -51,9 +51,7 @@ export default function Question({ question, onChanged, editMode }) {
             `${API_URL}/api/teacher/exams/questions/${question.id}`,
             {
                 method: "DELETE",
-                headers: {
-                    Authorization: authHeaders
-                }
+                headers: authHeaders()
             }
         );
 
@@ -72,7 +70,7 @@ export default function Question({ question, onChanged, editMode }) {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: authHeaders
+                    ...authHeaders()
                 },
                 body: JSON.stringify({
                     text: newOption,
@@ -105,9 +103,7 @@ export default function Question({ question, onChanged, editMode }) {
             `${API_URL}/api/teacher/exams/questions/${question.id}/media`,
             {
                 method: "POST",
-                headers: {
-                    Authorization: localStorage.getItem("token")
-                },
+                headers: authHeaders(),
                 body: formData
             }
         );
@@ -119,8 +115,6 @@ export default function Question({ question, onChanged, editMode }) {
 
     const deleteMedia = async (mediaId) => {
 
-        console.log("DELETE MEDIA", mediaId);
-
         if (!window.confirm("Ta bort filen?")) {
             return;
         }
@@ -129,9 +123,7 @@ export default function Question({ question, onChanged, editMode }) {
             `${API_URL}/api/teacher/exams/media/${mediaId}`,
             {
                 method: "DELETE",
-                headers: {
-                    Authorization: localStorage.getItem("token")
-                }
+                headers: authHeaders()
             }
         );
 

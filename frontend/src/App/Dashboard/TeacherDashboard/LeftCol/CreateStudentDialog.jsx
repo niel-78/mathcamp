@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { API_URL } from "@/config";
 import { toast } from "sonner";
+import { authHeaders } from "@/api/authHeaders";
 
 import {
     Dialog,
@@ -28,8 +29,7 @@ export default function CreateStudentDialog({
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization:
-                        localStorage.getItem("token")
+                    Authorization:authHeaders()
                 },
                 body: JSON.stringify({
                     email,

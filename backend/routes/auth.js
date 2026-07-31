@@ -46,7 +46,8 @@ router.post("/login", async (req, res) => {
       user: {
         id: user.id,
         username: user.username,
-        name: user.name,
+        first_name: user.first_name,
+        last_name: user.last_name,
         role: user.role
       }
     });
@@ -59,23 +60,14 @@ router.post("/login", async (req, res) => {
 
 
 router.get("/me", requireAuth, (req, res) => {
-  console.log("✅ /me HIT");
   res.json({
     id: req.user.id,
     username: req.user.username,
-    name: req.user.name,
+    first_name: req.user.first_name,
+    last_name: req.user.last_name,
     role: req.user.role
   });
 });
-
-
-router.get("/users", async (req, res) => {
-  res.json([
-    { username: "niklas" },
-    { username: "test" }
-  ]);
-});
-
 
 
 export default router;

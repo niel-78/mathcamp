@@ -21,9 +21,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
             `${API_URL}/api/teacher/exams/${exam.id}/blocks/${block.id}`,
             {
                 method: "DELETE",
-                headers: {
-                    Authorization: localStorage.getItem("token")
-                }
+                headers: authHeaders()
             }
         );
 
@@ -47,7 +45,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: localStorage.getItem("token")
+                    ...authHeaders()
                 },
                 body: JSON.stringify({
                     name
@@ -106,7 +104,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: localStorage.getItem("token")
+                    ...authHeaders()
                 },
                 body: JSON.stringify({
                     blockId: block.id,
@@ -121,7 +119,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: localStorage.getItem("token")
+                    ...authHeaders()
                 },
                 body: JSON.stringify({
                     blockId: previousBlock.id,
@@ -149,7 +147,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: localStorage.getItem("token")
+                    ...authHeaders()
                 },
                 body: JSON.stringify({
                     blockId: block.id,
@@ -164,7 +162,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: localStorage.getItem("token")
+                    ...authHeaders()
                 },
                 body: JSON.stringify({
                     blockId: nextBlock.id,

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { API_URL } from "@/config";
+import { authHeaders } from "@/api/authHeaders";
 
 export default function StudentList({ group, editMode, onChanged }) {
     const [username, setUsername] = useState("");
@@ -14,8 +15,7 @@ export default function StudentList({ group, editMode, onChanged }) {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization:
-                        localStorage.getItem("token")
+                    ...authHeaders()
                 },
                 body: JSON.stringify({
                     email: username,
@@ -58,10 +58,7 @@ export default function StudentList({ group, editMode, onChanged }) {
             `${API_URL}/api/teacher/groups/${group.id}/students/${userId}`,
             {
                 method: "DELETE",
-                headers: {
-                    Authorization:
-                        localStorage.getItem("token")
-                }
+                headers: authHeaders()
             }
         );
 
@@ -85,8 +82,7 @@ export default function StudentList({ group, editMode, onChanged }) {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization:
-                        localStorage.getItem("token")
+                    ...authHeaders()
                 },
                 body: JSON.stringify({
                     password

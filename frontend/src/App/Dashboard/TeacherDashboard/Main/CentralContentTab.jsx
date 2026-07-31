@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { API_URL } from "@/config";
 import MathContent from "@/components/ui/MathContent";
+import { authHeaders } from "@/api/authHeaders";
 
 export default function CentralContentTab({
     centralContentId,
@@ -10,8 +11,6 @@ export default function CentralContentTab({
 }) {
 
     const [blocks, setBlocks] = useState([]);
-
-    console.log("centralContentId", centralContentId);
 
     useEffect(() => {
 
@@ -24,10 +23,7 @@ export default function CentralContentTab({
         const response = await fetch(
             `${API_URL}/api/central-content/${centralContentId}/blocks`,
             {
-                headers: {
-                    Authorization:
-                        localStorage.getItem("token")
-                }
+                headers: authHeaders()
             }
         );
 

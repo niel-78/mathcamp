@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { API_URL } from "@/config";
+import { authHeaders } from "@/api/authHeaders";
 
 export default function BookSectionTab({
     sectionId

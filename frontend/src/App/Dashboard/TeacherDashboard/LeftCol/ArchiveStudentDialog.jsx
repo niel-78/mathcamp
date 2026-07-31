@@ -1,5 +1,6 @@
 import { API_URL } from "@/config";
 import { toast } from "sonner";
+import { authHeaders } from "@/api/authHeaders";
 
 import {
     AlertDialog,
@@ -25,10 +26,7 @@ export default function ArchiveStudentDialog({
             `${API_URL}/api/teacher/groups/${student.groupId}/students/${student.userId}`,
             {
                 method: "DELETE",
-                headers: {
-                    Authorization:
-                        localStorage.getItem("token")
-                }
+                headers: authHeaders()
             }
         );
 

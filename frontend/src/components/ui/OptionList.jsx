@@ -1,4 +1,4 @@
-import {  useState } from "react";
+import { useState } from "react";
 import { authHeaders } from "@/api/authHeaders";
 import { API_URL } from "@/config";
 import { formatValue } from "@/utils/formatValue";
@@ -17,9 +17,7 @@ export default function OptionList({ options, onChanged, editMode }) {
             `${API_URL}/api/teacher/exams/options/${optionId}`,
             {
                 method: "DELETE",
-                headers: {
-                    Authorization: authHeaders
-                }
+                headers: authHeaders()
             }
         );
 
@@ -38,7 +36,7 @@ export default function OptionList({ options, onChanged, editMode }) {
                     method: "PUT",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: authHeaders
+                        ...authHeaders()
                     },
                     body: JSON.stringify({
                         text,

@@ -54,7 +54,7 @@ export default function TeacherDashboard() {
                     </div>       
                 </ResizablePanel>
 
-                <ResizableHandle className="w-1 bg-gray-300" />
+                <ResizableHandle className="w-l bg-gray-300" />
 
                 <ResizablePanel
                     defaultSize={80} 

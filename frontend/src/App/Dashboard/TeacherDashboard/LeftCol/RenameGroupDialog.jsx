@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { API_URL } from "@/config";
+import { authHeaders } from "@/api/authHeaders";
 
 import {
     Dialog,
@@ -32,8 +33,7 @@ export default function RenameGroupDialog({
                 headers: {
                     "Content-Type":
                         "application/json",
-                    Authorization:
-                        localStorage.getItem("token")
+                    Authorization:authHeaders()
                 },
                 body: JSON.stringify({
                     name

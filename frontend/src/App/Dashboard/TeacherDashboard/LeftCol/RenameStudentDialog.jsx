@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { API_URL } from "@/config";
 import { toast } from "sonner";
+import { authHeaders } from "@/api/authHeaders";
 
 import {
     Dialog,
@@ -39,8 +40,7 @@ export default function RenameStudentDialog({
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization:
-                        localStorage.getItem("token")
+                    Authorization:authHeaders()
                 },
                 body: JSON.stringify({
                     first_name: firstName,
