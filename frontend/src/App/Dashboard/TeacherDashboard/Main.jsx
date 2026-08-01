@@ -1,12 +1,12 @@
 import TabBar from "./Main/TabBar";
 import StartPage from "./Main/StartPage";
 import ExamList from "./Main/ExamList";
-import BlockLibrary from "./Main/BlockLibrary";
+import BlockBankTab from "./Main/BlockBankTab";
+import BlockEditor from "@/components/ui/BlockEditor";
 import GroupStudentsTab from "./Main/GroupStudentsTab";
 import CentralContentTab from "./Main/CentralContentTab";
-import BlockTab from "./Main/CentralContentTab/BlockTab";
 import StudentTab from "./Main/StudentTab";
-import BookSectionTab from "./Main/BookSectionTab";
+import SectionTab from "./Main/SectionTab";
 
 export default function Main({
     tabs,
@@ -43,10 +43,11 @@ export default function Main({
                 )}
 
                 {currentTab?.type === "blocks" && (
-                    <BlockLibrary
+                    <BlockBankTab
                         openTab={openTab}
                     />
                 )}
+
                 {currentTab?.type === "groups" && (
                     <GroupsTab />
                 )}
@@ -85,19 +86,18 @@ export default function Main({
 
                 {    currentTab?.type === "block" && (
 
-                        <BlockTab
-                            block={currentTab.block}
-                        />
+                    <BlockEditor
+                        block={currentTab.block}
+                    />
 
                 )}
 
-                {    currentTab?.type === "book" && (
+                {    currentTab?.type === "book-section" && (
 
-
-                    <BookSectionTab
+                    <SectionTab
                         sectionId={currentTab.sectionId}
+                        openTab={openTab}
                     />
-
 
                 )}
 

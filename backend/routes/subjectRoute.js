@@ -145,7 +145,7 @@ router.get(
                 JOIN block_central_content bcc
                     ON b.id = bcc.block_id
                 WHERE bcc.central_content_id = ?
-                ORDER BY b.name
+                ORDER BY b.created_at
                 `,
                 [req.params.id]
             );

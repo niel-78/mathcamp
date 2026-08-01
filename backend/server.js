@@ -7,6 +7,7 @@ import eventsRoutes from "./routes/events.js";
 import resultRoutes from "./routes/result.js";
 import subjectRoute from "./routes/subjectRoute.js";
 import bookRoutes from "./routes/bookRoutes.js";
+import sectionRoutes from "./routes/sectionRoutes.js"
 import teacherExamRoutes from "./routes/teacherExamRoutes.js";
 import teacherGroupRoutes from "./routes/teacherGroupRoutes.js";
 import teacherStudentRoutes from "./routes/teacherStudentRoutes.js";
@@ -41,6 +42,7 @@ app.use("/api", answersRoutes)
 app.use("/api", eventsRoutes);
 app.use("/api", resultRoutes);
 app.use("/api", subjectRoute);
+app.use("/api/sections",sectionRoutes);
 app.use("/api/books", bookRoutes);
 app.use("/api/teacher/exams", teacherExamRoutes);
 app.use("/api/teacher/groups", teacherGroupRoutes);

@@ -2,6 +2,8 @@ USE mydb;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS block_sections;
+DROP TABLE IF EXISTS block_central_content;
 DROP TABLE IF EXISTS sections;
 DROP TABLE IF EXISTS subchapters;
 DROP TABLE IF EXISTS chapters;
@@ -76,7 +78,24 @@ VALUES (1, 'student', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpzt
 
 CREATE TABLE blocks (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255)
+
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by INT NOT NULL,
+
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+    updated_by INT NOT NULL,
+
+    deleted_at DATETIME NULL,
+
+    CONSTRAINT fk_blocks_created_by
+        FOREIGN KEY (created_by)
+        REFERENCES users(id),
+
+    CONSTRAINT fk_blocks_updated_by
+        FOREIGN KEY (updated_by)
+        REFERENCES users(id)
+
 ) ENGINE=InnoDB;
 
 CREATE TABLE questions (
@@ -324,8 +343,6 @@ CREATE TABLE block_central_content (
         ON DELETE CASCADE
 );
 
-
-
 CREATE TABLE books (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL
@@ -366,12 +383,28 @@ CREATE TABLE sections (
         REFERENCES subchapters(id)
 );
 
+CREATE TABLE block_sections (
+    block_id INT NOT NULL,
+    section_id INT NOT NULL,
+
+    PRIMARY KEY (
+        block_id,
+        section_id
+    ),
+
+    FOREIGN KEY (block_id)
+        REFERENCES blocks(id),
+
+    FOREIGN KEY (section_id)
+        REFERENCES sections(id)
+);
+
 
 -- ======================
 -- BLOCK 1 (TEXT TAL)
 -- ======================
 
-INSERT INTO blocks (id, name) VALUES (1, 'Taluppfattning');
+INSERT INTO blocks (id,created_by,updated_by) VALUES (1,2,2);
 
 INSERT INTO questions VALUES (NULL,'Skriv 1 074 000 med ord.',1,1,JSON_OBJECT('mode', 'text'));
 SET @q = LAST_INSERT_ID();
@@ -383,7 +416,7 @@ INSERT INTO options VALUES (NULL,@q,'en miljon sjuttiofyra tusen',1);
 -- BLOCK 2 (TALLINJE MCQ)
 -- ======================
 
-INSERT INTO blocks (id, name) VALUES (2, 'Taluppfattning');
+INSERT INTO blocks (id,created_by,updated_by) VALUES (2,2,2);
 
 INSERT INTO questions VALUES (NULL,'Vilket tal är närmast 35.1?',2,3,null);
 SET @q = LAST_INSERT_ID();
@@ -397,7 +430,7 @@ INSERT INTO options VALUES
 -- BLOCK 3 (ARITMETIK)
 -- ======================
 
-INSERT INTO blocks (id, name) VALUES (3, 'Aritmetik');
+INSERT INTO blocks (id,created_by,updated_by) VALUES (3,2,2);
 
 INSERT INTO questions VALUES (NULL,'11\\cdot2+5',3,1,JSON_OBJECT('mode', 'numeric'));
 SET @q = LAST_INSERT_ID();
@@ -408,7 +441,7 @@ INSERT INTO options VALUES (NULL,@q,'27',1);
 -- BLOCK 4 (NEGATIVA TAL)
 -- ======================
 
-INSERT INTO blocks (id, name) VALUES (4, 'Aritmetik');
+INSERT INTO blocks (id,created_by,updated_by) VALUES (4,2,2);
 
 INSERT INTO questions VALUES (NULL,'Förenkla $a+a+a+a$',4,1,JSON_OBJECT('mode', 'algebra'));
 SET @q = LAST_INSERT_ID();
@@ -419,7 +452,7 @@ INSERT INTO options VALUES (NULL,@q,'4a',1);
 -- BLOCK 5 (DECIMAL MCQ)
 -- ======================
 */
-INSERT INTO blocks (id, name) VALUES (5, 'Algebra');
+INSERT INTO blocks (id,created_by,updated_by) VALUES (5,2,2);
 
 INSERT INTO questions VALUES (NULL,'Lös ekvationen $x^2-5x+6=0$',5,1,JSON_OBJECT('mode', 'algebra','default','x_1=a,x_2=b'));
 SET @q = LAST_INSERT_ID();

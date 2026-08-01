@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
+
 import { API_URL } from "@/config";
-import MathContent from "@/components/ui/MathContent";
 import { authHeaders } from "@/api/authHeaders";
+
+import BlockLibrary from "@/components/ui/BlockLibrary";
+import CreateBlock from "@/components/ui/CreateBlock";
 
 export default function CentralContentTab({
     centralContentId,
@@ -39,13 +42,9 @@ export default function CentralContentTab({
 
         const data = await response.json();
 
-        console.log(data);
-
         setBlocks(data);
 
     };
-
-    console.log("blocks state", blocks);
 
     return (
 
@@ -63,48 +62,17 @@ export default function CentralContentTab({
 
             </div>
 
-            <div className="p-4 space-y-6">
+            <CreateBlock
+                centralContentIds={[centralContentId]}
+                onCreated={loadBlocks}
+            />
 
-                {blocks.map(block => (
+            <BlockLibrary
+                blocks={blocks}
+                openTab={openTab}
+            />
 
-                    <div
-                        key={block.id}
-                        className="
-                            border
-                            rounded
-                            p-4
-                            cursor-pointer
-                            hover:bg-slate-50
-                        "
-                        onClick={() =>
-                            openTab({
-                                id: `block-${block.id}`,
-                                type: "block",
-                                title: block.name,
-                                block: block
-                            })
-                        }
-                    >
-
-                        <h3 className="font-semibold mb-3">
-                            {block.name}
-                        </h3>
-
-                        {block.questions?.length > 0 && (
-
-                            <MathContent
-                                value={block.questions[0].question}
-                                className="p-2"
-                            />
-
-                        )}
-
-                    </div>
-
-                ))}
-
-            </div>
-        </div>    
+        </div>
 
     );
 

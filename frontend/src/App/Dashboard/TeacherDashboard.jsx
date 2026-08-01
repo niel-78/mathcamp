@@ -34,6 +34,10 @@ export default function TeacherDashboard() {
         setActiveTab(tab.id);
     };
 
+    const handleDragEnd = (event) => {
+        console.log(event);
+    };
+
 
     return (
 

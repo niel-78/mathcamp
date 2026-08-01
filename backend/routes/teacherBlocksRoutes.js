@@ -3,6 +3,7 @@ import db from "../db.js";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import hydrateBlocks from "../utils/hydrateBlocks.js";
 import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
 
@@ -30,6 +31,7 @@ router.get("/", async (req, res) => {
     const [rows] = await db.query(`
         SELECT *
         FROM blocks
+        WHERE deleted_at IS NULL
         ORDER BY name
     `);
 
@@ -39,53 +41,18 @@ router.get("/", async (req, res) => {
 // GET /api/teacher/blocks/full
 router.get("/full", async (req, res) => {
 
-    const [blocks] = await db.query(`
+    const [blocks] = await db.query(
+        `
         SELECT *
         FROM blocks
-        ORDER BY name
-    `);
+        WHERE deleted_at IS NULL
+        `
+    );
 
-    for (const block of blocks) {
+    const hydratedBlocks =
+        await hydrateBlocks(blocks);
 
-        const [questions] = await db.query(
-            `
-            SELECT *
-            FROM questions
-            WHERE block_id = ?
-            `,
-            [block.id]
-        );
-
-        for (const question of questions) {
-
-            const [media] = await db.query(
-                `
-                SELECT *
-                FROM question_media
-                WHERE question_id = ?
-                ORDER BY sort_order
-                `,
-                [question.id]
-            );
-
-            question.media = media;
-
-            const [options] = await db.query(
-                `
-                SELECT *
-                FROM options
-                WHERE question_id = ?
-                `,
-                [question.id]
-            );
-
-            question.options = options;
-        }
-
-        block.questions = questions;
-    }
-
-    res.json(blocks);
+    res.json(hydratedBlocks);
 });
 
 //GET /api/teacher/blocks/:blockId
@@ -95,6 +62,7 @@ router.get("/:blockId", async (req, res) => {
         `
         SELECT *
         FROM blocks
+        WHERE deleted_at IS NULL
         WHERE id = ?
         `,
         [req.params.blockId]
@@ -103,19 +71,90 @@ router.get("/:blockId", async (req, res) => {
     res.json(rows[0]);
 });
 
-
 // POST /api/teacher/blocks
 router.post("/", async (req, res) => {
-    const { name } = req.body;
 
-    const [result] = await db.query(
-        "INSERT INTO blocks(name) VALUES(?)",
-        [name]
+    const {
+        question,
+        centralContentIds = [],
+        sectionIds = []
+    } = req.body;
+
+    const [blockResult] = await db.query(
+        `
+        INSERT INTO blocks (
+            created_by,
+            updated_by
+        )
+        VALUES (?, ?)
+        `,
+        [
+            req.user.id,
+            req.user.id
+        ]
     );
 
-    res.json({
-        id: result.insertId
+    const blockId = blockResult.insertId;
+
+    const [questionResult] = await db.query(
+        `
+        INSERT INTO questions (
+            question,
+            block_id,
+            type,
+            math_config
+        )
+        VALUES (?, ?, ?, ?)
+        `,
+        [
+            question,
+            blockId,
+            1,
+            null
+        ]
+    );
+
+    for (const centralContentId of centralContentIds) {
+
+        await db.query(
+            `
+            INSERT INTO block_central_content (
+                block_id,
+                central_content_id
+            )
+            VALUES (?, ?)
+            `,
+            [
+                blockId,
+                centralContentId
+            ]
+        );
+
+    }
+
+    for (const sectionId of sectionIds) {
+
+        await db.query(
+            `
+            INSERT INTO block_sections (
+                block_id,
+                section_id
+            )
+            VALUES (?, ?)
+            `,
+            [
+                blockId,
+                sectionId
+            ]
+        );
+
+    }
+
+    res.status(201).json({
+        blockId,
+        questionId: questionResult.insertId
     });
+
 });
 
 // PUT /api/teacher/blocks/:blockId
@@ -126,10 +165,11 @@ router.put("/:blockId", async (req, res) => {
     await db.query(
         `
         UPDATE blocks
-        SET name = ?
+        SET name = ?,
+        updated_by = ?
         WHERE id = ?
         `,
-        [name, req.params.blockId]
+        [name, req.user.id, req.params.blockId]
     );
 
     res.sendStatus(204);
@@ -140,13 +180,16 @@ router.delete("/:blockId", async (req, res) => {
 
     await db.query(
         `
-        DELETE FROM blocks
+        UPDATE blocks
+        SET
+        deleted_at = NOW(),
+        updated_by = ?
         WHERE id = ?
         `,
-        [req.params.blockId]
-    );
+        [req.user.id,req.params.blockId]
+            );
 
-    res.sendStatus(204);
+            res.sendStatus(204);
 });
 
 
@@ -374,6 +417,94 @@ router.delete("/media/:mediaId", async (req, res) => {
     res.sendStatus(204);
 });
 
+//POST /api/teacher/blocks/:blockId/central-content/:centralContentId
+router.post("/:blockId/central-content/:centralContentId",
+    requireAuth,
+    async (req, res) => {
 
+        await db.query(
+            `
+            INSERT IGNORE INTO block_central_content (
+                block_id,
+                central_content_id
+            )
+            VALUES (?, ?)
+            `,
+            [
+                req.params.blockId,
+                req.params.centralContentId
+            ]
+        );
+
+        res.sendStatus(204);
+    }
+);
+
+//DELETE /api/teacher/blocks/:blockId/central-content/:centralContentId
+router.delete("/:blockId/central-content/:centralContentId",
+    requireAuth,
+    async (req, res) => {
+
+        await db.query(
+            `
+            DELETE FROM block_central_content
+            WHERE
+                block_id = ?
+                AND central_content_id = ?
+            `,
+            [
+                req.params.blockId,
+                req.params.centralContentId
+            ]
+        );
+
+        res.sendStatus(204);
+    }
+);
+
+//POST /api/teacher/blocks/:blockId/book-sections/:sectionId
+router.post("/:blockId/book-sections/:sectionId",
+    requireAuth,
+    async (req, res) => {
+
+        await db.query(
+            `
+            INSERT IGNORE INTO block_sections (
+                block_id,
+                section_id
+            )
+            VALUES (?, ?)
+            `,
+            [
+                req.params.blockId,
+                req.params.sectionId
+            ]
+        );
+
+        res.sendStatus(204);
+    }
+);
+
+//DELETE /api/teacher/blocks/:blockId/book-sections/:sectionId
+router.delete("/:blockId/book-sections/:sectionId",
+    requireAuth,
+    async (req, res) => {
+
+        await db.query(
+            `
+            DELETE FROM block_sections
+            WHERE
+                block_id = ?
+                AND section_id = ?
+            `,
+            [
+                req.params.blockId,
+                req.params.sectionId
+            ]
+        );
+
+        res.sendStatus(204);
+    }
+);
 
 export default router;
