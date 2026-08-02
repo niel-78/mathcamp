@@ -2,6 +2,7 @@ USE mydb;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS question_levels;
 DROP TABLE IF EXISTS block_sections;
 DROP TABLE IF EXISTS block_central_content;
 DROP TABLE IF EXISTS sections;
@@ -98,14 +99,61 @@ CREATE TABLE blocks (
 
 ) ENGINE=InnoDB;
 
+CREATE TABLE question_levels (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    description TEXT,
+    sort_order INT NOT NULL
+);
+
 CREATE TABLE questions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     question TEXT,
     block_id INT,
     type INT DEFAULT 1,
+    level_id INT NULL,
+    
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by INT NOT NULL,
+
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+    updated_by INT NOT NULL,
+
+    deleted_at DATETIME NULL,
+    
     math_config JSON DEFAULT JSON_OBJECT('mode', 'numeric'),
-    FOREIGN KEY (block_id) REFERENCES blocks(id)
+    FOREIGN KEY (block_id) REFERENCES blocks(id),
+    FOREIGN KEY (level_id) REFERENCES question_levels(id)
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+INSERT INTO question_levels
+(
+    name,
+    description,
+    sort_order
+)
+VALUES
+(
+    'Repetition',
+    'Träning av tidigare genomgångna moment',
+    1
+),
+(
+    'Grundläggande',
+    'Grundnivå som alla elever förväntas behärska',
+    2
+),
+(
+    'Påbyggnad',
+    'Mer utmanande uppgifter som kräver djupare förståelse',
+    3
+),
+(
+    'Avancerad',
+    'Komplexa uppgifter med hög problemlösningsgrad',
+    4
+);
 
 CREATE TABLE question_media (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -122,12 +170,32 @@ CREATE TABLE options (
     question_id INT,
     text TEXT,
     is_correct BOOLEAN DEFAULT 0,
+
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by INT NOT NULL,
+
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+    updated_by INT NOT NULL,
+
+    deleted_at DATETIME NULL,
+
     FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE exams (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255),
+
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by INT NOT NULL,
+
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+    updated_by INT NOT NULL,
+
+    deleted_at DATETIME NULL,
+
     exam_config JSON DEFAULT JSON_OBJECT('timer', '1000','allowPrevious','false','randomizeQuestions',1,'randomizeOptions',1)
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -406,10 +474,10 @@ CREATE TABLE block_sections (
 
 INSERT INTO blocks (id,created_by,updated_by) VALUES (1,2,2);
 
-INSERT INTO questions VALUES (NULL,'Skriv 1 074 000 med ord.',1,1,JSON_OBJECT('mode', 'text'));
+INSERT INTO questions (id,question,block_id,created_by,updated_by,math_config) VALUES (NULL,'Skriv 1 074 000 med ord.',1,2,2,JSON_OBJECT('mode', 'text'));
 SET @q = LAST_INSERT_ID();
 
-INSERT INTO options VALUES (NULL,@q,'en miljon sjuttiofyra tusen',1);
+INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUES (NULL,@q,'en miljon sjuttiofyra tusen',1,2,2);
 
 
 -- ======================
@@ -418,12 +486,12 @@ INSERT INTO options VALUES (NULL,@q,'en miljon sjuttiofyra tusen',1);
 
 INSERT INTO blocks (id,created_by,updated_by) VALUES (2,2,2);
 
-INSERT INTO questions VALUES (NULL,'Vilket tal är närmast 35.1?',2,3,null);
+INSERT INTO questions (id,question,block_id,created_by,updated_by,math_config) VALUES (NULL,'Vilket tal är närmast 35.1?',2,2,2,null);
 SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES
-(NULL,@q,'30',0),
-(NULL,@q,'40',1),
-(NULL,@q,'50',0);
+INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUES
+(NULL,@q,'30',0,2,2),
+(NULL,@q,'40',1,2,2),
+(NULL,@q,'50',0,2,2);
 
 
 -- ======================
@@ -432,9 +500,9 @@ INSERT INTO options VALUES
 
 INSERT INTO blocks (id,created_by,updated_by) VALUES (3,2,2);
 
-INSERT INTO questions VALUES (NULL,'11\\cdot2+5',3,1,JSON_OBJECT('mode', 'numeric'));
+INSERT INTO questions (id,question,block_id,created_by,updated_by,math_config) VALUES (NULL,'11\\cdot2+5',3,2,2,JSON_OBJECT('mode', 'numeric'));
 SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'27',1);
+INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUES (NULL,@q,'27',1,2,2);
 
 
 -- ======================
@@ -443,9 +511,9 @@ INSERT INTO options VALUES (NULL,@q,'27',1);
 
 INSERT INTO blocks (id,created_by,updated_by) VALUES (4,2,2);
 
-INSERT INTO questions VALUES (NULL,'Förenkla $a+a+a+a$',4,1,JSON_OBJECT('mode', 'algebra'));
+INSERT INTO questions (id,question,block_id,created_by,updated_by,math_config) VALUES (NULL,'Förenkla $a+a+a+a$',4,2,2,JSON_OBJECT('mode', 'algebra'));
 SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'4a',1);
+INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUES (NULL,@q,'4a',1,2,2);
 
 /*
 -- ======================
@@ -454,15 +522,15 @@ INSERT INTO options VALUES (NULL,@q,'4a',1);
 */
 INSERT INTO blocks (id,created_by,updated_by) VALUES (5,2,2);
 
-INSERT INTO questions VALUES (NULL,'Lös ekvationen $x^2-5x+6=0$',5,1,JSON_OBJECT('mode', 'algebra','default','x_1=a,x_2=b'));
+INSERT INTO questions (id,question,block_id,created_by,updated_by,math_config) VALUES (NULL,'Lös ekvationen $x^2-5x+6=0$',5,2,2,JSON_OBJECT('mode', 'algebra','default','x_1=a,x_2=b'));
 SET @q = LAST_INSERT_ID();
-INSERT INTO options VALUES (NULL,@q,'x_1=2,x_2=3',1),(NULL,@q,'x_1=3,x_2=2',1);
+INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUES (NULL,@q,'x_1=2,x_2=3',1,2,2),(NULL,@q,'x_1=3,x_2=2',1,2,2);
 
 -- ======================
 -- EXAM BLOCKS
 -- ======================
 
-INSERT INTO exams(`id`,`title`) VALUES(1,'Test');
+INSERT INTO exams(`id`,`title`,created_by,updated_by) VALUES(1,'Test',2,2);
 
 INSERT INTO exam_teachers (exam_id,teacher_id,is_owner) VALUES (1,2,TRUE);
 

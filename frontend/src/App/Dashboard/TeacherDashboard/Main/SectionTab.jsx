@@ -7,9 +7,9 @@ import BlockLibrary from "@/components/ui/BlockLibrary";
 
 export default function SectionTab({
     sectionId,
-    openTab
+    openTab,
+    blockRefreshKey
 }) {
-
 
     const [section, setSection] = useState(null);
     const [blocks, setBlocks] = useState([]);
@@ -19,7 +19,7 @@ export default function SectionTab({
         loadSection();
         loadBlocks();
 
-    }, [sectionId]);
+    }, [sectionId,blockRefreshKey]);
 
     const loadSection = async () => {
 
@@ -100,6 +100,7 @@ export default function SectionTab({
             <BlockLibrary
                 blocks={blocks}
                 openTab={openTab}
+                onReload={loadBlocks}
             />
 
         </div>

@@ -9,8 +9,7 @@ import requireRole from "../middleware/requireRole.js";
 
 const router = express.Router();
 
-// GET /api/sections/:id/blocks
-router.get("/:id/blocks", async (req, res) => {
+router.get("/:centralContentId/blocks", async (req, res) => {
 
     const [blocks] = await db.query(
         `
@@ -20,17 +19,16 @@ router.get("/:id/blocks", async (req, res) => {
             cu.last_name AS created_by_last_name,
             uu.first_name AS updated_by_first_name,
             uu.last_name AS updated_by_last_name
-        FROM block_sections bs
-        JOIN blocks b
-            ON b.id = bs.block_id
+        FROM blocks b
+        JOIN block_central_content bcc
+            ON b.id = bcc.block_id
         LEFT JOIN users cu
             ON cu.id = b.created_by
         LEFT JOIN users uu
             ON uu.id = b.updated_by
-        WHERE bs.section_id = ?
-        AND b.deleted_at IS NULL
+        WHERE bcc.central_content_id = ?
         `,
-        [req.params.id]
+        [req.params.centralContentId]
     );
 
     const hydratedBlocks =
@@ -40,42 +38,30 @@ router.get("/:id/blocks", async (req, res) => {
 
 });
 
-// POST /api/sections/:sectionId/blocks/:blockId
-router.post("/:sectionId/blocks/:blockId", requireAuth,
+
+router.post("/:centralContentId/blocks/:blockId",
+    requireAuth,
     async (req, res) => {
 
-        const { sectionId, blockId } = req.params;
+        const {
+            centralContentId,
+            blockId
+        } = req.params;
 
-        const [exists] = await db.query(
+        await db.query(
             `
-            SELECT 1
-            FROM block_sections
-            WHERE block_id = ?
-            AND section_id = ?
+            INSERT IGNORE INTO block_central_content
+            (
+                block_id,
+                central_content_id
+            )
+            VALUES (?, ?)
             `,
             [
                 blockId,
-                sectionId
+                centralContentId
             ]
         );
-
-        if (!exists.length) {
-
-            await db.query(
-                `
-                INSERT INTO block_sections (
-                    block_id,
-                    section_id
-                )
-                VALUES (?, ?)
-                `,
-                [
-                    blockId,
-                    sectionId
-                ]
-            );
-
-        }
 
         res.sendStatus(204);
 

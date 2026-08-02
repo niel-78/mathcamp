@@ -1,10 +1,49 @@
 import BlockCard from "@/components/ui/BlockCard";
 
+import { API_URL } from "@/config";
+import { authHeaders } from "@/api/authHeaders";
+
 export default function BlockLibrary({
     blocks,
     openTab,
     onDelete,
+    onReload
 }) {
+
+    const removeCentralContent = async (
+        blockId,
+        centralContentId,
+    ) => {
+
+        await fetch(
+            `${API_URL}/api/teacher/blocks/${blockId}/central-content/${centralContentId}`,
+            {
+                method: "DELETE",
+                headers: authHeaders()
+            }
+        );
+
+        onReload();
+
+    };
+
+    const removeSection = async (
+        blockId,
+        sectionId
+    ) => {
+
+        await fetch(
+            `${API_URL}/api/teacher/blocks/${blockId}/book-sections/${sectionId}`,
+            {
+                method: "DELETE",
+                headers: authHeaders()
+            }
+        );
+
+        onReload();
+
+    };
+
 
     if (!blocks?.length) {
         return (
@@ -30,6 +69,8 @@ export default function BlockLibrary({
                     block={block}
                     openTab={openTab}
                     onDelete={onDelete}
+                    onRemoveSection={removeSection}
+                    onRemoveCentralContent={removeCentralContent}
                 />
             ))}
         </div>

@@ -63,6 +63,7 @@ export default function BlockBankTab({
                 blocks={blocks}
                 openTab={openTab}
                 onDelete={setBlockToDelete}
+                onReload={loadBlocks}
             />
 
             <DeleteBlockDialog

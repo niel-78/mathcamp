@@ -9,8 +9,10 @@ import CreateStudentDialog from "./LeftCol/CreateStudentDialog";
 import RenameStudentDialog from "./LeftCol/RenameStudentDialog";
 import ResetPasswordDialog from "./LeftCol/ResetPasswordDialog";
 import ArchiveStudentDialog from "./LeftCol/ArchiveStudentDialog";
+import SectionTreeItem from "@/components/ui/SectionTreeItem";
+import CentralContentTreeItem from "@/components/ui/CentralContentTreeItem";
 
-export default function LeftCol( {openTab} ) {
+export default function LeftCol( {openTab, hoverTarget} ) {
 
     const [groups, setGroups] = useState([]);
     const [show, setShow] = useState({
@@ -121,7 +123,6 @@ export default function LeftCol( {openTab} ) {
         setBooks(data);
 
     };
-
 
     const toggle = (name) => {
         setShow(prev => ({
@@ -635,21 +636,13 @@ export default function LeftCol( {openTab} ) {
 
                                                                         {area.centralContent.map(item => (
 
-                                                                        <div
-                                                                            key={item.id}
-                                                                            className="tree-file cursor-pointer"
-                                                                            onClick={() =>
-                                                                                openTab({
-                                                                                    id: `cc-${item.id}`,
-                                                                                    type: "central-content",
-                                                                                    title: level.code,
-                                                                                    centralContentId: item.id,
-                                                                                    centralContentTitle: item.content,
-                                                                                    levelCode: level.code
-                                                                                })
-                                                                            }                                                                            >
-                                                                            {item.content}
-                                                                        </div>
+                                                                            <CentralContentTreeItem
+                                                                                key={item.id}
+                                                                                item={item}
+                                                                                level={level}
+                                                                                openTab={openTab}
+                                                                                hoverTarget={hoverTarget}
+                                                                            />
 
                                                                         ))}
 
@@ -802,41 +795,12 @@ export default function LeftCol( {openTab} ) {
                                                                                 {subchapter.sections.map(
                                                                                     section => (
 
-                                                                                        <div
-                                                                                            key={
-                                                                                                section.id
-                                                                                            }
-                                                                                            className="
-                                                                                                tree-file
-                                                                                                cursor-pointer
-                                                                                            "
-                                                                                            onClick={() =>
-                                                                                                openTab({
-                                                                                                    id:
-                                                                                                        `book-section-${section.id}`,
-                                                                                                    type:
-                                                                                                        "book-section",
-                                                                                                    title:
-                                                                                                        section.title,
-                                                                                                    sectionId:
-                                                                                                        section.id
-                                                                                                })
-                                                                                            }
-                                                                                        >
-                                                                                            {
-                                                                                                <>    
-                                                                                                    {section.title}
-                                                                                                    <span className="text-slate-500 ml-2">
-                                                                                                        ({section.page_number}
-                                                                                                        {section.end_page > section.page_number
-                                                                                                            ? `-${section.end_page}`
-                                                                                                            : ""}
-                                                                                                        )
-                                                                                                    </span>
-                                                                                                </>    
-                                                                                                
-                                                                                            }
-                                                                                        </div>
+                                                                                    <SectionTreeItem
+                                                                                        key={section.id}
+                                                                                        section={section}
+                                                                                        openTab={openTab}
+                                                                                        hoverTarget={hoverTarget}
+                                                                                    />
 
                                                                                     )
                                                                                 )}

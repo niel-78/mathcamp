@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
-
 import { API_URL } from "@/config";
-import { authHeaders } from "@/api/authHeaders";
 
 import BlockLibrary from "@/components/ui/BlockLibrary";
 import CreateBlock from "@/components/ui/CreateBlock";
+import { authHeaders } from "@/api/authHeaders";
 
 export default function CentralContentTab({
     centralContentId,
     centralContentTitle,
     levelCode,
+    blockRefreshKey,
     openTab
 }) {
 
@@ -17,9 +17,17 @@ export default function CentralContentTab({
 
     useEffect(() => {
 
+        console.log(
+            "CentralContentTab loadBlocks",
+            blockRefreshKey
+        );
+
         loadBlocks();
 
-    }, [centralContentId]);
+    }, [
+        centralContentId,
+        blockRefreshKey
+    ]);
 
     const loadBlocks = async () => {
 
@@ -29,6 +37,9 @@ export default function CentralContentTab({
                 headers: authHeaders()
             }
         );
+
+        console.log(response.url);
+        console.log(response.status);
 
         if (!response.ok) {
 
@@ -42,12 +53,15 @@ export default function CentralContentTab({
 
         const data = await response.json();
 
+        console.log(data);
+
         setBlocks(data);
 
     };
 
-    return (
+    console.log("blocks state", blocks);
 
+    return (
         <div>
 
             <div className="mb-6">
@@ -63,17 +77,17 @@ export default function CentralContentTab({
             </div>
 
             <CreateBlock
-                centralContentIds={[centralContentId]}
+                centralContentId={centralContentId}
                 onCreated={loadBlocks}
             />
 
             <BlockLibrary
                 blocks={blocks}
                 openTab={openTab}
+                onReload={loadBlocks}
             />
 
         </div>
-
     );
 
 }

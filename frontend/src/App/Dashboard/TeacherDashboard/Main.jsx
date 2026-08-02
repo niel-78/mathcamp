@@ -13,6 +13,7 @@ export default function Main({
     activeTab,
     setActiveTab,
     setTabs,
+    blockRefreshKey,
     openTab
 }) {
 
@@ -81,6 +82,7 @@ export default function Main({
                             currentTab.levelCode
                         }
                         openTab={openTab}
+                        blockRefreshKey={blockRefreshKey}
                     />
                 )}
 
@@ -97,6 +99,7 @@ export default function Main({
                     <SectionTab
                         sectionId={currentTab.sectionId}
                         openTab={openTab}
+                        blockRefreshKey={blockRefreshKey}
                     />
 
                 )}

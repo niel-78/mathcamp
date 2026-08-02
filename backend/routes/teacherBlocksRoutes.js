@@ -41,13 +41,20 @@ router.get("/", async (req, res) => {
 // GET /api/teacher/blocks/full
 router.get("/full", async (req, res) => {
 
-    const [blocks] = await db.query(
-        `
-        SELECT *
-        FROM blocks
-        WHERE deleted_at IS NULL
-        `
-    );
+    const [blocks] = await db.query(`
+        SELECT
+            b.*,
+            cu.first_name AS created_by_first_name,
+            cu.last_name AS created_by_last_name,
+            uu.first_name AS updated_by_first_name,
+            uu.last_name AS updated_by_last_name
+        FROM blocks b
+        LEFT JOIN users cu
+            ON cu.id = b.created_by
+        LEFT JOIN users uu
+            ON uu.id = b.updated_by
+        WHERE b.deleted_at IS NULL
+    `);
 
     const hydratedBlocks =
         await hydrateBlocks(blocks);
