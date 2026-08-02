@@ -142,23 +142,23 @@ export default function StudentList({ group, editMode, onChanged }) {
 
                                     <div className="flex gap-2">
 
-                                        <button
+                                        <Button
                                             className="btn-primary"
                                             onClick={() =>
                                                 resetPassword(student)
                                             }
                                         >
                                             Nytt lösenord
-                                        </button>
+                                        </Button>
 
-                                        <button
+                                        <Button
                                             className="btn-danger"
                                             onClick={() =>
                                                 deleteStudent(student.id)
                                             }
                                         >
                                             Ta bort
-                                        </button>
+                                        </Button>
 
                                     </div>
 

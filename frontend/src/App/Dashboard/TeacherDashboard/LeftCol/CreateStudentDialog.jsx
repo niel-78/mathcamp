@@ -2,6 +2,7 @@ import { useState } from "react";
 import { API_URL } from "@/config";
 import { toast } from "sonner";
 import { authHeaders } from "@/api/authHeaders";
+import { Button } from "@/components/ui/button";
 
 import {
     Dialog,
@@ -133,7 +134,7 @@ export default function CreateStudentDialog({
                         }}
                     />
 
-                    <button
+                    <Button
                         onClick={createStudent}
                         className="
                             w-full
@@ -146,7 +147,7 @@ export default function CreateStudentDialog({
                         "
                     >
                         Skapa elev
-                    </button>
+                    </Button>
 
                 </div>
 

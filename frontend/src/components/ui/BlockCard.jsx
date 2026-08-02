@@ -47,7 +47,7 @@ export default function BlockCard({
 
                 <div className="flex justify-end mb-2">
 
-                    <button
+                    <Button
                         {...listeners}
                         {...attributes}
                         className="
@@ -58,7 +58,7 @@ export default function BlockCard({
                         "
                     >
                         <GripVertical size={20} />
-                    </button>
+                    </Button>
 
                 </div>
 
@@ -100,7 +100,7 @@ export default function BlockCard({
                             {block.centralContent.map(item => (
                                 <div key={item.id} className="flex justify-between items-center">
                                     {item.content}
-                                    <button
+                                    <Button
                                         className="text-red-500"
                                         onClick={() =>
                                             onRemoveCentralContent(
@@ -110,7 +110,7 @@ export default function BlockCard({
                                         }
                                     >
                                         <X size={14} />
-                                    </button>
+                                    </Button>
                                 </div>
 
 
@@ -127,7 +127,7 @@ export default function BlockCard({
                             {block.bookSections.map(section => (
                                 <div key={section.id} className="flex justify-between items-center">
                                     {section.title}
-                                    <button
+                                    <Button
                                         className="text-red-500"
                                         onClick={() =>
                                             onRemoveSection(
@@ -137,7 +137,7 @@ export default function BlockCard({
                                         }
                                     >
                                         <X size={14} />
-                                    </button>
+                                    </Button>
                                 </div>    
                             ))}
                             
@@ -170,7 +170,7 @@ export default function BlockCard({
                     <FormatDate value={block.updated_at} />
                 </p>
 
-                <button
+                <Button
                     className="mt-3"
                     onClick={() =>
                         openTab({
@@ -182,7 +182,7 @@ export default function BlockCard({
                     }
                 >
                     Öppna
-                </button>
+                </Button>
 
                 <Button
                     variant="destructive"

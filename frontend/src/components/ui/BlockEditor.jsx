@@ -1,21 +1,45 @@
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { authHeaders } from "@/api/authHeaders";
-import Question from "@/components/ui/Question";
+import { API_URL } from "@/config";
+import QuestionView from "@/components/ui/QuestionView";
 
 export default function BlockEditor({
     block,
     editMode,
     onChanged,
-    examId
 }) {
 
-    const createBlock = async () => {
+    const [currentBlock, setCurrentBlock] = useState(block);    
 
-        if (!newBlock.trim()) {
-            return;
-        }
+    useEffect(() => {
+        setCurrentBlock(block);
+    }, [block]);
 
-        await fetch(
-            `${API_URL}/api/teacher/exams/${exam.id}/blocks`,
+    const loadBlock = async () => {
+
+        const response = await fetch(
+            `${API_URL}/api/teacher/blocks/${block.id}/full`,
+            {
+                headers: authHeaders()
+            }
+        );
+
+        const data = await response.json();
+
+        setCurrentBlock(data);
+
+    };
+
+    const createQuestion = async () => {
+
+        const lastQuestion =
+            currentBlock.questions[
+                currentBlock.questions.length - 1
+            ];
+
+        const response = await fetch(
+            `${API_URL}/api/teacher/blocks/${currentBlock.id}/questions`,
             {
                 method: "POST",
                 headers: {
@@ -23,34 +47,50 @@ export default function BlockEditor({
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    name: newBlock
+                    question: lastQuestion?.question ?? "",
+                    type: lastQuestion?.type ?? 1,
+                    math_config:
+                        lastQuestion?.math_config ??
+                        {}
                 })
             }
         );
 
-        setNewBlock("");
+        if (!response.ok) {
 
-        loadExam();
+            const text = await response.text();
 
-        setTimeout(() => {
-            blockRef.current?.focus();
-        }, 0);
+            console.error(text);
+
+            return;
+        }
+
+        const data = await response.json();
+
+        await loadBlock();
+
+        setEditingQuestionId(data.id);
 
     };
 
     return (
         <div className="block-editor">
 
-            <h3>{block.name}</h3>
+            {currentBlock?.questions.map(question => (
 
-            {block.questions.map(question => (
-                <Question
+                <QuestionView
                     key={question.id}
                     question={question}
-                    editMode={editMode}
-                    onChanged={onChanged}
+                    onChanged={loadBlock}
                 />
+
             ))}
+
+            <Button onClick={createQuestion}>
+                Ny fråga
+            </Button>
+
         </div>
     );
+
 }

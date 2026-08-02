@@ -2,6 +2,7 @@ import { useState } from "react";
 import { API_URL } from "@/config";
 import { useAuth } from "@/contexts/AuthContext";
 import { authHeaders } from "@/api/authHeaders";
+import { Button } from "@/components/ui/button";
 import ExamPage from "./StudentDashboard/ExamPage";
 import ResultPage from "./StudentDashboard/ResultPage";
 
@@ -60,13 +61,13 @@ const StudentDashboard = () => {
         onChange={(e) => setExamKey(e.target.value)}
       />
 
-      <button onClick={startExam}>
+      <Button onClick={startExam}>
         Start Exam
-      </button>
+      </Button>
 
-      <button onClick={logout}>
+      <Button onClick={logout}>
         Logout
-      </button>
+      </Button>
     </div>
   );
 }  

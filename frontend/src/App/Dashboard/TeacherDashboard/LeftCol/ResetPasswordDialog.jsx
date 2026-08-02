@@ -2,6 +2,7 @@ import { useState } from "react";
 import { API_URL } from "@/config";
 import { toast } from "sonner";
 import { authHeaders } from "@/api/authHeaders";
+import { Button } from "@/components/ui/button";
 
 import {
     Dialog,
@@ -111,7 +112,7 @@ export default function ResetPasswordDialog({
 
                     <div className="flex gap-2">
 
-                        <button
+                        <Button
                             className="
                                 flex-1
                                 bg-blue-600
@@ -123,7 +124,7 @@ export default function ResetPasswordDialog({
                             onClick={resetPassword}
                         >
                             Spara lösenord
-                        </button>
+                        </Button>
 
                     </div>
 

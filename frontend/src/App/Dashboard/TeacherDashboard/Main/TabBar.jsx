@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/button";
+
 export default function TabBar({
     tabs,
     activeTab,
@@ -43,7 +45,7 @@ export default function TabBar({
 
             {tabs.map(tab => (
 
-                <button
+                <Button
                     key={tab.id}
                     onClick={() =>
                         setActiveTab(tab.id)
@@ -73,7 +75,7 @@ export default function TabBar({
                         ×
                     </span>
 
-                </button>
+                </Button>
 
             ))}
 

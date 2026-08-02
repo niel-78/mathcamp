@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
+import { Button } from "@/components/ui/button";
 import UserProfile from "@/components/ui/UserProfile";
 import CreateGroupDialog from "./LeftCol/CreateGroupDialog";
 import RenameGroupDialog from "./LeftCol/RenameGroupDialog";
@@ -207,7 +208,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                         {contextMenu.type === "groups" && (
 
-                            <button
+                            <Button
                                 className="
                                     block
                                     w-full
@@ -223,7 +224,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                 }}
                             >
                                 Ny grupp
-                            </button>
+                            </Button>
 
                         )}
 
@@ -234,7 +235,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                     {contextMenu.groupName}
                                 </div>
 
-                                <button
+                                <Button
                                     className="
                                         block
                                         w-full
@@ -254,9 +255,9 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                     }}
                                 >
                                     Byt namn
-                                </button>
+                                </Button>
 
-                                <button
+                                <Button
                                     className="
                                         block
                                         w-full
@@ -276,14 +277,14 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                     }}
                                 >
                                     Arkivera
-                                </button>
+                                </Button>
                             </>
 
                         )}
 
                         {contextMenu?.type === "students" && (
 
-                            <button
+                            <Button
                                 className="
                                     block
                                     w-full
@@ -303,7 +304,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                 }}
                             >
                                 Lägg till elev
-                            </button>
+                            </Button>
 
                         )}
 
@@ -314,7 +315,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                     {contextMenu.firstName} {contextMenu.lastName}
                                 </div>
 
-                                <button
+                                <Button
                                     className="
                                         block
                                         w-full
@@ -333,9 +334,9 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                     }}
                                 >
                                     Nytt lösenord
-                                </button>
+                                </Button>
 
-                                <button
+                                <Button
                                     className="
                                         block
                                         w-full
@@ -357,9 +358,9 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                     }}
                                 >
                                     Byt namn
-                                </button>
+                                </Button>
 
-                                <button
+                                <Button
                                     className="
                                         block
                                         w-full
@@ -380,7 +381,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                     }}
                                 >
                                     Arkivera
-                                </button>
+                                </Button>
                             </>
 
                         )}
@@ -396,7 +397,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
             
             <div className="border-r p-4">
 
-                <button className="tree-folder" 
+                <Button className="tree-folder" 
                         onClick={() => {
                             toggle("groups");
                         }}
@@ -410,7 +411,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                         }}
                 >    
                     {show.groups ? "▼" : "▶"} Grupper
-                </button>
+                </Button>
 
                 {show.groups && (
                     <ul>
@@ -419,7 +420,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                             <li key={group.id}>
 
-                                <button
+                                <Button
                                     className="tree-node ml-4"
                                     onClick={() =>
                                         toggleFolder(group.id)
@@ -445,7 +446,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                     {" "}
 
                                     {group.name}
-                                </button>
+                                </Button>
 
                                 {expandedGroups[group.id] && (
                                     <div className="ml-8 border-l border-slate-300 pl-4">
@@ -550,20 +551,20 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                     </ul>
                 )}
 
-                <button className="tree-folder"
+                <Button className="tree-folder"
                         onClick={() => toggle("exams")}
                 >
                     {show.exams ? "▼" : "▶"} Prov
-                </button>
+                </Button>
 
 
-                <button className="tree-folder" 
+                <Button className="tree-folder" 
                     onClick={() =>
                         toggle("subjects")
                     }
                 >
                     {show.subjects ? "▼" : "▶"} Ämnen
-                </button>
+                </Button>
 
                 {show.subjects && (
 
@@ -674,11 +675,11 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                 )}
 
-                <button className="tree-folder"
+                <Button className="tree-folder"
                     onClick={() => toggle("books")}
                 >
                     {show.books ? "▼" : "▶"} Böcker
-                </button>
+                </Button>
 
                 {show.books && (
 

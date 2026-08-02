@@ -46,6 +46,7 @@ export default function Main({
                 {currentTab?.type === "blocks" && (
                     <BlockBankTab
                         openTab={openTab}
+                        blockRefreshKey={blockRefreshKey}
                     />
                 )}
 

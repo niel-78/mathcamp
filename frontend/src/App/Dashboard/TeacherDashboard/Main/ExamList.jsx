@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { authHeaders } from "@/api/authHeaders";
 import { API_URL } from "@/config";
+import { Button } from "@/components/ui/button";
 
 export default function ExamList({ onSelect }) {
     const [loading, setLoading] = useState(true);
@@ -108,12 +109,12 @@ export default function ExamList({ onSelect }) {
 
         <div className="flex gap-2 mb-4">
 
-            <button
+            <Button
                 className="btn-primary"
                 onClick={createExam}
             >
                 Skapa prov
-            </button>
+            </Button>
 
         </div>
 

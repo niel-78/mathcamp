@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
+import { Button } from "@/components/ui/button";
 import StudentList from "./GroupPage/StudentList";
 import GroupExamList from "./GroupPage/GroupExamList";
 
@@ -164,12 +165,12 @@ export default function GroupPage() {
 
                 <div className="flex gap-2 mb-4">
 
-                    <button
+                    <Button
                         className="btn-primary"
                         onClick={createGroup}
                     >
                         Ny grupp
-                    </button>
+                    </Button>
 
                 </div>
                 
@@ -219,7 +220,7 @@ export default function GroupPage() {
 
                         <div className="flex gap-2 mb-4">
 
-                            <button
+                            <Button
                                 className="btn-action"
                                 onClick={() => setStudentEditMode(
                                     !studentEditMode)
@@ -228,31 +229,31 @@ export default function GroupPage() {
                             {studentEditMode
                                 ? "Klar"
                                 : "Redigera elever"}
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                                 className="btn-primary"
                                 onClick={renameGroup}
                             >
                                 Byt namn
-                            </button>
+                            </Button>
 
-                            <button
+                            <Button
                                 className="btn-primary"
                                 onClick={() =>
                                     archiveGroup(selectedGroup.id)
                                 }
                             >
                                 Arkivera
-                            </button>
+                            </Button>
 
-                            <button
+                            <Button
                                 className="btn-danger"
                                 onClick={() =>
                                     deleteGroup(selectedGroup.id)
                                 }
                             >
                                 Ta bort
-                            </button>
+                            </Button>
 
                         </div>
 

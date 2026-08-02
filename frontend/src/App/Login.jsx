@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { API_URL } from "@/config";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 export default function Login() {
     const { setUser } = useAuth();
@@ -89,11 +90,11 @@ export default function Login() {
             "
         />
 
-        <button
+        <Button
             type="submit"
             className="btn-primary"
         >
             Login
-        </button>
+        </Button>
     </form>);
 }

@@ -6,12 +6,20 @@ export default async function hydrateBlocks(blocks) {
 
         const [questions] = await db.query(
             `
-            SELECT *
-            FROM questions
-            WHERE block_id = ?
+            SELECT
+                q.*,
+                ql.name AS level_name,
+                ql.description AS level_description,
+                ql.sort_order AS level_sort_order
+            FROM questions q
+            LEFT JOIN question_levels ql
+                ON ql.id = q.level_id
+            WHERE q.block_id = ?
+            AND q.deleted_at IS NULL
             `,
             [block.id]
         );
+
 
         for (const question of questions) {
 
@@ -20,11 +28,23 @@ export default async function hydrateBlocks(blocks) {
                 SELECT *
                 FROM options
                 WHERE question_id = ?
+                AND deleted_at IS NULL
                 `,
                 [question.id]
             );
 
             question.options = options;
+
+            const [media] = await db.query(
+                `
+                SELECT *
+                FROM question_media
+                WHERE question_id = ?
+                `,
+                [question.id]
+            );
+
+            question.media = media;
 
         }
 

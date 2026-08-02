@@ -240,12 +240,12 @@ export default function Block({ block, exam, onChanged, editMode }) {
                         }}
                     />
 
-                    <button
+                    <Button
                         className="btn-primary"
                         onClick={createQuestion}
                     >
                         Lägg till fråga
-                    </button>
+                    </Button>
 
                 </div>
             )}
@@ -254,36 +254,36 @@ export default function Block({ block, exam, onChanged, editMode }) {
                 <div className="flex gap-2 mt-4">
 
                     {canMoveUp && (
-                        <button
+                        <Button
                             className="btn-action"
                             onClick={() => moveUp(block)}
                         >
                             Flytta upp
-                        </button>
+                        </Button>
                     )}
 
                     {canMoveDown && (
-                        <button
+                        <Button
                             className="btn-action"
                             onClick={() => moveDown(block)}
                         >
                             Flytta ner
-                        </button>
+                        </Button>
                     )}
 
-                    <button
+                    <Button
                         className="btn-action"
                         onClick={() => renameBlock(block)}
                     >
                         Byt namn
-                    </button>
+                    </Button>
 
-                    <button
+                    <Button
                         className="btn-danger"
                         onClick={() => deleteBlock(block)}
                     >
                         Ta bort block
-                    </button>
+                    </Button>
 
                 </div>
             )}

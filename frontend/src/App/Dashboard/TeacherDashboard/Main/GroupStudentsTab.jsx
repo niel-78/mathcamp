@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
+import { Button } from "@/components/ui/button";
 import AddStudentDialog from "./GroupStudentsTab/AddStudentDialog";
 import EditStudentDialog from "./GroupStudentsTab/EditStudentDialog";
 import DeleteStudentDialog from "./GroupStudentsTab/DeleteStudentDialog";
@@ -44,7 +45,7 @@ export default function GroupStudentsTab( {groupId} ) {
                     Elever
                 </h2>
 
-                <button
+                <Button
                     className="btn-action"
                     onClick={() =>
                         setEditMode(!editMode)
@@ -53,7 +54,7 @@ export default function GroupStudentsTab( {groupId} ) {
                     {editMode
                         ? "Klar"
                         : "Redigera"}
-                </button>
+                </Button>
 
             </div>
 
@@ -62,14 +63,14 @@ export default function GroupStudentsTab( {groupId} ) {
 
                 <div className="mb-4">
 
-                    <button
+                    <Button
                         className="btn-primary"
                         onClick={() =>
                             setShowAddStudent(true)
                         }
                     >
                         Lägg till elev
-                    </button>
+                    </Button>
 
                 </div>
 
@@ -107,7 +108,7 @@ export default function GroupStudentsTab( {groupId} ) {
 
                                     <div className="flex gap-2">
 
-                                        <button
+                                        <Button
                                             className="btn-action"
                                             onClick={() => {
                                                 setSelectedStudent(student);
@@ -115,7 +116,7 @@ export default function GroupStudentsTab( {groupId} ) {
                                             }}
                                         >
                                             Redigera
-                                        </button>
+                                        </Button>
 
                                         <DeleteStudentDialog
                                             student={student}

@@ -4,6 +4,7 @@ import { formatValue } from "@/utils/formatValue";
 import { formatQuestion } from "@/utils/formatQuestion";
 import { isSEB } from "@/utils/isSEB";
 import { API_URL } from "@/config";
+import { Button } from "@/components/ui/button";
 import { authHeaders } from "@/api/authHeaders";
 
 export default function ExamPage({ attemptId, examConfig, onExit }) {
@@ -258,9 +259,9 @@ export default function ExamPage({ attemptId, examConfig, onExit }) {
         <div>
         <h2>✅ Det var sista frågan!</h2>
 
-        <button onClick={() => onExit()}>
+        <Button onClick={() => onExit()}>
             Visa resultat
-        </button>
+        </Button>
         </div>
     );
     }
@@ -317,7 +318,7 @@ export default function ExamPage({ attemptId, examConfig, onExit }) {
             {current.type === 2 && (
             <div className="answers">
                 {(current.shuffledOptions || current.options).map(opt => (
-                <button
+                <Button
                     key={opt.id}
                     className={answers[current.id] === opt.id ? "selected" : ""}
                     onClick={() => handleSingle(current.id, opt.id)}
@@ -328,7 +329,7 @@ export default function ExamPage({ attemptId, examConfig, onExit }) {
                 }}
                 />
 
-                </button>
+                </Button>
                 ))}
             </div>
             )}
@@ -336,7 +337,7 @@ export default function ExamPage({ attemptId, examConfig, onExit }) {
             {current.type === 3 && (
             <div className="answers">
                 {(current.shuffledOptions || current.options).map(opt => (
-                <button
+                <Button
                     key={opt.id}
                     className={
                         answers[current.id]?.includes(opt.id) ? "selected" : ""
@@ -352,7 +353,7 @@ export default function ExamPage({ attemptId, examConfig, onExit }) {
                     }}
                     />
 
-                </button>
+                </Button>
                 ))}
             </div>
             )}
@@ -361,13 +362,13 @@ export default function ExamPage({ attemptId, examConfig, onExit }) {
 
         <div className="nav">
         {!allowPrevious && (          
-            <button onClick={prev} disabled={index === 0}>
+            <Button onClick={prev} disabled={index === 0}>
                 ← Föregående
-            </button>
+            </Button>
         )}    
 
         {current.math_config?.default && (
-        <button
+        <Button
             onClick={() => {
             setAnswers(prev => ({
                 ...prev,
@@ -376,13 +377,13 @@ export default function ExamPage({ attemptId, examConfig, onExit }) {
             }}
         >
             ↺ Återställ
-        </button>
+        </Button>
         )}
 
 
-        <button onClick={next}>
+        <Button onClick={next}>
             {index === questions.length - 1 ? "Avsluta prov" : "Nästa →"}
-        </button>
+        </Button>
 
         </div>
 

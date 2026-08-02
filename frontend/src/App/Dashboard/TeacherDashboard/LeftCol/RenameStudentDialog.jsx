@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { API_URL } from "@/config";
 import { toast } from "sonner";
 import { authHeaders } from "@/api/authHeaders";
+import { Button } from "@/components/ui/button";
 
 import {
     Dialog,
@@ -101,7 +102,7 @@ export default function RenameStudentDialog({
                         }}
                     />
 
-                    <button
+                    <Button
                         onClick={save}
                         className="
                             w-full
@@ -113,7 +114,7 @@ export default function RenameStudentDialog({
                         "
                     >
                         Spara
-                    </button>
+                    </Button>
 
                 </div>
 

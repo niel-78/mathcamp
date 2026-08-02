@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { authHeaders } from "@/api/authHeaders";
 import { API_URL } from "@/config";
+import { Button } from "@/components/ui/button";
 import BlockEditor from "@/components/ui/BlockEditor";
 
 function ExamEditor({examId, onClose}) {
@@ -94,7 +95,7 @@ function ExamEditor({examId, onClose}) {
 
                 <div className="flex gap-2">
 
-                    <button
+                    <Button
                         className="btn-action"
                         onClick={() =>
                             setEditMode(!editMode)
@@ -103,14 +104,14 @@ function ExamEditor({examId, onClose}) {
                         {editMode
                             ? "Klar"
                             : "Redigera"}
-                    </button>
+                    </Button>
 
-                    <button
+                    <Button
                         className="btn-primary"
                         onClick={onClose}
                     >
                         Tillbaka
-                    </button>
+                    </Button>
 
                 </div>
 
@@ -155,12 +156,12 @@ function ExamEditor({examId, onClose}) {
                             }}
                         />
 
-                        <button
+                        <Button
                             className="btn-primary"
                             onClick={createBlock}
                         >
                             Lägg till block
-                        </button>
+                        </Button>
 
                     </div>
 
@@ -168,7 +169,7 @@ function ExamEditor({examId, onClose}) {
 
                 <div className="flex justify-end gap-2 mt-4">
 
-                    <button
+                    <Button
                         className="btn-action"
                         onClick={() =>
                             setEditMode(!editMode)
@@ -177,14 +178,14 @@ function ExamEditor({examId, onClose}) {
                         {editMode
                             ? "Klar"
                             : "Redigera"}
-                    </button>
+                    </Button>
 
-                    <button
+                    <Button
                         className="btn-primary"
                         onClick={onClose}
                     >
                         Tillbaka
-                    </button>
+                    </Button>
 
                 </div>
 

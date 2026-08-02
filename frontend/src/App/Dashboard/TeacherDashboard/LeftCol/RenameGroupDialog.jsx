@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
+import { Button } from "@/components/ui/button";
 
 import {
     Dialog,
@@ -87,7 +88,7 @@ export default function RenameGroupDialog({
                     "
                 />
 
-                <button
+                <Button
                     onClick={save}
                     className="
                         bg-blue-600
@@ -98,7 +99,7 @@ export default function RenameGroupDialog({
                     "
                 >
                     Spara
-                </button>
+                </Button>
 
             </DialogContent>
 

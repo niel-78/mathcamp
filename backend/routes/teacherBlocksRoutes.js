@@ -62,6 +62,60 @@ router.get("/full", async (req, res) => {
     res.json(hydratedBlocks);
 });
 
+//GET /api/teacher/blocks/:blockId/full
+router.get("/:blockId/full", async (req, res) => {
+
+    const [blocks] = await db.query(
+        `
+        SELECT
+            b.*,
+            cu.first_name AS created_by_first_name,
+            cu.last_name AS created_by_last_name,
+            uu.first_name AS updated_by_first_name,
+            uu.last_name AS updated_by_last_name
+        FROM blocks b
+        LEFT JOIN users cu
+            ON cu.id = b.created_by
+        LEFT JOIN users uu
+            ON uu.id = b.updated_by
+        WHERE b.id = ?
+        `,
+        [req.params.blockId]
+    );
+
+    const hydratedBlocks =
+        await hydrateBlocks(blocks);
+
+    res.json(hydratedBlocks[0]);
+
+});
+
+//GET /api/teacher/blocks/question-levels
+router.get("/question-levels", async (req, res) => {
+
+    try {
+
+        const [levels] = await db.query(`
+            SELECT *
+            FROM question_levels
+            ORDER BY sort_order
+        `);
+
+        res.json(levels);
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            error: error.message
+        });
+
+    }
+
+});
+
+
 //GET /api/teacher/blocks/:blockId
 router.get("/:blockId", async (req, res) => {
 
@@ -204,9 +258,9 @@ router.delete("/:blockId", async (req, res) => {
 router.post("/:blockId/questions", async (req, res) => {
 
     const {
-        question,
-        type,
-        math_config
+        question = "",
+        type = 1,
+        math_config = {}
     } = req.body;
 
     const [result] = await db.query(
@@ -215,14 +269,18 @@ router.post("/:blockId/questions", async (req, res) => {
             question,
             block_id,
             type,
+            created_by,
+            updated_by,
             math_config
         )
-        VALUES (?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?)
         `,
         [
             question,
             req.params.blockId,
             type,
+            req.user.id,
+            req.user.id,
             JSON.stringify(math_config)
         ]
     );
@@ -230,6 +288,7 @@ router.post("/:blockId/questions", async (req, res) => {
     res.json({
         id: result.insertId
     });
+
 });
 
 
@@ -239,7 +298,8 @@ router.put("/questions/:questionId", async (req, res) => {
     const {
         question,
         type,
-        math_config
+        math_config,
+        level_id
     } = req.body;
 
     await db.query(
@@ -248,13 +308,16 @@ router.put("/questions/:questionId", async (req, res) => {
         SET
             question = ?,
             type = ?,
-            math_config = ?
+            math_config = ?,
+            level_id = ?
+
         WHERE id = ?
         `,
         [
             question,
             type,
             JSON.stringify(math_config),
+            level_id,
             req.params.questionId
         ]
     );
@@ -267,10 +330,17 @@ router.delete("/questions/:questionId", async (req, res) => {
 
     await db.query(
         `
-        DELETE FROM questions
+        UPDATE questions
+        SET
+            deleted_at = NOW(),
+            updated_at = NOW(),
+            updated_by = ?
         WHERE id = ?
         `,
-        [req.params.questionId]
+        [
+            req.user.id,
+            req.params.questionId
+        ]
     );
 
     res.sendStatus(204);
@@ -290,22 +360,26 @@ router.post("/questions/:questionId/options", async (req, res) => {
         INSERT INTO options(
             question_id,
             text,
-            is_correct
+            is_correct,
+            created_by,
+            updated_by
         )
-        VALUES (?, ?, ?)
+        VALUES (?, ?, ?, ?, ?)
         `,
         [
             req.params.questionId,
             text,
-            is_correct
+            is_correct,
+            req.user.id,
+            req.user.id
         ]
     );
 
     res.json({
         id: result.insertId
     });
-});
 
+});
 
 // PUT /api/teacher/blocks/options/:optionId
 router.put("/options/:optionId", async (req, res) => {
@@ -335,7 +409,8 @@ router.delete("/options/:optionId", async (req, res) => {
 
     await db.query(
         `
-        DELETE FROM options
+        UPDATE options
+        SET deleted_at = NOW()
         WHERE id = ?
         `,
         [req.params.optionId]
@@ -349,6 +424,9 @@ router.delete("/options/:optionId", async (req, res) => {
 router.post("/questions/:questionId/media",
     upload.single("file"),
     async (req, res) => {
+
+        console.log("FILE:", req.file);
+        console.log("CWD:", process.cwd());
 
         const mediaType =
             req.file.mimetype.startsWith("video")
@@ -513,5 +591,6 @@ router.delete("/:blockId/book-sections/:sectionId",
         res.sendStatus(204);
     }
 );
+
 
 export default router;

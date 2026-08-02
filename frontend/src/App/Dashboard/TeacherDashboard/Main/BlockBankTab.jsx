@@ -9,6 +9,7 @@ import DeleteBlockDialog from "@/components/ui/DeleteBlockDialog";
 
 export default function BlockBankTab({
     openTab,
+    blockRefreshKey
 }) {
 
     const [blocks, setBlocks] = useState([]);
@@ -16,7 +17,7 @@ export default function BlockBankTab({
 
     useEffect(() => {
         loadBlocks();
-    }, []);
+    }, [blockRefreshKey]);
 
     const loadBlocks = async () => {
 

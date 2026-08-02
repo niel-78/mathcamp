@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
+import { Button } from "@/components/ui/button";
 
 import {
     Dialog,
@@ -79,7 +80,7 @@ export default function CreateGroupDialog({
                     "
                 />
 
-                <button
+                <Button
                     onClick={createGroup}
                     className="
                         mt-4
@@ -91,7 +92,7 @@ export default function CreateGroupDialog({
                     "
                 >
                     Skapa grupp
-                </button>
+                </Button>
 
             </DialogContent>
 

@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/button";
+
 export default function StartPage({
     openTab
 }) {
@@ -5,7 +7,7 @@ export default function StartPage({
     return (
         <div className="p-8 flex gap-4">
 
-            <button
+            <Button
                 onClick={() =>
                     openTab({
                         id: "exams",
@@ -15,9 +17,9 @@ export default function StartPage({
                 }
             >
                 Prov
-            </button>
+            </Button>
 
-            <button
+            <Button
                 onClick={() =>
                     openTab({
                         id: "blocks",
@@ -27,7 +29,7 @@ export default function StartPage({
                 }
             >
                 Frågebank
-            </button>
+            </Button>
 
         </div>
     );
