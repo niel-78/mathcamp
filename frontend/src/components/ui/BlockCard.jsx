@@ -1,4 +1,4 @@
-import { useDraggable } from "@dnd-kit/core";
+import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { GripVertical } from "lucide-react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,39 +7,60 @@ import FormatDate from "@/utils/FormatDate";
 
 export default function BlockCard({
     block,
+    dragPrefix = "block",
     openTab,
     onDelete,
     onRemoveCentralContent,
-    onRemoveSection
+    onRemoveSection,
+    orderNumber
 
 }) {
 
     const {
         attributes,
         listeners,
-        setNodeRef,
+        setNodeRef: setDragRef,
         transform
     } = useDraggable({
-            id: `block-${block.id}`,
-            data: {
-                blockId: block.id
-            }
-        });
+        id: `${dragPrefix}-block-${block.id}`,
+        data: {
+            type:
+                dragPrefix === "exam"
+                    ? "exam-block"
+                    : "block",
 
-    const style = transform
-        ? {
-            transform: `translate3d(
-                ${transform.x}px,
-                ${transform.y}px,
-                0
-            )`
+            blockId: block.id,
+            block
         }
-        : undefined;
+    });
+
+    const {
+        setNodeRef: setDropRef
+    } = useDroppable({
+        id: `exam-block-${block.id}`
+    });
+
+    const setRefs = (node) => {
+
+        setDragRef(node);
+
+        if (dragPrefix === "exam") {
+            setDropRef(node);
+        }
+
+    };
+
+    const style = {
+        transform: transform
+            ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
+            : undefined,
+        opacity: transform ? 0.7 : 1
+    };
 
     return (
 
         <div
-            ref={setNodeRef}
+            ref={setRefs}
             style={style}
         >
 
@@ -48,6 +69,7 @@ export default function BlockCard({
                 <div className="flex justify-end mb-2">
 
                     <Button
+                        variant="ghost"
                         {...listeners}
                         {...attributes}
                         className="
@@ -62,10 +84,22 @@ export default function BlockCard({
 
                 </div>
 
-                <p className="font-semibold">
-                    ID: {block.id}
-                </p>
+                <div className="flex justify-between">
 
+                    <span className="font-semibold">
+                        {orderNumber !== undefined && (
+                            <>
+                                {orderNumber}.{" "}
+                            </>
+                        )}
+                    </span>
+
+                    <span className="font-semibold">
+                        ID: {block.id}
+                    </span>
+
+                </div>
+            
                 {block.questions?.length > 0 && (
 
                     <MathContent
@@ -101,6 +135,7 @@ export default function BlockCard({
                                 <div key={item.id} className="flex justify-between items-center">
                                     {item.content}
                                     <Button
+                                        variant="ghost"
                                         className="text-red-500"
                                         onClick={() =>
                                             onRemoveCentralContent(
@@ -128,6 +163,7 @@ export default function BlockCard({
                                 <div key={section.id} className="flex justify-between items-center">
                                     {section.title}
                                     <Button
+                                        variant="ghost"
                                         className="text-red-500"
                                         onClick={() =>
                                             onRemoveSection(
@@ -186,9 +222,12 @@ export default function BlockCard({
 
                 <Button
                     variant="destructive"
+                    onPointerDown={(e) => {
+                        e.stopPropagation();
+                    }}
                     onClick={() => onDelete(block.id)}
                 >
-                    Radera
+                    Ta bort
                 </Button>
 
             </div>

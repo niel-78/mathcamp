@@ -138,7 +138,8 @@ router.post("/", async (req, res) => {
     const {
         question,
         centralContentIds = [],
-        sectionIds = []
+        sectionIds = [],
+        examId
     } = req.body;
 
     const [blockResult] = await db.query(
@@ -155,7 +156,40 @@ router.post("/", async (req, res) => {
         ]
     );
 
+    console.log("Block skapade");
+
     const blockId = blockResult.insertId;
+
+    if (examId) {
+
+        const [rows] = await db.query(
+            `
+            SELECT
+                COALESCE(MAX(order_by), 0) + 1
+                AS nextOrder
+            FROM exam_blocks
+            WHERE exam_id = ?
+            `,
+            [examId]
+        );
+
+        await db.query(
+            `
+            INSERT INTO exam_blocks (
+                exam_id,
+                block_id,
+                order_by
+            )
+            VALUES (?, ?, ?)
+            `,
+            [
+                examId,
+                blockId,
+                rows[0].nextOrder
+            ]
+        );
+
+    }
 
     const [questionResult] = await db.query(
         `
@@ -163,14 +197,18 @@ router.post("/", async (req, res) => {
             question,
             block_id,
             type,
+            created_by,
+            updated_by,
             math_config
         )
-        VALUES (?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?)
         `,
         [
             question,
             blockId,
             1,
+            req.user.id,
+            req.user.id,
             null
         ]
     );
@@ -212,7 +250,7 @@ router.post("/", async (req, res) => {
     }
 
     res.status(201).json({
-        blockId,
+        id: blockId,
         questionId: questionResult.insertId
     });
 

@@ -34,6 +34,20 @@ export default function SectionTab({
 
     };
 
+    const removeBlock = async (blockId) => {
+
+        await fetch(
+            `${API_URL}/api/teacher/blocks/${blockId}/book-sections/${sectionId}`,
+            {
+                method: "DELETE",
+                headers: authHeaders()
+            }
+        );
+
+        loadBlocks();
+
+    };
+
     const loadBlocks = async () => {
 
         const response = await fetch(
@@ -52,13 +66,9 @@ export default function SectionTab({
 
         const data = await response.json();
 
-        console.log(data);
-
         setBlocks(data);
 
     };
-
-    
 
     if (!section) {
 
@@ -101,6 +111,7 @@ export default function SectionTab({
                 blocks={blocks}
                 openTab={openTab}
                 onReload={loadBlocks}
+                onDelete={removeBlock}
             />
 
         </div>

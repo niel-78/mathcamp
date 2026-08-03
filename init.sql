@@ -187,6 +187,10 @@ CREATE TABLE exams (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255),
 
+    subject_id INT NOT NULL,
+    level_id INT NOT NULL,
+    book_id INT NULL,
+
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by INT NOT NULL,
 
@@ -294,15 +298,24 @@ INSERT INTO group_students (user_id, group_id)
 VALUES (1, 1),(4, 2),(5, 2),(6, 2);
 
 CREATE TABLE exam_blocks (
-    exam_id INT,
-    block_id INT,
-    order_by INT,
-    PRIMARY KEY (exam_id, block_id),
-    FOREIGN KEY (exam_id) REFERENCES exams(id) ON DELETE CASCADE,
-    FOREIGN KEY (block_id) REFERENCES blocks(id) ON DELETE CASCADE
-) ENGINE=InnoDB 
-CHARACTER SET utf8mb4 
-COLLATE utf8mb4_unicode_ci;
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    exam_id INT NOT NULL,
+    block_id INT NOT NULL,
+
+    order_by INT NOT NULL,
+
+    created_at TIMESTAMP
+        DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE (exam_id, block_id),
+
+    FOREIGN KEY (exam_id)
+        REFERENCES exams(id),
+
+    FOREIGN KEY (block_id)
+        REFERENCES blocks(id)
+);
 
 
 CREATE TABLE exam_attempts (
@@ -530,11 +543,11 @@ INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUE
 -- EXAM BLOCKS
 -- ======================
 
-INSERT INTO exams(`id`,`title`,created_by,updated_by) VALUES(1,'Test',2,2);
+INSERT INTO exams(`id`,`title`,subject_id,level_id,created_by,updated_by) VALUES(1,'Test',1,2,2,2);
 
 INSERT INTO exam_teachers (exam_id,teacher_id,is_owner) VALUES (1,2,TRUE);
 
-INSERT INTO exam_blocks VALUES
+INSERT INTO exam_blocks (exam_id,block_id,order_by) VALUES
 (1,1,1),(1,2,2),(1,3,3),(1,4,4),(1,5,5);
 
 INSERT INTO group_exams(`exam_id`,`group_id`,`group_exam_key`) VALUES(1,1,'A');

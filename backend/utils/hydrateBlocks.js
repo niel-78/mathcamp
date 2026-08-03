@@ -40,6 +40,7 @@ export default async function hydrateBlocks(blocks) {
                 SELECT *
                 FROM question_media
                 WHERE question_id = ?
+                ORDER BY sort_order
                 `,
                 [question.id]
             );

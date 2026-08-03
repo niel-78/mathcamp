@@ -31,6 +31,11 @@ export default function CentralContentTab({
 
     const loadBlocks = async () => {
 
+        console.log(
+            "loadBlocks",
+            centralContentId
+            );
+
         const response = await fetch(
             `${API_URL}/api/central-content/${centralContentId}/blocks`,
             {
@@ -59,7 +64,19 @@ export default function CentralContentTab({
 
     };
 
-    console.log("blocks state", blocks);
+    const removeBlock = async (blockId) => {
+
+        await fetch(
+            `${API_URL}/api/teacher/blocks/${blockId}/central-content/${centralContentId}`,
+            {
+                method: "DELETE",
+                headers: authHeaders()
+            }
+        );
+
+        loadBlocks();
+
+    };
 
     return (
         <div>
@@ -77,7 +94,7 @@ export default function CentralContentTab({
             </div>
 
             <CreateBlock
-                centralContentId={centralContentId}
+                centralContentIds={[centralContentId]}
                 onCreated={loadBlocks}
             />
 
@@ -85,6 +102,7 @@ export default function CentralContentTab({
                 blocks={blocks}
                 openTab={openTab}
                 onReload={loadBlocks}
+                onDelete={removeBlock}
             />
 
         </div>

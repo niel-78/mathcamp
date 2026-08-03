@@ -398,6 +398,8 @@ export default function LeftCol( {openTab, hoverTarget} ) {
             <div className="border-r p-4">
 
                 <Button className="tree-folder" 
+                        variant="ghost"
+                        size="lg"
                         onClick={() => {
                             toggle("groups");
                         }}
@@ -422,6 +424,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                                 <Button
                                     className="tree-node ml-4"
+                                    variant="ghost"
                                     onClick={() =>
                                         toggleFolder(group.id)
                                     }
@@ -552,6 +555,8 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                 )}
 
                 <Button className="tree-folder"
+                        variant="ghost"
+                        size="lg"
                         onClick={() => toggle("exams")}
                 >
                     {show.exams ? "▼" : "▶"} Prov
@@ -559,6 +564,8 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
 
                 <Button className="tree-folder" 
+                    variant="ghost"
+                    size="lg"
                     onClick={() =>
                         toggle("subjects")
                     }
@@ -676,7 +683,9 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                 )}
 
                 <Button className="tree-folder"
-                    onClick={() => toggle("books")}
+                        size="lg"
+                        variant="ghost"
+                        onClick={() => toggle("books")}
                 >
                     {show.books ? "▼" : "▶"} Böcker
                 </Button>

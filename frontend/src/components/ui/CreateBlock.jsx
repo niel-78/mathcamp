@@ -10,6 +10,7 @@ import MathContent from "@/components/ui/MathContent";
 export default function CreateBlock({
     centralContentIds = [],
     sectionIds = [],
+    examId,
     onCreated
 }) {
 
@@ -37,7 +38,8 @@ export default function CreateBlock({
                     body: JSON.stringify({
                         question,
                         centralContentIds,
-                        sectionIds
+                        sectionIds,
+                        examId
                     })
                 }
             );
@@ -47,6 +49,8 @@ export default function CreateBlock({
                     "Kunde inte skapa block."
                 );
             }
+
+            await response.json();
 
             setQuestion("");
 

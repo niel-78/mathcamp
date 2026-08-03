@@ -66,6 +66,7 @@ export default function BlockLibrary({
             {blocks.map(block => (
                 <BlockCard
                     key={block.id}
+                    dragPrefix="library"
                     block={block}
                     openTab={openTab}
                     onDelete={onDelete}

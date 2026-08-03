@@ -9,6 +9,7 @@ import requireRole from "../middleware/requireRole.js";
 
 const router = express.Router();
 
+// GET /api/central-content/:id/blocks
 router.get("/:centralContentId/blocks", async (req, res) => {
 
     const [blocks] = await db.query(

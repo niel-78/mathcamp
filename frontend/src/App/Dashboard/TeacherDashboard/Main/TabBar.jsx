@@ -1,10 +1,11 @@
-import { Button } from "@/components/ui/button";
+import DraggableTab from "@/components/ui/DraggableTab";
 
 export default function TabBar({
     tabs,
     activeTab,
     setActiveTab,
-    setTabs
+    setTabs,
+    area
 }) {
 
     const closeTab = (tabId) => {
@@ -41,41 +42,19 @@ export default function TabBar({
     };
 
     return (
-        <div className="flex border-b">
+        <div className="flex gap-2 overflow-x-auto whitespace-nowrap">
 
             {tabs.map(tab => (
 
-                <Button
+                <DraggableTab
                     key={tab.id}
-                    onClick={() =>
-                        setActiveTab(tab.id)
-                    }
-                    className={`
-                        px-4 py-2 border-r
-                        ${
-                            activeTab === tab.id
-                                ? "bg-white"
-                                : "bg-gray-100"
-                        }
-                    `}
-                >
-                    {tab.title}
-
-                    {" "}
-
-                    <span
-                        onClick={(e) => {
-
-                            e.stopPropagation();
-
-                            closeTab(tab.id);
-
-                        }}
-                    >
-                        ×
-                    </span>
-
-                </Button>
+                    tab={tab}
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                    closeTab={closeTab}
+                    area={area}
+                    className="flex-shrink-0"
+                />
 
             ))}
 
