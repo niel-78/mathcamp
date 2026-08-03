@@ -27,7 +27,7 @@ function ExamEditor({examId, onClose}) {
     const loadExam = async () => {
         try {
             const res = await fetch(
-                `${API_URL}/api/teacher/exams/${examId}/full`,
+                `${API_URL}/api/exams/${examId}/full`,
                 {
                     headers: authHeaders()
                 }
@@ -47,7 +47,7 @@ function ExamEditor({examId, onClose}) {
     const saveExam = async (value) => {
 
         await fetch(
-            `${API_URL}/api/teacher/exams/${exam.id}`,
+            `${API_URL}/api/exams/${exam.id}`,
             {
                 method: "PUT",
                 headers: {

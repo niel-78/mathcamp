@@ -20,7 +20,7 @@ export default function ExamListTab({
 
             const response =
                 await fetch(
-                    `${API_URL}/api/teacher/exams`,
+                    `${API_URL}/api/exams`,
                     {
                         headers:
                             authHeaders()

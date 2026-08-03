@@ -23,7 +23,7 @@ export default function GroupStudentsTab( {groupId} ) {
     const loadStudents = async () => {
 
         const response = await fetch(
-            `${API_URL}/api/teacher/groups/${groupId}/full`,
+            `${API_URL}/api/groups/${groupId}/`,
             {
                 headers: authHeaders()
             }

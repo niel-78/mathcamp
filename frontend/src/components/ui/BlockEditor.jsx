@@ -19,7 +19,7 @@ export default function BlockEditor({
     const loadBlock = async () => {
 
         const response = await fetch(
-            `${API_URL}/api/teacher/blocks/${block.id}/full`,
+            `${API_URL}/api/blocks/${block.id}/`,
             {
                 headers: authHeaders()
             }
@@ -39,7 +39,7 @@ export default function BlockEditor({
             ];
 
         const response = await fetch(
-            `${API_URL}/api/teacher/blocks/${currentBlock.id}/questions`,
+            `${API_URL}/api/blocks/${currentBlock.id}/questions`,
             {
                 method: "POST",
                 headers: {

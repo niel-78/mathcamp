@@ -38,8 +38,8 @@ router.get("/", async (req, res) => {
     res.json(rows);
 });
 
-// GET /api/teacher/blocks/full
-router.get("/full", async (req, res) => {
+// GET /api/teacher/blocks/
+router.get("/", async (req, res) => {
 
     const [blocks] = await db.query(`
         SELECT
@@ -62,8 +62,8 @@ router.get("/full", async (req, res) => {
     res.json(hydratedBlocks);
 });
 
-//GET /api/teacher/blocks/:blockId/full
-router.get("/:blockId/full", async (req, res) => {
+//GET /api/teacher/blocks/:blockId/
+router.get("/:blockId/", async (req, res) => {
 
     const [blocks] = await db.query(
         `

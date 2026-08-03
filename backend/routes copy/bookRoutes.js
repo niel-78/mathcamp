@@ -3,18 +3,6 @@ import db from "../db.js";
 
 const router = express.Router();
 
-/*
-GET    /api/books
-POST   /api/books
-
-GET    /api/books/:id
-PUT    /api/books/:id
-DELETE /api/books/:id
-
-GET    /api/books/:id/sections
-
-*/
-// GET /api/books
 router.get("/", async (req, res) => {
 
     const [books] = await db.query(
@@ -89,43 +77,49 @@ router.get("/", async (req, res) => {
 
 });
 
-// PUT /api/books/:id
-router.put("/:id", async (req, res) => {
+router.get(
+    "/sections/:sectionId",
+    async (req, res) => {
 
-    try {
-
-        const {
-            title,
-            description
-        } = req.body;
-
-        await db.query(
+        const [rows] = await db.query(
             `
-            UPDATE books
-            SET
-                title = ?,
-                description = ?
-            WHERE id = ?
+            SELECT
+                s.*,
+
+                sc.title
+                    AS subchapter_title,
+
+                sc.subchapter_number,
+
+                c.title
+                    AS chapter_title,
+
+                c.chapter_number
+
+            FROM sections s
+
+            JOIN subchapters sc
+                ON sc.id =
+                    s.subchapter_id
+
+            JOIN chapters c
+                ON c.id =
+                    sc.chapter_id
+
+            WHERE s.id = ?
             `,
-            [
-                title,
-                description,
-                req.params.id
-            ]
+            [req.params.sectionId]
         );
 
-        res.sendStatus(204);
+        if (!rows.length) {
 
-    } catch (err) {
+            return res.sendStatus(404);
 
-        console.error(err);
+        }
 
-        res.status(500).json({
-            error: "Kunde inte uppdatera boken."
-        });
+        res.json(rows[0]);
 
     }
-
-});
+);
 
 export default router;

@@ -21,12 +21,12 @@ export default function CreateGroupDialog({
     const createGroup = async () => {
 
         const res = await fetch(
-            `${API_URL}/api/teacher/groups`,
+            `${API_URL}/api/groups`,
             {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization:authHeaders()
+                    ...authHeaders()
                 },
                 body: JSON.stringify({
                     name

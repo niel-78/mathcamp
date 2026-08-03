@@ -16,7 +16,7 @@ export default function StartPage({
                     })
                 }
             >
-                Prov
+                Provbank
             </Button>
 
             <Button
@@ -29,6 +29,18 @@ export default function StartPage({
                 }
             >
                 Frågebank
+            </Button>
+
+            <Button
+                onClick={() =>
+                    openTab({
+                        id: "group-exams",
+                        title: "Provtillfällen",
+                        type: "group-exams"
+                    })
+                }
+            >
+                Provtillfällen
             </Button>
 
         </div>

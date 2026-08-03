@@ -28,7 +28,7 @@ export default function CreateBlock({
         try {
 
             const response = await fetch(
-                `${API_URL}/api/teacher/blocks`,
+                `${API_URL}/api/blocks`,
                 {
                     method: "POST",
                     headers: {

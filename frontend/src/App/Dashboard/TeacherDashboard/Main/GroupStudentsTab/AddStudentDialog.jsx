@@ -24,7 +24,7 @@ export default function AddStudentDialog({
     const createStudent = async () => {
 
         const response = await fetch(
-            `${API_URL}/api/teacher/groups/${groupId}/students`,
+            `${API_URL}/api/groups/${groupId}/students`,
             {
                 method: "POST",
                 headers: {

@@ -12,7 +12,7 @@ export default function Login() {
     const handleLogin = async (e) => {
         e.preventDefault();
 
-        const res = await fetch(`${API_URL}/api/login`, {
+        const res = await fetch(`${API_URL}/api/auth/login`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -30,12 +30,6 @@ export default function Login() {
         localStorage.setItem("token", data.token);
         setUser(data.user);
         toast.success("Inloggning lyckades");
-
-        /**
-        toast.info("Sparar...");
-        toast.success("Sparat");
-        toast.error("Kunde inte spara"); 
-        */
 
     };
 

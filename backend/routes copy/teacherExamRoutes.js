@@ -190,8 +190,8 @@ router.delete("/:examId", async (req, res) => {
 });
 
 
-//GET /api/teacher/exams/:examId/full
-router.get("/:examId/full", async (req, res) => {
+//GET /api/teacher/exams/:examId/
+router.get("/:examId/", async (req, res) => {
 
     const [examRows] = await db.query(
         `

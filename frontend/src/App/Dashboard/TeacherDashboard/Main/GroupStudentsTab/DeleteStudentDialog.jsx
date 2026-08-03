@@ -23,7 +23,7 @@ export default function DeleteStudentDialog({
     const deleteStudent = async () => {
 
         await fetch(
-            `${API_URL}/api/teacher/groups/${groupId}/students/${student.id}`,
+            `${API_URL}/api/groups/${groupId}/students/${student.id}`,
             {
                 method: "DELETE",
                 headers: {

@@ -23,12 +23,12 @@ export default function ResetPasswordDialog({
     const resetPassword = async () => {
 
         const response = await fetch(
-            `${API_URL}/api/teacher/students/${student.id}/password`,
+            `${API_URL}/api/students/${student.id}/password`,
             {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization:authHeaders()
+                    ...authHeaders()
                 },
                 body: JSON.stringify({
                     password: newPassword

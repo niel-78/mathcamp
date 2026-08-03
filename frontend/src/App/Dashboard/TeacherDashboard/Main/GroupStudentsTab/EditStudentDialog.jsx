@@ -36,7 +36,7 @@ export default function EditStudentDialog({
     const saveStudent = async () => {
 
         await fetch(
-            `${API_URL}/api/teacher/students/${student.id}`,
+            `${API_URL}/api/students/${student.id}`,
             {
                 method: "PUT",
                 headers: {

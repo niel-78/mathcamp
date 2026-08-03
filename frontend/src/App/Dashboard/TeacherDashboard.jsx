@@ -190,7 +190,7 @@ export default function TeacherDashboard() {
                 active.data.current.blockId;
 
             await fetch(
-                `${API_URL}/api/teacher/exams/${examId}/import-block`,
+                `${API_URL}/api/exams/${examId}/import-block`,
                 {
                     method: "POST",
                     headers: {

@@ -47,7 +47,7 @@ export default function QuestionView({
         const loadLevels = async () => {
 
             const response = await fetch(
-                `${API_URL}/api/teacher/blocks/question-levels`,
+                `${API_URL}/api/blocks/question-levels`,
                 {
                     headers: authHeaders()
                 }
@@ -76,7 +76,7 @@ export default function QuestionView({
     const saveQuestion = async () => {
 
         await fetch(
-            `${API_URL}/api/teacher/blocks/questions/${question.id}`,
+            `${API_URL}/api/blocks/questions/${question.id}`,
             {
                 method: "PUT",
                 headers: {
@@ -102,7 +102,7 @@ export default function QuestionView({
         try {
 
             await fetch(
-                `${API_URL}/api/teacher/blocks/questions/${questionId}`,
+                `${API_URL}/api/blocks/questions/${questionId}`,
                 {
                     method: "DELETE",
                     headers: authHeaders()
@@ -138,7 +138,7 @@ export default function QuestionView({
         try {
 
             const response = await fetch(
-                `${API_URL}/api/teacher/blocks/questions/${question.id}/media`,
+                `${API_URL}/api/blocks/questions/${question.id}/media`,
                 {
                     method: "POST",
                     headers: authHeaders(),
@@ -171,7 +171,7 @@ export default function QuestionView({
         try {
 
             await fetch(
-                `${API_URL}/api/teacher/blocks/media/${mediaId}`,
+                `${API_URL}/api/blocks/media/${mediaId}`,
                 {
                     method: "DELETE",
                     headers: authHeaders()
@@ -197,7 +197,7 @@ export default function QuestionView({
         try {
 
             await fetch(
-                `${API_URL}/api/teacher/blocks/questions/${question.id}`,
+                `${API_URL}/api/blocks/questions/${question.id}`,
                 {
                     method: "PUT",
                     headers: {

@@ -71,7 +71,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const loadGroups = async () => {
 
         const response = await fetch(
-            `${API_URL}/api/teacher/groups`,
+            `${API_URL}/api/groups`,
             {
                 headers: authHeaders()
             }
@@ -85,7 +85,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const loadStudents = async (groupId) => {
 
         const response = await fetch(
-            `${API_URL}/api/teacher/groups/${groupId}/full`,
+            `${API_URL}/api/groups/${groupId}/`,
             {
                 headers: authHeaders()
             }
@@ -103,7 +103,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const loadSubjects = async () => {
 
         const response = await fetch(
-            `${API_URL}/api/subjects/full`,
+            `${API_URL}/api/subjects/`,
             {
                 headers: authHeaders()
             }
@@ -142,7 +142,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const toggleStudents = async (groupId) => {
         if (!groupStudents[groupId]) {
             const response = await fetch(
-                `${API_URL}/api/teacher/groups/${groupId}/full`,
+                `${API_URL}/api/groups/${groupId}/`,
                 {
                     headers:authHeaders()
                 }
@@ -213,9 +213,11 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                     block
                                     w-full
                                     p-2
+                                    items-center
                                     text-left
                                     hover:bg-slate-100
                                 "
+                                variant="inline"
                                 onClick={() => {
 
                                     setShowCreateGroupDialog(true);
@@ -240,9 +242,11 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                         block
                                         w-full
                                         p-2
+                                        items-center
                                         text-left
                                         hover:bg-slate-100
                                     "
+                                    variant="inline"
                                     onClick={() => {
 
                                         setRenameDialog({
@@ -262,9 +266,11 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                         block
                                         w-full
                                         p-2
+                                        items-center
                                         text-left
                                         hover:bg-slate-100
                                     "
+                                    variant="inline"
                                     onClick={() => {
 
                                         setArchiveDialog({
@@ -289,9 +295,11 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                     block
                                     w-full
                                     p-2
+                                    items-center
                                     text-left
                                     hover:bg-slate-100
                                 "
+                                variant="inline"
                                 onClick={() => {
 
                                     setCreateStudentDialog({
@@ -320,9 +328,11 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                         block
                                         w-full
                                         p-2
+                                        items-center
                                         text-left
                                         hover:bg-slate-100
                                     "
+                                    variant="inline"
                                     onClick={() => {
                                         setPasswordDialog({
                                             id: contextMenu.userId,
@@ -341,9 +351,11 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                         block
                                         w-full
                                         p-2
+                                        items-center
                                         text-left
                                         hover:bg-slate-100
                                     "
+                                    variant="inline"
                                     onClick={() => {
 
                                         setRenameStudentDialog({
@@ -365,9 +377,11 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                         block
                                         w-full
                                         p-2
+                                        items-center
                                         text-left
                                         hover:bg-slate-100
                                     "
+                                    variant="inline"
                                     onClick={() => {
 
                                         setArchiveStudentDialog({

@@ -8,7 +8,7 @@ export function AuthProvider({ children }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch("/api/me", {
+        fetch("/api/auth/me", {
             headers: authHeaders()
         })
         .then(res => res.json())

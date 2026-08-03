@@ -18,7 +18,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
         }
 
         await fetch(
-            `${API_URL}/api/teacher/exams/${exam.id}/blocks/${block.id}`,
+            `${API_URL}/api/exams/${exam.id}/blocks/${block.id}`,
             {
                 method: "DELETE",
                 headers: authHeaders()
@@ -40,7 +40,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
         }
 
         await fetch(
-            `${API_URL}/api/teacher/exams/blocks/${block.id}`,
+            `${API_URL}/api/exams/blocks/${block.id}`,
             {
                 method: "PUT",
                 headers: {
@@ -64,7 +64,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
         }
 
         const response = await fetch(
-            `${API_URL}/api/teacher/exams/blocks/${block.id}/questions`,
+            `${API_URL}/api/exams/blocks/${block.id}/questions`,
             {
                 method: "POST",
                 headers: {
@@ -99,7 +99,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
         }
 
         await fetch(
-            `${API_URL}/api/teacher/exams/${exam.id}/blocks/${block.id}/order`,
+            `${API_URL}/api/exams/${exam.id}/blocks/${block.id}/order`,
             {
                 method: "PUT",
                 headers: {
@@ -114,7 +114,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
         );
 
         await fetch(
-            `${API_URL}/api/teacher/exams/${exam.id}/blocks/${previousBlock.id}/order`,
+            `${API_URL}/api/exams/${exam.id}/blocks/${previousBlock.id}/order`,
             {
                 method: "PUT",
                 headers: {
@@ -142,7 +142,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
         }
 
         await fetch(
-            `${API_URL}/api/teacher/exams/${exam.id}/blocks/${block.id}/order`,
+            `${API_URL}/api/exams/${exam.id}/blocks/${block.id}/order`,
             {
                 method: "PUT",
                 headers: {
@@ -157,7 +157,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
         );
 
         await fetch(
-            `${API_URL}/api/teacher/exams/${exam.id}/blocks/${nextBlock.id}/order`,
+            `${API_URL}/api/exams/${exam.id}/blocks/${nextBlock.id}/order`,
             {
                 method: "PUT",
                 headers: {

@@ -21,9 +21,11 @@ export default function ArchiveStudentDialog({
 }) {
 
     const archiveStudent = async () => {
+        
+        console.log(student)
 
         const response = await fetch(
-            `${API_URL}/api/teacher/groups/${student.groupId}/students/${student.userId}`,
+            `${API_URL}/api/students/${student.userId}/archive`,
             {
                 method: "DELETE",
                 headers: authHeaders()

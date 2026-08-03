@@ -3,7 +3,19 @@ import db from "../db.js";
 
 const router = express.Router();
 
-router.get("/subjects",
+/*
+GET    /api/subjects
+POST   /api/subjects
+
+GET    /api/subjects/:id
+PUT    /api/subjects/:id
+DELETE /api/subjects/:id
+
+GET    /api/subjects/:id/central-content
+*/
+
+// GET /api/subjects
+router.get("/",
     async (req, res) => {
 
         try {
@@ -38,8 +50,18 @@ router.get("/subjects",
     }
 );
 
+// POST /api/subjects
 
-router.get("/subjects/full", 
+// GET /api/subjects/:id
+
+// PUT /api/subjects/:id
+
+// DELETE /api/subjects/:id
+
+// GET /api/subjects/:id/central-content
+
+// GET /api/subjects/
+router.get("/", 
     async (req, res) => {
 
         try {

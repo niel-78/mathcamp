@@ -10,6 +10,8 @@ import CentralContentTab from "./Main/CentralContentTab";
 import StudentTab from "./Main/StudentTab";
 import SectionTab from "./Main/SectionTab";
 import ExamTab from "./Main/ExamTab";
+import GroupExamLibraryTab from "./Main/GroupExamLibraryTab";
+import GroupExamTab from "./Main/GroupExamTab";
 
 
 export default function Main({
@@ -148,8 +150,7 @@ export default function Main({
 
                     )}
 
-                    {
-                        currentTab?.type === "exam" && (
+                    {   currentTab?.type === "exam" && (
 
                             <ExamTab
                                 examId={currentTab.examId}
@@ -158,9 +159,30 @@ export default function Main({
                                 }
                             />
 
-                        )
-                    }
+                    )}
+                        
+                    {   currentTab?.type === "group-exams" && (
 
+                            <GroupExamLibraryTab
+                                openTab={(tab) =>
+                                    openTab(tab, area)
+                                }
+                            />
+
+                    )}
+
+                    {   currentTab?.type === "group-exam" && (
+
+                            <GroupExamTab
+                                groupExamId={currentTab.groupExamId}
+                                openTab={(tab) =>
+                                    openTab(tab, area)
+                                }
+                            />
+
+                    )}
+                    
+                    
                 </div>
 
             </div>

@@ -32,7 +32,7 @@ export default function OptionList({ options, onChanged, questionId }) {
         try {
 
             await fetch(
-                `${API_URL}/api/teacher/blocks/questions/${questionId}/options`,
+                `${API_URL}/api/blocks/questions/${questionId}/options`,
                 {
                     method: "POST",
                     headers: {
@@ -73,7 +73,7 @@ export default function OptionList({ options, onChanged, questionId }) {
             toast.info("Tar bort alternativ...");
 
             await fetch(
-                `${API_URL}/api/teacher/blocks/options/${optionId}`,
+                `${API_URL}/api/blocks/options/${optionId}`,
                 {
                     method: "DELETE",
                     headers: authHeaders()
@@ -103,7 +103,7 @@ export default function OptionList({ options, onChanged, questionId }) {
         try {
 
             await fetch(
-                `${API_URL}/api/teacher/blocks/options/${optionId}`,
+                `${API_URL}/api/blocks/options/${optionId}`,
                 {
                     method: "PUT",
                     headers: {

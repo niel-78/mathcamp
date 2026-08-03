@@ -16,7 +16,7 @@ export default function BlockLibrary({
     ) => {
 
         await fetch(
-            `${API_URL}/api/teacher/blocks/${blockId}/central-content/${centralContentId}`,
+            `${API_URL}/api/blocks/${blockId}/central-content/${centralContentId}`,
             {
                 method: "DELETE",
                 headers: authHeaders()
@@ -33,7 +33,7 @@ export default function BlockLibrary({
     ) => {
 
         await fetch(
-            `${API_URL}/api/teacher/blocks/${blockId}/book-sections/${sectionId}`,
+            `${API_URL}/api/blocks/${blockId}/book-sections/${sectionId}`,
             {
                 method: "DELETE",
                 headers: authHeaders()

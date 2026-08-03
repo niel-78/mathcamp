@@ -36,12 +36,12 @@ export default function RenameStudentDialog({
     const save = async () => {
 
         const response = await fetch(
-            `${API_URL}/api/teacher/students/${student.id}`,
+            `${API_URL}/api/students/${student.id}`,
             {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization:authHeaders()
+                    ...authHeaders()
                 },
                 body: JSON.stringify({
                     first_name: firstName,

@@ -67,7 +67,7 @@ export default function CentralContentTab({
     const removeBlock = async (blockId) => {
 
         await fetch(
-            `${API_URL}/api/teacher/blocks/${blockId}/central-content/${centralContentId}`,
+            `${API_URL}/api/blocks/${blockId}/central-content/${centralContentId}`,
             {
                 method: "DELETE",
                 headers: authHeaders()

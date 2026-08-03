@@ -19,7 +19,7 @@ export default function ExamTab({
     const loadBlocks = async () => {
 
         const response = await fetch(
-            `${API_URL}/api/teacher/exams/${examId}/blocks`,
+            `${API_URL}/api/exams/${examId}/blocks`,
             {
                 headers: authHeaders()
             }
@@ -42,7 +42,7 @@ export default function ExamTab({
         console.log("REMOVE", blockId);
 
         const response = await fetch(
-            `${API_URL}/api/teacher/exams/${examId}/blocks/${blockId}`,
+            `${API_URL}/api/exams/${examId}/blocks/${blockId}`,
             {
                 method: "DELETE",
                 headers: authHeaders()
@@ -134,7 +134,7 @@ export default function ExamTab({
                     (block, index) =>
 
                         fetch(
-                            `${API_URL}/api/teacher/exams/${examId}/blocks/${block.id}/order`,
+                            `${API_URL}/api/exams/${examId}/blocks/${block.id}/order`,
                             {
                                 method: "PUT",
                                 headers: {

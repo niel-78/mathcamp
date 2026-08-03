@@ -14,7 +14,7 @@ export default function GroupPage() {
     const loadGroups = async () => {
 
         const response = await fetch(
-            `${API_URL}/api/teacher/groups`,
+            `${API_URL}/api/groups`,
             {
                 headers: authHeaders()
             }
@@ -28,7 +28,7 @@ export default function GroupPage() {
     const loadGroup = async (group) => {
 
         const response = await fetch(
-            `${API_URL}/api/teacher/groups/${group.id}/full`,
+            `${API_URL}/api/groups/${group.id}/`,
             {
                 headers: authHeaders()
             }
@@ -62,7 +62,7 @@ export default function GroupPage() {
         }
 
         await fetch(
-            `${API_URL}/api/teacher/groups/${selectedGroup.id}`,
+            `${API_URL}/api/groups/${selectedGroup.id}`,
             {
                 method: "PUT",
                 headers: {
@@ -90,7 +90,7 @@ export default function GroupPage() {
         }
 
         await fetch(
-            `${API_URL}/api/teacher/groups/${groupId}/archive`,
+            `${API_URL}/api/groups/${groupId}/archive`,
             {
                 method: "PUT",
                 headers: authHeaders()
@@ -113,7 +113,7 @@ export default function GroupPage() {
         }
 
         await fetch(
-            `${API_URL}/api/teacher/groups/${groupId}`,
+            `${API_URL}/api/groups/${groupId}`,
             {
                 method: "DELETE",
                 headers: authHeaders()
@@ -136,7 +136,7 @@ export default function GroupPage() {
         }
 
         await fetch(
-            `${API_URL}/api/teacher/groups`,
+            `${API_URL}/api/groups`,
             {
                 method: "POST",
                 headers: {

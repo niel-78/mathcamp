@@ -15,7 +15,8 @@ DROP TABLE IF EXISTS content_areas;
 DROP TABLE IF EXISTS levels;
 DROP TABLE IF EXISTS subjects;
 DROP TABLE IF EXISTS question_media;
-DROP TABLE IF EXISTS exam_teachers;
+DROP TABLE IF EXISTS group_users;
+DROP TABLE IF EXISTS exam_users;
 DROP TABLE IF EXISTS group_students;
 DROP TABLE IF EXISTS groups;
 DROP TABLE IF EXISTS group_exams;
@@ -200,25 +201,25 @@ CREATE TABLE exams (
 
     deleted_at DATETIME NULL,
 
-    exam_config JSON DEFAULT JSON_OBJECT('timer', '1000','allowPrevious','false','randomizeQuestions',1,'randomizeOptions',1)
+    exam_config JSON DEFAULT JSON_OBJECT('allowCalculator', 'false','allowFormulaSheet','true','defaultTimeLimit',60000)
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 
-CREATE TABLE exam_teachers (
+CREATE TABLE exam_users (
     exam_id INT NOT NULL,
-    teacher_id INT NOT NULL,
+    user_id INT NOT NULL,
 
     is_owner BOOLEAN NOT NULL DEFAULT FALSE,
 
     granted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    PRIMARY KEY (exam_id, teacher_id),
+    PRIMARY KEY (exam_id, user_id),
 
     FOREIGN KEY (exam_id)
         REFERENCES exams(id)
         ON DELETE CASCADE,
 
-    FOREIGN KEY (teacher_id)
+    FOREIGN KEY (user_id)
         REFERENCES users(id)
         ON DELETE CASCADE
 );
@@ -233,6 +234,25 @@ CREATE TABLE groups (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE group_users (
+    group_id INT NOT NULL,
+    user_id INT NOT NULL,
+
+    is_owner BOOLEAN NOT NULL DEFAULT FALSE,
+
+    granted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (group_id, user_id),
+
+    FOREIGN KEY (group_id)
+        REFERENCES groups(id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (user_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE
+);
+
 INSERT INTO groups (id, name)
 VALUES
 (1, 'Niklas grupp'),(2, 'Joines grupp');
@@ -244,19 +264,25 @@ CREATE TABLE group_exams (
     exam_id INT NOT NULL,
 
     group_exam_key VARCHAR(50) UNIQUE,
-    exam_config JSON DEFAULT JSON_OBJECT('timer', '1000','allowPrevious','false','randomizeQuestions',1,'randomizeOptions',1),
+    exam_config JSON DEFAULT JSON_OBJECT(),
 
     time_limit_minutes INT DEFAULT NULL,
 
     shuffle_questions BOOLEAN NOT NULL DEFAULT FALSE,
-    shuffle_options BOOLEAN NOT NULL DEFAULT FALSE,
+    shuffle_options BOOLEAN NOT NULL DEFAULT TRUE,
+
+    allow_previous BOOLEAN NOT NULL DEFAULT FALSE,
+    allow_same_question BOOLEAN NOT NULL DEFAULT FALSE,
+
+    show_calculator BOOLEAN NOT NULL DEFAULT FALSE,
+    show_formula_sheet BOOLEAN NOT NULL DEFAULT FALSE,
 
     max_attempts INT NOT NULL DEFAULT 1,
 
     show_result_immediately BOOLEAN DEFAULT TRUE,
     passing_score DECIMAL(5,2) DEFAULT NULL,
-    is_active BOOLEAN DEFAULT TRUE,
-
+    
+    is_open BOOLEAN DEFAULT FALSE,
     available_from DATETIME DEFAULT NULL,
     available_until DATETIME DEFAULT NULL,
 
@@ -324,7 +350,13 @@ CREATE TABLE exam_attempts (
     group_exam_id INT NOT NULL,
     exam_config JSON,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
+    started_at DATETIME NULL,
+    submitted_at DATETIME NULL,
+    status ENUM(
+        'not_started',
+        'in_progress',
+        'submitted'
+    ) DEFAULT 'not_started',
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (group_exam_id) REFERENCES group_exams(id)
 ) ENGINE=InnoDB
@@ -545,7 +577,9 @@ INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUE
 
 INSERT INTO exams(`id`,`title`,subject_id,level_id,created_by,updated_by) VALUES(1,'Test',1,2,2,2);
 
-INSERT INTO exam_teachers (exam_id,teacher_id,is_owner) VALUES (1,2,TRUE);
+INSERT INTO exam_users (exam_id,user_id,is_owner) VALUES (1,2,TRUE);
+
+INSERT INTO group_users (group_id,user_id,is_owner) VALUES (1,2,TRUE);
 
 INSERT INTO exam_blocks (exam_id,block_id,order_by) VALUES
 (1,1,1),(1,2,2),(1,3,3),(1,4,4),(1,5,5);

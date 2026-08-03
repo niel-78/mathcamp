@@ -22,11 +22,11 @@ export default function ArchiveGroupDialog({
     const archiveGroup = async () => {
 
         const response = await fetch(
-            `${API_URL}/api/teacher/groups/${group.id}/archive`,
+            `${API_URL}/api/groups/${group.id}/archive`,
             {
                 method: "PUT",
                 headers: {
-                    Authorization: authHeaders()
+                    ...authHeaders()
                 }
             }
         );

@@ -28,13 +28,12 @@ export default function RenameGroupDialog({
     const save = async () => {
 
         const response = await fetch(
-            `${API_URL}/api/teacher/groups/${group.id}`,
+            `${API_URL}/api/groups/${group.id}`,
             {
                 method: "PUT",
                 headers: {
-                    "Content-Type":
-                        "application/json",
-                    Authorization:authHeaders()
+                    "Content-Type": "application/json",
+                    ...authHeaders()
                 },
                 body: JSON.stringify({
                     name

@@ -18,22 +18,22 @@ export default function CreateStudentDialog({
     onCreated
 }) {
 
-    const [email, setEmail] = useState("");
+    const [username, setUsername] = useState("");
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
 
     const createStudent = async () => {
 
         const response = await fetch(
-            `${API_URL}/api/teacher/groups/${group.groupId}/students`,
+            `${API_URL}/api/groups/${group.groupId}/students`,
             {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization:authHeaders()
+                    ...authHeaders()
                 },
                 body: JSON.stringify({
-                    email,
+                    username,
                     first_name: firstName,
                     last_name: lastName
                 })
@@ -51,7 +51,7 @@ export default function CreateStudentDialog({
             `Elev skapad. Lösenord: ${data.password}`
         );
 
-        setEmail("");
+        setUsername("");
         setFirstName("");
         setLastName("");
 
@@ -119,9 +119,9 @@ export default function CreateStudentDialog({
                             p-2
                         "
                         placeholder="Användarnamn"
-                        value={email}
+                        value={username}
                         onChange={(e) =>
-                            setEmail(
+                            setUsername(
                                 e.target.value
                             )
                         }

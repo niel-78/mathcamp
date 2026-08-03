@@ -1,18 +1,26 @@
 import express from "express";
 import path from "path";
-import authRoutes from "./routes/auth.js";
-import examRoutes from "./routes/exam.js";
-import answersRoutes from "./routes/answers.js";
-import eventsRoutes from "./routes/events.js";
-import resultRoutes from "./routes/result.js";
-import subjectRoute from "./routes/subjectRoute.js";
+
+import authRoutes from "./routes/authRoutes.js";
+
+import subjectRoutes from "./routes/subjectRoutes.js";
+import centralContentRoutes from "./routes/centralContentRoutes.js";
+
+import blockRoutes from "./routes/blockRoutes.js";
+
+import examRoutes from "./routes/examRoutes.js";
+import groupExamRoutes from "./routes/groupExamRoutes.js";
+import examAttemptRoutes from "./routes/examAttemptRoutes.js";
+
+import groupRoutes from "./routes/groupRoutes.js";
+import studentRoutes from "./routes/studentRoutes.js";
+
 import bookRoutes from "./routes/bookRoutes.js";
 import sectionRoutes from "./routes/sectionRoutes.js";
-import centralContentRoute from "./routes/centralContentRoute.js";
-import teacherExamRoutes from "./routes/teacherExamRoutes.js";
-import teacherGroupRoutes from "./routes/teacherGroupRoutes.js";
-import teacherStudentRoutes from "./routes/teacherStudentRoutes.js";
-import teacherBlocksRoutes from "./routes/teacherBlocksRoutes.js";
+
+import eventRoutes from "./routes/eventRoutes.js";
+import resultRoutes from "./routes/resultRoutes.js";
+
 import cors from "cors";
 
 console.log("🔥 SERVER FILE START");
@@ -37,21 +45,25 @@ app.use(cors({
 
 app.use(express.json());
 
-app.use("/api", authRoutes);
-app.use("/api", examRoutes);
-app.use("/api", answersRoutes)
-app.use("/api", eventsRoutes);
-app.use("/api", resultRoutes);
-app.use("/api", subjectRoute);
-app.use("/api/central-content", centralContentRoute);
-app.use("/api/sections",sectionRoutes);
+app.use("/api/auth", authRoutes);
+
+app.use("/api/subjects", subjectRoutes);
+app.use("/api/central-content", centralContentRoutes);
+
+app.use("/api/blocks", blockRoutes);
+
+app.use("/api/exams", examRoutes);
+app.use("/api/group-exams", groupExamRoutes);
+app.use("/api/exam-attempts", examAttemptRoutes);
+
+app.use("/api/groups", groupRoutes);
+app.use("/api/students", studentRoutes);
+
 app.use("/api/books", bookRoutes);
-app.use("/api/teacher/exams", teacherExamRoutes);
-app.use("/api/teacher/groups", teacherGroupRoutes);
-app.use("/api/teacher/students", teacherStudentRoutes);
-app.use("/api/teacher/blocks", teacherBlocksRoutes);
+app.use("/api/sections", sectionRoutes);
 
-
+app.use("/api/results", resultRoutes);
+app.use("/api/events", eventRoutes);
 
 
 app.use(

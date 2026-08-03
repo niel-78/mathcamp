@@ -10,7 +10,7 @@ export default function GroupExamCard({ groupExam, onChanged }) {
     ) => {
 
         await fetch(
-            `${API_URL}/api/teacher/group-exams/${groupExam.id}`,
+            `${API_URL}/api/group-exams/${groupExam.id}`,
             {
                 method: "PUT",
                 headers: {

@@ -39,7 +39,7 @@ export default function CreateExam({
             ] = await Promise.all([
 
                 fetch(
-                    `${API_URL}/api/subjects/full`,
+                    `${API_URL}/api/subjects/`,
                     {
                         headers: authHeaders()
                     }
@@ -80,7 +80,7 @@ export default function CreateExam({
         });
 
         const response = await fetch(
-            `${API_URL}/api/teacher/exams`,
+            `${API_URL}/api/exams`,
             {
                 method: "POST",
                 headers: {

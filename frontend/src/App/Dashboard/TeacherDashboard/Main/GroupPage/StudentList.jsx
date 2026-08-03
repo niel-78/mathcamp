@@ -10,7 +10,7 @@ export default function StudentList({ group, editMode, onChanged }) {
     const createStudent = async () => {
 
         const response = await fetch(
-            `${API_URL}/api/teacher/groups/${group.id}/students`,
+            `${API_URL}/api/groups/${group.id}/students`,
             {
                 method: "POST",
                 headers: {
@@ -55,7 +55,7 @@ export default function StudentList({ group, editMode, onChanged }) {
         }
 
         await fetch(
-            `${API_URL}/api/teacher/groups/${group.id}/students/${userId}`,
+            `${API_URL}/api/groups/${group.id}/students/${userId}`,
             {
                 method: "DELETE",
                 headers: authHeaders()
@@ -77,7 +77,7 @@ export default function StudentList({ group, editMode, onChanged }) {
         }
 
         const response = await fetch(
-            `${API_URL}/api/teacher/users/${student.id}/password`,
+            `${API_URL}/api/users/${student.id}/password`,
             {
                 method: "PUT",
                 headers: {

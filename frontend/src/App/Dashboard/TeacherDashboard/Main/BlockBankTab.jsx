@@ -22,7 +22,7 @@ export default function BlockBankTab({
     const loadBlocks = async () => {
 
         const res = await fetch(
-            `${API_URL}/api/teacher/blocks/full`,
+            `${API_URL}/api/blocks/`,
             {
                 headers: authHeaders()
             }
@@ -37,7 +37,7 @@ export default function BlockBankTab({
     const deleteBlock = async () => {
 
         await fetch(
-            `${API_URL}/api/teacher/blocks/${blockToDelete}`,
+            `${API_URL}/api/blocks/${blockToDelete}`,
             {
                 method: "DELETE",
                 headers: authHeaders()
