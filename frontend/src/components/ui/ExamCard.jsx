@@ -7,7 +7,8 @@ import {
 
 export default function ExamCard({
     exam,
-    openTab
+    openTab,
+    onDelete
 }) {
 
     return (
@@ -152,6 +153,16 @@ export default function ExamCard({
                 >
                     Öppna
                 </Button>
+
+                <Button
+                    variant="destructive"
+                    onPointerDown={(e) => {
+                        e.stopPropagation();
+                    }}
+                    onClick={() => onDelete(exam)}
+                >
+                    Ta bort
+                </Button>                
 
             </div>
 

@@ -16,6 +16,10 @@ export default function BlockEditor({
         setCurrentBlock(block);
     }, [block]);
 
+    useEffect(() => {
+        loadBlock();
+    }, [block.id]);
+
     const loadBlock = async () => {
 
         const response = await fetch(
@@ -26,7 +30,6 @@ export default function BlockEditor({
         );
 
         const data = await response.json();
-
         setCurrentBlock(data);
 
     };
@@ -68,8 +71,6 @@ export default function BlockEditor({
         const data = await response.json();
 
         await loadBlock();
-
-        setEditingQuestionId(data.id);
 
     };
 

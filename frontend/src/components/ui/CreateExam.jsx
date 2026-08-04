@@ -70,8 +70,6 @@ export default function CreateExam({
 
     const createExam = async () => {
 
-        console.log("CREATE EXAM CLICKED");
-
         console.log({
             title,
             subjectId,

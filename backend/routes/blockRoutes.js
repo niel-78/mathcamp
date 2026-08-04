@@ -25,6 +25,9 @@ DELETE /api/blocks/:id/central-content/:centralContentId
 
 POST   /api/blocks/:id/sections/:sectionId
 POST   /api/blocks/:id/central-content/:centralContentId
+
+GET    /api/blocks/sections/:sectionId
+
 */
 
 
@@ -368,6 +371,60 @@ router.post("/:blockId/central-content/:centralContentId",
         res.sendStatus(204);
     }
 );
+
+
+// GET /api/central-content/:centralContentId
+router.get("/:centralContentId/:centralContentId", async (req, res) => {
+
+    const [blocks] = await db.query(
+        `
+        SELECT
+            b.*,
+            cu.first_name AS created_by_first_name,
+            cu.last_name AS created_by_last_name,
+            uu.first_name AS updated_by_first_name,
+            uu.last_name AS updated_by_last_name
+        FROM blocks b
+        JOIN block_central_content bcc
+            ON b.id = bcc.block_id
+        LEFT JOIN users cu
+            ON cu.id = b.created_by
+        LEFT JOIN users uu
+            ON uu.id = b.updated_by
+        WHERE bcc.central_content_id = ?
+        `,
+        [req.params.centralContentId]
+    );
+
+    const hydratedBlocks =
+        await hydrateBlocks(blocks);
+
+    res.json(hydratedBlocks);
+
+});
+// GET /api/blocks/sections/:sectionId
+router.get("/sections/:sectionId", async (req, res) => {
+
+
+    const [blocks] = await db.query(
+        `
+        SELECT
+            b.*
+        FROM blocks b
+        INNER JOIN block_sections bs
+            ON bs.block_id = b.id
+        WHERE bs.section_id = ?
+        ORDER BY b.id
+        `,
+        [req.params.sectionId]
+    );
+
+    const hydratedBlocks =
+        await hydrateBlocks(blocks);
+
+    res.json(hydratedBlocks);
+
+});
 
 
 

@@ -28,76 +28,32 @@ DELETE /api/exams/:id/users/:userId
 
 // GET /api/exams
 router.get("/", async (req, res) => {
-
     try {
 
-        const [rows] = await db.query(
+        const [exams] = await db.query(
             `
             SELECT
-                e.id,
-                e.title,
-                e.subject_id,
-                e.level_id,
-                e.book_id,
-                e.created_at,
-                e.updated_at,
-                et.is_owner,
-
-                s.name AS subject_name,
-                l.name AS level_name,
-                b.title AS book_title,
-
-                COUNT(DISTINCT eb.block_id) AS block_count
-
+                e.*
             FROM exams e
-
-            JOIN exam_teachers et
-                ON et.exam_id = e.id
-
-            LEFT JOIN subjects s
-                ON s.id = e.subject_id
-
-            LEFT JOIN levels l
-                ON l.id = e.level_id
-
-            LEFT JOIN books b
-                ON b.id = e.book_id
-
-            LEFT JOIN exam_blocks eb
-                ON eb.exam_id = e.id
-
-            WHERE et.teacher_id = ?
-
-            GROUP BY
-                e.id,
-                e.title,
-                e.subject_id,
-                e.level_id,
-                e.book_id,
-                e.created_at,
-                e.updated_at,
-                et.is_owner,
-                s.name,
-                l.name,
-                b.title
-
-            ORDER BY e.updated_at DESC
+            INNER JOIN exam_users eu
+                ON eu.exam_id = e.id
+            WHERE e.deleted_at IS NULL AND eu.user_id = ?
+            ORDER BY e.title
             `,
             [req.user.id]
         );
 
-        res.json(rows);
+        res.json(exams);
 
     } catch (err) {
 
         console.error(err);
 
         res.status(500).json({
-            error: err.message
+            error: "Kunde inte hämta prov."
         });
 
     }
-
 });
 
 //POST /api/exams
@@ -133,9 +89,9 @@ router.post("/", async (req, res) => {
 
     await db.query(
         `
-        INSERT INTO exam_teachers (
+        INSERT INTO exam_users (
             exam_id,
-            teacher_id,
+            user_id,
             is_owner
         )
         VALUES (?, ?, 1)
@@ -196,7 +152,6 @@ router.get("/:examId", async (req, res) => {
         groupExams
     });
 });
-
 //PUT /api/exams/:examId
 router.put("/:examId", async (req, res) => {
     const { title } = req.body;
@@ -212,37 +167,56 @@ router.put("/:examId", async (req, res) => {
 
     res.sendStatus(204);
 });
-
-// DELETE /api//exams/:examId
+// DELETE /api/exams/:examId
 router.delete("/:examId", async (req, res) => {
+    try {
 
-    const [rows] = await db.query(
-        `
-        SELECT *
-        FROM exam_teachers
-        WHERE exam_id = ?
-        AND teacher_id = ?
-        AND is_owner = 1
-        `,
-        [req.params.examId, req.user.id]
-    );
+        await db.query(
+            `
+            UPDATE exams
+            SET
+                deleted_at = NOW(),
+                updated_by = ?
+            WHERE id = ?
+            `,
+            [
+                req.user.id,
+                req.params.examId
+            ]
+        );
 
-    if (!rows.length) {
-        return res.status(403).json({
-            error: "Only owner can delete exam"
+        await db.query(
+            `
+            DELETE FROM exam_users
+            WHERE exam_id = ?
+                AND user_id = ?
+            `,
+            [
+                req.params.examId,
+                req.user.id
+            ]
+        );
+
+        res.sendStatus(204);
+
+    } catch (err) {
+
+        console.error(err);
+
+        res.status(500).json({
+            error: "Kunde inte ta bort provet."
         });
-    }
-    
-    await db.query(
-        `
-        DELETE FROM exams
-        WHERE id = ?
-        `,
-        [req.params.examId]
-    );
 
-    res.sendStatus(204);
+    }
 });
+
+
+
+
+
+
+
+
 
 // POST /api/teacher/:examId/library-blocks
 router.post("/:examId/library-blocks",
@@ -653,6 +627,5 @@ router.put("/:examId/blocks/:blockId/order",
         res.sendStatus(204);
     }
 );
-
 
 export default router

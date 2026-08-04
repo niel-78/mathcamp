@@ -35,7 +35,7 @@ export default function GroupExamTab({
     const loadGroupExam = async () => {
 
         const response = await fetch(
-            `${API_URL}/api/groups/group-exams/${groupExamId}`,
+            `${API_URL}/api/group-exams/${groupExamId}`,
             {
                 headers: authHeaders()
             }
@@ -55,7 +55,7 @@ export default function GroupExamTab({
     const loadBlocks = async () => {
 
         const response = await fetch(
-            `${API_URL}/api/groups/group-exams/${groupExamId}/blocks`,
+            `${API_URL}/api/group-exams/${groupExamId}/blocks`,
             {
                 headers: authHeaders()
             }
@@ -75,7 +75,7 @@ export default function GroupExamTab({
     const save = async () => {
 
         const response = await fetch(
-            `${API_URL}/api/groups/group-exams/${groupExamId}`,
+            `${API_URL}/api/group-exams/${groupExamId}`,
             {
                 method: "PUT",
                 headers: {

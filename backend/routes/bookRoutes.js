@@ -12,6 +12,7 @@ PUT    /api/books/:id
 DELETE /api/books/:id
 
 GET    /api/books/:id/sections
+GET    /api/blocks/:id/book-sections/:sectionId
 
 */
 // GET /api/books
@@ -127,5 +128,114 @@ router.put("/:id", async (req, res) => {
     }
 
 });
+
+// GET /api/books/:id/sections
+router.get("/:id/sections", async (req, res) => {
+    try {
+
+        const [sections] = await db.query(
+            `
+            SELECT
+                s.id,
+                s.subchapter_id,
+                s.title,
+                s.content,
+                s.page_number,
+                s.sort_order,
+
+                sc.title AS subchapter_title,
+                c.title AS chapter_title
+
+            FROM sections s
+
+            INNER JOIN subchapters sc
+                ON sc.id = s.subchapter_id
+
+            INNER JOIN chapters c
+                ON c.id = sc.chapter_id
+
+            WHERE c.book_id = ?
+
+            ORDER BY
+                c.sort_order,
+                sc.sort_order,
+                s.sort_order
+            `,
+            [req.params.id]
+        );
+
+        res.json(sections);
+
+    } catch (err) {
+
+        console.error(err);
+
+        res.status(500).json({
+            error: "Kunde inte hämta sektionerna."
+        });
+
+    }
+});
+
+// GET /api/books/sections/:sectionId
+router.get("/sections/:sectionId", async (req, res) => {
+    try {
+
+        const [rows] = await db.query(
+            `
+            SELECT
+                s.id,
+                s.title,
+                s.content,
+                s.page_number,
+                s.sort_order,
+
+                sc.id AS subchapter_id,
+                sc.subchapter_number,
+                sc.title AS subchapter_title,
+
+                c.id AS chapter_id,
+                c.chapter_number,
+                c.title AS chapter_title,
+
+                b.id AS book_id,
+                b.title AS book_title
+
+            FROM sections s
+
+            INNER JOIN subchapters sc
+                ON sc.id = s.subchapter_id
+
+            INNER JOIN chapters c
+                ON c.id = sc.chapter_id
+
+            INNER JOIN books b
+                ON b.id = c.book_id
+
+            WHERE s.id = ?
+            `,
+            [req.params.sectionId]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({
+                error: "Sektionen hittades inte."
+            });
+        }
+
+        res.json(rows[0]);
+
+    } catch (err) {
+
+        console.error(err);
+
+        res.status(500).json({
+            error: "Kunde inte hämta sektionen."
+        });
+
+    }
+});
+
+
 
 export default router;

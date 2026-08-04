@@ -73,7 +73,7 @@ export default function CreateGroupExam({
         }
 
         const response = await fetch(
-            `${API_URL}/api/groups/group-exams`,
+            `${API_URL}/api/group-exams`,
             {
                 method: "POST",
                 headers: {

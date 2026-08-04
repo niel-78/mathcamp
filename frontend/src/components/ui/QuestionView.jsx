@@ -47,7 +47,7 @@ export default function QuestionView({
         const loadLevels = async () => {
 
             const response = await fetch(
-                `${API_URL}/api/blocks/question-levels`,
+                `${API_URL}/api/question-levels`,
                 {
                     headers: authHeaders()
                 }
@@ -92,6 +92,8 @@ export default function QuestionView({
         );
 
         await onChanged();
+
+        setEditingQuestionText(false);
 
         toast.success("Fråga sparad");
 
@@ -424,7 +426,7 @@ export default function QuestionView({
 
                         </div>
 
-)}
+                    )}
                 </div>    
 
                 <OptionList

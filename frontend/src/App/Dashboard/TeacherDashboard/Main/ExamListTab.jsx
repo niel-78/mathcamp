@@ -3,16 +3,24 @@ import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 import ExamCard from "@/components/ui/ExamCard";
 import CreateExam from "@/components/ui/CreateExam";
+import DeleteExamDialog from "@/components/ui/DeleteExamDialog";
 
 export default function ExamListTab({
     selectedExamId,
     onSelectExam,
     openTab
-
 }) {
 
     const [exams, setExams] =
         useState([]);
+
+    const [examToDelete, setExamToDelete] = useState(null);
+    const [deleteOpen, setDeleteOpen] = useState(false);
+
+    const handleDeleteExam = (exam) => {
+        setExamToDelete(exam);
+        setDeleteOpen(true);
+    };
 
     const loadExams = async () => {
 
@@ -53,47 +61,52 @@ export default function ExamListTab({
     }, []);
 
     return (
+        <>
+            <div className="space-y-4">
 
-        <div className="space-y-4">
+                <CreateExam
+                    onCreated={() => {
 
-            <CreateExam
-                onCreated={() => {
+                        loadExams();
 
-                    loadExams();
-
-                }}
-            />
-
-            <div
-                className="
-                    grid
-                    gap-4
-                    grid-cols-1
-                    md:grid-cols-2
-                    xl:grid-cols-3
-                "
-            >
-
-            {exams.map(exam => (
-
-                <ExamCard
-                    key={exam.id}
-                    exam={exam}
-                    selected={
-                        selectedExamId ===
-                        exam.id
-                    }
-                    openTab={openTab}
-                    onClick={() =>
-                        onSelectExam(exam.id)
-                    }
+                    }}
                 />
 
-            ))}
+                <div
+                    className="
+                        grid
+                        gap-4
+                        grid-cols-1
+                        md:grid-cols-2
+                        xl:grid-cols-3
+                    "
+                >
+
+                {exams.map(exam => (
+
+                    <ExamCard
+                        key={exam.id}
+                        exam={exam}
+                        selected={
+                            selectedExamId ===
+                            exam.id
+                        }
+                        openTab={openTab}
+                        onDelete={handleDeleteExam}
+                    />
+
+                ))}
+
+                </div>
 
             </div>
-
-        </div>
+            <DeleteExamDialog
+                exam={examToDelete}
+                open={deleteOpen}
+                onOpenChange={setDeleteOpen}
+                onDeleted={loadExams}
+            />
+        </>
 
     );
 

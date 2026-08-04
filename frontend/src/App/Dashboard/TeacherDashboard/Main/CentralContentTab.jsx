@@ -37,14 +37,11 @@ export default function CentralContentTab({
             );
 
         const response = await fetch(
-            `${API_URL}/api/central-content/${centralContentId}/blocks`,
+            `${API_URL}/api/blocks/central-content/${centralContentId}`,
             {
                 headers: authHeaders()
             }
         );
-
-        console.log(response.url);
-        console.log(response.status);
 
         if (!response.ok) {
 
@@ -57,8 +54,6 @@ export default function CentralContentTab({
         }
 
         const data = await response.json();
-
-        console.log(data);
 
         setBlocks(data);
 

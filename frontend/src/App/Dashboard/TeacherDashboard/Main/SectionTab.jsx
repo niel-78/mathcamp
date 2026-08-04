@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { API_URL } from "@/config";
+import { authHeaders } from "@/api/authHeaders";
 
 import CreateBlock from "@/components/ui/CreateBlock";
 import BlockLibrary from "@/components/ui/BlockLibrary";
@@ -51,7 +52,10 @@ export default function SectionTab({
     const loadBlocks = async () => {
 
         const response = await fetch(
-            `${API_URL}/api/sections/${sectionId}/blocks`
+            `${API_URL}/api/blocks/sections/${sectionId}`,
+            {
+                headers: authHeaders()
+            }
         );
 
         if (!response.ok) {
@@ -65,7 +69,6 @@ export default function SectionTab({
         }
 
         const data = await response.json();
-
         setBlocks(data);
 
     };

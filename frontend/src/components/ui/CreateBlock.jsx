@@ -50,7 +50,7 @@ export default function CreateBlock({
                 );
             }
 
-            await response.json();
+            const data = await response.json();
 
             setQuestion("");
 

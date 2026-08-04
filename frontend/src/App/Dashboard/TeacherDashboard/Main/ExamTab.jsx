@@ -7,7 +7,8 @@ import BlockCard from "@/components/ui/BlockCard";
 import CreateBlock from "@/components/ui/CreateBlock";
 
 export default function ExamTab({
-    examId
+    examId,
+    openTab
 }) {
 
     const [blocks, setBlocks] = useState([]);
@@ -218,6 +219,7 @@ export default function ExamTab({
                                 block={block}
                                 orderNumber={index + 1}
                                 onDelete={removeBlock}
+                                openTab={openTab}
                             />
 
                         </ExamBlock>
