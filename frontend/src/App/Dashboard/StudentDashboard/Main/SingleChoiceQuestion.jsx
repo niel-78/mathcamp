@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { formatMathText } from "@/utils/formatMathText";
+import MathContent from "@/components/ui/MathContent";
 
 export default function SingleChoiceQuestion({
     question,
@@ -13,13 +13,7 @@ export default function SingleChoiceQuestion({
                 Fråga {question.sort_order}
             </h2>
 
-            <div
-                dangerouslySetInnerHTML={{
-                    __html: formatMathText(
-                        question.question
-                    )
-                }}
-            />
+            <MathContent value={question.question} />
 
             <div className="answers">
 
@@ -37,13 +31,8 @@ export default function SingleChoiceQuestion({
                                 onChange(opt.id)
                             }}
                     >
-                        <div
-                            dangerouslySetInnerHTML={{
-                                __html: formatMathText(
-                                    opt.text
-                                )
-                            }}
-                        />
+
+                        <MathContent value={opt.text} />
 
                     </Button>
 

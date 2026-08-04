@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { authHeaders } from "@/api/authHeaders";
-import { formatMathText } from "@/utils/formatMathText";
+import MathContent from "@/components/ui/MathContent";
 import { API_URL } from "@/config";
 import Question from "./Block/Question";
 
@@ -74,7 +74,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
                 body: JSON.stringify({
                     question: newQuestion,
                     type: 1,
-                    math_config: {
+                    answer_config: {
                         mode: "numeric"
                     }
                 })
@@ -216,11 +216,9 @@ export default function Block({ block, exam, onChanged, editMode }) {
                             bg-gray-50
                             rounded-lg
                         "
-                        dangerouslySetInnerHTML={{
-                            __html: formatMathText(newQuestion)
-                        }}
-                    />
-
+                    >
+                        <MathContent value={newQuestion} />
+                    </div>    
                     <textarea
                         rows={3}
                         className="

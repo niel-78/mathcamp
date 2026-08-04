@@ -1,132 +1,198 @@
 import { useEffect, useState } from "react";
+
 import { API_URL } from "@/config";
-import { formatMathText } from "@/utils/formatMathText";
 import { authHeaders } from "@/api/authHeaders";
 
-const ResultPage = ({ attemptId }) => {
-  const [results, setResults] = useState([]);
-  const [score, setScore] = useState(0);
+import MathContent from "@/components/ui/MathContent";
 
-  useEffect(() => {
-    const loadResults = async () => {
+export default function ResultPage({
+    attemptId
+}) {
 
-      const res = await fetch(
-        `${API_URL}/api/result?attemptId=${attemptId}`,{
-          headers: authHeaders()    
+    const [results, setResults] =
+        useState([]);
+
+    const [loading, setLoading] =
+        useState(true);
+
+    useEffect(() => {
+
+        const loadResults = async () => {
+
+            try {
+
+                const res = await fetch(
+                    `${API_URL}/api/exam-attempts/${attemptId}/results`,
+                    {
+                        headers: authHeaders()
+                    }
+                );
+
+                const data =
+                    await res.json();
+
+                setResults(
+                    data.results || []
+                );
+
+            } catch (error) {
+
+                console.error(error);
+
+            } finally {
+
+                setLoading(false);
+            }
+        };
+
+        if (attemptId) {
+            loadResults();
         }
-      );
 
-      if (!res.ok) {
-        const text = await res.text();
-        console.error("ERROR:", text);
-        return;
-      }
+    }, [attemptId]);
 
-      const data = await res.json();
-
-      const results = data.results || [];
-
-      setResults(results);
-
-      const correctCount = results.filter(r => r.correct).length;
-      setScore(correctCount);
-    };
-
-    if (attemptId) {
-      loadResults();   // ✅ kalla funktionen
+    if (loading) {
+        return <p>Laddar resultat...</p>;
     }
 
-  }, [attemptId]);
+    const score =
+        results.filter(
+            r => r.correct
+        ).length;
 
+    return (
 
-  return (    
-    <div>
-      <h1>Result</h1>
+        <div className="max-w-4xl mx-auto p-6">
 
-      <h2>
-        Poäng: {score} / {results.length}
-      </h2>
+            <h1 className="text-3xl font-bold mb-6">
+                Resultat
+            </h1>
 
-      {results.map(r => (
-        <div
-          key={r.question_id}
-          style={{
-            padding: "10px",
-            marginBottom: "10px",
-            border: "1px solid #ccc",
-            background: r.correct ? "#d4edda" : "#f8d7da"
-          }}
-        >
-          <h4>Fråga {r.question_id}</h4>
+            <div className="rounded-lg border p-4 mb-6">
 
-          <div>
-            {r.correct ? "✅ Rätt" : "❌ Fel"}
-          </div>
+                <h2 className="text-xl font-semibold">
+                    Poäng
+                </h2>
 
-          {/* ✅ TEXT (type 1) */}
-          {r.type === 1 && (
-            <div>
-
-              <strong>Ditt svar:</strong>
-              <div
-                dangerouslySetInnerHTML={{
-                  __html: formatMathText(r.userText)
-                }}
-              />
-
-              <strong>Rätt svar:</strong>
-              <div
-                dangerouslySetInnerHTML={{
-                  __html: formatMathText(r.correctText)
-                }}
-              />
-
+                <p className="text-3xl mt-2">
+                    {score} / {results.length}
+                </p>
 
             </div>
-          )}
 
-          {/* ✅ SINGLE & MULTI (type 2 & 3) */}
-          {(r.type === 2 || r.type === 3) && (
-            <div>
-              {r.options.map(opt => {
-                const isUser = r.userOptions.includes(opt.id);
-                const isCorrect = r.correctOptions.includes(opt.id);
+            <div className="space-y-4">
 
-                return (
-                  <div
-                    key={opt.id}
-                    style={{
-                      padding: "5px",
-                      marginTop: "5px",
-                      background:
-                        isCorrect
-                          ? "#c3f3c3"
-                          : isUser
-                          ? "#f8c6c6"
-                          : "transparent"
-                    }}
-                  >
-                    <span>
-                      {isCorrect ? "✅" : isUser ? "❌" : ""}{" "}
-                    </span>
+                {results.map(
+                    (result, index) => (
 
+                        <div
+                            key={
+                                result.question_id
+                            }
+                            className="rounded-lg border p-4"
+                        >
 
-                    <span
-                      dangerouslySetInnerHTML={{
-                        __html: formatMathText(opt.text)
-                      }}
-                    />
-                  </div>
-                );
-              })}
+                            <div className="flex justify-between mb-4">
+
+                                <h3 className="font-semibold">
+                                    Fråga {index + 1}
+                                </h3>
+
+                                <span
+                                    className={
+                                        result.correct
+                                            ? "text-green-600"
+                                            : "text-red-600"
+                                    }
+                                >
+                                    {result.correct
+                                        ? "✓ Rätt"
+                                        : "✗ Fel"}
+                                </span>
+
+                            </div>
+
+                            <MathContent
+                                value={
+                                    result.question
+                                }
+                            />
+
+                            <div className="mt-4">
+
+                                <strong>
+                                    Ditt svar
+                                </strong>
+
+                                {result.question_type === "text" ? (
+
+                                    <MathContent
+                                        value={
+                                            result.text_answer
+                                        }
+                                    />
+
+                                ) : (
+
+                                    <ul className="list-disc ml-5">
+
+                                        {result.selected_options.map(
+                                            option => (
+
+                                                <li
+                                                    key={option.id}
+                                                >
+                                                    <MathContent
+                                                        value={
+                                                            option.text
+                                                        }
+                                                    />
+                                                </li>
+
+                                            )
+                                        )}
+
+                                    </ul>
+
+                                )}
+
+                            </div>
+
+                            <div className="mt-4">
+
+                                <strong>
+                                    Rätt svar
+                                </strong>
+
+                                <ul className="list-disc ml-5">
+
+                                    {result.correct_options.map(
+                                        option => (
+
+                                            <li
+                                                key={option.id}
+                                            >
+                                                <MathContent
+                                                    value={
+                                                        option.text
+                                                    }
+                                                />
+                                            </li>
+
+                                        )
+                                    )}
+
+                                </ul>
+
+                            </div>
+
+                        </div>
+
+                    )
+                )}
+
             </div>
-          )}
+
         </div>
-      ))}  
-    
-
-    </div>
-  );
-}  
-
-export default ResultPage;
+    );
+}

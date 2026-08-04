@@ -86,7 +86,7 @@ export default function QuestionView({
                 body: JSON.stringify({
                     question: questionText,
                     type: question.type,
-                    math_config: question.math_config
+                    answer_config: question.answer_config
                 })
             }
         );
@@ -209,7 +209,7 @@ export default function QuestionView({
                     body: JSON.stringify({
                         question: question.question,
                         type: question.type,
-                        math_config: question.math_config,
+                        answer_config: question.answer_config,
                         level_id: levelId
                     })
                 }

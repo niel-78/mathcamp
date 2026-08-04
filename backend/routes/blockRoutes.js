@@ -136,7 +136,7 @@ router.post("/", async (req, res) => {
             type,
             created_by,
             updated_by,
-            math_config
+            answer_config
         )
         VALUES (?, ?, ?, ?, ?, ?)
         `,
@@ -467,7 +467,7 @@ router.post("/:blockId/questions", async (req, res) => {
     const {
         question = "",
         type = 1,
-        math_config = {}
+        answer_config = {}
     } = req.body;
 
     const [result] = await db.query(
@@ -478,7 +478,7 @@ router.post("/:blockId/questions", async (req, res) => {
             type,
             created_by,
             updated_by,
-            math_config
+            answer_config
         )
         VALUES (?, ?, ?, ?, ?, ?)
         `,
@@ -488,7 +488,7 @@ router.post("/:blockId/questions", async (req, res) => {
             type,
             req.user.id,
             req.user.id,
-            JSON.stringify(math_config)
+            JSON.stringify(answer_config)
         ]
     );
 
@@ -505,7 +505,7 @@ router.put("/questions/:questionId", async (req, res) => {
     const {
         question,
         type,
-        math_config,
+        answer_config,
         level_id
     } = req.body;
 
@@ -515,7 +515,7 @@ router.put("/questions/:questionId", async (req, res) => {
         SET
             question = ?,
             type = ?,
-            math_config = ?,
+            answer_config = ?,
             level_id = ?
 
         WHERE id = ?
@@ -523,7 +523,7 @@ router.put("/questions/:questionId", async (req, res) => {
         [
             question,
             type,
-            JSON.stringify(math_config),
+            JSON.stringify(answer_config),
             level_id,
             req.params.questionId
         ]

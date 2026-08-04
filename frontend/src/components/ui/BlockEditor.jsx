@@ -52,8 +52,8 @@ export default function BlockEditor({
                 body: JSON.stringify({
                     question: lastQuestion?.question ?? "",
                     type: lastQuestion?.type ?? 1,
-                    math_config:
-                        lastQuestion?.math_config ??
+                    answer_config:
+                        lastQuestion?.answer_config ??
                         {}
                 })
             }

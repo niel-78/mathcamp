@@ -10,7 +10,7 @@ export default function QuestionView({
     onMultiChoice
 }) {
 
-    console.log(answer);
+    console.log(question);
 
     switch (question.question_type) {
 

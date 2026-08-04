@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { renderLatex } from "@/utils/renderLatex";
-import { formatMathText } from "@/utils/formatMathText";
+import MathContent from "@/components/ui/MathContent";
 import { isSEB } from "@/utils/isSEB";
 import { API_URL } from "@/config";
 import { Button } from "@/components/ui/button";
@@ -41,9 +41,9 @@ export default function ExamPage({ attemptId, onExit }) {
 
             data.questions.forEach(q => {
                 let config =
-                    typeof q.math_config === "string"
-                    ? JSON.parse(q.math_config)
-                    : q.math_config;
+                    typeof q.answer_config === "string"
+                    ? JSON.parse(q.answer_config)
+                    : q.answer_config;
 
                 if (config?.default) {
                     initialAnswers[q.id] = config.default;
@@ -163,9 +163,9 @@ export default function ExamPage({ attemptId, onExit }) {
     const handleInput = (questionId, value) => {
         const question = questions.find(q => q.id === questionId);
         const config =
-            typeof question?.math_config === "string"
-            ? JSON.parse(question.math_config)
-            : question?.math_config;
+            typeof question?.answer_config === "string"
+            ? JSON.parse(question.answer_config)
+            : question?.answer_config;
 
         const filtered = applyConfig(value, config);
 
@@ -253,25 +253,17 @@ export default function ExamPage({ attemptId, onExit }) {
 
             <h2>Fråga {index + 1}</h2>
 
-            <div
-                dangerouslySetInnerHTML={{
-                    __html: formatMathText(current.question)
-                }}
-            />
+            <MathContent value={current.question} />
 
             {/* ✅ visa options */}
             <div className="answers">
 
                 {/*Visa endast preview för text input som inte är text*/}
                 <div className="preview">
-                    {current.type !== 1 || current.math_config.mode === 'text'
+                    {current.type !== 1 || current.answer_config.mode === 'text'
                         ? ""
                         : (
-                        <span
-                            dangerouslySetInnerHTML={{
-                            __html: formatMathText(answers[current.id])
-                            }}
-                        />
+                        <MathContent value={answers[current.id]} />
                         )
                     }
                 </div>
@@ -316,13 +308,7 @@ export default function ExamPage({ attemptId, onExit }) {
                         handleMulti(current.id, opt.id);
                     }}
                 >
-
-                    <div
-                    dangerouslySetInnerHTML={{
-                        __html: formatMathText(opt.text)
-                    }}
-                    />
-
+                    <MathContent value={opt.text} />
                 </Button>
                 ))}
             </div>
@@ -337,12 +323,12 @@ export default function ExamPage({ attemptId, onExit }) {
             </Button>
         )}    
 
-        {current.math_config?.default && (
+        {current.answer_config?.default && (
         <Button
             onClick={() => {
             setAnswers(prev => ({
                 ...prev,
-                [current.id]: current.math_config.default
+                [current.id]: current.answer_config.default
             }));
             }}
         >

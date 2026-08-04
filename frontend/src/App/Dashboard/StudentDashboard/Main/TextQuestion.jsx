@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { formatMathText } from "@/utils/formatMathText";
+import MathContent from "@/components/ui/MathContent";
 import { Input } from "@/components/ui/input";
+import MathPreview from "@/components/ui/MathPreview";
 
 export default function TextQuestion({
     question,
@@ -14,34 +15,16 @@ export default function TextQuestion({
         setText(value || "");
     }, [question.id, value]);
 
-    const config =
-        typeof question.math_config === "string"
-            ? JSON.parse(question.math_config)
-            : question.math_config;
-
     return (
         <>
             <h2>
                 Fråga {question.sort_order}
             </h2>
 
-            <div
-                dangerouslySetInnerHTML={{
-                    __html: formatMathText(
-                        question.question
-                    )
-                }}
-            />
+            <MathContent value={question.question} />
 
-            {config?.mode !== "text" && (
-                <div className="preview">
-                    <span
-                        dangerouslySetInnerHTML={{
-                            __html: formatMathText(text)
-                        }}
-                    />
-                </div>
-            )}
+            <MathPreview value={text} />
+
 
             <Input
                 type="text"

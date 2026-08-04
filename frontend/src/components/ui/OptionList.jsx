@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { authHeaders } from "@/api/authHeaders";
 import { API_URL } from "@/config";
-import { formatMathText } from "@/utils/formatMathText";
+import MathContent from "@/components/ui/MathContent";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import DeleteOptionDialog from "@/components/ui/DeleteOptionDialog";
@@ -364,7 +364,7 @@ export default function OptionList({ options, onChanged, questionId }) {
                         <div
                             className="math-preview mb-2"
                             dangerouslySetInnerHTML={{
-                                __html: formatMathText(
+                                __html: formatQuestion(
                                     newOptionText
                                 )
                             }}

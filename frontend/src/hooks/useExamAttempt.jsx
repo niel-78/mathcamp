@@ -38,7 +38,22 @@ export function useExamAttempt(attemptId) {
                 }
 
                 setAttempt(data.attempt);
-                setQuestions(data.questions || []);
+
+                const normalizedQuestions =
+                    (data.questions || []).map(question => ({
+
+                        ...question,
+
+                        answer_config:
+                            typeof question.answer_config === "string"
+                                ? JSON.parse(question.answer_config)
+                                : question.answer_config
+
+                    }));
+
+                setQuestions(normalizedQuestions);
+
+                setQuestions(normalizedQuestions || []);
 
                 const answerMap = {};
 
@@ -59,9 +74,9 @@ export function useExamAttempt(attemptId) {
                     else {
 
                         const config =
-                            typeof question.math_config === "string"
-                                ? JSON.parse(question.math_config)
-                                : question.math_config;
+                            typeof question.answer_config === "string"
+                                ? JSON.parse(question.answer_config)
+                                : question.answer_config;
 
                         if (config?.default) {
                             answerMap[question.id] =

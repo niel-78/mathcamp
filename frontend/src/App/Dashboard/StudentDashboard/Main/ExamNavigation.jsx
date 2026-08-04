@@ -7,7 +7,8 @@ export default function ExamNavigation({
     showReset,
     onPrev,
     onNext,
-    onReset
+    onReset,
+    onSubmit
 }) {
 
     const isFirst = index === 0;
@@ -40,13 +41,18 @@ export default function ExamNavigation({
             </div>
 
             <div>
-                <Button onClick={onNext}>
+                <Button
+                    onClick={
+                        isLast
+                            ? onSubmit
+                            : onNext
+                    }
+                >
                     {isLast
-                        ? "Avsluta prov"
+                        ? "Lämna in prov"
                         : "Nästa →"}
                 </Button>
             </div>
-
         </div>
     );
 }

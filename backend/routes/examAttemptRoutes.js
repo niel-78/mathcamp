@@ -627,5 +627,244 @@ router.post("/start", async (req, res) => {
 
     }
 });
+// POST /api/exam-attempts/:id/submit
+router.post("/:id/submit", async (req, res) => {
+
+    const connection = await db.getConnection();
+
+    try {
+
+        const { id } = req.params;
+
+        await connection.beginTransaction();
+
+        const [attemptRows] =
+            await connection.query(
+                `
+                SELECT
+                    id,
+                    user_id,
+                    status
+                FROM exam_attempts
+                WHERE id = ?
+                `,
+                [id]
+            );
+
+        if (attemptRows.length === 0) {
+
+            await connection.rollback();
+
+            return res.status(404).json({
+                error: "Provförsöket hittades inte."
+            });
+        }
+
+        const attempt = attemptRows[0];
+
+        if (attempt.user_id !== req.user.id) {
+
+            await connection.rollback();
+
+            return res.status(403).json({
+                error: "Saknar behörighet."
+            });
+        }
+
+        if (attempt.status === "submitted") {
+
+            await connection.rollback();
+
+            return res.status(409).json({
+                error: "Provet är redan inlämnat."
+            });
+        }
+
+        await connection.query(
+            `
+            UPDATE exam_attempts
+            SET
+                status = 'submitted',
+                submitted_at = NOW()
+            WHERE id = ?
+            `,
+            [id]
+        );
+
+        await connection.commit();
+
+        res.json({
+            success: true
+        });
+
+    } catch (error) {
+
+        await connection.rollback();
+
+        console.error(error);
+
+        res.status(500).json({
+            error:
+                error.message ||
+                "Kunde inte lämna in provet."
+        });
+
+    } finally {
+
+        connection.release();
+    }
+});
+
+// GET /api/exam-attempts/:id/results
+router.get("/:id/results", async (req, res) => {
+
+    const connection = await db.getConnection();
+
+    try {
+
+        const { id } = req.params;
+
+        const [attemptRows] =
+            await connection.query(
+                `
+                SELECT
+                    id,
+                    user_id
+                FROM exam_attempts
+                WHERE id = ?
+                `,
+                [id]
+            );
+
+        if (attemptRows.length === 0) {
+            return res.status(404).json({
+                error: "Provförsök hittades inte."
+            });
+        }
+
+        const attempt = attemptRows[0];
+
+        if (attempt.user_id !== req.user.id) {
+            return res.status(403).json({
+                error: "Saknar behörighet."
+            });
+        }
+
+        const [questions] =
+            await connection.query(
+                `
+                SELECT
+                    q.id,
+                    q.question,
+                    q.question_type,
+                    a.id AS answer_id,
+                    a.text_answer
+                FROM answers a
+                INNER JOIN questions q
+                    ON q.id = a.question_id
+                INNER JOIN attempt_questions aq
+                    ON aq.question_id = q.id
+                    AND aq.attempt_id = a.attempt_id
+                WHERE a.attempt_id = ?
+                ORDER BY aq.sort_order
+                `,
+                [id]
+            );
+
+        const results = [];
+
+        for (const question of questions) {
+
+            const [selectedOptions] =
+                await connection.query(
+                    `
+                    SELECT
+                        o.id,
+                        o.text
+                    FROM answer_options ao
+                    INNER JOIN options o
+                        ON o.id = ao.option_id
+                    WHERE ao.answer_id = ?
+                    ORDER BY o.id
+                    `,
+                    [question.answer_id]
+                );
+
+            const [correctOptions] =
+                await connection.query(
+                    `
+                    SELECT
+                        id,
+                        text
+                    FROM options
+                    WHERE question_id = ?
+                        AND is_correct = 1
+                    ORDER BY id
+                    `,
+                    [question.id]
+                );
+
+            let correct = false;
+
+            if (question.question_type === "text") {
+
+                const correctTexts =
+                    correctOptions.map(
+                        o => o.text.trim()
+                    );
+
+                correct =
+                    correctTexts.includes(
+                        (question.text_answer || "").trim()
+                    );
+
+            } else {
+
+                const selectedIds =
+                    selectedOptions
+                        .map(o => o.id)
+                        .sort((a, b) => a - b);
+
+                const correctIds =
+                    correctOptions
+                        .map(o => o.id)
+                        .sort((a, b) => a - b);
+
+                correct =
+                    JSON.stringify(selectedIds) ===
+                    JSON.stringify(correctIds);
+            }
+
+            results.push({
+                question_id: question.id,
+                question: question.question,
+                question_type: question.question_type,
+                text_answer: question.text_answer,
+                selected_options: selectedOptions,
+                correct_options: correctOptions,
+                correct
+            });
+        }
+
+        res.json({
+            results
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            error:
+                error.message ||
+                "Kunde inte hämta resultat."
+        });
+
+    } finally {
+
+        connection.release();
+    }
+});
+
 
 export default router

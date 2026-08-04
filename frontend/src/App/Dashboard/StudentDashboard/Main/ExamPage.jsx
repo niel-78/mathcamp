@@ -6,6 +6,8 @@ import { usePreventBackButton } from "@/hooks/usePreventBackButton";
 import { useDisableContextMenu } from "@/hooks/useDisableContextMenu";
 import { useTabSwitchDetection } from "@/hooks/useTabSwitchDetection";
 
+import { API_URL } from "@/config";
+import { authHeaders } from "@/api/authHeaders";
 import UserProfile from "@/components/ui/UserProfile";
 import ExamHeader from "./ExamHeader";
 import ExamTimer from "./ExamTimer";
@@ -49,6 +51,11 @@ export default function ExamPage({
 
     const current = questions[index];
 
+    const answerConfig =
+        typeof current.answer_config === "string"
+            ? JSON.parse(current.answer_config)
+            : current.answer_config;
+
     if (!current) {
         return <p>Ingen fråga hittades.</p>;
     }
@@ -79,8 +86,6 @@ export default function ExamPage({
                 ...prev,
                 [questionId]: optionId,
             };
-
-            console.log("NEW ANSWERS", next);
 
             return next;
         });
@@ -128,9 +133,40 @@ export default function ExamPage({
         setIndex(i => Math.max(0, i - 1));
     };
 
-    console.log("ExamPage answer", answers[current.id]);
+    const resetToDefault = async () => {
 
-    
+        const defaultValue =
+            current.answer_config?.default_answer;
+
+        if (defaultValue === undefined) {
+            return;
+        }
+
+        setAnswers(prev => ({
+            ...prev,
+            [current.id]: defaultValue
+        }));
+
+        await saveAnswer(
+            current.id,
+            {
+                text_answer: defaultValue
+            }
+        );
+    };
+
+    const submitExam = async () => {
+
+        await fetch(
+            `${API_URL}/api/exam-attempts/${attemptId}/submit`,
+            {
+                method: "POST",
+                headers: authHeaders()
+            }
+        );
+
+        onExit();
+    };
 
     return (
 
@@ -165,8 +201,11 @@ export default function ExamPage({
                         total={questions.length}
                         //allowPrevious={attempt?.allow_previous}
                         allowPrevious="true"
+                        showReset={answerConfig.default_answer !== undefined}
                         onPrev={prev}
                         onNext={next}
+                        onReset={resetToDefault}
+                        onSubmit={submitExam}
                     />
 
                 </CardContent>

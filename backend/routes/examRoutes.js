@@ -356,7 +356,7 @@ router.post("/:examId/copy", async (req, res) => {
                     question,
                     block_id,
                     type,
-                    math_config
+                    answer_config
                 )
                 VALUES (?, ?, ?, ?)
                 `,
@@ -364,7 +364,7 @@ router.post("/:examId/copy", async (req, res) => {
                     question.question,
                     newBlockId,
                     question.type,
-                    question.math_config
+                    question.answer_config
                 ]
             );
 
