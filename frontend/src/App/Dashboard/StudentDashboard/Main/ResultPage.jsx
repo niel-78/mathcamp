@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { API_URL } from "@/config";
-import { formatValue } from "@/utils/formatValue";
+import { formatMathText } from "@/utils/formatMathText";
 import { authHeaders } from "@/api/authHeaders";
 
 const ResultPage = ({ attemptId }) => {
@@ -70,14 +70,14 @@ const ResultPage = ({ attemptId }) => {
               <strong>Ditt svar:</strong>
               <div
                 dangerouslySetInnerHTML={{
-                  __html: formatValue(r.userText)
+                  __html: formatMathText(r.userText)
                 }}
               />
 
               <strong>Rätt svar:</strong>
               <div
                 dangerouslySetInnerHTML={{
-                  __html: formatValue(r.correctText)
+                  __html: formatMathText(r.correctText)
                 }}
               />
 
@@ -113,7 +113,7 @@ const ResultPage = ({ attemptId }) => {
 
                     <span
                       dangerouslySetInnerHTML={{
-                        __html: formatValue(opt.text)
+                        __html: formatMathText(opt.text)
                       }}
                     />
                   </div>

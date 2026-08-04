@@ -125,12 +125,12 @@ router.get("/:examId", async (req, res) => {
 
     const [blocks] = await db.query(
         `
-        SELECT b.*, eb.order_by
+        SELECT b.*, eb.sort_order
         FROM blocks b
         JOIN exam_blocks eb
             ON eb.block_id = b.id
         WHERE eb.exam_id = ?
-        ORDER BY eb.order_by
+        ORDER BY eb.sort_order
         `,
         [req.params.examId]
     );
@@ -227,7 +227,7 @@ router.post("/:examId/library-blocks",
         const [[row]] = await db.query(
             `
             SELECT
-                COALESCE(MAX(order_by), 0) + 1
+                COALESCE(MAX(sort_order), 0) + 1
                 AS nextOrder
             FROM exam_blocks
             WHERE exam_id = ?
@@ -240,7 +240,7 @@ router.post("/:examId/library-blocks",
             INSERT INTO exam_blocks(
                 exam_id,
                 block_id,
-                order_by
+                sort_order
             )
             VALUES (?, ?, ?)
             `,
@@ -302,7 +302,7 @@ router.post("/:examId/copy", async (req, res) => {
 
     const [blocks] = await db.query(
         `
-        SELECT b.*, eb.order_by
+        SELECT b.*, eb.sort_order
         FROM blocks b
         JOIN exam_blocks eb
             ON eb.block_id = b.id
@@ -328,14 +328,14 @@ router.post("/:examId/copy", async (req, res) => {
             INSERT INTO exam_blocks(
                 exam_id,
                 block_id,
-                order_by
+                sort_order
             )
             VALUES (?, ?, ?)
             `,
             [
                 newExamId,
                 newBlockId,
-                block.order_by
+                block.sort_order
             ]
         );
 
@@ -450,7 +450,7 @@ router.get("/:examId/blocks", async (req, res) => {
             JOIN blocks b
                 ON b.id = eb.block_id
             WHERE eb.exam_id = ?
-            ORDER BY eb.order_by
+            ORDER BY eb.sort_order
             `,
             [req.params.examId]
         );
@@ -488,7 +488,7 @@ router.post("/:examId/blocks", async (req, res) => {
 
     const [rows] = await db.query(
         `
-        SELECT COALESCE(MAX(order_by), 0) + 1 AS nextOrder
+        SELECT COALESCE(MAX(sort_order), 0) + 1 AS nextOrder
         FROM exam_blocks
         WHERE exam_id = ?
         `,
@@ -502,7 +502,7 @@ router.post("/:examId/blocks", async (req, res) => {
         INSERT INTO exam_blocks(
             exam_id,
             block_id,
-            order_by
+            sort_order
         )
         VALUES (?, ?, ?)
         `,
@@ -528,7 +528,7 @@ router.post("/:examId/import-block",
             `
             SELECT
                 COALESCE(
-                    MAX(order_by),
+                    MAX(sort_order),
                     0
                 ) + 1 AS nextOrder
             FROM exam_blocks
@@ -567,7 +567,7 @@ router.post("/:examId/import-block",
             INSERT INTO exam_blocks (
                 exam_id,
                 block_id,
-                order_by
+                sort_order
             )
             VALUES (?, ?, ?)
             `,
@@ -608,17 +608,17 @@ router.put("/:examId/blocks/:blockId/order",
         console.log(req.params);
         console.log(req.body);
         
-        const { order_by } = req.body;
+        const { sort_order } = req.body;
 
         await db.query(
             `
             UPDATE exam_blocks
-            SET order_by = ?
+            SET sort_order = ?
             WHERE exam_id = ?
             AND block_id = ?
             `,
             [
-                order_by,
+                sort_order,
                 req.params.examId,
                 req.params.blockId
             ]

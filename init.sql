@@ -22,11 +22,11 @@ DROP TABLE IF EXISTS groups;
 DROP TABLE IF EXISTS group_exams;
 DROP TABLE IF EXISTS answer_options;
 DROP TABLE IF EXISTS answers;
-DROP TABLE IF EXISTS exam_questions;
 DROP TABLE IF EXISTS options;
 DROP TABLE IF EXISTS exam_blocks;
 DROP TABLE IF EXISTS exam_attempts;
 DROP TABLE IF EXISTS attempt_questions;
+DROP TABLE IF EXISTS attempt_options;
 DROP TABLE IF EXISTS questions;
 DROP TABLE IF EXISTS exams;
 DROP TABLE IF EXISTS blocks;
@@ -114,7 +114,11 @@ CREATE TABLE questions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     question TEXT,
     block_id INT,
-    type INT DEFAULT 1,
+    question_type ENUM(
+        'text',
+        'single_choice',
+        'multiple_choice'
+    ),
     level_id INT NULL,
     
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -340,7 +344,7 @@ CREATE TABLE exam_blocks (
     exam_id INT NOT NULL,
     block_id INT NOT NULL,
 
-    order_by INT NOT NULL,
+    sort_order INT NOT NULL,
 
     created_at TIMESTAMP
         DEFAULT CURRENT_TIMESTAMP,
@@ -368,6 +372,7 @@ CREATE TABLE exam_attempts (
         'in_progress',
         'submitted'
     ) DEFAULT 'not_started',
+    UNIQUE (group_exam_id, user_id),
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (group_exam_id) REFERENCES group_exams(id)
 ) ENGINE=InnoDB
@@ -381,13 +386,11 @@ CREATE TABLE answers (
     user_id INT,
     exam_id INT,
     question_id INT,
-    option_id INT NULL,
     text_answer TEXT NULL,
     attempt_id VARCHAR(36),
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (exam_id) REFERENCES exams(id),
     FOREIGN KEY (question_id) REFERENCES questions(id),
-    FOREIGN KEY (option_id) REFERENCES options(id),
     FOREIGN KEY (attempt_id) REFERENCES exam_attempts(id) ON DELETE CASCADE,
     UNIQUE (attempt_id, question_id)
 ) ENGINE=InnoDB
@@ -409,10 +412,34 @@ CREATE TABLE answer_options (
 CREATE TABLE attempt_questions (
     attempt_id VARCHAR(36),
     question_id INT,
-    order_by INT,
+    sort_order INT,
     PRIMARY KEY (attempt_id, question_id),
     FOREIGN KEY (attempt_id) REFERENCES exam_attempts(id),
     FOREIGN KEY (question_id) REFERENCES questions(id)
+) ENGINE=InnoDB
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
+
+/*Alternativ på test*/
+CREATE TABLE attempt_options (
+    attempt_id VARCHAR(36) NOT NULL,
+    option_id INT NOT NULL,
+    sort_order INT NOT NULL,
+
+    PRIMARY KEY (
+        attempt_id,
+        option_id
+    ),
+
+    CONSTRAINT fk_attempt_options_attempt
+        FOREIGN KEY (attempt_id)
+        REFERENCES exam_attempts(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_attempt_options_option
+        FOREIGN KEY (option_id)
+        REFERENCES options(id)
+        ON DELETE CASCADE
 ) ENGINE=InnoDB
 CHARACTER SET utf8mb4
 COLLATE utf8mb4_unicode_ci;
@@ -532,7 +559,7 @@ CREATE TABLE block_sections (
 
 INSERT INTO blocks (id,created_by,updated_by) VALUES (1,2,2);
 
-INSERT INTO questions (id,question,block_id,created_by,updated_by,math_config) VALUES (NULL,'Skriv 1 074 000 med ord.',1,2,2,JSON_OBJECT('mode', 'text'));
+INSERT INTO questions (id,question,block_id,created_by,updated_by,math_config,question_type) VALUES (NULL,'Skriv 1 074 000 med ord.',1,2,2,JSON_OBJECT('mode', 'text'),'text');
 SET @q = LAST_INSERT_ID();
 
 INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUES (NULL,@q,'en miljon sjuttiofyra tusen',1,2,2);
@@ -544,7 +571,7 @@ INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUE
 
 INSERT INTO blocks (id,created_by,updated_by) VALUES (2,2,2);
 
-INSERT INTO questions (id,question,block_id,created_by,updated_by,math_config) VALUES (NULL,'Vilket tal är närmast 35.1?',2,2,2,null);
+INSERT INTO questions (id,question,block_id,created_by,updated_by,math_config,question_type) VALUES (NULL,'Vilket tal är närmast 35.1?',2,2,2,JSON_OBJECT('mode', 'text'),'single_choice');
 SET @q = LAST_INSERT_ID();
 INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUES
 (NULL,@q,'30',0,2,2),
@@ -558,7 +585,7 @@ INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUE
 
 INSERT INTO blocks (id,created_by,updated_by) VALUES (3,2,2);
 
-INSERT INTO questions (id,question,block_id,created_by,updated_by,math_config) VALUES (NULL,'11\\cdot2+5',3,2,2,JSON_OBJECT('mode', 'numeric'));
+INSERT INTO questions (id,question,block_id,created_by,updated_by,math_config,question_type) VALUES (NULL,'11\\cdot2+5',3,2,2,JSON_OBJECT('mode', 'numeric'),'text');
 SET @q = LAST_INSERT_ID();
 INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUES (NULL,@q,'27',1,2,2);
 
@@ -569,7 +596,7 @@ INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUE
 
 INSERT INTO blocks (id,created_by,updated_by) VALUES (4,2,2);
 
-INSERT INTO questions (id,question,block_id,created_by,updated_by,math_config) VALUES (NULL,'Förenkla $a+a+a+a$',4,2,2,JSON_OBJECT('mode', 'algebra'));
+INSERT INTO questions (id,question,block_id,created_by,updated_by,math_config,question_type) VALUES (NULL,'Förenkla $a+a+a+a$',4,2,2,JSON_OBJECT('mode', 'algebra'),'text');
 SET @q = LAST_INSERT_ID();
 INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUES (NULL,@q,'4a',1,2,2);
 
@@ -580,9 +607,26 @@ INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUE
 */
 INSERT INTO blocks (id,created_by,updated_by) VALUES (5,2,2);
 
-INSERT INTO questions (id,question,block_id,created_by,updated_by,math_config) VALUES (NULL,'Lös ekvationen $x^2-5x+6=0$',5,2,2,JSON_OBJECT('mode', 'algebra','default','x_1=a,x_2=b'));
+INSERT INTO questions (id,question,block_id,created_by,updated_by,math_config,question_type) VALUES (NULL,'Lös ekvationen $x^2-5x+6=0$',5,2,2,JSON_OBJECT('mode', 'algebra','default','x_1=a,x_2=b'),'text');
 SET @q = LAST_INSERT_ID();
 INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUES (NULL,@q,'x_1=2,x_2=3',1,2,2),(NULL,@q,'x_1=3,x_2=2',1,2,2);
+
+
+-- ======================
+-- BLOCK 6 BRÅK (ska tas bort)
+-- ======================
+
+INSERT INTO blocks (id,created_by,updated_by) VALUES (6,2,2);
+
+INSERT INTO questions (id,question,block_id,created_by,updated_by,math_config,question_type) VALUES (NULL,'Vilka tal är lika stora?',2,2,2,JSON_OBJECT('mode', 'text'),'multiple_choice');
+SET @q = LAST_INSERT_ID();
+INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUES
+(NULL,@q,'$\\frac{3}{4}$',0,2,2),
+(NULL,@q,'$\\frac{2}{3}$',1,2,2),
+(NULL,@q,'$\\frac{4}{6}$',1,2,2),
+(NULL,@q,'$\\frac{4}{3}$',0,2,2);
+
+
 
 -- ======================
 -- EXAM BLOCKS
@@ -594,10 +638,10 @@ INSERT INTO exam_users (exam_id,user_id,is_owner) VALUES (1,2,TRUE);
 
 INSERT INTO group_users (group_id,user_id,is_owner) VALUES (1,2,TRUE);
 
-INSERT INTO exam_blocks (exam_id,block_id,order_by) VALUES
-(1,1,1),(1,2,2),(1,3,3),(1,4,4),(1,5,5);
+INSERT INTO exam_blocks (exam_id,block_id,sort_order) VALUES
+(1,1,6),(1,2,2),(1,3,3),(1,4,4),(1,5,5),(1,6,1);
 
-INSERT INTO group_exams(`exam_id`,`group_id`,`group_exam_key`) VALUES(1,1,'A');
+INSERT INTO group_exams(`exam_id`,`group_id`,`group_exam_key`,`is_open`,`time_limit_minutes`) VALUES(1,1,'A',TRUE,15);
 
 --Matematik 
 

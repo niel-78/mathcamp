@@ -1,4 +1,4 @@
-import { formatValue } from "@/utils/formatValue";
+import { formatMathText } from "@/utils/formatMathText";
 
 export default function MathContent({
     value,
@@ -41,7 +41,7 @@ export default function MathContent({
             <div
                 className={`${className} text-center`}
                 dangerouslySetInnerHTML={{
-                    __html: formatValue(text)
+                    __html: formatMathText(text)
                 }}
             />
         );
@@ -52,7 +52,7 @@ export default function MathContent({
         <div
             className={className}
             dangerouslySetInnerHTML={{
-                __html: formatValue(text)
+                __html: formatMathText(text)
             }}
         />
     );

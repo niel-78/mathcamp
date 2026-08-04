@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { authHeaders } from "@/api/authHeaders";
-import { formatValue } from "@/utils/formatValue";
+import { formatMathText } from "@/utils/formatMathText";
 import { API_URL } from "@/config";
 import Question from "./Block/Question";
 
@@ -91,8 +91,8 @@ export default function Block({ block, exam, onChanged, editMode }) {
     const moveUp = async (block) => {
 
         const previousBlock = exam.blocks
-            .filter(b => b.order_by < block.order_by)
-            .sort((a, b) => b.order_by - a.order_by)[0];
+            .filter(b => b.sort_order < block.sort_order)
+            .sort((a, b) => b.sort_order - a.sort_order)[0];
 
         if (!previousBlock) {
             return;
@@ -108,7 +108,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
                 },
                 body: JSON.stringify({
                     blockId: block.id,
-                    order_by: previousBlock.order_by
+                    sort_order: previousBlock.sort_order
                 })
             }
         );
@@ -123,7 +123,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
                 },
                 body: JSON.stringify({
                     blockId: previousBlock.id,
-                    order_by: block.order_by
+                    sort_order: block.sort_order
                 })
             }
         );
@@ -134,8 +134,8 @@ export default function Block({ block, exam, onChanged, editMode }) {
     const moveDown = async (block) => {
 
         const nextBlock = exam.blocks
-            .filter(b => b.order_by > block.order_by)
-            .sort((a, b) => a.order_by - b.order_by)[0];
+            .filter(b => b.sort_order > block.sort_order)
+            .sort((a, b) => a.sort_order - b.sort_order)[0];
 
         if (!nextBlock) {
             return;
@@ -151,7 +151,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
                 },
                 body: JSON.stringify({
                     blockId: block.id,
-                    order_by: nextBlock.order_by
+                    sort_order: nextBlock.sort_order
                 })
             }
         );
@@ -166,7 +166,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
                 },
                 body: JSON.stringify({
                     blockId: nextBlock.id,
-                    order_by: block.order_by
+                    sort_order: block.sort_order
                 })
             }
         );
@@ -175,11 +175,11 @@ export default function Block({ block, exam, onChanged, editMode }) {
     };
 
     const canMoveUp = exam.blocks.some(
-        b => b.order_by < block.order_by
+        b => b.sort_order < block.sort_order
     );
 
     const canMoveDown = exam.blocks.some(
-        b => b.order_by > block.order_by
+        b => b.sort_order > block.sort_order
     );
 
     return (
@@ -188,7 +188,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
             <div className="flex justify-between items-center mb-4">
 
                 <h3 className="text-xl font-semibold">
-                    {block.order_by}. {block.name}
+                    {block.sort_order}. {block.name}
                 </h3>
 
             </div>
@@ -217,7 +217,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
                             rounded-lg
                         "
                         dangerouslySetInnerHTML={{
-                            __html: formatValue(newQuestion)
+                            __html: formatMathText(newQuestion)
                         }}
                     />
 

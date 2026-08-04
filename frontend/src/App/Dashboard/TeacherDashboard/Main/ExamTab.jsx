@@ -31,8 +31,8 @@ export default function ExamTab({
         setBlocks(
             data.sort(
                 (a, b) =>
-                    a.order_by -
-                    b.order_by
+                    a.sort_order -
+                    b.sort_order
             )
         );
 
@@ -144,7 +144,7 @@ export default function ExamTab({
                                         "application/json"
                                 },
                                 body: JSON.stringify({
-                                    order_by:
+                                    sort_order:
                                         index + 1
                                 })
                             }

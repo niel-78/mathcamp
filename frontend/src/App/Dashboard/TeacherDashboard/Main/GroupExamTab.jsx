@@ -21,11 +21,6 @@ export default function GroupExamTab({
 
     useEffect(() => {
 
-        console.log(
-            "GroupExamTab",
-            groupExamId
-        );
-
         loadGroupExam();
         loadBlocks();
 

@@ -102,7 +102,7 @@ router.post("/", async (req, res) => {
         const [rows] = await db.query(
             `
             SELECT
-                COALESCE(MAX(order_by), 0) + 1
+                COALESCE(MAX(sort_order), 0) + 1
                 AS nextOrder
             FROM exam_blocks
             WHERE exam_id = ?
@@ -115,7 +115,7 @@ router.post("/", async (req, res) => {
             INSERT INTO exam_blocks (
                 exam_id,
                 block_id,
-                order_by
+                sort_order
             )
             VALUES (?, ?, ?)
             `,

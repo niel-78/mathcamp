@@ -1,56 +1,34 @@
 import { useEffect, useState } from "react";
 import { renderLatex } from "@/utils/renderLatex";
-import { formatValue } from "@/utils/formatValue";
-import { formatQuestion } from "@/utils/formatQuestion";
+import { formatMathText } from "@/utils/formatMathText";
 import { isSEB } from "@/utils/isSEB";
 import { API_URL } from "@/config";
 import { Button } from "@/components/ui/button";
 import { authHeaders } from "@/api/authHeaders";
 
-export default function ExamPage({ attemptId, examConfig, onExit }) {
+export default function ExamPage({ attemptId, onExit }) {
     const [questions, setQuestions] = useState([]);
     const [index, setIndex] = useState(0);
     const [answers, setAnswers] = useState({});
     const [time, setTime] = useState(0);
-    const [allowPrevious, setAllowPrevious] = useState(true);
-    const [randomizeOptions, setRandomizeOptions] = useState(true);
     const isDone = index >= questions.length;
     const current = questions[index];
 
-    // Fisher-Yates shuffle
-    function shuffle(array) {
-    const newArray = [...array]; // kopiera (viktigt i React!)
-        for (let i = newArray.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-        }
-        return newArray;
-    }
+    const allowPrevious = true;    
 
     useEffect(() => {
         if (!attemptId) return;
 
-        const parsed = JSON.parse(examConfig);
-        setTime(parsed.timer);
-        if(parsed.allowPrevious != undefined){
-            setAllowPrevious(parsed.allowPrevious)
-        }
-        if(parsed.randomizeOptions != undefined){
-            setRandomizeOptions(parsed.randomizeOptions)
-        }
-
         const fetchQuestions = async () => {
-            console.log("🔥 FETCH START");
 
             const res = await fetch(
-                `${API_URL}/api/questions?attemptId=${attemptId}`,
+                `${API_URL}/api/exam-attempts/${attemptId}`,
                 {
                     headers: authHeaders()
                 }
             );
 
             const data = await res.json();
-            console.log("🔥 DATA:", data);
 
             if (!res.ok || !data.questions) {
                 alert(data.error || "No questions");
@@ -59,7 +37,6 @@ export default function ExamPage({ attemptId, examConfig, onExit }) {
  
             setQuestions(data.questions);
 
-            // ✅ sätt default answers direkt
             const initialAnswers = {};
 
             data.questions.forEach(q => {
@@ -75,14 +52,6 @@ export default function ExamPage({ attemptId, examConfig, onExit }) {
 
             setAnswers(initialAnswers);
 
-            if(randomizeOptions){
-                console.log("randomizeOptions")
-                data.questions.forEach(q => {
-                    if(q.options.length > 1){
-                        q.shuffledOptions = shuffle(q.options)
-                    }
-                });
-            }
         };
 
         fetchQuestions();
@@ -118,7 +87,7 @@ export default function ExamPage({ attemptId, examConfig, onExit }) {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: localStorage.getItem("token")
+                        ...authHeaders()
                     },
                     body: JSON.stringify({ type: "tab_switch" })
                 });
@@ -186,6 +155,7 @@ export default function ExamPage({ attemptId, examConfig, onExit }) {
                 attempt_id: attemptId,
                 question_id: questionId,
                 answer: answer
+                //selected_option_ids
             })
         });
     };
@@ -267,71 +237,71 @@ export default function ExamPage({ attemptId, examConfig, onExit }) {
     }
 
     return (
-        <div className="exam-container">
+        <div className="h-screen flex flex-col">
 
-        {/* SEB warning */}
-        {!isSEB() && (
-            <div className="warning-text">
-            ⚠️ Du kör inte i Safe Exam Browser!
-            </div>
-        )}
-
-        <h1>Prov</h1>
-
-        <h2>Exam started ✅</h2>
-        <p>Attempt: {attemptId}</p>
-
-        <h2>Fråga {index + 1}</h2>
-
-        <div
-            dangerouslySetInnerHTML={{
-                __html: formatQuestion(current.question)
-            }}
-        />
-
-        {/* ✅ visa options */}
-        <div className="answers">
-
-            {/*Visa endast preview för text input som inte är text*/}
-            <div className="preview">
-                {current.type !== 1 || current.math_config.mode === 'text'
-                    ? ""
-                    : (
-                    <span
-                        dangerouslySetInnerHTML={{
-                        __html: formatValue(answers[current.id])
-                        }}
-                    />
-                    )
-                }
-            </div>
-
-            {current.type === 1 && (
-                <input
-                    type="text"
-                    value={answers[current.id] || ""}
-                    onChange={(e) => handleInput(current.id, e.target.value)}
-                    className="answer-input"
-                />
+            {/* SEB warning */}
+            {!isSEB() && (
+                <div className="warning-text">
+                ⚠️ Du kör inte i Safe Exam Browser!
+                </div>
             )}
-            
-            {current.type === 2 && (
-            <div className="answers">
-                {(current.shuffledOptions || current.options).map(opt => (
-                <Button
-                    key={opt.id}
-                    className={answers[current.id] === opt.id ? "selected" : ""}
-                    onClick={() => handleSingle(current.id, opt.id)}
-                >
-                <div
-                dangerouslySetInnerHTML={{
-                    __html: renderLatex(opt.text)
-                }}
-                />
 
-                </Button>
-                ))}
-            </div>
+            <h1>Prov</h1>
+
+            <h2>Exam started ✅</h2>
+            <p>Attempt: {attemptId}</p>
+
+            <h2>Fråga {index + 1}</h2>
+
+            <div
+                dangerouslySetInnerHTML={{
+                    __html: formatMathText(current.question)
+                }}
+            />
+
+            {/* ✅ visa options */}
+            <div className="answers">
+
+                {/*Visa endast preview för text input som inte är text*/}
+                <div className="preview">
+                    {current.type !== 1 || current.math_config.mode === 'text'
+                        ? ""
+                        : (
+                        <span
+                            dangerouslySetInnerHTML={{
+                            __html: formatMathText(answers[current.id])
+                            }}
+                        />
+                        )
+                    }
+                </div>
+
+                {current.type === 1 && (
+                    <input
+                        type="text"
+                        value={answers[current.id] || ""}
+                        onChange={(e) => handleInput(current.id, e.target.value)}
+                        className="answer-input"
+                    />
+                )}
+                
+                {current.type === 2 && (
+                <div className="answers">
+                    {(current.shuffledOptions || current.options).map(opt => (
+                    <Button
+                        key={opt.id}
+                        className={answers[current.id] === opt.id ? "selected" : ""}
+                        onClick={() => handleSingle(current.id, opt.id)}
+                    >
+                    <div
+                    dangerouslySetInnerHTML={{
+                        __html: renderLatex(opt.text)
+                    }}
+                    />
+
+                    </Button>
+                    ))}
+                </div>
             )}
 
             {current.type === 3 && (
@@ -349,7 +319,7 @@ export default function ExamPage({ attemptId, examConfig, onExit }) {
 
                     <div
                     dangerouslySetInnerHTML={{
-                        __html: formatValue(opt.text)
+                        __html: formatMathText(opt.text)
                     }}
                     />
 
@@ -386,11 +356,6 @@ export default function ExamPage({ attemptId, examConfig, onExit }) {
         </Button>
 
         </div>
-
-        <p>
-        ⏳ Tid: {Math.floor(parseInt(time) / 60)}:
-        {String(time % 60).padStart(2, "0")}
-        </p>
 
     </div>
 

@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { authHeaders } from "@/api/authHeaders";
 import { API_URL } from "@/config";
-import { formatValue } from "@/utils/formatValue";
-import { formatQuestion } from "@/utils/formatQuestion";
+import { formatMathText } from "@/utils/formatMathText";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import DeleteOptionDialog from "@/components/ui/DeleteOptionDialog";
@@ -175,7 +174,7 @@ export default function OptionList({ options, onChanged, questionId }) {
                                     mb-2
                                 "
                                 dangerouslySetInnerHTML={{
-                                    __html: formatQuestion(
+                                    __html: formatMathText(
                                         editedOptions[option.id] ??
                                         option.text
                                     )
@@ -238,7 +237,7 @@ export default function OptionList({ options, onChanged, questionId }) {
                                 <div
                                     className="math-content flex-1"
                                     dangerouslySetInnerHTML={{
-                                        __html: formatValue(
+                                        __html: formatMathText(
                                             option.text
                                         )
                                     }}
@@ -365,7 +364,7 @@ export default function OptionList({ options, onChanged, questionId }) {
                         <div
                             className="math-preview mb-2"
                             dangerouslySetInnerHTML={{
-                                __html: formatQuestion(
+                                __html: formatMathText(
                                     newOptionText
                                 )
                             }}

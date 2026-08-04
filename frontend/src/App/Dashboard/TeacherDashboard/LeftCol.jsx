@@ -314,6 +314,9 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                 <div className="px-3 py-2 text-sm text-gray-500 border-b">
                                     {contextMenu.firstName} {contextMenu.lastName}
                                 </div>
+                                <div className="px-3 py-2 text-sm text-gray-500 border-b">
+                                    {contextMenu.userName}
+                                </div>
 
                                 <Button
                                     className="
@@ -529,6 +532,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                                         userId: student.id,
                                                                         firstName: student.first_name,
                                                                         lastName: student.last_name,
+                                                                        userName: student.username,
                                                                         groupId: group.id,
                                                                         x: e.clientX,
                                                                         y: e.clientY

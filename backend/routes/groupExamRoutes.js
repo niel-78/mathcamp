@@ -292,7 +292,7 @@ router.get("/:id/blocks", async (req, res) => {
             JOIN blocks b
                 ON b.id = eb.block_id
             WHERE ge.id = ?
-            ORDER BY eb.order_by
+            ORDER BY eb.sort_order
             `,
             [req.params.id]
         );

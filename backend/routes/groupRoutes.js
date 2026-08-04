@@ -236,7 +236,8 @@ router.post("/:id/students", async (req, res) => {
         );
 
         res.status(201).json({
-            id: userResult.insertId
+            id: userResult.insertId,
+            password: password 
         });
 
     } catch (err) {
