@@ -58,6 +58,7 @@ router.post("/", async (req, res) => {
     });
 });
 
+
 // GET /api/groups/:id
 router.get("/:id", async (req, res) => {
     try {
@@ -147,6 +148,43 @@ router.put("/:id", async (req, res) => {
 
 });
 
+
+// GET /api/groups/:id/students
+router.get("/:id/students", async (req, res) => {
+    try {
+
+        const [students] = await db.query(
+            `
+            SELECT
+                u.id,
+                u.first_name,
+                u.last_name,
+                u.username,
+                gs.joined_at
+            FROM group_students gs
+            INNER JOIN users u
+                ON u.id = gs.user_id
+            WHERE gs.group_id = ?
+            AND u.role = 'student'
+            ORDER BY u.last_name, u.first_name
+            `,
+            [req.params.id]
+        );
+
+        res.json({
+            students
+        });
+
+    } catch (err) {
+
+        console.error(err);
+
+        res.status(500).json({
+            error: "Kunde inte hämta gruppens elever."
+        });
+
+    }
+});
 // POST /api/groups/:id/students
 router.post("/:id/students", async (req, res) => {
     try {
@@ -185,7 +223,7 @@ router.post("/:id/students", async (req, res) => {
 
         await db.query(
             `
-            INSERT INTO group_users (
+            INSERT INTO group_students (
                 group_id,
                 user_id
             )
@@ -211,6 +249,43 @@ router.post("/:id/students", async (req, res) => {
 
     }
 });
+// DELETE /api/groups/:id/students/:studentId
+router.delete("/:id/students/:studentId", async (req, res) => {
+    try {
+
+        const [result] = await db.query(
+            `
+            DELETE FROM group_students
+            WHERE group_id = ?
+              AND user_id = ?
+            `,
+            [
+                req.params.id,
+                req.params.studentId
+            ]
+        );
+
+        console.log(result);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                error: "Eleven finns inte i gruppen."
+            });
+        }
+
+        res.sendStatus(204);
+
+    } catch (err) {
+
+        console.error(err);
+
+        res.status(500).json({
+            error: "Kunde inte ta bort eleven från gruppen."
+        });
+
+    }
+});
+
 
 //PUT /api/groups/:id/archive
 router.put("/:id/archive", async (req, res) => {

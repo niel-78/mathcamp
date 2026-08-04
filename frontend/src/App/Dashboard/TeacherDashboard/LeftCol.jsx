@@ -84,14 +84,18 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
     const loadStudents = async (groupId) => {
 
+        console.log("load students ", groupId);
+
         const response = await fetch(
-            `${API_URL}/api/groups/${groupId}/`,
+            `${API_URL}/api/groups/${groupId}/students`,
             {
                 headers: authHeaders()
             }
         );
 
         const data = await response.json();
+
+        console.log(data);
 
         setGroupStudents((prev) => ({
             ...prev,
@@ -141,19 +145,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
     const toggleStudents = async (groupId) => {
         if (!groupStudents[groupId]) {
-            const response = await fetch(
-                `${API_URL}/api/groups/${groupId}/`,
-                {
-                    headers:authHeaders()
-                }
-            );
-
-            const data = await response.json();
-
-            setGroupStudents((prev) => ({
-                ...prev,
-                [groupId]: data.students,
-            }));
+            loadStudents(groupId);
         }
 
         setExpandedStudents((prev) => ({

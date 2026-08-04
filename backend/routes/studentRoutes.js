@@ -138,39 +138,6 @@ router.put("/:studentId/password",
     }
 );
 
-// PUT /api/students/:studentId/archive
-router.put("/:studentId/archive", async (req, res) => {
-    try {
-
-        const [result] = await db.query(
-            `
-            UPDATE users
-            SET archived = TRUE
-            WHERE id = ?
-            AND role = 'student'
-            `,
-            [req.params.studentId]
-        );
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({
-                error: "Eleven hittades inte."
-            });
-        }
-
-        res.sendStatus(204);
-
-    } catch (err) {
-
-        console.error(err);
-
-        res.status(500).json({
-            error: "Kunde inte arkivera eleven."
-        });
-
-    }
-});
-
 // GET /api/students/:id/attempts
 // GET /api/students/:id/results
 

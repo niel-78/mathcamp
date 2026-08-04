@@ -78,6 +78,7 @@ VALUES (1, 'student', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpzt
 (5, 'Betty', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Betty', 'Blue' , 'student'),
 (6, 'Calle', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Calle', 'Arvidsson' , 'student');
 
+/*Typuppgifter*/
 CREATE TABLE blocks (
     id INT AUTO_INCREMENT PRIMARY KEY,
 
@@ -100,6 +101,7 @@ CREATE TABLE blocks (
 
 ) ENGINE=InnoDB;
 
+/*Svårighetsgrader*/
 CREATE TABLE question_levels (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
@@ -107,6 +109,7 @@ CREATE TABLE question_levels (
     sort_order INT NOT NULL
 );
 
+/*Uppgifter*/
 CREATE TABLE questions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     question TEXT,
@@ -156,6 +159,7 @@ VALUES
     4
 );
 
+/*Bilder till uppgifter*/
 CREATE TABLE question_media (
     id INT AUTO_INCREMENT PRIMARY KEY,
     question_id INT NOT NULL,
@@ -166,6 +170,7 @@ CREATE TABLE question_media (
     FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
 );
 
+/*Facit och alternativ på flervalsfrågor*/
 CREATE TABLE options (
     id INT AUTO_INCREMENT PRIMARY KEY,
     question_id INT,
@@ -184,6 +189,7 @@ CREATE TABLE options (
     FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+/*Prov*/
 CREATE TABLE exams (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255),
@@ -204,7 +210,7 @@ CREATE TABLE exams (
     exam_config JSON DEFAULT JSON_OBJECT('allowCalculator', 'false','allowFormulaSheet','true','defaultTimeLimit',60000)
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-
+/*Personal kopplat till prov*/
 CREATE TABLE exam_users (
     exam_id INT NOT NULL,
     user_id INT NOT NULL,
@@ -224,6 +230,7 @@ CREATE TABLE exam_users (
         ON DELETE CASCADE
 );
 
+/*Elevgrupper*/
 CREATE TABLE groups (
     id INT AUTO_INCREMENT PRIMARY KEY,
 
@@ -234,6 +241,7 @@ CREATE TABLE groups (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+/*Personal som är kopplad till grupp*/
 CREATE TABLE group_users (
     group_id INT NOT NULL,
     user_id INT NOT NULL,
@@ -257,6 +265,7 @@ INSERT INTO groups (id, name)
 VALUES
 (1, 'Niklas grupp'),(2, 'Joines grupp');
 
+/*Provtillfällen*/
 CREATE TABLE group_exams (
     id INT AUTO_INCREMENT PRIMARY KEY,
 
@@ -301,6 +310,7 @@ CREATE TABLE group_exams (
     UNIQUE KEY unique_group_exam (group_id, exam_id)
 );
 
+/*Elever i grupper*/
 CREATE TABLE group_students (
     user_id INT NOT NULL,
     group_id INT NOT NULL,
@@ -323,6 +333,7 @@ CREATE TABLE group_students (
 INSERT INTO group_students (user_id, group_id)
 VALUES (1, 1),(4, 2),(5, 2),(6, 2);
 
+/*Typyppgifter i prov*/
 CREATE TABLE exam_blocks (
     id INT AUTO_INCREMENT PRIMARY KEY,
 
@@ -343,7 +354,7 @@ CREATE TABLE exam_blocks (
         REFERENCES blocks(id)
 );
 
-
+/*Provtillfälle för elev*/
 CREATE TABLE exam_attempts (
     id VARCHAR(36) PRIMARY KEY,
     user_id INT,
@@ -364,7 +375,7 @@ CHARACTER SET utf8mb4
 COLLATE utf8mb4_unicode_ci;
 ;
 
-
+/*Elevsvar på uppgift*/
 CREATE TABLE answers (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT,
@@ -383,6 +394,7 @@ CREATE TABLE answers (
 CHARACTER SET utf8mb4
 COLLATE utf8mb4_unicode_ci;
 
+/**/
 CREATE TABLE answer_options (
     answer_id INT,
     option_id INT,
@@ -393,6 +405,7 @@ CREATE TABLE answer_options (
     FOREIGN KEY (option_id) REFERENCES options(id)
 ) ENGINE=InnoDB;
 
+/*Provfrågor för elev*/
 CREATE TABLE attempt_questions (
     attempt_id VARCHAR(36),
     question_id INT,

@@ -23,9 +23,10 @@ export default function ArchiveStudentDialog({
     const archiveStudent = async () => {
         
         console.log(student)
+        console.log(authHeaders())
 
         const response = await fetch(
-            `${API_URL}/api/students/${student.userId}/archive`,
+            `${API_URL}/api/groups/${student.groupId}/students/${student.userId}`,
             {
                 method: "DELETE",
                 headers: authHeaders()
@@ -37,6 +38,7 @@ export default function ArchiveStudentDialog({
             toast.error(
                 "Kunde inte arkivera eleven"
             );
+            console.log(response.status);
 
             return;
         }
