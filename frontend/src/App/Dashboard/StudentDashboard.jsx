@@ -41,7 +41,6 @@ const StudentDashboard = () => {
     }
 
     setAttemptId(data.attempt_id);
-    console.log(data);
     setExamConfig(data.exam_config);
     setView("exam");
   };
@@ -57,7 +56,6 @@ const StudentDashboard = () => {
   }
 
   if (view === "result") {
-    console.log(attemptId);
     return <ResultPage attemptId={attemptId} />;
   }
 

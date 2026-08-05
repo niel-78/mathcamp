@@ -199,8 +199,8 @@ export default function ExamPage({
                     <ExamNavigation
                         index={index}
                         total={questions.length}
-                        //allowPrevious={attempt?.allow_previous}
-                        allowPrevious="true"
+                        allowPrevious={attempt?.allow_previous}
+                        //allowPrevious="true"
                         showReset={answerConfig.default_answer !== undefined}
                         onPrev={prev}
                         onNext={next}

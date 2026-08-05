@@ -560,7 +560,7 @@ CREATE TABLE block_sections (
 
 INSERT INTO blocks (id,created_by,updated_by) VALUES (1,2,2);
 
-INSERT INTO questions (id,question,block_id,created_by,updated_by,answer_config,question_type) VALUES (NULL,'Skriv 1 074 000 med ord.',1,2,2,JSON_OBJECT('mode', 'text'),'text');
+INSERT INTO questions (id,question,block_id,created_by,updated_by,answer_config,question_type) VALUES (NULL,'Skriv 1 074 000 med ord.',1,2,2,JSON_OBJECT('grading_mode', 'text','default_answer','en miljon sjuttiofyra tusen'),'text');
 SET @q = LAST_INSERT_ID();
 
 INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUES (NULL,@q,'en miljon sjuttiofyra tusen',1,2,2);
@@ -572,7 +572,7 @@ INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUE
 
 INSERT INTO blocks (id,created_by,updated_by) VALUES (2,2,2);
 
-INSERT INTO questions (id,question,block_id,created_by,updated_by,answer_config,question_type) VALUES (NULL,'Vilket tal är närmast 35.1?',2,2,2,JSON_OBJECT('mode', 'text'),'single_choice');
+INSERT INTO questions (id,question,block_id,created_by,updated_by,answer_config,question_type) VALUES (NULL,'Vilket tal är närmast 35.1?',2,2,2,JSON_OBJECT(),'single_choice');
 SET @q = LAST_INSERT_ID();
 INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUES
 (NULL,@q,'30',0,2,2),
@@ -586,9 +586,9 @@ INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUE
 
 INSERT INTO blocks (id,created_by,updated_by) VALUES (3,2,2);
 
-INSERT INTO questions (id,question,block_id,created_by,updated_by,answer_config,question_type) VALUES (NULL,'11\\cdot2+5',3,2,2,JSON_OBJECT('mode', 'numeric'),'text');
+INSERT INTO questions (id,question,block_id,created_by,updated_by,answer_config,question_type) VALUES (NULL,'Skriv $\\pi$ med minst 2 decimaler',3,2,2,JSON_OBJECT('grading_mode','numeric',"decimals",2,'default_answer','3.14'),'text');
 SET @q = LAST_INSERT_ID();
-INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUES (NULL,@q,'27',1,2,2);
+INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUES (NULL,@q,'3.1415',1,2,2);
 
 
 -- ======================
@@ -597,9 +597,9 @@ INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUE
 
 INSERT INTO blocks (id,created_by,updated_by) VALUES (4,2,2);
 
-INSERT INTO questions (id,question,block_id,created_by,updated_by,answer_config,question_type) VALUES (NULL,'Förenkla $a+a+a+a$',4,2,2,JSON_OBJECT('mode', 'algebra'),'text');
+INSERT INTO questions (id,question,block_id,created_by,updated_by,answer_config,question_type) VALUES (NULL,'Förenkla $2x-1+x+7$',4,2,2,JSON_OBJECT('grading_mode', 'algebra','default_answer','6+3x'),'text');
 SET @q = LAST_INSERT_ID();
-INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUES (NULL,@q,'4a',1,2,2);
+INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUES (NULL,@q,'3x+6',1,2,2);
 
 /*
 -- ======================
@@ -608,9 +608,9 @@ INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUE
 */
 INSERT INTO blocks (id,created_by,updated_by) VALUES (5,2,2);
 
-INSERT INTO questions (id,question,block_id,created_by,updated_by,answer_config,question_type) VALUES (NULL,'Lös ekvationen $x^2-5x+6=0$',5,2,2,JSON_OBJECT('mode', 'algebra','default_answer','x_1=a,x_2=b'),'text');
+INSERT INTO questions (id,question,block_id,created_by,updated_by,answer_config,question_type) VALUES (NULL,'Lös ekvationen $x^2-5x+6=0$',5,2,2,JSON_OBJECT('grading_mode', 'variables','ignore_variable_names', true,'default_answer','x_1=3,x_2=2'),'text');
 SET @q = LAST_INSERT_ID();
-INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUES (NULL,@q,'x_1=2,x_2=3',1,2,2),(NULL,@q,'x_1=3,x_2=2',1,2,2);
+INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUES (NULL,@q,'x_1=2,x_2=3',1,2,2);
 
 
 -- ======================
@@ -619,7 +619,7 @@ INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUE
 
 INSERT INTO blocks (id,created_by,updated_by) VALUES (6,2,2);
 
-INSERT INTO questions (id,question,block_id,created_by,updated_by,answer_config,question_type) VALUES (NULL,'Vilka tal är lika stora?',2,2,2,JSON_OBJECT('mode', 'text'),'multiple_choice');
+INSERT INTO questions (id,question,block_id,created_by,updated_by,answer_config,question_type) VALUES (NULL,'Vilka tal är lika stora?',2,2,2,JSON_OBJECT(),'multiple_choice');
 SET @q = LAST_INSERT_ID();
 INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUES
 (NULL,@q,'$\\frac{3}{4}$',0,2,2),
@@ -640,9 +640,11 @@ INSERT INTO exam_users (exam_id,user_id,is_owner) VALUES (1,2,TRUE);
 INSERT INTO group_users (group_id,user_id,is_owner) VALUES (1,2,TRUE);
 
 INSERT INTO exam_blocks (exam_id,block_id,sort_order) VALUES
-(1,1,6),(1,2,2),(1,3,3),(1,4,4),(1,5,5),(1,6,1);
+(1,5,3);
+--(1,1,6),(1,2,2),(1,3,3),(1,4,4),(1,5,5),(1,6,1);
 
-INSERT INTO group_exams(`exam_id`,`group_id`,`group_exam_key`,`is_open`,`time_limit_minutes`,`shuffle_questions`) VALUES(1,1,'A',TRUE,15,TRUE);
+
+INSERT INTO group_exams(`exam_id`,`group_id`,`group_exam_key`,`is_open`,`time_limit_minutes`,`shuffle_questions`,`shuffle_options`,`allow_previous`) VALUES(1,1,'A',TRUE,15,TRUE,TRUE,FALSE);
 
 --Matematik 
 

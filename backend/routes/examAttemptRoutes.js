@@ -3,6 +3,8 @@ import db from "../db.js";
 import crypto from "crypto";
 import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
+import { gradeAnswer } from "../utils/gradeAnswer.js";
+
 
 const router = express.Router();
 
@@ -757,6 +759,7 @@ router.get("/:id/results", async (req, res) => {
                     q.id,
                     q.question,
                     q.question_type,
+                    q.answer_config,
                     a.id AS answer_id,
                     a.text_answer
                 FROM answers a
@@ -790,6 +793,11 @@ router.get("/:id/results", async (req, res) => {
                     [question.answer_id]
                 );
 
+            question.answer_config =
+                typeof question.answer_config === "string"
+                    ? JSON.parse(question.answer_config)
+                    : question.answer_config;
+
             const [correctOptions] =
                 await connection.query(
                     `
@@ -805,18 +813,18 @@ router.get("/:id/results", async (req, res) => {
                 );
 
             let correct = false;
-
+    
             if (question.question_type === "text") {
 
-                const correctTexts =
-                    correctOptions.map(
-                        o => o.text.trim()
-                    );
-
                 correct =
-                    correctTexts.includes(
-                        (question.text_answer || "").trim()
-                    );
+                    gradeAnswer({
+                        studentAnswer:
+                            question.text_answer,
+                        correctAnswer:
+                            correctOptions[0]?.text,
+                        config:
+                            question.answer_config
+                    });
 
             } else {
 

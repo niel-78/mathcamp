@@ -10,8 +10,6 @@ export default function QuestionView({
     onMultiChoice
 }) {
 
-    console.log(question);
-
     switch (question.question_type) {
 
         case 'text':
