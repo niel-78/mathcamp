@@ -5,13 +5,21 @@ import MathContent from "@/components/ui/MathContent";
 import OptionList from "@/components/ui/OptionList";
 import DeleteQuestionDialog from "@/components/ui/DeleteQuestionDialog";
 import DeleteMediaDialog from "@/components/ui/DeleteMediaDialog";
+import QuestionTester from "@/components/ui/QuestionTester";
+import AnswerConfigEditor from "@/components/ui/AnswerConfigEditor";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
+import { GRADING_MODES, QUESTION_TYPES, getQuestionTypeLabel, getGradingModeLabel } from "@/constants/examConstants";
 
 export default function QuestionView({
     question,
     onChanged
 }) {
+
+    const answerConfig =
+    typeof question.answer_config === "string"
+        ? JSON.parse(question.answer_config)
+        : (question.answer_config || {});
 
     const [editingQuestionText,
         setEditingQuestionText] =
@@ -33,6 +41,9 @@ export default function QuestionView({
 
     const [editingLevel, setEditingLevel] =
         useState(false);
+
+    const [questionType, setQuestionType] =
+        useState(question.question_type);
 
     const [uploadingMedia, setUploadingMedia] = useState(false);
 
@@ -76,7 +87,7 @@ export default function QuestionView({
     const saveQuestion = async () => {
 
         await fetch(
-            `${API_URL}/api/blocks/questions/${question.id}`,
+            `${API_URL}/api/questions/${question.id}`,
             {
                 method: "PUT",
                 headers: {
@@ -85,7 +96,7 @@ export default function QuestionView({
                 },
                 body: JSON.stringify({
                     question: questionText,
-                    type: question.type,
+                    question_type: question.question_type,
                     answer_config: question.answer_config
                 })
             }
@@ -104,7 +115,7 @@ export default function QuestionView({
         try {
 
             await fetch(
-                `${API_URL}/api/blocks/questions/${questionId}`,
+                `${API_URL}/api/questions/${questionId}`,
                 {
                     method: "DELETE",
                     headers: authHeaders()
@@ -140,7 +151,7 @@ export default function QuestionView({
         try {
 
             const response = await fetch(
-                `${API_URL}/api/blocks/questions/${question.id}/media`,
+                `${API_URL}/api/questions/${question.id}/media`,
                 {
                     method: "POST",
                     headers: authHeaders(),
@@ -173,7 +184,7 @@ export default function QuestionView({
         try {
 
             await fetch(
-                `${API_URL}/api/blocks/media/${mediaId}`,
+                `${API_URL}/api/questions/media/${mediaId}`,
                 {
                     method: "DELETE",
                     headers: authHeaders()
@@ -199,7 +210,7 @@ export default function QuestionView({
         try {
 
             await fetch(
-                `${API_URL}/api/blocks/questions/${question.id}`,
+                `${API_URL}/api/questions/${question.id}`,
                 {
                     method: "PUT",
                     headers: {
@@ -208,7 +219,7 @@ export default function QuestionView({
                     },
                     body: JSON.stringify({
                         question: question.question,
-                        type: question.type,
+                        question_type: question.question_type,
                         answer_config: question.answer_config,
                         level_id: levelId
                     })
@@ -434,6 +445,11 @@ export default function QuestionView({
                     options={question.options}
                     onChanged={onChanged}
                 />
+
+                <QuestionTester
+                    question={question}
+                />
+
                 <div
                     className="
                         flex
@@ -515,6 +531,11 @@ export default function QuestionView({
 
                 </div>
 
+                <AnswerConfigEditor
+                    question={question}
+                    onChanged={onChanged}
+                />    
+                        
             </div>
             <DeleteQuestionDialog
                 open={questionToDelete !== null}

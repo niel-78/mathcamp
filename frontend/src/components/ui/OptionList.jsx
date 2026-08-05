@@ -168,17 +168,12 @@ export default function OptionList({ options, onChanged, questionId }) {
 
                             </label>
 
-                            <div
+                            <MathContent
                                 className="
                                     math-preview
                                     mb-2
                                 "
-                                dangerouslySetInnerHTML={{
-                                    __html: formatMathText(
-                                        editedOptions[option.id] ??
-                                        option.text
-                                    )
-                                }}
+                                value={(editedOptions[option.id] ?? option.text)}
                             />
 
                             <textarea
@@ -234,13 +229,9 @@ export default function OptionList({ options, onChanged, questionId }) {
                         <>
                             <div className="flex-1 flex items-start gap-2">
 
-                                <div
+                                <MathContent
                                     className="math-content flex-1"
-                                    dangerouslySetInnerHTML={{
-                                        __html: formatMathText(
-                                            option.text
-                                        )
-                                    }}
+                                    value={option.text}
                                 />
                                 <div className="flex items-center gap-2 shrink-0"></div>
                                 {option.is_correct ? (
@@ -360,15 +351,13 @@ export default function OptionList({ options, onChanged, questionId }) {
                             }
                             placeholder="Nytt alternativ..."
                         />
-
-                        <div
-                            className="math-preview mb-2"
-                            dangerouslySetInnerHTML={{
-                                __html: formatQuestion(
-                                    newOptionText
-                                )
-                            }}
-                        />
+                        <MathContent
+                                className="
+                                    math-preview
+                                    mb-2
+                                "
+                                value={newOptionText}
+                            />
 
                         <div className="flex gap-2">
 

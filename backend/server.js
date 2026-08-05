@@ -7,6 +7,7 @@ import subjectRoutes from "./routes/subjectRoutes.js";
 import centralContentRoutes from "./routes/centralContentRoutes.js";
 
 import blockRoutes from "./routes/blockRoutes.js";
+import questionRoutes from "./routes/questionRoutes.js";
 import questionLevelRoutes from "./routes/questionLevelRoutes.js";
 
 import examRoutes from "./routes/examRoutes.js";
@@ -52,6 +53,7 @@ app.use("/api/subjects", subjectRoutes);
 app.use("/api/central-content", centralContentRoutes);
 
 app.use("/api/blocks", blockRoutes);
+app.use("/api/questions", questionRoutes);
 app.use("/api/question-levels", questionLevelRoutes);
 
 app.use("/api/exams", examRoutes);

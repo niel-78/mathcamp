@@ -1,6 +1,6 @@
 import express from "express";
 import db from "../db.js";
-import multer from "multer";
+
 import path from "path";
 import fs from "fs";
 import hydrateBlocks from "../utils/hydrateBlocks.js";
@@ -17,6 +17,7 @@ GET    /api/blocks/:id
 PUT    /api/blocks/:id
 DELETE /api/blocks/:id
 
+POST   /api/blocks/:id/questions
 POST   /api/blocks/:id/options
 POST   /api/blocks/:id/attachments
 
@@ -29,19 +30,6 @@ POST   /api/blocks/:id/central-content/:centralContentId
 GET    /api/blocks/sections/:sectionId
 
 */
-
-
-const storage = multer.diskStorage({
-    destination: "uploads/",
-    filename: (req, file, cb) => {
-        cb(
-            null,
-            Date.now() +
-            path.extname(file.originalname)
-        );
-    }
-});
-const upload = multer({ storage })
 
 router.use(requireAuth);
 router.use(requireRole("teacher", "admin"));
@@ -70,7 +58,7 @@ router.get("/", async (req, res) => {
     res.json(hydratedBlocks);
 });
 
-// POST   /api/blocks
+// POST /api/blocks
 router.post("/", async (req, res) => {
 
     const {
@@ -133,7 +121,7 @@ router.post("/", async (req, res) => {
         INSERT INTO questions (
             question,
             block_id,
-            type,
+            question_type,
             created_by,
             updated_by,
             answer_config
@@ -193,7 +181,7 @@ router.post("/", async (req, res) => {
 
 });
 
-// GET    /api/blocks/:id - är samma som den nedan än så länge
+// GET /api/blocks/:id
 router.get("/:blockId/", async (req, res) => {
 
     const [blocks] = await db.query(
@@ -220,34 +208,7 @@ router.get("/:blockId/", async (req, res) => {
     res.json(hydratedBlocks[0]);
 
 });
-// GET    /api/blocks/:id/
-router.get("/:blockId/", async (req, res) => {
-
-    const [blocks] = await db.query(
-        `
-        SELECT
-            b.*,
-            cu.first_name AS created_by_first_name,
-            cu.last_name AS created_by_last_name,
-            uu.first_name AS updated_by_first_name,
-            uu.last_name AS updated_by_last_name
-        FROM blocks b
-        LEFT JOIN users cu
-            ON cu.id = b.created_by
-        LEFT JOIN users uu
-            ON uu.id = b.updated_by
-        WHERE b.id = ?
-        `,
-        [req.params.blockId]
-    );
-
-    const hydratedBlocks =
-        await hydrateBlocks(blocks);
-
-    res.json(hydratedBlocks[0]);
-
-});
-// PUT    /api/blocks/:id
+// PUT /api/blocks/:id
 router.put("/:blockId", async (req, res) => {
 
     const { name } = req.body;
@@ -279,6 +240,43 @@ router.delete("/:blockId", async (req, res) => {
             );
 
             res.sendStatus(204);
+});
+
+// POST /api/blocks/:id/questions
+router.post("/:id/questions", async (req, res) => {
+
+    const {
+        question = "",
+        answer_type = "text",
+        answer_config = {}
+    } = req.body;
+
+    const [result] = await db.query(
+        `
+        INSERT INTO questions(
+            question,
+            block_id,
+            question_type,
+            created_by,
+            updated_by,
+            answer_config
+        )
+        VALUES (?, ?, ?, ?, ?, ?)
+        `,
+        [
+            question,
+            req.params.id,
+            type,
+            req.user.id,
+            req.user.id,
+            JSON.stringify(answer_config)
+        ]
+    );
+
+    res.json({
+        id: result.insertId
+    });
+
 });
 
 // POST   /api/blocks/:id/options
@@ -467,7 +465,7 @@ router.post("/:blockId/questions", async (req, res) => {
     const {
         question = "",
         type = 1,
-        answer_config = {}
+        math_config = {}
     } = req.body;
 
     const [result] = await db.query(
@@ -478,7 +476,7 @@ router.post("/:blockId/questions", async (req, res) => {
             type,
             created_by,
             updated_by,
-            answer_config
+            math_config
         )
         VALUES (?, ?, ?, ?, ?, ?)
         `,
@@ -488,7 +486,7 @@ router.post("/:blockId/questions", async (req, res) => {
             type,
             req.user.id,
             req.user.id,
-            JSON.stringify(answer_config)
+            JSON.stringify(math_config)
         ]
     );
 
@@ -498,39 +496,6 @@ router.post("/:blockId/questions", async (req, res) => {
 
 });
 
-
-// PUT /api/teacher/blocks/questions/:questionId
-router.put("/questions/:questionId", async (req, res) => {
-
-    const {
-        question,
-        type,
-        answer_config,
-        level_id
-    } = req.body;
-
-    await db.query(
-        `
-        UPDATE questions
-        SET
-            question = ?,
-            type = ?,
-            answer_config = ?,
-            level_id = ?
-
-        WHERE id = ?
-        `,
-        [
-            question,
-            type,
-            JSON.stringify(answer_config),
-            level_id,
-            req.params.questionId
-        ]
-    );
-
-    res.sendStatus(204);
-});
 
 //DELETE /api/teacher/questions/:questionId
 router.delete("/questions/:questionId", async (req, res) => {
@@ -627,87 +592,9 @@ router.delete("/options/:optionId", async (req, res) => {
 });
 
 
-// POST /api/teacher/blocks/questions/:questionId/media
-router.post("/questions/:questionId/media",
-    upload.single("file"),
-    async (req, res) => {
 
-        console.log("FILE:", req.file);
-        console.log("CWD:", process.cwd());
 
-        const mediaType =
-            req.file.mimetype.startsWith("video")
-                ? "video"
-                : "image";
 
-        const mediaUrl =
-            "/uploads/" + req.file.filename;
-
-        const [result] = await db.query(
-            `
-            INSERT INTO question_media (
-                question_id,
-                media_type,
-                media_url
-            )
-            VALUES (?, ?, ?)
-            `,
-            [
-                req.params.questionId,
-                mediaType,
-                mediaUrl
-            ]
-        );
-
-        res.json({
-            id: result.insertId,
-            media_url: mediaUrl
-        });
-    }
-);
-
-// DELETE /api/teacher/blocks/media/:mediaId
-router.delete("/media/:mediaId", async (req, res) => {
-
-    const [rows] = await db.query(
-        `
-        SELECT *
-        FROM question_media
-        WHERE id = ?
-        `,
-        [req.params.mediaId]
-    );
-
-    if (!rows.length) {
-        return res.status(404).json({
-            error: "Media not found"
-        });
-    }
-
-    const filePath = path.join(
-        process.cwd(),
-        rows[0].media_url.replace(/^\//, "")
-    );
-
-    console.log("Deleting:", filePath);
-
-    try {
-        await fs.promises.unlink(filePath);
-        console.log("File deleted");
-    } catch (err) {
-        console.error("Delete failed:", err);
-    }
-
-    await db.query(
-        `
-        DELETE FROM question_media
-        WHERE id = ?
-        `,
-        [req.params.mediaId]
-    );
-
-    res.sendStatus(204);
-});
 
 
 
