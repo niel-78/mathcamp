@@ -4,7 +4,8 @@ import TabBar from "./Main/TabBar";
 import StartPage from "./Main/StartPage";
 import ExamListTab from "./Main/ExamListTab";
 import BlockBankTab from "./Main/BlockBankTab";
-import BlockEditor from "@/components/ui/BlockEditor";
+import BlockContent from "@/App/Dashboard/TeacherDashboard/Main/BlockContent";
+import QuestionCardTab from "./Main/QuestionCardTab";
 import GroupStudentsTab from "./Main/GroupStudentsTab";
 import CentralContentTab from "./Main/CentralContentTab";
 import StudentTab from "./Main/StudentTab";
@@ -35,6 +36,39 @@ export default function Main({
         id: `panel-${area}`
     });
 
+    const closeTab = (tabId) => {
+
+        const tabIndex = tabs.findIndex(
+            tab => tab.id === tabId
+        );
+
+        const newTabs = tabs.filter(
+            tab => tab.id !== tabId
+        );
+
+        setTabs(newTabs);
+
+        if (activeTab === tabId) {
+
+            if (newTabs.length === 0) {
+
+                setActiveTab(null);
+
+            } else {
+
+                const newIndex =
+                    Math.max(0, tabIndex - 1);
+
+                setActiveTab(
+                    newTabs[newIndex].id
+                );
+
+            }
+
+        }
+
+    };
+
     return (
         <div
             ref={setNodeRef}
@@ -56,10 +90,16 @@ export default function Main({
                     activeTab={activeTab}
                     setActiveTab={setActiveTab}
                     setTabs={setTabs}
+                    closeTab={closeTab}
                     area={area}
                 />
 
-                <div className="p-4 flex-1 overflow-auto">
+                    <div
+                        className="
+                            flex-1
+                            overflow-hidden
+                        "
+                    >
 
                     {currentTab?.type === "home" && (
                         <StartPage
@@ -89,6 +129,18 @@ export default function Main({
                             }
                             blockRefreshKey={blockRefreshKey}
                         />
+                    )}
+
+                    {currentTab?.type === "question" && (
+
+                        <QuestionCardTab
+                            questionId={
+                                currentTab.questionId
+                            }
+                            tabId={currentTab.id}
+                            closeTab={closeTab}
+                        />
+
                     )}
 
                     {currentTab?.type === "groups" && (
@@ -132,8 +184,11 @@ export default function Main({
 
                     {    currentTab?.type === "block" && (
 
-                        <BlockEditor
+                        <BlockContent
                             block={currentTab.block}
+                            area={area}
+                            openTab={openTab}
+                            closeTab={closeTab}
                         />
 
                     )}

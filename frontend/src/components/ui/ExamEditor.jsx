@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { authHeaders } from "@/api/authHeaders";
 import { API_URL } from "@/config";
 import { Button } from "@/components/ui/button";
-import BlockEditor from "@/components/ui/BlockEditor";
+import BlockContent from "@/App/Dashboard/TeacherDashboard/Main/BlockContent";
 
 function ExamEditor({examId, onClose}) {
     const [exam, setExam] = useState(null);
@@ -121,7 +121,7 @@ function ExamEditor({examId, onClose}) {
 
                 {exam.blocks.map(block => (
 
-                    <BlockEditor
+                    <BlockContent
                         key={block.id}
                         block={block}
                         examId={exam.id}

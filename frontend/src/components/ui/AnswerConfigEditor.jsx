@@ -65,6 +65,21 @@ export default function AnswerConfigEditor({
             config.round_to ?? ""
         );
 
+    const [
+        requireSimplified,
+        setRequireSimplified
+    ] = useState(
+        config.require_simplified ??
+        false
+    );
+
+    const [
+        allowDecimal,
+        setAllowDecimal
+    ] = useState(
+        config.allow_decimal ?? false
+    );
+
     const modeConfig =
         Object.values(GRADING_MODES)
             .find(
@@ -101,7 +116,11 @@ export default function AnswerConfigEditor({
                     tolerance:
                         tolerance,
                     round_to:
-                        roundTo
+                        roundTo,
+                    require_simplified:
+                        requireSimplified,
+                    allow_decimal:
+                        allowDecimal
                 }
             }
         );
@@ -283,6 +302,121 @@ export default function AnswerConfigEditor({
                 )}
 
 
+                {modeConfig?.settings.includes(
+                    "require_simplified"
+                ) && (
+
+                    <div>
+
+                        <label>
+                            Maximalt förenklat bråk
+                        </label>
+
+                        {!editing ? (
+
+                            <div
+                                className="
+                                    border
+                                    rounded
+                                    p-2
+                                    bg-gray-50
+                                "
+                            >
+                                {requireSimplified
+                                    ? "Ja"
+                                    : "Nej"}
+                            </div>
+
+                        ) : (
+
+                            <label
+                                className="
+                                    flex
+                                    gap-2
+                                    items-center
+                                "
+                            >
+
+                                <input
+                                    type="checkbox"
+                                    checked={
+                                        requireSimplified
+                                    }
+                                    onChange={(e) =>
+                                        setRequireSimplified(
+                                            e.target.checked
+                                        )
+                                    }
+                                />
+
+                                Kräv maximalt förenklat bråk
+
+                            </label>
+
+                        )}
+
+                    </div>
+
+                )}
+
+                {modeConfig?.settings.includes(
+                    "allow_decimal"
+                ) && (
+
+                    <div>
+
+                        <label>
+                            Tillåt decimalform
+                        </label>
+
+                        {!editing ? (
+
+                            <div
+                                className="
+                                    border
+                                    rounded
+                                    p-2
+                                    bg-gray-50
+                                "
+                            >
+                                {allowDecimal
+                                    ? "Ja"
+                                    : "Nej"}
+                            </div>
+
+                        ) : (
+
+                            <label
+                                className="
+                                    flex
+                                    gap-2
+                                    items-center
+                                "
+                            >
+
+                                <input
+                                    type="checkbox"
+                                    checked={
+                                        allowDecimal
+                                    }
+                                    onChange={(e) =>
+                                        setAllowDecimal(
+                                            e.target.checked
+                                        )
+                                    }
+                                />
+
+                                Tillåt decimalform
+
+                            </label>
+
+                        )}
+
+                    </div>
+
+                )}
+
+
 
                 {modeConfig?.settings.includes(
                     "tolerance"
@@ -336,6 +470,8 @@ export default function AnswerConfigEditor({
                     </div>
 
                 )}
+
+
 
 
 
@@ -400,7 +536,7 @@ export default function AnswerConfigEditor({
 
     return (
 
-        <div className="border rounded-lg p-4">
+        <div className="flex items-center gap-4">
 
             {!editing ? (
 
@@ -413,14 +549,20 @@ export default function AnswerConfigEditor({
                         )}
                     </div>
 
-                    <div>
-                        <strong>Rättningsmetod:</strong>{" "}
-                        {getGradingModeLabel(
-                            gradingMode
-                        )}
-                    </div>
+                    {questionType ===
+                        QUESTION_TYPES.TEXT.value && (
+                        <>
 
-                    {renderSettings()}
+                            <div>
+                                <strong>Rättningsmetod:</strong>{" "}
+                                {getGradingModeLabel(
+                                    gradingMode
+                                )}
+                            </div>
+
+                            {renderSettings()}
+
+                        </>)}    
 
                     <Button
                         className="mt-2"
@@ -435,7 +577,7 @@ export default function AnswerConfigEditor({
 
             ) : (
 
-                <div className="space-y-4">
+                <div className="flex items-center gap-4">
 
                     <div>
 
@@ -475,45 +617,52 @@ export default function AnswerConfigEditor({
 
                     </div>
 
-                    <div>
+                    {questionType ===
+                        QUESTION_TYPES.TEXT.value && (
+                        <>
 
-                        <label
-                            className="
-                                text-sm
-                                font-medium
-                                block
-                                mb-1
-                            "
-                        >
-                            Rättningsmetod
-                        </label>
+                            <div>
 
-                        <select
-                            className="input-standard"
-                            value={gradingMode}
-                            onChange={(e) =>
-                                setGradingMode(
-                                    e.target.value
-                                )
-                            }
-                        >
-                            {Object.values(
-                                GRADING_MODES
-                            ).map(mode => (
-
-                                <option
-                                    key={mode.value}
-                                    value={mode.value}
+                                <label
+                                    className="
+                                        text-sm
+                                        font-medium
+                                        block
+                                        mb-1
+                                    "
                                 >
-                                    {mode.label}
-                                </option>
+                                    Rättningsmetod
+                                </label>
 
-                            ))}
-                        </select>
+                                <select
+                                    className="input-standard"
+                                    value={gradingMode}
+                                    onChange={(e) =>
+                                        setGradingMode(
+                                            e.target.value
+                                        )
+                                    }
+                                >
+                                    {Object.values(
+                                        GRADING_MODES
+                                    ).map(mode => (
 
-                    </div>
+                                        <option
+                                            key={mode.value}
+                                            value={mode.value}
+                                        >
+                                            {mode.label}
+                                        </option>
 
-                    {renderSettings()}
+                                    ))}
+                                </select>
+
+                            </div>
+
+                            {renderSettings()}
+
+                        </>
+                    )}    
 
                     <div className="flex gap-2">
 

@@ -1,5 +1,4 @@
 import { useDraggable } from "@dnd-kit/core";
-import { Button } from "@/components/ui/button";
 
 export default function DraggableTab({
     tab,
@@ -22,6 +21,9 @@ export default function DraggableTab({
         }
     });
 
+    const isActive =
+        activeTab === tab.id;
+
     const style = transform
         ? {
             transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`
@@ -30,26 +32,67 @@ export default function DraggableTab({
 
     return (
 
-        <Button
+        <div
             ref={setNodeRef}
             style={style}
-            variant="outline"
             onClick={() =>
                 setActiveTab(tab.id)
             }
+            className={`
+                flex
+                items-center
+                gap-2
+                px-3
+                py-2
+                border-r
+                cursor-pointer
+                select-none
+                min-w-[150px]
+                max-w-[250px]
+
+                ${isActive
+                    ? `
+                        bg-white
+                        border-t-2
+                        border-t-blue-500
+                        text-black
+                        font-medium
+                    `
+                    : `
+                        bg-slate-100
+                        hover:bg-slate-200
+                        text-slate-700
+                    `
+                }
+            `}
         >
 
             <span
                 {...listeners}
                 {...attributes}
-                className="cursor-grab mr-2"
+                onClick={(e) =>
+                    e.stopPropagation()
+                }
+                className="
+                    cursor-grab
+                    text-slate-500
+                    shrink-0
+                "
             >
                 ⠿
             </span>
 
-            {tab.title}
-
             <span
+                className="
+                    truncate
+                    flex-1
+                "
+            >
+                {tab.title}
+            </span>
+
+            <button
+                type="button"
                 onClick={(e) => {
 
                     e.stopPropagation();
@@ -57,11 +100,18 @@ export default function DraggableTab({
                     closeTab(tab.id);
 
                 }}
+                className="
+                    shrink-0
+                    text-slate-500
+                    hover:text-red-500
+                    px-1
+                "
             >
                 ×
-            </span>
+            </button>
 
-        </Button>
+        </div>
 
     );
+
 }

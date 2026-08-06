@@ -1,5 +1,5 @@
 import { normalizeAnswer }
-    from "../utils/normalizeAnswer.js";
+    from "../normalizeAnswer.js";
 
 console.log("-> gradeText");
 

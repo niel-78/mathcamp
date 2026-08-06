@@ -31,6 +31,15 @@ export const GRADING_MODES = {
             "round_to"
         ]
     },
+    FRACTION: {
+        value: "fraction",
+        label: "Bråk",
+        settings: [
+            "default_answer",
+            "require_simplified",
+            "allow_decimal"
+        ]
+    },
     ALGEBRA: {
         value: "algebra",
         label: "Algebra",

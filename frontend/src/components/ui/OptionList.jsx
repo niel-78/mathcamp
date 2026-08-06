@@ -7,6 +7,11 @@ import { Button } from "@/components/ui/button";
 import DeleteOptionDialog from "@/components/ui/DeleteOptionDialog";
 
 export default function OptionList({ options, onChanged, questionId }) {
+    
+    if (!options) {
+        return null;
+    }
+
     const [editedOptions, setEditedOptions] = useState({});
     const [editedCorrect, setEditedCorrect] = useState({})
 

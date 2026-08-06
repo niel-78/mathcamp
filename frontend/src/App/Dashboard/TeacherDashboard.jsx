@@ -10,13 +10,31 @@ import {
 } from "@/components/ui/resizable";
 import { authHeaders } from "@/api/authHeaders";
 import { API_URL } from "@/config";
-import { Button } from "@/components/ui/button";
 import LeftCol from "./TeacherDashboard/LeftCol";
+import AppHeader from "./TeacherDashboard/AppHeader";
 import Main from "./TeacherDashboard/Main";
 
 export default function TeacherDashboard() {
 
     const [splitView, setSplitView] = useState(false);
+
+    const [darkMode, setDarkMode] =
+    useState(
+        document.documentElement
+            .classList.contains("dark")
+    );
+
+    useEffect(() => {
+
+        localStorage.setItem(
+            "theme",
+            darkMode
+                ? "dark"
+                : "light"
+        );
+
+    }, [darkMode]);
+
     const [leftTabs, setLeftTabs] =
         useState(() => {
 
@@ -430,16 +448,10 @@ export default function TeacherDashboard() {
 
                                     <div className="p-2 border-b">
 
-                                        <Button
-                                            variant="outline"
-                                            onClick={() =>
-                                                setSplitView(v => !v)
-                                            }
-                                        >
-                                            {splitView
-                                                ? "En vy"
-                                                : "Dela vy"}
-                                        </Button>
+                                        <AppHeader
+                                            splitView={splitView}
+                                            setSplitView={setSplitView}
+                                        />
 
                                     </div>
 

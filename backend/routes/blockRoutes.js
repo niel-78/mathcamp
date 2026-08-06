@@ -247,7 +247,7 @@ router.post("/:id/questions", async (req, res) => {
 
     const {
         question = "",
-        answer_type = "text",
+        question_type = "text",
         answer_config = {}
     } = req.body;
 
@@ -266,7 +266,7 @@ router.post("/:id/questions", async (req, res) => {
         [
             question,
             req.params.id,
-            type,
+            question_type,
             req.user.id,
             req.user.id,
             JSON.stringify(answer_config)
@@ -464,8 +464,8 @@ router.post("/:blockId/questions", async (req, res) => {
 
     const {
         question = "",
-        type = 1,
-        math_config = {}
+        question_type = 1,
+        answer_config = {}
     } = req.body;
 
     const [result] = await db.query(
@@ -473,20 +473,20 @@ router.post("/:blockId/questions", async (req, res) => {
         INSERT INTO questions(
             question,
             block_id,
-            type,
+            question_type,
             created_by,
             updated_by,
-            math_config
+            answer_config
         )
         VALUES (?, ?, ?, ?, ?, ?)
         `,
         [
             question,
             req.params.blockId,
-            type,
+            question_type,
             req.user.id,
             req.user.id,
-            JSON.stringify(math_config)
+            JSON.stringify(answer_config)
         ]
     );
 

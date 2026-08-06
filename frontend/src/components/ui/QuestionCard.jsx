@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import MathContent from "@/components/ui/MathContent";
 import OptionList from "@/components/ui/OptionList";
-import DeleteQuestionDialog from "@/components/ui/DeleteQuestionDialog";
 import DeleteMediaDialog from "@/components/ui/DeleteMediaDialog";
 import QuestionTester from "@/components/ui/QuestionTester";
 import AnswerConfigEditor from "@/components/ui/AnswerConfigEditor";
@@ -11,10 +10,14 @@ import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 import { GRADING_MODES, QUESTION_TYPES, getQuestionTypeLabel, getGradingModeLabel } from "@/constants/examConstants";
 
-export default function QuestionView({
+export default function QuestionCard({
     question,
     onChanged
 }) {
+
+    if (!question) {
+        return null;
+    }
 
     const answerConfig =
     typeof question.answer_config === "string"
@@ -107,32 +110,6 @@ export default function QuestionView({
         setEditingQuestionText(false);
 
         toast.success("Fråga sparad");
-
-    };
-
-    const deleteQuestion = async (questionId) => {
-
-        try {
-
-            await fetch(
-                `${API_URL}/api/questions/${questionId}`,
-                {
-                    method: "DELETE",
-                    headers: authHeaders()
-                }
-            );
-
-            await onChanged();
-
-            toast.success("Frågan har tagits bort");
-
-        } catch (error) {
-
-            console.error(error);
-
-            toast.error("Kunde inte ta bort frågan");
-
-        }
 
     };
 
@@ -367,18 +344,6 @@ export default function QuestionView({
                                     Redigera
                                 </Button>
 
-                                <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={() =>
-                                        setQuestionToDelete(
-                                            question.id
-                                        )
-                                    }
-                                >
-                                    Ta bort
-                                </Button>
-
                             </div>
 
                         </div>
@@ -537,25 +502,7 @@ export default function QuestionView({
                 />    
                         
             </div>
-            <DeleteQuestionDialog
-                open={questionToDelete !== null}
-                onOpenChange={(open) => {
 
-                    if (!open) {
-                        setQuestionToDelete(null);
-                    }
-
-                }}
-                onDelete={async () => {
-
-                    await deleteQuestion(
-                        questionToDelete
-                    );
-
-                    setQuestionToDelete(null);
-
-                }}
-            />
             <DeleteMediaDialog
                 open={mediaToDelete !== null}
                 onOpenChange={(open) => {

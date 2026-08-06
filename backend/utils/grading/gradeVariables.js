@@ -1,4 +1,4 @@
-import { normalizeAnswer } from "./normalizeAnswer.js";
+import { normalizeAnswer } from "../normalizeAnswer.js";
 
 export const gradeVariables = (
     studentAnswer,

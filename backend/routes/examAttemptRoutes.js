@@ -3,7 +3,7 @@ import db from "../db.js";
 import crypto from "crypto";
 import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
-import { gradeAnswer } from "../utils/gradeAnswer.js";
+import { gradeAnswer } from "../utils/grading/gradeAnswer.js";
 
 
 const router = express.Router();

@@ -2,6 +2,7 @@ import { gradeText } from "./gradeText.js";
 import { gradeNumeric } from "./gradeNumeric.js";
 import { gradeAlgebra } from "./gradeAlgebra.js";
 import { gradeVariables } from "./gradeVariables.js";
+import { gradeFraction } from "./gradeFraction.js";
 
 export const gradeAnswer = ({
     studentAnswer,
@@ -24,6 +25,13 @@ export const gradeAnswer = ({
 
         case "numeric":
             return gradeNumeric(
+                studentAnswer,
+                correctAnswer,
+                config
+            );
+
+        case "fraction":
+            return gradeFraction(
                 studentAnswer,
                 correctAnswer,
                 config
