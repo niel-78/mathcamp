@@ -27,6 +27,12 @@ export default function CreateBlock({
 
         try {
 
+            console.log({
+                examId,
+                centralContentIds,
+                sectionIds
+            });
+
             const response = await fetch(
                 `${API_URL}/api/blocks`,
                 {
@@ -51,6 +57,8 @@ export default function CreateBlock({
             }
 
             const data = await response.json();
+
+            console.log(data);
 
             setQuestion("");
 

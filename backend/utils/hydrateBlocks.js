@@ -77,6 +77,55 @@ export default async function hydrateBlocks(blocks) {
 
         block.bookSections = bookSections;
 
+        const [subjects] = await db.query(
+            `
+            SELECT DISTINCT
+                s.id,
+                s.name
+            FROM block_central_content bcc
+
+            JOIN central_content cc
+                ON cc.id = bcc.central_content_id
+
+            JOIN content_areas ca
+                ON ca.id = cc.area_id
+
+            JOIN levels l
+                ON l.id = ca.level_id
+
+            JOIN subjects s
+                ON s.id = l.subject_id
+
+            WHERE bcc.block_id = ?
+            `,
+            [block.id]
+        );
+
+        block.subjects = subjects;
+
+        const [levels] = await db.query(
+            `
+            SELECT DISTINCT
+                l.id,
+                l.name
+            FROM block_central_content bcc
+
+            JOIN central_content cc
+                ON cc.id = bcc.central_content_id
+
+            JOIN content_areas ca
+                ON ca.id = cc.area_id
+
+            JOIN levels l
+                ON l.id = ca.level_id
+
+            WHERE bcc.block_id = ?
+            `,
+            [block.id]
+        );
+
+        block.levels = levels;
+
     }
 
     return blocks;

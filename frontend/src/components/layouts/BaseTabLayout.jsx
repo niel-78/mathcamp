@@ -6,39 +6,9 @@ export default function BaseTabLayout({
 
     return (
 
-        <div
-            className="
-                h-full
-                flex
-                flex-col
+        <div className="tab-surface">
 
-                bg-background
-                text-foreground
-
-                border
-                border-border
-
-                rounded-b-lg
-                overflow-hidden
-            "
-        >
-
-            <div
-                className="
-                    px-4
-                    py-3
-
-                    bg-card
-                    border-b
-                    border-border
-
-                    flex
-                    items-center
-                    justify-between
-
-                    shrink-0
-                "
-            >
+            <div className="tab-header">
 
                 <h1
                     className="
@@ -53,13 +23,7 @@ export default function BaseTabLayout({
 
             </div>
 
-            <div
-                className="
-                    flex-1
-                    overflow-auto
-                    p-4
-                "
-            >
+            <div className="tab-content">
                 {children}
             </div>
 

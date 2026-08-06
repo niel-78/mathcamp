@@ -1,26 +1,37 @@
 import { useEffect, useState } from "react";
+
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
+
+import { Button } from "@/components/ui/button";
+
 import ExamCard from "@/components/ui/ExamCard";
 import CreateExam from "@/components/ui/CreateExam";
+
+import NewExamDialog from "@/components/ui/NewExamDialog";
 import DeleteExamDialog from "@/components/ui/DeleteExamDialog";
+
+import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 
 export default function ExamListTab({
     selectedExamId,
-    onSelectExam,
     openTab
 }) {
 
     const [exams, setExams] =
         useState([]);
 
-    const [examToDelete, setExamToDelete] = useState(null);
-    const [deleteOpen, setDeleteOpen] = useState(false);
+    const [creatingExam,
+        setCreatingExam] =
+        useState(false);
 
-    const handleDeleteExam = (exam) => {
-        setExamToDelete(exam);
-        setDeleteOpen(true);
-    };
+    const [examToDelete,
+        setExamToDelete] =
+        useState(null);
+
+    const [deleteOpen,
+        setDeleteOpen] =
+        useState(false);
 
     const loadExams = async () => {
 
@@ -36,9 +47,7 @@ export default function ExamListTab({
                 );
 
             if (!response.ok) {
-
                 return;
-
             }
 
             const data =
@@ -60,17 +69,39 @@ export default function ExamListTab({
 
     }, []);
 
+    const handleDeleteExam = (
+        exam
+    ) => {
+
+        setExamToDelete(exam);
+
+        setDeleteOpen(true);
+
+    };
+
     return (
+
         <>
-            <div className="space-y-4">
 
-                <CreateExam
-                    onCreated={() => {
+            <BaseTabLayout
 
-                        loadExams();
+                title="Provbank"
 
-                    }}
-                />
+                actions={
+
+                    <Button
+                        onClick={() =>
+                            setCreatingExam(
+                                true
+                            )
+                        }
+                    >
+                        Nytt prov
+                    </Button>
+
+                }
+
+            >
 
                 <div
                     className="
@@ -82,30 +113,67 @@ export default function ExamListTab({
                     "
                 >
 
-                {exams.map(exam => (
+                    {exams.map(exam => (
 
-                    <ExamCard
-                        key={exam.id}
-                        exam={exam}
-                        selected={
-                            selectedExamId ===
-                            exam.id
-                        }
-                        openTab={openTab}
-                        onDelete={handleDeleteExam}
-                    />
+                        <ExamCard
+                            key={exam.id}
+                            exam={exam}
+                            selected={
+                                selectedExamId ===
+                                exam.id
+                            }
+                            openTab={openTab}
+                            onDelete={
+                                handleDeleteExam
+                            }
+                        />
 
-                ))}
+                    ))}
 
                 </div>
 
-            </div>
+            </BaseTabLayout>
+
             <DeleteExamDialog
                 exam={examToDelete}
                 open={deleteOpen}
-                onOpenChange={setDeleteOpen}
+                onOpenChange={
+                    setDeleteOpen
+                }
                 onDeleted={loadExams}
             />
+
+            <NewExamDialog
+                open={creatingExam}
+                onOpenChange={
+                    setCreatingExam
+                }
+            >
+
+                <CreateExam
+                    onCreated={(exam) => {
+
+                        console.log(
+                            "received in ExamListTab",
+                            exam
+                        );
+
+                        setCreatingExam(false);
+
+                        loadExams();
+
+                        openTab({
+                            id: `exam-${exam.id}`,
+                            title: exam.title,
+                            type: "exam",
+                            examId: exam.id
+                        });
+
+                    }}
+                />
+
+            </NewExamDialog>
+
         </>
 
     );

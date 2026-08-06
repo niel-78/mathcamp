@@ -96,11 +96,20 @@ export default function CreateExam({
             }
         );
 
-        console.log("status", response.status);
+        if (!response.ok) {
+
+            toast.error(
+                "Kunde inte skapa prov"
+            );
+
+            return;
+        }
 
         const exam = await response.json();
 
-        console.log("exam", exam);
+        toast.success(
+            "Prov skapat"
+        );
 
         onCreated?.(exam);
 

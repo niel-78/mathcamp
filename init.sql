@@ -4,7 +4,6 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 DROP TABLE IF EXISTS question_levels;
 DROP TABLE IF EXISTS block_sections;
-DROP TABLE IF EXISTS block_central_content;
 DROP TABLE IF EXISTS sections;
 DROP TABLE IF EXISTS subchapters;
 DROP TABLE IF EXISTS chapters;

@@ -34,10 +34,34 @@ GET    /api/blocks/sections/:sectionId
 router.use(requireAuth);
 router.use(requireRole("teacher", "admin"));
 
-// GET /api/blocks/
-router.get("/", async (req, res) => {
+// GET /api/blocks/sections/:sectionId
+router.get("/sections/:sectionId", async (req, res) => {
 
-    const [blocks] = await db.query(`
+    const [blocks] = await db.query(
+        `
+        SELECT
+            b.*
+        FROM blocks b
+        INNER JOIN block_sections bs
+            ON bs.block_id = b.id
+        WHERE bs.section_id = ?
+        ORDER BY b.id
+        `,
+        [req.params.sectionId]
+    );
+
+    const hydratedBlocks =
+        await hydrateBlocks(blocks);
+
+    res.json(hydratedBlocks);
+
+});
+
+// GET /api/central-content/:centralContentId
+router.get("/:centralContentId/:centralContentId", async (req, res) => {
+
+    const [blocks] = await db.query(
+        `
         SELECT
             b.*,
             cu.first_name AS created_by_first_name,
@@ -45,139 +69,21 @@ router.get("/", async (req, res) => {
             uu.first_name AS updated_by_first_name,
             uu.last_name AS updated_by_last_name
         FROM blocks b
+        JOIN block_central_content bcc
+            ON b.id = bcc.block_id
         LEFT JOIN users cu
             ON cu.id = b.created_by
         LEFT JOIN users uu
             ON uu.id = b.updated_by
-        WHERE b.deleted_at IS NULL
-    `);
+        WHERE bcc.central_content_id = ?
+        `,
+        [req.params.centralContentId]
+    );
 
     const hydratedBlocks =
         await hydrateBlocks(blocks);
 
     res.json(hydratedBlocks);
-});
-
-// POST /api/blocks
-router.post("/", async (req, res) => {
-
-    const {
-        question,
-        centralContentIds = [],
-        sectionIds = [],
-        examId
-    } = req.body;
-
-    const [blockResult] = await db.query(
-        `
-        INSERT INTO blocks (
-            created_by,
-            updated_by
-        )
-        VALUES (?, ?)
-        `,
-        [
-            req.user.id,
-            req.user.id
-        ]
-    );
-
-
-    const blockId = blockResult.insertId;
-
-    if (examId) {
-
-        const [rows] = await db.query(
-            `
-            SELECT
-                COALESCE(MAX(sort_order), 0) + 1
-                AS nextOrder
-            FROM exam_blocks
-            WHERE exam_id = ?
-            `,
-            [examId]
-        );
-
-        await db.query(
-            `
-            INSERT INTO exam_blocks (
-                exam_id,
-                block_id,
-                sort_order
-            )
-            VALUES (?, ?, ?)
-            `,
-            [
-                examId,
-                blockId,
-                rows[0].nextOrder
-            ]
-        );
-
-    }
-
-    const [questionResult] = await db.query(
-        `
-        INSERT INTO questions (
-            question,
-            block_id,
-            question_type,
-            created_by,
-            updated_by,
-            answer_config
-        )
-        VALUES (?, ?, ?, ?, ?, ?)
-        `,
-        [
-            question,
-            blockId,
-            1,
-            req.user.id,
-            req.user.id,
-            null
-        ]
-    );
-
-    for (const centralContentId of centralContentIds) {
-
-        await db.query(
-            `
-            INSERT INTO block_central_content (
-                block_id,
-                central_content_id
-            )
-            VALUES (?, ?)
-            `,
-            [
-                blockId,
-                centralContentId
-            ]
-        );
-
-    }
-
-    for (const sectionId of sectionIds) {
-
-        await db.query(
-            `
-            INSERT INTO block_sections (
-                block_id,
-                section_id
-            )
-            VALUES (?, ?)
-            `,
-            [
-                blockId,
-                sectionId
-            ]
-        );
-
-    }
-
-    res.status(201).json({
-        id: blockId,
-        questionId: questionResult.insertId
-    });
 
 });
 
@@ -208,6 +114,168 @@ router.get("/:blockId/", async (req, res) => {
     res.json(hydratedBlocks[0]);
 
 });
+
+
+// GET /api/blocks/
+router.get("/", async (req, res) => {
+
+    const [blocks] = await db.query(`
+        SELECT
+            b.*,
+            cu.first_name AS created_by_first_name,
+            cu.last_name AS created_by_last_name,
+            uu.first_name AS updated_by_first_name,
+            uu.last_name AS updated_by_last_name
+        FROM blocks b
+        LEFT JOIN users cu
+            ON cu.id = b.created_by
+        LEFT JOIN users uu
+            ON uu.id = b.updated_by
+        WHERE b.deleted_at IS NULL
+    `);
+
+    const hydratedBlocks =
+        await hydrateBlocks(blocks);
+
+    res.json(hydratedBlocks);
+});
+
+// POST /api/blocks
+router.post("/", async (req, res) => {
+
+    try {
+
+        const {
+            question,
+            centralContentIds = [],
+            sectionIds = [],
+            examId
+        } = req.body;
+
+        const [blockResult] = await db.query(
+            `
+            INSERT INTO blocks (
+                created_by,
+                updated_by
+            )
+            VALUES (?, ?)
+            `,
+            [
+                req.user.id,
+                req.user.id
+            ]
+        );
+
+
+        const blockId = blockResult.insertId;
+
+        if (examId) {
+
+            const [rows] = await db.query(
+                `
+                SELECT
+                    COALESCE(MAX(sort_order), 0) + 1
+                    AS nextOrder
+                FROM exam_blocks
+                WHERE exam_id = ?
+                `,
+                [examId]
+            );
+
+            await db.query(
+                `
+                INSERT INTO exam_blocks (
+                    exam_id,
+                    block_id,
+                    sort_order
+                )
+                VALUES (?, ?, ?)
+                `,
+                [
+                    examId,
+                    blockId,
+                    rows[0].nextOrder
+                ]
+            );
+
+        }
+
+        const [questionResult] = await db.query(
+            `
+            INSERT INTO questions (
+                question,
+                block_id,
+                question_type,
+                created_by,
+                updated_by,
+                answer_config
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+            `,
+            [
+                question,
+                blockId,
+                1,
+                req.user.id,
+                req.user.id,
+                null
+            ]
+        );
+
+        for (const centralContentId of centralContentIds) {
+
+            await db.query(
+                `
+                INSERT INTO block_central_content (
+                    block_id,
+                    central_content_id
+                )
+                VALUES (?, ?)
+                `,
+                [
+                    blockId,
+                    centralContentId
+                ]
+            );
+
+        }
+
+        for (const sectionId of sectionIds) {
+
+            await db.query(
+                `
+                INSERT INTO block_sections (
+                    block_id,
+                    section_id
+                )
+                VALUES (?, ?)
+                `,
+                [
+                    blockId,
+                    sectionId
+                ]
+            );
+
+        }
+
+        res.status(201).json({
+            id: blockId,
+            questionId: questionResult.insertId
+        });
+
+
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({
+                error: error.message
+            });
+        }
+                
+    
+
+});
+
+
 // PUT /api/blocks/:id
 router.put("/:blockId", async (req, res) => {
 
@@ -369,234 +437,6 @@ router.post("/:blockId/central-content/:centralContentId",
         res.sendStatus(204);
     }
 );
-
-
-// GET /api/central-content/:centralContentId
-router.get("/:centralContentId/:centralContentId", async (req, res) => {
-
-    const [blocks] = await db.query(
-        `
-        SELECT
-            b.*,
-            cu.first_name AS created_by_first_name,
-            cu.last_name AS created_by_last_name,
-            uu.first_name AS updated_by_first_name,
-            uu.last_name AS updated_by_last_name
-        FROM blocks b
-        JOIN block_central_content bcc
-            ON b.id = bcc.block_id
-        LEFT JOIN users cu
-            ON cu.id = b.created_by
-        LEFT JOIN users uu
-            ON uu.id = b.updated_by
-        WHERE bcc.central_content_id = ?
-        `,
-        [req.params.centralContentId]
-    );
-
-    const hydratedBlocks =
-        await hydrateBlocks(blocks);
-
-    res.json(hydratedBlocks);
-
-});
-// GET /api/blocks/sections/:sectionId
-router.get("/sections/:sectionId", async (req, res) => {
-
-
-    const [blocks] = await db.query(
-        `
-        SELECT
-            b.*
-        FROM blocks b
-        INNER JOIN block_sections bs
-            ON bs.block_id = b.id
-        WHERE bs.section_id = ?
-        ORDER BY b.id
-        `,
-        [req.params.sectionId]
-    );
-
-    const hydratedBlocks =
-        await hydrateBlocks(blocks);
-
-    res.json(hydratedBlocks);
-
-});
-
-
-
-
-
-
-
-
-
-
-
-//GET /api/teacher/blocks/question-levels
-router.get("/question-levels", async (req, res) => {
-
-    try {
-
-        const [levels] = await db.query(`
-            SELECT *
-            FROM question_levels
-            ORDER BY sort_order
-        `);
-
-        res.json(levels);
-
-    } catch (error) {
-
-        console.error(error);
-
-        res.status(500).json({
-            error: error.message
-        });
-
-    }
-
-});
-
-// POST /api/teacher/blocks/:blockId/questions
-router.post("/:blockId/questions", async (req, res) => {
-
-    const {
-        question = "",
-        question_type = 1,
-        answer_config = {}
-    } = req.body;
-
-    const [result] = await db.query(
-        `
-        INSERT INTO questions(
-            question,
-            block_id,
-            question_type,
-            created_by,
-            updated_by,
-            answer_config
-        )
-        VALUES (?, ?, ?, ?, ?, ?)
-        `,
-        [
-            question,
-            req.params.blockId,
-            question_type,
-            req.user.id,
-            req.user.id,
-            JSON.stringify(answer_config)
-        ]
-    );
-
-    res.json({
-        id: result.insertId
-    });
-
-});
-
-
-//DELETE /api/teacher/questions/:questionId
-router.delete("/questions/:questionId", async (req, res) => {
-
-    await db.query(
-        `
-        UPDATE questions
-        SET
-            deleted_at = NOW(),
-            updated_at = NOW(),
-            updated_by = ?
-        WHERE id = ?
-        `,
-        [
-            req.user.id,
-            req.params.questionId
-        ]
-    );
-
-    res.sendStatus(204);
-});
-
-
-// POST /api/teacher/blocks/questions/:questionId/options
-router.post("/questions/:questionId/options", async (req, res) => {
-
-    const {
-        text,
-        is_correct
-    } = req.body;
-
-    const [result] = await db.query(
-        `
-        INSERT INTO options(
-            question_id,
-            text,
-            is_correct,
-            created_by,
-            updated_by
-        )
-        VALUES (?, ?, ?, ?, ?)
-        `,
-        [
-            req.params.questionId,
-            text,
-            is_correct,
-            req.user.id,
-            req.user.id
-        ]
-    );
-
-    res.json({
-        id: result.insertId
-    });
-
-});
-
-// PUT /api/teacher/blocks/options/:optionId
-router.put("/options/:optionId", async (req, res) => {
-
-    const { text, is_correct } = req.body;
-
-    await db.query(
-        `
-        UPDATE options
-        SET
-            text = ?,
-            is_correct = ?
-        WHERE id = ?
-        `,
-        [
-            text,
-            is_correct,
-            req.params.optionId
-        ]
-    );
-
-    res.sendStatus(204);
-});
-
-// DELETE /api/teacher/blocks/questions/:questionId
-router.delete("/options/:optionId", async (req, res) => {
-
-    await db.query(
-        `
-        UPDATE options
-        SET deleted_at = NOW()
-        WHERE id = ?
-        `,
-        [req.params.optionId]
-    );
-
-    res.sendStatus(204);
-});
-
-
-
-
-
-
-
 
 
 

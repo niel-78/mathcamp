@@ -98,9 +98,9 @@ router.post("/", async (req, res) => {
         `,
         [result.insertId, req.user.id]
     );
-
-    res.json({
-        id: result.insertId
+    res.status(201).json({
+        id: result.insertId,
+        title
     });
 });
 

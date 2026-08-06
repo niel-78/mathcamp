@@ -5,6 +5,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
+body {
+    @apply
+        bg-background
+        text-foreground;
+}
+
 .btn-primary {
     @apply bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700;
 }
@@ -100,6 +106,46 @@
     @apply bg-blue-100 text-blue-800 font-medium;
 }
 
+.tab-surface {
+    @apply
+        h-full
+        flex
+        flex-col
+
+        bg-card
+        text-card-foreground
+
+        border
+        border-border
+
+        rounded-b-lg
+        overflow-hidden;
+}
+
+.tab-header {
+    @apply
+        px-4
+        py-3
+
+        flex
+        items-center
+        justify-between
+
+        bg-card
+
+        border-b
+        border-border
+
+        shrink-0;
+}
+
+.tab-content {
+    @apply
+        flex-1
+        overflow-auto
+        p-4;
+}
+
 
 @theme inline {
 
@@ -186,15 +232,15 @@
 
 :root {
 
-    --background: oklch(1 0 0);
+    --background: oklch(0.98 0.003 247);
 
     --foreground: oklch(0.145 0 0);
 
-    --card: oklch(1 0 0);
+    --card: oklch(0.995 0.002 247);
 
     --card-foreground: oklch(0.145 0 0);
 
-    --popover: oklch(1 0 0);
+    --popover: oklch(0.995 0.002 247);
 
     --popover-foreground: oklch(0.145 0 0);
 
@@ -216,7 +262,7 @@
 
     --destructive: oklch(0.577 0.245 27.325);
 
-    --border: oklch(0.922 0 0);
+    --border: oklch(0.90 0.01 247);
 
     --input: oklch(0.922 0 0);
 
@@ -234,7 +280,7 @@
 
     --radius: 0.625rem;
 
-    --sidebar: oklch(0.985 0 0);
+    --sidebar: oklch(0.955 0.01 247);
 
     --sidebar-foreground: oklch(0.145 0 0);
 

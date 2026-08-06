@@ -6,9 +6,7 @@ import ExamListTab from "./Main/ExamListTab";
 import BlockBankTab from "./Main/BlockBankTab";
 import BlockContent from "@/App/Dashboard/TeacherDashboard/Main/BlockContent";
 import QuestionCardTab from "./Main/QuestionCardTab";
-import GroupStudentsTab from "./Main/GroupStudentsTab";
 import CentralContentTab from "./Main/CentralContentTab";
-import StudentTab from "./Main/StudentTab";
 import SectionTab from "./Main/SectionTab";
 import ExamTab from "./Main/ExamTab";
 import GroupExamLibraryTab from "./Main/GroupExamLibraryTab";
@@ -119,6 +117,17 @@ export default function Main({
                             }
                         />
 
+                    )}
+
+                    {currentTab?.type === "exam" && (
+
+                            <ExamTab
+                                examId={currentTab.examId}
+                                examTitle={currentTab.title}
+                                openTab={(tab) =>
+                                    openTab(tab, area)
+                                }
+                            />
 
                     )}
 
@@ -131,6 +140,17 @@ export default function Main({
                         />
                     )}
 
+                    {    currentTab?.type === "block" && (
+
+                        <BlockContent
+                            block={currentTab.block}
+                            area={area}
+                            openTab={openTab}
+                            closeTab={closeTab}
+                        />
+
+                    )}
+
                     {currentTab?.type === "question" && (
 
                         <QuestionCardTab
@@ -139,27 +159,6 @@ export default function Main({
                             }
                             tabId={currentTab.id}
                             closeTab={closeTab}
-                        />
-
-                    )}
-
-                    {currentTab?.type === "groups" && (
-                        <GroupsTab />
-                    )}
-
-                    {currentTab?.type === "group-students" && (
-                        <GroupStudentsTab
-                            groupId={currentTab.groupId}
-                        />
-                        
-                    )}
-
-                    {
-                    currentTab?.type === "student" && (
-
-                        <StudentTab
-                            studentId={currentTab.studentId}
-                            groupId={currentTab.groupId}
                         />
 
                     )}
@@ -182,16 +181,6 @@ export default function Main({
                         />
                     )}
 
-                    {    currentTab?.type === "block" && (
-
-                        <BlockContent
-                            block={currentTab.block}
-                            area={area}
-                            openTab={openTab}
-                            closeTab={closeTab}
-                        />
-
-                    )}
 
                     {    currentTab?.type === "book-section" && (
 
@@ -205,16 +194,7 @@ export default function Main({
 
                     )}
 
-                    {   currentTab?.type === "exam" && (
 
-                            <ExamTab
-                                examId={currentTab.examId}
-                                openTab={(tab) =>
-                                    openTab(tab, area)
-                                }
-                            />
-
-                    )}
                         
                     {   currentTab?.type === "group-exams" && (
 

@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { API_URL } from "@/config";
 
 import BlockLibrary from "@/components/ui/BlockLibrary";
-import CreateBlock from "@/components/ui/CreateBlock";
+import BaseTabLayout from "@/components/layouts/BaseTabLayout";
+import CreateBlockDialog from "@/components/ui/CreateBlockDialog";
+import { Button } from "@/components/ui/button";
 import { authHeaders } from "@/api/authHeaders";
 
 export default function CentralContentTab({
@@ -28,6 +30,11 @@ export default function CentralContentTab({
         centralContentId,
         blockRefreshKey
     ]);
+
+    const [
+        createBlockOpen,
+        setCreateBlockOpen
+    ] = useState(false);
 
     const loadBlocks = async () => {
 
@@ -74,33 +81,49 @@ export default function CentralContentTab({
     };
 
     return (
-        <div>
+        <>
+            <BaseTabLayout
 
-            <div className="mb-6">
+                title={`${levelCode} - ${centralContentTitle}`}
 
-                <h1 className="text-2xl font-bold">
-                    {levelCode}
-                </h1>
+                actions={
 
-                <p className="text-muted-foreground mt-2">
-                    {centralContentTitle}
-                </p>
+                    <Button
+                        onClick={() =>
+                            setCreateBlockOpen(
+                                true
+                            )
+                        }
+                    >
+                        Skapa eget block
+                    </Button>
 
-            </div>
+                }
 
-            <CreateBlock
-                centralContentIds={[centralContentId]}
+            >
+
+                <BlockLibrary
+                    blocks={blocks}
+                    openTab={openTab}
+                    onReload={loadBlocks}
+                    onDelete={removeBlock}
+                />
+
+            </BaseTabLayout>
+
+            <CreateBlockDialog
+                open={createBlockOpen}
+                onOpenChange={
+                    setCreateBlockOpen
+                }
+                centralContentIds={[
+                    centralContentId
+                ]}
                 onCreated={loadBlocks}
             />
 
-            <BlockLibrary
-                blocks={blocks}
-                openTab={openTab}
-                onReload={loadBlocks}
-                onDelete={removeBlock}
-            />
+        </>    
 
-        </div>
     );
 
 }

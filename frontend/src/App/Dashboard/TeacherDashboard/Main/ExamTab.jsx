@@ -2,13 +2,18 @@ import { useEffect, useState } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { authHeaders } from "@/api/authHeaders";
 import { API_URL } from "@/config";
+import { Button } from "@/components/ui/button";
 import ExamBlock from "@/components/ui/ExamBlock";
 import BlockCard from "@/components/ui/BlockCard";
 import CreateBlock from "@/components/ui/CreateBlock";
+import CreateBlockDialog from "@/components/ui/CreateBlockDialog";
+import ImportBlocksDialog from "@/components/ui/ImportBlocksDialog";
+import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 
 export default function ExamTab({
     examId,
-    openTab
+    openTab,
+    examTitle
 }) {
 
     const [blocks, setBlocks] = useState([]);
@@ -16,6 +21,17 @@ export default function ExamTab({
     const { setNodeRef } = useDroppable({
         id: `exam-${examId}`
     });
+
+    const [
+        createBlockOpen,
+        setCreateBlockOpen
+    ] = useState(false);
+
+    const [
+        importDialogOpen,
+        setImportDialogOpen
+    ] = useState(false);
+
 
     const loadBlocks = async () => {
 
@@ -174,66 +190,111 @@ export default function ExamTab({
 
         <>
 
-            <div
-                ref={setNodeRef}
-                className="
-                    h-full
-                    rounded-lg
-                    border-2
-                    border-dashed
-                    border-slate-300
-                    p-4
-                "
-            >
-                Dra block hit...
-            </div>
+            <BaseTabLayout
 
-            <CreateBlock
-                examId={examId}
-                onCreated={loadBlocks}
-            />    
+                title={`Prov: ${examTitle}`}
 
-            <div className="border rounded-lg bg-white">
+                actions={
 
-                <div className="p-4">
+                    <div className="flex gap-2">
 
-                    <div
-                        className="
-                            grid
-                            grid-cols-1
-                            md:grid-cols-2
-                            xl:grid-cols-3
-                            gap-4
-                        "
-                    >
-
-                    {blocks.map((block, index) => (
-
-                        <ExamBlock
-                            key={block.id}
-                            block={block}
+                        <Button
+                            onClick={() =>
+                                setCreateBlockOpen(true)
+                            }
                         >
-
-                            <BlockCard
-                                dragPrefix="exam"
-                                block={block}
-                                orderNumber={index + 1}
-                                onDelete={removeBlock}
-                                openTab={openTab}
-                            />
-
-                        </ExamBlock>
-
-                    ))}
-
+                            Skapa eget block
+                        </Button>     
+                        
+                        
+                        <Button
+                            variant="outline"
+                            onClick={() =>
+                                setImportDialogOpen(true)
+                            }
+                        >
+                            Importera block (uu)
+                        </Button>
 
                     </div>
 
+                }
+
+            >
+
+
+                <div
+                    ref={setNodeRef}
+                    className="
+                        h-full
+                        rounded-lg
+                        border-2
+                        border-dashed
+                        border-slate-300
+                        p-4
+                    "
+                >
+                    Dra block hit...
                 </div>
 
+                <div className="border rounded-lg bg-white">
 
-            </div>
-        </>
+                    <div className="p-4">
+
+                        <div
+                            className="
+                                grid
+                                grid-cols-1
+                                md:grid-cols-2
+                                xl:grid-cols-3
+                                gap-4
+                            "
+                        >
+
+                        {blocks.map((block, index) => (
+
+                            <ExamBlock
+                                key={block.id}
+                                block={block}
+                            >
+
+                                <BlockCard
+                                    dragPrefix="exam"
+                                    block={block}
+                                    orderNumber={index + 1}
+                                    onDelete={removeBlock}
+                                    openTab={openTab}
+                                />
+
+                            </ExamBlock>
+
+                        ))}
+
+
+                        </div>
+
+                    </div>
+
+
+                </div>
+            </BaseTabLayout>
+
+
+            <ImportBlocksDialog
+                open={importDialogOpen}
+                onOpenChange={setImportDialogOpen}
+                examId={examId}
+                onImported={loadBlocks}
+            />
+
+            <CreateBlockDialog
+                open={createBlockOpen}
+                onOpenChange={setCreateBlockOpen}
+                examId={examId}
+                onCreated={loadBlocks}
+            />
+
+        </>    
 
     );
 

@@ -3,8 +3,10 @@ import { useEffect, useState } from "react";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 
-import CreateBlock from "@/components/ui/CreateBlock";
+import CreateBlockDialog from "@/components/ui/CreateBlockDialog";
 import BlockLibrary from "@/components/ui/BlockLibrary";
+import BaseTabLayout from "@/components/layouts/BaseTabLayout";
+import { Button } from "@/components/ui/button";
 
 export default function SectionTab({
     sectionId,
@@ -14,6 +16,11 @@ export default function SectionTab({
 
     const [section, setSection] = useState(null);
     const [blocks, setBlocks] = useState([]);
+
+    const [
+        createBlockOpen,
+        setCreateBlockOpen
+    ] = useState(false);
 
     useEffect(() => {
 
@@ -69,6 +76,7 @@ export default function SectionTab({
         }
 
         const data = await response.json();
+
         setBlocks(data);
 
     };
@@ -85,39 +93,39 @@ export default function SectionTab({
 
     return (
 
-        <div className="p-6">
+        <>
+            <BaseTabLayout
 
-            <h1 className="text-3xl font-bold mb-2">
-                {section.title}
-            </h1>
+                title={`${section.chapter_number}-${section.chapter_title} -${section.subchapter_number}-${section.subchapter_title}`}
 
-            <div className="text-sm text-slate-500 mb-6">
+                actions={
 
-                {section.chapter_number}
-                {" "}
-                {section.chapter_title}
+                    <Button
+                        onClick={() =>
+                            setCreateBlockOpen(true)
+                        }
+                    >
+                        Skapa eget block
+                    </Button>
 
-                {" → "}
+                }
 
-                {section.subchapter_number}
-                {" "}
-                {section.subchapter_title}
+            >
+                <BlockLibrary
+                    blocks={blocks}
+                    openTab={openTab}
+                    onReload={loadBlocks}
+                    onDelete={removeBlock}
+                />
 
-            </div>
-
-            <CreateBlock
+            </BaseTabLayout>
+            <CreateBlockDialog
+                open={createBlockOpen}
+                onOpenChange={setCreateBlockOpen}
                 sectionIds={[sectionId]}
                 onCreated={loadBlocks}
             />
-
-            <BlockLibrary
-                blocks={blocks}
-                openTab={openTab}
-                onReload={loadBlocks}
-                onDelete={removeBlock}
-            />
-
-        </div>
+        </>    
 
     );
 

@@ -1,17 +1,20 @@
 import { Button } from "@/components/ui/button";
+import BaseTabLayout from "@/components/layouts/BaseTabLayout";   
 
 export default function StartPage({
     openTab
 }) {
 
     return (
-        <div className="p-8 flex gap-4">
+        <BaseTabLayout
+            title="Startsida"
+        >
 
             <Button
                 onClick={() =>
                     openTab({
                         id: "exams",
-                        title: "Prov",
+                        title: "Provbank",
                         type: "exams"
                     })
                 }
@@ -43,6 +46,6 @@ export default function StartPage({
                 Provtillfällen
             </Button>
 
-        </div>
+        </BaseTabLayout>
     );
 }
