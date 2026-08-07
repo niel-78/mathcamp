@@ -181,11 +181,11 @@ router.put("/:id", async (req, res) => {
         exam_config,
         time_limit_minutes,
 
-        shuffle_questions,
-        shuffle_options,
+        shuffle_order_questions,
+        shuffle_order_options,
 
-        allow_previous,
-        allow_same_question,
+        allow_go_to_previous_question,
+        never_repeat_question,
 
         show_calculator,
         show_formula_sheet,
@@ -193,7 +193,7 @@ router.put("/:id", async (req, res) => {
         max_attempts,
 
         show_result_immediately,
-        passing_score,
+        use_different_questions_in_block,
 
         is_open,
 
@@ -209,11 +209,11 @@ router.put("/:id", async (req, res) => {
 
             time_limit_minutes = ?,
 
-            shuffle_questions = ?,
-            shuffle_options = ?,
+            shuffle_order_questions = ?,
+            shuffle_order_options = ?,
 
-            allow_previous = ?,
-            allow_same_question = ?,
+            allow_go_to_previous_question = ?,
+            never_repeat_question = ?,
 
             show_calculator = ?,
             show_formula_sheet = ?,
@@ -221,7 +221,7 @@ router.put("/:id", async (req, res) => {
             max_attempts = ?,
 
             show_result_immediately = ?,
-            passing_score = ?,
+            use_different_questions_in_block = ?,
 
             is_open = ?,
 
@@ -237,11 +237,11 @@ router.put("/:id", async (req, res) => {
 
             time_limit_minutes,
 
-            shuffle_questions,
-            shuffle_options,
+            shuffle_order_questions,
+            shuffle_order_options,
 
-            allow_previous,
-            allow_same_question,
+            allow_go_to_previous_question,
+            never_repeat_question,
 
             show_calculator,
             show_formula_sheet,
@@ -249,7 +249,7 @@ router.put("/:id", async (req, res) => {
             max_attempts,
 
             show_result_immediately,
-            passing_score,
+            use_different_questions_in_block,
 
             is_open,
 
@@ -314,7 +314,7 @@ router.get("/:id/preview",
         }
 
     }
-)
+);
 
 //GET /api/group-exams/:id/blocks
 router.get("/:id/blocks", async (req, res) => {

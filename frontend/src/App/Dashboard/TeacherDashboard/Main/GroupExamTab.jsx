@@ -102,24 +102,20 @@ export default function GroupExamTab({
                                 groupExam.max_attempts
                             ),
 
-                        passing_score:
-                            groupExam.passing_score
-                                ? Number(
-                                    groupExam.passing_score
-                                )
-                                : null,
+                        shuffle_order_questions:
+                            groupExam.shuffle_order_questions,
 
-                        shuffle_questions:
-                            groupExam.shuffle_questions,
+                        shuffle_order_options:
+                            groupExam.shuffle_order_options,
 
-                        shuffle_options:
-                            groupExam.shuffle_options,
+                        use_different_questions_in_block:
+                            groupExam.use_different_questions_in_block,
 
-                        allow_previous:
-                            groupExam.allow_previous,
+                        allow_go_to_previous_question:
+                            groupExam.allow_go_to_previous_question,
 
-                        allow_same_question:
-                            groupExam.allow_same_question,
+                        never_repeat_question:
+                            groupExam.never_repeat_question,
 
                         show_calculator:
                             groupExam.show_calculator,
@@ -344,12 +340,12 @@ export default function GroupExamTab({
                             <Input
                                 type="number"
                                 value={
-                                    groupExam.passing_score ?? ""
+                                    groupExam.use_different_questions_in_block ?? ""
                                 }
                                 onChange={(e) =>
                                     setGroupExam({
                                         ...groupExam,
-                                        passing_score:
+                                        use_different_questions_in_block:
                                             e.target.value
                                     })
                                 }
@@ -426,16 +422,16 @@ export default function GroupExamTab({
 
                         </Field>
 
-                        <Field label="Slumpa frågor">
+                        <Field label="Slumpa frågeordning">
 
                             <Switch
                                 checked={
-                                    !!groupExam.shuffle_questions
+                                    !!groupExam.shuffle_order_questions
                                 }
                                 onCheckedChange={(checked) =>
                                     setGroupExam({
                                         ...groupExam,
-                                        shuffle_questions:
+                                        shuffle_order_questions:
                                             checked
                                     })
                                 }
@@ -443,16 +439,16 @@ export default function GroupExamTab({
 
                         </Field>
 
-                        <Field label="Slumpa alternativ">
+                        <Field label="Slumpa alternativordning">
 
                             <Switch
                                 checked={
-                                    !!groupExam.shuffle_options
+                                    !!groupExam.shuffle_order_options
                                 }
                                 onCheckedChange={(checked) =>
                                     setGroupExam({
                                         ...groupExam,
-                                        shuffle_options:
+                                        shuffle_order_options:
                                             checked
                                     })
                                 }
@@ -460,16 +456,16 @@ export default function GroupExamTab({
 
                         </Field>
 
-                        <Field label="Tillåt föregående fråga">
+                        <Field label="Använd olika uppgifter i block">
 
                             <Switch
                                 checked={
-                                    !!groupExam.allow_previous
+                                    !!groupExam.use_different_questions_in_block
                                 }
                                 onCheckedChange={(checked) =>
                                     setGroupExam({
                                         ...groupExam,
-                                        allow_previous:
+                                        use_different_questions_in_block:
                                             checked
                                     })
                                 }
@@ -477,16 +473,33 @@ export default function GroupExamTab({
 
                         </Field>
 
-                        <Field label="Tillåt samma fråga">
+                        <Field label="Tillåt att gå tillbaka">
 
                             <Switch
                                 checked={
-                                    !!groupExam.allow_same_question
+                                    !!groupExam.allow_go_to_previous_question
                                 }
                                 onCheckedChange={(checked) =>
                                     setGroupExam({
                                         ...groupExam,
-                                        allow_same_question:
+                                        allow_go_to_previous_question:
+                                            checked
+                                    })
+                                }
+                            />
+
+                        </Field>
+
+                        <Field label="Upprepa aldrig fråga">
+
+                            <Switch
+                                checked={
+                                    !!groupExam.never_repeat_question
+                                }
+                                onCheckedChange={(checked) =>
+                                    setGroupExam({
+                                        ...groupExam,
+                                        never_repeat_question:
                                             checked
                                     })
                                 }

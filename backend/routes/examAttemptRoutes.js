@@ -365,8 +365,8 @@ router.post("/start", async (req, res) => {
                 ge.is_open,
                 ge.available_from,
                 ge.available_until,
-                ge.shuffle_questions,
-                ge.shuffle_options,
+                ge.shuffle_order_questions,
+                ge.shuffle_order_options,
                 ge.time_limit_minutes,
                 ge.exam_config
             FROM group_exams ge
@@ -511,11 +511,14 @@ router.post("/start", async (req, res) => {
                 groupExam.id
             );
 
-        for (
-            let i = 0;
-            i < session.questions.length;
-            i++
-        ) {
+        console.log(
+            "Session questions:",
+            session.questions.map(
+                q => q.id
+            )
+        );
+
+        for (let i = 0; i < session.questions.length; i++) {
 
             const question =
                 session.questions[i];
@@ -563,7 +566,7 @@ router.post("/start", async (req, res) => {
 
             }
 
-        }            
+        }
 
 
         await connection.commit();

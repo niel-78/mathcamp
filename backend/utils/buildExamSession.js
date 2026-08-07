@@ -36,36 +36,94 @@ export async function buildExamSession(
         groupExamRows[0];
 
     /*
-     * Hämta alla frågor från provets block
+     * Hämta alla block som ingår i provet
      */
-    const [questions] =
+    const [blocks] =
         await connection.query(
             `
             SELECT
-                q.id,
-                q.question,
-                q.question_type,
-                q.answer_config,
-                q.level_id
-
-            FROM questions q
-
-            INNER JOIN blocks b
-                ON b.id = q.block_id
+                b.id,
+                eb.sort_order
+            FROM blocks b
 
             INNER JOIN exam_blocks eb
                 ON eb.block_id = b.id
 
             WHERE eb.exam_id = ?
+
+            ORDER BY
+                eb.sort_order
             `,
             [groupExam.exam_id]
         );
 
+
+    const questions = [];
+
     /*
-     * Slumpa frågor om inställningen säger det
+     * Bygg frågelistan block för block
+     */
+    for (const block of blocks) {
+
+        const [blockQuestions] =
+            await connection.query(
+                `
+                SELECT
+                    id,
+                    question,
+                    question_type,
+                    answer_config,
+                    level_id
+                FROM questions
+                WHERE block_id = ?
+                AND deleted_at IS NULL
+                `,
+                [block.id]
+            );
+
+        if (
+            blockQuestions.length === 0
+        ) {
+            continue;
+        }
+
+        /*
+         * En fråga per block
+         */
+        if (
+            groupExam.use_different_questions_in_block
+        ) {
+
+            const randomQuestion =
+                blockQuestions[
+                    Math.floor(
+                        Math.random()
+                        * blockQuestions.length
+                    )
+                ];
+
+            questions.push(
+                randomQuestion
+            );
+
+        } else {
+
+            /*
+             * Alla frågor från blocket
+             */
+            questions.push(
+                ...blockQuestions
+            );
+
+        }
+
+    }
+
+    /*
+     * Slumpa uppgiftsordning
      */
     const orderedQuestions =
-        groupExam.shuffle_questions
+        groupExam.shuffle_order_questions
 
             ? [...questions].sort(
                 () =>
@@ -97,7 +155,7 @@ export async function buildExamSession(
             );
 
         question.options =
-            groupExam.shuffle_options
+            groupExam.shuffle_order_options
 
                 ? [...options].sort(
                     () =>
@@ -124,11 +182,14 @@ export async function buildExamSession(
         exam_config:
             groupExam.exam_config,
 
-        shuffle_questions:
-            !!groupExam.shuffle_questions,
+        shuffle_order_questions:
+            !!groupExam.shuffle_order_questions,
 
-        shuffle_options:
-            !!groupExam.shuffle_options,
+        shuffle_order_options:
+            !!groupExam.shuffle_order_options,
+
+        use_different_questions_in_block:
+            !!groupExam.use_different_questions_in_block,
 
         questions:
             orderedQuestions

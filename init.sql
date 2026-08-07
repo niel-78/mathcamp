@@ -281,11 +281,13 @@ CREATE TABLE group_exams (
 
     time_limit_minutes INT DEFAULT NULL,
 
-    shuffle_questions BOOLEAN NOT NULL DEFAULT FALSE,
-    shuffle_options BOOLEAN NOT NULL DEFAULT TRUE,
+    shuffle_order_questions BOOLEAN NOT NULL DEFAULT FALSE,
+    shuffle_order_options BOOLEAN NOT NULL DEFAULT TRUE,
 
-    allow_previous BOOLEAN NOT NULL DEFAULT FALSE,
-    allow_same_question BOOLEAN NOT NULL DEFAULT FALSE,
+    use_different_questions_in_block BOOLEAN NOT NULL DEFAULT TRUE,
+
+    allow_go_to_previous_question BOOLEAN NOT NULL DEFAULT TRUE,
+    never_repeat_question BOOLEAN NOT NULL DEFAULT TRUE,
 
     show_calculator BOOLEAN NOT NULL DEFAULT FALSE,
     show_formula_sheet BOOLEAN NOT NULL DEFAULT FALSE,
@@ -293,8 +295,7 @@ CREATE TABLE group_exams (
     max_attempts INT NOT NULL DEFAULT 1,
 
     show_result_immediately BOOLEAN DEFAULT TRUE,
-    passing_score DECIMAL(5,2) DEFAULT NULL,
-    
+
     is_open BOOLEAN DEFAULT FALSE,
     available_from DATETIME DEFAULT NULL,
     available_until DATETIME DEFAULT NULL,
@@ -661,7 +662,7 @@ INSERT INTO exam_blocks (exam_id,block_id,sort_order) VALUES
 (1,1,6),(1,2,2),(1,3,3),(1,4,4),(1,5,5),(1,6,1);
 
 
-INSERT INTO group_exams(`exam_id`,`group_id`,`group_exam_key`,`is_open`,`time_limit_minutes`,`shuffle_questions`,`shuffle_options`,`allow_previous`) VALUES(1,1,'A',TRUE,15,TRUE,TRUE,FALSE);
+INSERT INTO group_exams(`exam_id`,`group_id`,`group_exam_key`) VALUES(1,1,'A');
 
 --Matematik 
 
