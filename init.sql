@@ -2,6 +2,7 @@ USE mydb;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS level_books;
 DROP TABLE IF EXISTS question_levels;
 DROP TABLE IF EXISTS block_sections;
 DROP TABLE IF EXISTS sections;
@@ -266,7 +267,7 @@ CREATE TABLE group_users (
 
 INSERT INTO groups (id, name)
 VALUES
-(1, 'Niklas grupp'),(2, 'Joines grupp');
+(1, 'Niklas grupp'),(2, 'Jolines grupp');
 
 /*Provtillfällen*/
 CREATE TABLE group_exams (
@@ -550,6 +551,24 @@ CREATE TABLE block_sections (
 
     FOREIGN KEY (section_id)
         REFERENCES sections(id)
+);
+
+CREATE TABLE level_books (
+    level_id INT NOT NULL,
+    book_id INT NOT NULL,
+
+    PRIMARY KEY (
+        level_id,
+        book_id
+    ),
+
+    FOREIGN KEY (level_id)
+        REFERENCES levels(id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (book_id)
+        REFERENCES books(id)
+        ON DELETE CASCADE
 );
 
 
@@ -1335,3 +1354,5 @@ VALUES
 (38,'Repetitionsuppgifter',322,1),
 (38,'Svar, ledtrådar och lösningar',330,2),
 (38,'Register',392,3);
+
+INSERT INTO level_books (level_id, book_id) VALUES (2,1);

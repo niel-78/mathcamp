@@ -1,4 +1,5 @@
 import { useDraggable } from "@dnd-kit/core";
+import { Button } from "@/components/ui/button";
 
 export default function DraggableTab({
     tab,
@@ -12,7 +13,7 @@ export default function DraggableTab({
         attributes,
         listeners,
         setNodeRef,
-        transform,
+        transform
     } = useDraggable({
         id: `tab-${tab.id}`,
         data: {
@@ -26,7 +27,13 @@ export default function DraggableTab({
 
     const style = transform
         ? {
-            transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`
+            transform: `
+                translate3d(
+                    ${transform.x}px,
+                    ${transform.y}px,
+                    0
+                )
+            `
         }
         : undefined;
 
@@ -42,27 +49,41 @@ export default function DraggableTab({
                 flex
                 items-center
                 gap-2
+
                 px-3
                 py-2
+
                 border-r
+                border-border
+
                 cursor-pointer
                 select-none
+
                 min-w-[150px]
                 max-w-[250px]
 
-                ${isActive
-                    ? `
-                        bg-white
-                        border-t-2
-                        border-t-blue-500
-                        text-black
-                        font-medium
-                    `
-                    : `
-                        bg-slate-100
-                        hover:bg-slate-200
-                        text-slate-700
-                    `
+                transition-colors
+
+                ${
+                    isActive
+
+                        ? `
+                            bg-card
+                            text-card-foreground
+
+                            border-t-2
+                            border-t-primary
+
+                            font-medium
+                          `
+
+                        : `
+                            bg-muted
+                            text-muted-foreground
+
+                            hover:bg-accent
+                            hover:text-accent-foreground
+                          `
                 }
             `}
         >
@@ -75,24 +96,44 @@ export default function DraggableTab({
                 }
                 className="
                     cursor-grab
-                    text-slate-500
+                    text-muted-foreground
                     shrink-0
                 "
             >
                 ⠿
             </span>
 
-            <span
+            <div
                 className="
-                    truncate
                     flex-1
+                    overflow-hidden
                 "
             >
-                {tab.title}
-            </span>
 
-            <button
+                <div
+                    className="
+                        text-xs
+                        text-muted-foreground
+                        truncate
+                    "
+                >
+                    {tab.subtitle}
+                </div>
+
+                <div
+                    className="
+                        text-sm
+                        truncate
+                    "
+                >
+                    {tab.title}
+                </div>
+
+            </div>
+
+            <Button
                 type="button"
+                variant="ghost"
                 onClick={(e) => {
 
                     e.stopPropagation();
@@ -102,13 +143,18 @@ export default function DraggableTab({
                 }}
                 className="
                     shrink-0
-                    text-slate-500
-                    hover:text-red-500
+
+                    text-muted-foreground
+
+                    hover:text-destructive
+
                     px-1
+
+                    transition-colors
                 "
             >
                 ×
-            </button>
+            </Button>
 
         </div>
 

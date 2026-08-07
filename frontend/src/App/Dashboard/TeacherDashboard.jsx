@@ -193,7 +193,7 @@ export default function TeacherDashboard() {
         console.log("OVER ID", over.id);
 
         /*
-        Importera block från blockTav till examTab
+        Importera block från blockTab till examTab
         */
         if (
             active.data.current?.type === "block" &&
@@ -369,7 +369,7 @@ export default function TeacherDashboard() {
                 );
 
             await fetch(
-                `${API_URL}/api/central-content/${centralContentId}/blocks/${blockId}`,
+                `${API_URL}/api/blocks/${blockId}/central-content/${centralContentId}`,
                 {
                     method: "POST",
                     headers: authHeaders()
@@ -393,7 +393,7 @@ export default function TeacherDashboard() {
                 );
 
             await fetch(
-                `${API_URL}/api/sections/${sectionId}/blocks/${blockId}`,
+                `${API_URL}/api/blocks/${blockId}/book-sections/${sectionId}`,
                 {
                     method: "POST",
                     headers: authHeaders()
@@ -409,55 +409,110 @@ export default function TeacherDashboard() {
 
     return (
 
-            <DndContext
-                collisionDetection={pointerWithin}
-                onDragOver={({ over }) => {
-                    setHoverTarget(over?.id ?? null);
-                }}
-                onDragEnd={(event) => {
-                    setHoverTarget(null);
-                    handleDragEnd(event);
-                }}
-            >
-                <div className="h-screen">
-                    <ResizablePanelGroup
-                        direction="horizontal"
-                        className="h-full w-full"
+        <DndContext
+            collisionDetection={pointerWithin}
+            onDragOver={({ over }) => {
+                setHoverTarget(over?.id ?? null);
+            }}
+            onDragEnd={(event) => {
+                setHoverTarget(null);
+                handleDragEnd(event);
+            }}
+        >
+
+            <div className="h-screen">
+
+                <ResizablePanelGroup
+                    direction="horizontal"
+                    className="h-full w-full"
+                >
+
+                    <ResizablePanel
+                        defaultSize={20}
                     >
-                        <ResizablePanel 
-                            defaultSize={20}
+
+                        <div
+                            className="
+                                h-full
+                                overflow-y-auto
+                            "
                         >
-                            <div className="h-full overflow-y-auto">
-                                <LeftCol 
-                                    tabs={leftTabs}
-                                    openTab={openTab}
-                                    setTabs={setLeftTabs}
-                                    setActiveTab={setActiveLeftTab}
-                                    hoverTarget={hoverTarget}
-                                />
-                            </div>       
-                        </ResizablePanel>
 
-                        <ResizableHandle className="w-l bg-gray-300" />
+                            <LeftCol
+                                tabs={leftTabs}
+                                openTab={openTab}
+                                setTabs={setLeftTabs}
+                                setActiveTab={setActiveLeftTab}
+                                hoverTarget={hoverTarget}
+                            />
 
-                            <ResizablePanel
-                                defaultSize={80}
+                        </div>
+
+                    </ResizablePanel>
+
+                    <ResizableHandle />
+
+                    <ResizablePanel
+                        defaultSize={80}
+                    >
+
+                        <div
+                            className="
+                                h-full
+                                flex
+                                flex-col
+                                min-h-0
+                            "
+                        >
+
+                            <div
+                                className="
+                                    p-2
+                                    border-b
+                                "
                             >
 
-                                <div className="h-full flex flex-col">
+                                <AppHeader
+                                    splitView={splitView}
+                                    setSplitView={setSplitView}
+                                />
 
-                                    <div className="p-2 border-b">
+                            </div>
 
-                                        <AppHeader
-                                            splitView={splitView}
-                                            setSplitView={setSplitView}
-                                        />
+                            <div
+                                className="
+                                    flex-1
+                                    overflow-hidden
+                                    min-h-0
+                                "
+                            >
 
-                                    </div>
+                                {!splitView ? (
 
-                                    <div className="flex-1 overflow-hidden">
+                                    <Main
+                                        area="left"
+                                        hoverTarget={hoverTarget}
+                                        tabs={leftTabs}
+                                        activeTab={activeLeftTab}
+                                        setActiveTab={setActiveLeftTab}
+                                        setTabs={setLeftTabs}
+                                        openTab={openTab}
+                                        blockRefreshKey={blockRefreshKey}
+                                    />
 
-                                        {!splitView ? (
+                                ) : (
+
+                                    <ResizablePanelGroup
+                                        direction="horizontal"
+                                        className="
+                                            h-full
+                                            min-h-0
+                                        "
+                                    >
+
+                                        <ResizablePanel
+                                            defaultSize={50}
+                                        >
 
                                             <Main
                                                 area="left"
@@ -470,56 +525,42 @@ export default function TeacherDashboard() {
                                                 blockRefreshKey={blockRefreshKey}
                                             />
 
-                                        ) : (
+                                        </ResizablePanel>
 
-                                            <ResizablePanelGroup
-                                                direction="horizontal"
-                                                className="h-full"
-                                            >
+                                        <ResizableHandle />
 
-                                                <ResizablePanel defaultSize={50}>
+                                        <ResizablePanel
+                                            defaultSize={50}
+                                        >
 
-                                                    <Main
-                                                        area="left"
-                                                        hoverTarget={hoverTarget}
-                                                        tabs={leftTabs}
-                                                        activeTab={activeLeftTab}
-                                                        setActiveTab={setActiveLeftTab}
-                                                        setTabs={setLeftTabs}
-                                                        openTab={openTab}
-                                                        blockRefreshKey={blockRefreshKey}
-                                                    />
+                                            <Main
+                                                area="right"
+                                                hoverTarget={hoverTarget}
+                                                tabs={rightTabs}
+                                                activeTab={activeRightTab}
+                                                setActiveTab={setActiveRightTab}
+                                                setTabs={setRightTabs}
+                                                openTab={openTab}
+                                                blockRefreshKey={blockRefreshKey}
+                                            />
 
-                                                </ResizablePanel>
+                                        </ResizablePanel>
 
-                                                <ResizableHandle />
+                                    </ResizablePanelGroup>
 
-                                                <ResizablePanel defaultSize={50}>
+                                )}
 
-                                                    <Main
-                                                        area="right"
-                                                        hoverTarget={hoverTarget}
-                                                        tabs={rightTabs}
-                                                        activeTab={activeRightTab}
-                                                        setActiveTab={setActiveRightTab}
-                                                        setTabs={setRightTabs}
-                                                        openTab={openTab}
-                                                        blockRefreshKey={blockRefreshKey}
-                                                    />
+                            </div>
 
-                                                </ResizablePanel>
+                        </div>
 
-                                            </ResizablePanelGroup>
+                    </ResizablePanel>
 
-                                        )}
+                </ResizablePanelGroup>
 
-                                    </div>
+            </div>
 
-                                </div>
+        </DndContext>
 
-                            </ResizablePanel>
-                    </ResizablePanelGroup>
-                </div>
-            </DndContext>    
-        );
+    );
 }

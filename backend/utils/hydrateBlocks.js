@@ -77,6 +77,33 @@ export default async function hydrateBlocks(blocks) {
 
         block.bookSections = bookSections;
 
+        const [books] = await db.query(
+            `
+            SELECT DISTINCT
+                b.id,
+                b.title
+
+            FROM block_sections bs
+
+            JOIN sections s
+                ON s.id = bs.section_id
+
+            JOIN subchapters sc
+                ON sc.id = s.subchapter_id
+
+            JOIN chapters c
+                ON c.id = sc.chapter_id
+
+            JOIN books b
+                ON b.id = c.book_id
+
+            WHERE bs.block_id = ?
+            `,
+            [block.id]
+        );
+
+        block.books = books;
+
         const [subjects] = await db.query(
             `
             SELECT DISTINCT

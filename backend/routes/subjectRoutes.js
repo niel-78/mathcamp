@@ -16,6 +16,7 @@ GET    /api/subjects/:id/central-content
 
 // GET /api/subjects
 router.get("/", async (req, res) => {
+
     try {
 
         const [rows] = await db.query(`
@@ -63,6 +64,7 @@ router.get("/", async (req, res) => {
             );
 
             if (!subject) {
+
                 subject = {
                     id: row.subject_id,
                     code: row.subject_code,
@@ -71,6 +73,7 @@ router.get("/", async (req, res) => {
                 };
 
                 subjects.push(subject);
+
             }
 
             let level = subject.levels.find(
@@ -78,14 +81,17 @@ router.get("/", async (req, res) => {
             );
 
             if (!level && row.level_id) {
+
                 level = {
                     id: row.level_id,
                     code: row.level_code,
                     name: row.level_name,
+                    books: [],
                     areas: []
                 };
 
                 subject.levels.push(level);
+
             }
 
             if (!level) {
@@ -97,6 +103,7 @@ router.get("/", async (req, res) => {
             );
 
             if (!area && row.area_id) {
+
                 area = {
                     id: row.area_id,
                     title: row.area_title,
@@ -105,15 +112,57 @@ router.get("/", async (req, res) => {
                 };
 
                 level.areas.push(area);
+
             }
 
             if (area && row.content_id) {
+
                 area.centralContent.push({
                     id: row.content_id,
                     content: row.content_text,
-                    sort_order: row.content_sort_order
+                    sort_order:
+                        row.content_sort_order
                 });
+
             }
+
+        }
+
+        // Lägg till böcker på respektive level
+
+        for (const subject of subjects) {
+
+            for (const level of subject.levels) {
+
+                const [books] = await db.query(
+                    `
+                    SELECT
+                        b.id,
+                        b.title
+
+                    FROM level_books lb
+
+                    JOIN books b
+                        ON b.id = lb.book_id
+
+                    WHERE lb.level_id = ?
+
+                    ORDER BY b.title
+                    `,
+                    [level.id]
+                );
+
+                console.log(
+                    "LEVEL",
+                    level.id,
+                    level.name,
+                    books
+                );
+
+                level.books = books;
+
+            }
+
         }
 
         res.json(subjects);
@@ -127,6 +176,7 @@ router.get("/", async (req, res) => {
         });
 
     }
+
 });
 // POST /api/subjects
 
@@ -137,98 +187,5 @@ router.get("/", async (req, res) => {
 // DELETE /api/subjects/:id
 
 // GET /api/subjects/:id/central-content
-
-// GET /api/subjects/
-router.get("/", 
-    async (req, res) => {
-
-        try {
-
-            const [subjects] = await db.query(`
-                SELECT
-                    id,
-                    code,
-                    name
-                FROM subjects
-                ORDER BY name
-            `);
-
-            const [levels] = await db.query(`
-                SELECT
-                    id,
-                    subject_id,
-                    code,
-                    name
-                FROM levels
-                ORDER BY name
-            `);
-
-            const [areas] = await db.query(`
-                SELECT
-                    id,
-                    level_id,
-                    title,
-                    sort_order
-                FROM content_areas
-                ORDER BY sort_order
-            `);
-
-            const [content] = await db.query(`
-                SELECT
-                    id,
-                    area_id,
-                    content,
-                    sort_order
-                FROM central_content
-                ORDER BY sort_order
-            `);
-
-            subjects.forEach(subject => {
-
-                subject.levels = levels
-                    .filter(
-                        level =>
-                            level.subject_id ===
-                            subject.id
-                    );
-
-                subject.levels.forEach(level => {
-
-                    level.areas = areas
-                        .filter(
-                            area =>
-                                area.level_id ===
-                                level.id
-                        );
-
-                    level.areas.forEach(area => {
-
-                        area.centralContent =
-                            content.filter(
-                                item =>
-                                    item.area_id ===
-                                    area.id
-                            );
-
-                    });
-
-                });
-
-            });
-
-            res.json(subjects);
-
-        } catch (error) {
-
-            console.error(error);
-
-            res.status(500).json({
-                error: error.message
-            });
-
-        }
-
-    }
-);
 
 export default router;

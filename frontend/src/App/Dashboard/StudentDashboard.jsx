@@ -96,7 +96,7 @@ const StudentDashboard = () => {
                   
 
                   <Button onClick={startExam}>
-                    Start Exam
+                      Start Exam
                   </Button>
 
               </div>

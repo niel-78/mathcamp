@@ -5,10 +5,12 @@ import { API_URL } from "@/config";
 import { Button } from "@/components/ui/button";
 import ExamBlock from "@/components/ui/ExamBlock";
 import BlockCard from "@/components/ui/BlockCard";
-import CreateBlock from "@/components/ui/CreateBlock";
+import CardSection from "@/components/layouts/CardSection";
+import CardGridLayout from "@/components/layouts/CardGridLayout";
 import CreateBlockDialog from "@/components/ui/CreateBlockDialog";
 import ImportBlocksDialog from "@/components/ui/ImportBlocksDialog";
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";
+import DropZone from "@/components/ui/DropZone";
 
 export default function ExamTab({
     examId,
@@ -222,34 +224,18 @@ export default function ExamTab({
 
             >
 
+                <DropZone
+                    id={`exam-${examId}`}
+                    text="Dra block hit för att lägga till dem i provet"
+                />
 
-                <div
-                    ref={setNodeRef}
-                    className="
-                        h-full
-                        rounded-lg
-                        border-2
-                        border-dashed
-                        border-slate-300
-                        p-4
-                    "
+                <CardSection
+                    title="Provblock"
+                    description="Block som ingår i provet."
                 >
-                    Dra block hit...
-                </div>
-
-                <div className="border rounded-lg bg-white">
-
-                    <div className="p-4">
-
-                        <div
-                            className="
-                                grid
-                                grid-cols-1
-                                md:grid-cols-2
-                                xl:grid-cols-3
-                                gap-4
-                            "
-                        >
+                    <CardGridLayout
+                        minCardWidth={500}
+                    >
 
                         {blocks.map((block, index) => (
 
@@ -270,13 +256,10 @@ export default function ExamTab({
 
                         ))}
 
+                    </CardGridLayout>
 
-                        </div>
+                </CardSection>
 
-                    </div>
-
-
-                </div>
             </BaseTabLayout>
 
 

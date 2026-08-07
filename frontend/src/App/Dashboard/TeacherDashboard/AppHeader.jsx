@@ -50,15 +50,21 @@ export default function AppHeader({
     }, [darkMode]);
 
     return (
-
         <div
             className="
                 h-12
+
                 flex
                 items-center
                 justify-between
+
                 px-4
+
+                bg-sidebar
+                text-sidebar-foreground
+
                 border-b
+                border-border
             "
         >
 

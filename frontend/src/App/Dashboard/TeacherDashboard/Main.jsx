@@ -68,6 +68,7 @@ export default function Main({
     };
 
     return (
+
         <div
             ref={setNodeRef}
             className={`
@@ -80,8 +81,15 @@ export default function Main({
                 }
             `}
         >
-                            
-            <div className="flex flex-col">
+
+            <div
+                className="
+                    flex
+                    flex-col
+                    h-full
+                    min-h-0
+                "
+            >
 
                 <TabBar
                     tabs={tabs}
@@ -92,12 +100,13 @@ export default function Main({
                     area={area}
                 />
 
-                    <div
-                        className="
-                            flex-1
-                            overflow-hidden
-                        "
-                    >
+                <div
+                    className="
+                        flex-1
+                        overflow-hidden
+                        min-h-0
+                    "
+                >
 
                     {currentTab?.type === "home" && (
                         <StartPage
@@ -121,26 +130,30 @@ export default function Main({
 
                     {currentTab?.type === "exam" && (
 
-                            <ExamTab
-                                examId={currentTab.examId}
-                                examTitle={currentTab.title}
-                                openTab={(tab) =>
-                                    openTab(tab, area)
-                                }
-                            />
+                        <ExamTab
+                            examId={currentTab.examId}
+                            examTitle={currentTab.title}
+                            openTab={(tab) =>
+                                openTab(tab, area)
+                            }
+                        />
 
                     )}
 
                     {currentTab?.type === "blocks" && (
+
                         <BlockBankTab
                             openTab={(tab) =>
                                 openTab(tab, area)
                             }
-                            blockRefreshKey={blockRefreshKey}
+                            blockRefreshKey={
+                                blockRefreshKey
+                            }
                         />
+
                     )}
 
-                    {    currentTab?.type === "block" && (
+                    {currentTab?.type === "block" && (
 
                         <BlockContent
                             block={currentTab.block}
@@ -164,6 +177,7 @@ export default function Main({
                     )}
 
                     {currentTab?.type === "central-content" && (
+
                         <CentralContentTab
                             centralContentId={
                                 currentTab.centralContentId
@@ -171,56 +185,63 @@ export default function Main({
                             centralContentTitle={
                                 currentTab.centralContentTitle
                             }
-                            levelCode={
-                                currentTab.levelCode
+                            areaTitle={
+                                currentTab.areaTitle
                             }
                             openTab={(tab) =>
                                 openTab(tab, area)
                             }
-                            blockRefreshKey={blockRefreshKey}
+                            blockRefreshKey={
+                                blockRefreshKey
+                            }
                         />
+
                     )}
 
-
-                    {    currentTab?.type === "book-section" && (
+                    {currentTab?.type === "book-section" && (
 
                         <SectionTab
-                            sectionId={currentTab.sectionId}
+                            sectionId={
+                                currentTab.sectionId
+                            }
                             openTab={(tab) =>
                                 openTab(tab, area)
                             }
-                            blockRefreshKey={blockRefreshKey}
+                            blockRefreshKey={
+                                blockRefreshKey
+                            }
                         />
 
                     )}
 
+                    {currentTab?.type === "group-exams" && (
 
-                        
-                    {   currentTab?.type === "group-exams" && (
-
-                            <GroupExamLibraryTab
-                                openTab={(tab) =>
-                                    openTab(tab, area)
-                                }
-                            />
+                        <GroupExamLibraryTab
+                            openTab={(tab) =>
+                                openTab(tab, area)
+                            }
+                        />
 
                     )}
 
-                    {   currentTab?.type === "group-exam" && (
+                    {currentTab?.type === "group-exam" && (
 
-                            <GroupExamTab
-                                groupExamId={currentTab.groupExamId}
-                                openTab={(tab) =>
-                                    openTab(tab, area)
-                                }
-                            />
+                        <GroupExamTab
+                            groupExamId={
+                                currentTab.groupExamId
+                            }
+                            openTab={(tab) =>
+                                openTab(tab, area)
+                            }
+                        />
 
                     )}
-                    
-                    
+
                 </div>
 
             </div>
+
         </div>
+
     );
 }

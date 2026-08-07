@@ -34,7 +34,7 @@ export default function UserProfile() {
                         {user.first_name} {user.last_name}
                     </div>
 
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-muted-foreground">
                         {user.role}
                     </div>
 

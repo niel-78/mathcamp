@@ -185,13 +185,16 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                     <div
                         className="
                             fixed
-                            bg-white
+                            bg-popover
+                            text-popover-foreground
                             border
-                            rounded
+                            border-border
+                            rounded-lg
                             shadow-lg
                             z-50
                             min-w-40
                         "
+
                         style={{
                             left: contextMenu.x,
                             top: contextMenu.y
@@ -207,7 +210,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                     p-2
                                     items-center
                                     text-left
-                                    hover:bg-slate-100
+                                    hover:bg-accent
                                 "
                                 variant="inline"
                                 onClick={() => {
@@ -225,7 +228,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                         {contextMenu.type === "group" && (
 
                             <>
-                                <div className="px-3 py-2 text-sm text-gray-500 border-b">
+                                <div className="px-3 py-2 text-sm text-muted-foreground border-b">
                                     {contextMenu.groupName}
                                 </div>
 
@@ -236,7 +239,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                         p-2
                                         items-center
                                         text-left
-                                        hover:bg-slate-100
+                                        hover:bg-accent
                                     "
                                     variant="inline"
                                     onClick={() => {
@@ -260,7 +263,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                         p-2
                                         items-center
                                         text-left
-                                        hover:bg-slate-100
+                                        hover:bg-accent
                                     "
                                     variant="inline"
                                     onClick={() => {
@@ -289,7 +292,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                     p-2
                                     items-center
                                     text-left
-                                    hover:bg-slate-100
+                                    hover:bg-accent
                                 "
                                 variant="inline"
                                 onClick={() => {
@@ -311,10 +314,10 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                         {contextMenu?.type === "student" && (
 
                             <>
-                                <div className="px-3 py-2 text-sm text-gray-500 border-b">
+                                <div className="px-3 py-2 text-sm text-muted-foreground border-b">
                                     {contextMenu.firstName} {contextMenu.lastName}
                                 </div>
-                                <div className="px-3 py-2 text-sm text-gray-500 border-b">
+                                <div className="px-3 py-2 text-sm text-muted-foreground border-b">
                                     {contextMenu.userName}
                                 </div>
 
@@ -325,7 +328,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                         p-2
                                         items-center
                                         text-left
-                                        hover:bg-slate-100
+                                        hover:bg-accent
                                     "
                                     variant="inline"
                                     onClick={() => {
@@ -348,7 +351,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                         p-2
                                         items-center
                                         text-left
-                                        hover:bg-slate-100
+                                        hover:bg-accent
                                     "
                                     variant="inline"
                                     onClick={() => {
@@ -374,7 +377,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                         p-2
                                         items-center
                                         text-left
-                                        hover:bg-slate-100
+                                        hover:bg-accent
                                     "
                                     variant="inline"
                                     onClick={() => {
@@ -404,7 +407,17 @@ export default function LeftCol( {openTab, hoverTarget} ) {
             
             
             
-            <div className="border-r p-4">
+            <div
+                className="
+                    border-r
+                    border-border
+
+                    bg-sidebar
+                    text-sidebar-foreground
+
+                    p-4
+                "
+            >
 
                 <Button className="tree-folder" 
                         variant="ghost"
@@ -461,7 +474,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                 </Button>
 
                                 {expandedGroups[group.id] && (
-                                    <div className="ml-8 border-l border-slate-300 pl-4">
+                                    <div className="ml-8 border-l border-border pl-4">
 
                                         <div className="tree-file">
                                             Kommande prov

@@ -2,6 +2,8 @@ import BlockCard from "@/components/ui/BlockCard";
 
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
+import CardSection from "@/components/layouts/CardSection";
+import CardGridLayout from "@/components/layouts/CardGridLayout";
 
 export default function BlockLibrary({
     blocks,
@@ -54,26 +56,39 @@ export default function BlockLibrary({
     }
 
     return (
-        <div
-            className="
-                grid
-                gap-4
-                grid-cols-1
-                md:grid-cols-2
-                xl:grid-cols-3
+
+        <CardSection
+            title="Uppgiftsbank"
+            description="
+                Alla tillgängliga uppgiftsblock.
             "
         >
-            {blocks.map(block => (
-                <BlockCard
-                    key={block.id}
-                    dragPrefix="library"
-                    block={block}
-                    openTab={openTab}
-                    onDelete={onDelete}
-                    onRemoveSection={removeSection}
-                    onRemoveCentralContent={removeCentralContent}
-                />
-            ))}
-        </div>
+
+            <CardGridLayout
+                pageSize={12}
+                minCardWidth={500}
+            >
+
+                {blocks.map(block => (
+
+                    <BlockCard
+                        key={block.id}
+                        dragPrefix="library"
+                        block={block}
+                        openTab={openTab}
+                        onDelete={onDelete}
+                        onRemoveSection={
+                            removeSection
+                        }
+                        onRemoveCentralContent={
+                            removeCentralContent
+                        }
+                    />
+
+                ))}
+
+            </CardGridLayout>
+
+        </CardSection>
     );
 }

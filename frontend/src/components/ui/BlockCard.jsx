@@ -1,4 +1,5 @@
 import { useDraggable, useDroppable } from "@dnd-kit/core";
+import { useState } from "react";
 import { GripVertical } from "lucide-react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -57,14 +58,19 @@ export default function BlockCard({
         opacity: transform ? 0.7 : 1
     };
 
+    const [showReferences, setShowReferences] = useState(false);
+
+    const referenceCount = (block.centralContent?.length ?? 0) + (block.bookSections?.length ?? 0);
+
     return (
 
         <div
             ref={setRefs}
             style={style}
+            className="w-full"
         >
 
-            <div className="border rounded p-4">
+            <div className="card h-full">
 
                 <div className="flex justify-end mb-2">
 
@@ -109,7 +115,7 @@ export default function BlockCard({
 
                 )}
 
-                <p className="mt-2 text-sm text-gray-500">
+                <p className="mt-2 text-sm text-muted-foreground">
 
                     {block.questions?.length ?? 0}
                     {" "}
@@ -119,68 +125,130 @@ export default function BlockCard({
 
                 </p>
 
-                <div className="mt-3">
+                {referenceCount > 0 && (
 
-                    <h4 className="font-semibold text-sm">
-                        Referenser
-                    </h4>
+                    <div className="mt-3">
 
-                    {block.centralContent?.length > 0 && (
-                        <>
-                            <p className="text-xs text-muted-foreground">
-                                Centralt innehåll
-                            </p>
+                        <Button
+                            type="button"
+                            onClick={() =>
+                                setShowReferences(
+                                    !showReferences
+                                )
+                            }
+                            className="
+                                text-sm
+                                font-semibold
 
-                            {block.centralContent.map(item => (
-                                <div key={item.id} className="flex justify-between items-center">
-                                    {item.content}
-                                    <Button
-                                        variant="ghost"
-                                        className="text-red-500"
-                                        onClick={() =>
-                                            onRemoveCentralContent(
-                                                block.id,
-                                                item.id
+                                hover:text-primary
+                            "
+                        >
+                            {showReferences
+                                ? "▼"
+                                : "▶"}
+                            {" "}
+                            Referenser
+                            ({referenceCount})
+                        </Button>
+
+                        {showReferences && (
+
+                            <div className="mt-2">
+
+                                {block.centralContent?.length > 0 && (
+                                    <>
+                                        <p
+                                            className="
+                                                text-xs
+                                                text-muted-foreground
+                                            "
+                                        >
+                                            Centralt innehåll
+                                        </p>
+
+                                        {block.centralContent.map(
+                                            item => (
+                                                <div
+                                                    key={item.id}
+                                                    className="
+                                                        flex
+                                                        justify-between
+                                                        items-center
+                                                    "
+                                                >
+                                                    {item.content}
+
+                                                    <Button
+                                                        variant="ghost"
+                                                        className="
+                                                            text-red-500
+                                                        "
+                                                        onClick={() =>
+                                                            onRemoveCentralContent?.(
+                                                                block.id,
+                                                                item.id
+                                                            )
+                                                        }
+                                                    >
+                                                        <X size={14} />
+                                                    </Button>
+                                                </div>
                                             )
-                                        }
-                                    >
-                                        <X size={14} />
-                                    </Button>
-                                </div>
+                                        )}
+                                    </>
+                                )}
 
+                                {block.bookSections?.length > 0 && (
+                                    <>
+                                        <p
+                                            className="
+                                                text-xs
+                                                text-muted-foreground
+                                                mt-2
+                                            "
+                                        >
+                                            Bok
+                                        </p>
 
-                            ))}
-                        </>
-                    )}
+                                        {block.bookSections.map(
+                                            section => (
+                                                <div
+                                                    key={section.id}
+                                                    className="
+                                                        flex
+                                                        justify-between
+                                                        items-center
+                                                    "
+                                                >
+                                                    {section.title}
 
-                    {block.bookSections?.length > 0 && (
-                        <>
-                            <p className="text-xs text-muted-foreground mt-2">
-                                Bok
-                            </p>
-
-                            {block.bookSections.map(section => (
-                                <div key={section.id} className="flex justify-between items-center">
-                                    {section.title}
-                                    <Button
-                                        variant="ghost"
-                                        className="text-red-500"
-                                        onClick={() =>
-                                            onRemoveSection(
-                                                block.id,
-                                                section.id
+                                                    <Button
+                                                        variant="ghost"
+                                                        className="
+                                                            text-red-500
+                                                        "
+                                                        onClick={() =>
+                                                            onRemoveSection?.(
+                                                                block.id,
+                                                                section.id
+                                                            )
+                                                        }
+                                                    >
+                                                        <X size={14} />
+                                                    </Button>
+                                                </div>
                                             )
-                                        }
-                                    >
-                                        <X size={14} />
-                                    </Button>
-                                </div>    
-                            ))}
-                            
-                        </>
-                    )}
+                                        )}
+                                    </>
+                                )}
 
-                </div>
+                            </div>
+
+                        )}
+
+                    </div>
+
+                )}
 
                 <p>
                     Skapad av

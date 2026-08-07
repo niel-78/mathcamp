@@ -96,7 +96,6 @@ function ExamEditor({examId, onClose}) {
                 <div className="flex gap-2">
 
                     <Button
-                        className="btn-action"
                         onClick={() =>
                             setEditMode(!editMode)
                         }
@@ -107,7 +106,6 @@ function ExamEditor({examId, onClose}) {
                     </Button>
 
                     <Button
-                        className="btn-primary"
                         onClick={onClose}
                     >
                         Tillbaka
@@ -157,7 +155,6 @@ function ExamEditor({examId, onClose}) {
                         />
 
                         <Button
-                            className="btn-primary"
                             onClick={createBlock}
                         >
                             Lägg till block
@@ -170,7 +167,6 @@ function ExamEditor({examId, onClose}) {
                 <div className="flex justify-end gap-2 mt-4">
 
                     <Button
-                        className="btn-action"
                         onClick={() =>
                             setEditMode(!editMode)
                         }
@@ -181,7 +177,6 @@ function ExamEditor({examId, onClose}) {
                     </Button>
 
                     <Button
-                        className="btn-primary"
                         onClick={onClose}
                     >
                         Tillbaka

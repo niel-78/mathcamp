@@ -84,7 +84,7 @@ export default function CentralContentTab({
         <>
             <BaseTabLayout
 
-                title={`${levelCode} - ${centralContentTitle}`}
+                title={`${levelCode} > ${centralContentTitle}`}
 
                 actions={
 

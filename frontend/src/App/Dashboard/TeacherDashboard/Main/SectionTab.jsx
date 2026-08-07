@@ -96,7 +96,7 @@ export default function SectionTab({
         <>
             <BaseTabLayout
 
-                title={`${section.chapter_number}-${section.chapter_title} -${section.subchapter_number}-${section.subchapter_title}`}
+                title={`${section.chapter_number}. ${section.chapter_title} > ${section.subchapter_number} > ${section.subchapter_title}`}
 
                 actions={
 

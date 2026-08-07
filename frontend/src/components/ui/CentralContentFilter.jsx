@@ -2,17 +2,10 @@ import { useEffect, useState } from "react";
 
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
+import TabPanelSection from "@/components/layouts/TabPanelSection";
 
-export default function BlockFilter({
-    subjectId,
-    onSubjectChange,
 
-    levelId,
-    onLevelChange,
-
-    areaId,
-    onAreaChange,
-
+export default function CentralContentFilter({
     centralContentId,
     onCentralContentChange
 }) {
@@ -20,37 +13,46 @@ export default function BlockFilter({
     const [subjects, setSubjects] =
         useState([]);
 
+    const [subjectId, setSubjectId] =
+        useState("");
+
+    const [levelId, setLevelId] =
+        useState("");
+
+    const [areaId, setAreaId] =
+        useState("");
+
+
 
     useEffect(() => {
-
-        const loadSubjects = async () => {
-
-            const response =
-                await fetch(
-                    `${API_URL}/api/subjects`,
-                    {
-                        headers:
-                            authHeaders()
-                    }
-                );
-
-            if (!response.ok) {
-                return;
-            }
-
-            const data =
-                await response.json();
-
-            console.log(data);    
-
-            setSubjects(data);
-
-        };
 
         loadSubjects();
 
     }, []);
 
+
+    const loadSubjects = async () => {
+
+        const response =
+            await fetch(
+                `${API_URL}/api/subjects`,
+                {
+                    headers:
+                        authHeaders()
+                }
+            );
+
+        if (!response.ok) {
+            return;
+        }
+
+        const data = await response.json();
+
+
+        setSubjects(data);
+        console.log(subjects[0]);
+
+    };
 
     const selectedSubject =
         subjects.find(
@@ -74,12 +76,13 @@ export default function BlockFilter({
 
     return (
 
-        <div
-            className="
-                flex
-                flex-col
-                gap-3
-                max-w-md
+        <TabPanelSection
+            title="Filtrera på centralt innehåll"
+            description="
+                Hitta block utifrån
+                ämne, kurs,
+                område och
+                centralt innehåll.
             "
         >
 
@@ -90,12 +93,12 @@ export default function BlockFilter({
                 value={subjectId}
                 onChange={(e) => {
 
-                    onSubjectChange(
+                    setSubjectId(
                         e.target.value
                     );
 
-                    onLevelChange("");
-                    onAreaChange("");
+                    setLevelId("");
+                    setAreaId("");
                     onCentralContentChange("");
 
                 }}
@@ -127,11 +130,11 @@ export default function BlockFilter({
                 value={levelId}
                 onChange={(e) => {
 
-                    onLevelChange(
+                    setLevelId(
                         e.target.value
                     );
 
-                    onAreaChange("");
+                    setAreaId("");
                     onCentralContentChange("");
 
                 }}
@@ -161,9 +164,10 @@ export default function BlockFilter({
                 value={areaId}
                 onChange={(e) => {
 
-                    onAreaChange(
+                    setAreaId(
                         e.target.value
                     );
+
                     onCentralContentChange("");
 
                 }}
@@ -218,7 +222,7 @@ export default function BlockFilter({
             </select>
 
 
-        </div>      
+        </TabPanelSection>      
     );
 
 

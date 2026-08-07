@@ -12,8 +12,7 @@ import { Button } from "@/components/ui/button";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 
-import BlockBrowser
-    from "@/components/ui/BlockBrowser";
+import CentralContentFilter from "@/components/ui/CentralContentFilter";
 
 export default function ImportBlocksDialog({
     open,
@@ -95,16 +94,6 @@ export default function ImportBlocksDialog({
                         overflow-hidden
                     "
                 >
-
-                    <BlockBrowser
-                        selectable
-                        selectedBlocks={
-                            selectedBlocks
-                        }
-                        onSelectionChange={
-                            setSelectedBlocks
-                        }
-                    />
 
                 </div>
 

@@ -1,4 +1,6 @@
 import { Button } from "@/components/ui/button";
+import MetaItem from "@/components/ui/MetaItem";
+
 import {
     BookOpen,
     Layers,
@@ -15,96 +17,80 @@ export default function ExamCard({
 
         <div
             className="
-                rounded-lg
-                border
-                bg-white
-                p-4
-                shadow-sm
+                card
+                h-full
+                flex
+                flex-col
             "
         >
 
-            <div className="mb-4">
+            <div className="flex-1">
 
-                <h3 className="font-semibold text-lg">
+                <h3
+                    className="
+                        font-semibold
+                        text-lg
+                    "
+                >
                     {exam.title}
                 </h3>
 
-                <p className="text-xs text-muted-foreground">
+                <p
+                    className="
+                        text-xs
+                        text-muted-foreground
+                    "
+                >
                     ID: {exam.id}
                 </p>
 
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div
+                className="
+                    grid
+                    grid-cols-2
+                    gap-3
+                    text-sm
+                "
+            >
 
-                <div className="flex items-center gap-2">
+                <MetaItem
+                    icon={GraduationCap}
+                    label="Ämne"
+                    value={exam.subject_name}
+                />
 
-                    <GraduationCap
-                        size={16}
-                    />
+                <MetaItem
+                    icon={Layers}
+                    label="Nivå"
+                    value={exam.level_name}
+                />
 
-                    <div>
-
-                        <div className="font-medium">
-                            Ämne
-                        </div>
-
-                        <div className="text-muted-foreground">
-                            {exam.subject_name}
-                        </div>
-
-                    </div>
-
-                </div>
-
-                <div className="flex items-center gap-2">
-
-                    <Layers
-                        size={16}
-                    />
-
-                    <div>
-
-                        <div className="font-medium">
-                            Nivå
-                        </div>
-
-                        <div className="text-muted-foreground">
-                            {exam.level_name}
-                        </div>
-
-                    </div>
-
-                </div>
-
-                <div className="flex items-center gap-2">
-
-                    <BookOpen
-                        size={16}
-                    />
-
-                    <div>
-
-                        <div className="font-medium">
-                            Bok
-                        </div>
-
-                        <div className="text-muted-foreground">
-                            {exam.book_title ||
-                                "Ingen bok"}
-                        </div>
-
-                    </div>
-
-                </div>
+                <MetaItem
+                    icon={BookOpen}
+                    label="Bok"
+                    value={
+                        exam.book_title ||
+                        "Ingen bok"
+                    }
+                />
 
                 <div>
 
-                    <div className="font-medium">
+                    <div
+                        className="
+                            font-medium
+                        "
+                    >
                         Block
                     </div>
 
-                    <div className="text-muted-foreground">
+                    <div
+                        className="
+                            text-muted-foreground
+                        "
+                    >
                         {exam.block_count}
                     </div>
 
@@ -116,6 +102,7 @@ export default function ExamCard({
                 className="
                     mt-4
                     border-t
+                    border-border
                     pt-3
                     text-xs
                     text-muted-foreground
@@ -124,22 +111,43 @@ export default function ExamCard({
             >
 
                 <div>
+
                     Skapad:{" "}
-                    {new Date(
-                        exam.created_at
-                    ).toLocaleDateString("sv-SE")}
+
+                    {
+                        new Date(
+                            exam.created_at
+                        ).toLocaleDateString(
+                            "sv-SE"
+                        )
+                    }
+
                 </div>
 
                 <div>
+
                     Uppdaterad:{" "}
-                    {new Date(
-                        exam.updated_at
-                    ).toLocaleDateString("sv-SE")}
+
+                    {
+                        new Date(
+                            exam.updated_at
+                        ).toLocaleDateString(
+                            "sv-SE"
+                        )
+                    }
+
                 </div>
 
             </div>
 
-            <div className="mt-4 flex justify-end">
+            <div
+                className="
+                    mt-4
+                    flex
+                    justify-end
+                    gap-2
+                "
+            >
 
                 <Button
                     onClick={() =>
@@ -159,10 +167,12 @@ export default function ExamCard({
                     onPointerDown={(e) => {
                         e.stopPropagation();
                     }}
-                    onClick={() => onDelete(exam)}
+                    onClick={() =>
+                        onDelete(exam)
+                    }
                 >
                     Ta bort
-                </Button>                
+                </Button>
 
             </div>
 

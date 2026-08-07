@@ -4,9 +4,12 @@ import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 import { Button } from "@/components/ui/button";
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";
+import { TabSectionRow } from "@/components/layouts/TabSectionRow";
+import { TabSection } from "@/components/layouts/TabSection";
 import CreateBlockDialog from "@/components/ui/CreateBlockDialog";
 import BlockLibrary from "@/components/ui/BlockLibrary";
-import BlockFilter from "@/components/ui/BlockFilter";
+import CentralContentFilter from "@/components/ui/CentralContentFilter";
+import BookSectionFilter from "@/components/ui/BookSectionFilter";
 import DeleteBlockDialog from "@/components/ui/DeleteBlockDialog";
 
 
@@ -18,19 +21,14 @@ export default function BlockBankTab({
     const [blocks, setBlocks] = useState([]);
     const [blockToDelete, setBlockToDelete] = useState(null);
 
-    const [subjectId, setSubjectId] =
+    const [centralContentId,
+        setCentralContentId] =
         useState("");
 
-    const [levelId, setLevelId] =
+    const [sectionId,
+        setSectionId] =
         useState("");
 
-    const [areaId, setAreaId] =
-        useState("");
-
-    const [
-        centralContentId,
-        setCentralContentId
-    ] = useState("");
 
     useEffect(() => {
         loadBlocks();
@@ -55,6 +53,7 @@ export default function BlockBankTab({
 
     };
 
+
     const deleteBlock = async () => {
 
         await fetch(
@@ -71,53 +70,38 @@ export default function BlockBankTab({
 
     };
 
+
     const filteredBlocks =
         blocks.filter(block => {
 
-        const matchesSubject =
-            !subjectId ||
-            block.subjects?.some(
-                subject =>
-                    subject.id === Number(subjectId)
-            );
+        const matchesCC =
 
-        const matchesLevel =
-            !levelId ||
-            block.levels?.some(
-                level =>
-                    level.id === Number(levelId)
-            );
-
-        const matchesArea =
-            !areaId ||
-            block.centralContent?.some(
-                cc =>
-                    cc.area_id ===
-                    Number(areaId)
-            );
-
-        const matchesCentralContent =
             !centralContentId ||
+
             block.centralContent?.some(
                 cc =>
-                    cc.id === Number(centralContentId)
+                    cc.id ===
+                    Number(
+                        centralContentId
+                    )
+            );
+
+        const matchesSection =
+
+            !sectionId ||
+
+            block.bookSections?.some(
+                section =>
+                    section.id ===
+                    Number(sectionId)
             );
 
         return (
-            matchesSubject &&
-            matchesLevel &&
-            matchesArea &&
-            matchesCentralContent
+            matchesCC &&
+            matchesSection
         );
 
     });  
-
-    console.log({
-        subjectId,
-        levelId,
-        areaId,
-        centralContentId
-    });
 
     return (
         <>
@@ -142,24 +126,41 @@ export default function BlockBankTab({
 
             >
 
-                <BlockFilter
+                <TabSectionRow>
 
-                    subjectId={subjectId}
-                    onSubjectChange={setSubjectId}
+                    <TabSection
+                        title="
+                            Centralt innehåll
+                        "
+                    >
 
-                    levelId={levelId}
-                    onLevelChange={setLevelId}
+                        <CentralContentFilter
+                            centralContentId={
+                                centralContentId
+                            }
+                            onCentralContentChange={
+                                setCentralContentId
+                            }
+                        />
 
-                    areaId={areaId}
-                    onAreaChange={setAreaId}
+                    </TabSection>
 
-                    centralContentId={centralContentId}
-                    onCentralContentChange={
-                        setCentralContentId
-                    }
+                    <TabSection
+                        title="
+                            Boksektion
+                        "
+                    >
 
-                />
+                        <BookSectionFilter
+                            sectionId={sectionId}
+                            onSectionChange={
+                                setSectionId
+                            }
+                        />
 
+                    </TabSection>
+
+                </TabSectionRow>
 
                 <BlockLibrary
                     blocks={filteredBlocks}

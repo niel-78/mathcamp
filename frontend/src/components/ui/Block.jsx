@@ -239,7 +239,6 @@ export default function Block({ block, exam, onChanged, editMode }) {
                     />
 
                     <Button
-                        className="btn-primary"
                         onClick={createQuestion}
                     >
                         Lägg till fråga
@@ -253,7 +252,6 @@ export default function Block({ block, exam, onChanged, editMode }) {
 
                     {canMoveUp && (
                         <Button
-                            className="btn-action"
                             onClick={() => moveUp(block)}
                         >
                             Flytta upp
@@ -262,7 +260,6 @@ export default function Block({ block, exam, onChanged, editMode }) {
 
                     {canMoveDown && (
                         <Button
-                            className="btn-action"
                             onClick={() => moveDown(block)}
                         >
                             Flytta ner
@@ -270,14 +267,12 @@ export default function Block({ block, exam, onChanged, editMode }) {
                     )}
 
                     <Button
-                        className="btn-action"
                         onClick={() => renameBlock(block)}
                     >
                         Byt namn
                     </Button>
 
                     <Button
-                        className="btn-danger"
                         onClick={() => deleteBlock(block)}
                     >
                         Ta bort block
