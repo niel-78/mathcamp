@@ -279,7 +279,7 @@ export default function BlockCard({
                     onClick={() =>
                         openTab({
                             id: `block-${block.id}`,
-                            title: `ID: ${block.id}`,
+                            title: `Block #${block.id}`,
                             type: "block",
                             block
                         })

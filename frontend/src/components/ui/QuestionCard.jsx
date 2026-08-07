@@ -8,6 +8,8 @@ import QuestionTester from "@/components/ui/QuestionTester";
 import AnswerConfigEditor from "@/components/ui/AnswerConfigEditor";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
+import DetailLayout from "@/components/layouts/DetailLayout";
+import CardSection from "@/components/layouts/CardSection";
 import { GRADING_MODES, QUESTION_TYPES, getQuestionTypeLabel, getGradingModeLabel } from "@/constants/examConstants";
 
 export default function QuestionCard({
@@ -32,11 +34,6 @@ export default function QuestionCard({
         setQuestionText] =
         useState(question.question);
 
-    const [
-        questionToDelete,
-        setQuestionToDelete
-    ] = useState(null);
-    
     const [
         mediaToDelete,
         setMediaToDelete
@@ -218,6 +215,339 @@ export default function QuestionCard({
         }
 
     };
+
+    return (
+        <>
+            <DetailLayout
+
+                sidebar={
+
+                    <>
+
+                        <CardSection
+                            title="Information"
+                        >
+
+                            <div className="space-y-3">
+
+                                <div>
+
+                                    <strong>ID:</strong>
+                                    {" "}
+                                    {question.id}
+
+                                </div>
+
+                                <div>
+
+                                    <strong>Typ:</strong>
+                                    {" "}
+                                    {
+                                        getQuestionTypeLabel(
+                                            question.question_type
+                                        )
+                                    }
+
+                                </div>
+
+                                <div>
+
+                                    <strong>Nivå:</strong>
+                                    {" "}
+                                    {
+                                        question.level_name
+                                            ?? "Saknas"
+                                    }
+
+                                </div>
+
+                            </div>
+
+                        </CardSection>
+
+                        <CardSection
+                            title="Nivå"
+                        >
+
+                            {!editingLevel ? (
+
+                                <div className="space-y-3">
+
+                                    <div>
+                                        {question.level_name
+                                            ?? "Saknas"}
+                                    </div>
+
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                            setEditingLevel(true)
+                                        }
+                                    >
+                                        Redigera
+                                    </Button>
+
+                                </div>
+
+                            ) : (
+
+                                <div className="space-y-3">
+
+                                    <select
+                                        className="
+                                            input-standard
+                                        "
+                                        value={levelId ?? 2}
+                                        onChange={(e) =>
+                                            setLevelId(
+                                                Number(
+                                                    e.target.value
+                                                )
+                                            )
+                                        }
+                                    >
+
+                                        {levels.map(level => (
+
+                                            <option
+                                                key={level.id}
+                                                value={level.id}
+                                            >
+                                                {level.name}
+                                            </option>
+
+                                        ))}
+
+                                    </select>
+
+                                    <div
+                                        className="
+                                            flex
+                                            gap-2
+                                        "
+                                    >
+
+                                        <Button
+                                            size="sm"
+                                            onClick={saveLevel}
+                                        >
+                                            Spara
+                                        </Button>
+
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() =>
+                                                setEditingLevel(
+                                                    false
+                                                )
+                                            }
+                                        >
+                                            Avbryt
+                                        </Button>
+
+                                    </div>
+
+                                </div>
+
+                            )}
+
+                        </CardSection>
+
+                        <CardSection
+                            title="Bedömning"
+                        >
+
+                            <AnswerConfigEditor
+                                question={question}
+                                onChanged={onChanged}
+                            />
+
+                        </CardSection>
+
+                    </>
+
+                }
+
+            >
+
+
+                <CardSection
+                    title="Media"
+                >
+
+                    <div className="space-y-4">
+
+                        <div
+                            className="
+                                flex
+                                flex-wrap
+                                gap-4
+                                items-start
+                            "
+                        >
+
+                            {question.media?.map(media => (
+
+                                <div
+                                    key={media.id}
+                                    className="
+                                        w-48
+                                        border
+                                        border-border
+                                        rounded-xl
+                                        overflow-hidden
+                                        flex
+                                        flex-col
+                                    "
+                                >
+
+                                    <img
+                                        src={`${API_URL}${media.media_url}`}
+                                        alt="Bild"
+                                    />
+
+                                    <div
+                                        className="
+                                            p-3
+                                            flex
+                                            justify-end
+                                        "
+                                    >
+
+                                        <Button
+                                            size="sm"
+                                            variant="destructive"
+                                            onClick={() =>
+                                                setMediaToDelete(
+                                                    media.id
+                                                )
+                                            }
+                                        >
+                                            Ta bort
+                                        </Button>
+
+                                    </div>
+
+                                </div>
+
+                            ))}
+
+                            <label
+                                className="
+                                    cursor-pointer
+                                "
+                            >
+
+                                <input
+                                    type="file"
+                                    className="hidden"
+                                    onChange={uploadMedia}
+                                />
+
+                                <div
+                                    className="
+                                        w-48
+                                        h-[180px]
+
+                                        border-2
+                                        border-dashed
+                                        border-border
+
+                                        rounded-xl
+
+                                        flex
+                                        items-center
+                                        justify-center
+
+                                        text-muted-foreground
+
+                                        hover:bg-accent
+                                        hover:text-accent-foreground
+
+                                        transition-colors
+                                    "
+                                >
+                                    + Ladda upp
+                                </div>
+
+                            </label>
+
+                        </div>
+
+                        {(!question.media ||
+                            question.media.length === 0) && (
+
+                            <p
+                                className="
+                                    text-sm
+                                    text-muted-foreground
+                                "
+                            >
+                                Inget media uppladdat ännu.
+                            </p>
+
+                        )}
+
+                    </div>
+
+                </CardSection>
+
+
+                <CardSection
+                    title={`Uppgift ID: ${question.id}`}
+                >
+
+                    <MathContent
+                        value={question.question}
+                    />
+
+                </CardSection>
+
+                <CardSection
+                    title="Svarsalternativ"
+                >
+                    <OptionList
+                        questionId={question.id}
+                        options={question.options}
+                        onChanged={onChanged}
+                    />
+                </CardSection>
+
+                <CardSection
+                    title="Testa uppgiften"
+                >
+
+                    <QuestionTester
+                        question={question}
+                    />
+
+                </CardSection>
+
+            </DetailLayout>
+            <DeleteMediaDialog
+                open={mediaToDelete !== null}
+                onOpenChange={(open) => {
+
+                    if (!open) {
+                        setMediaToDelete(null);
+                    }
+
+                }}
+                onDelete={async () => {
+
+                    await deleteMedia(
+                        mediaToDelete
+                    );
+
+                    setMediaToDelete(null);
+
+                }}
+            />
+        </>
+
+    );
 
     return (
         <div className="space-y-4">

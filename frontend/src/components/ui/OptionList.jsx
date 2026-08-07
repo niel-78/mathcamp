@@ -2,6 +2,9 @@ import { useState } from "react";
 import { authHeaders } from "@/api/authHeaders";
 import { API_URL } from "@/config";
 import MathContent from "@/components/ui/MathContent";
+import OptionCard from "@/components/ui/OptionCard";
+import OptionEditor from "@/components/ui/OptionEditor";
+
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import DeleteOptionDialog from "@/components/ui/DeleteOptionDialog";
@@ -137,191 +140,130 @@ export default function OptionList({ options, onChanged, questionId }) {
 
     return (
         <>
-            {options.map(option => (
 
-                <div
-                    key={option.id}    
-                    className="
-                            flex
-                            items-start
-                            justify-between
-                            py-2
-                            border-b
-                        "
-                >
+            <div className="grid gap-4">
 
-                    {editingOptionId === option.id ? (
+                {options.map(option => (
 
-                        <>
-                            <label className="flex items-center gap-2 mb-2">
+                    editingOptionId === option.id
 
-                                <input
-                                    type="checkbox"
-                                    checked={
-                                        editedCorrect[option.id] ??
-                                        option.is_correct
-                                    }
-                                    onChange={(e) =>
-                                        setEditedCorrect({
-                                            ...editedCorrect,
-                                            [option.id]: e.target.checked
-                                        })
-                                    }
-                                />
+                        ? (
 
-                                <span>Rätt svar</span>
-
-                            </label>
-
-                            <MathContent
-                                className="
-                                    math-preview
-                                    mb-2
-                                "
-                                value={(editedOptions[option.id] ?? option.text)}
-                            />
-
-                            <textarea
-                                rows={3}
-                                className="input-standard"
-                                value={
-                                    editedOptions[option.id] ??
-                                    option.text
+                            <OptionEditor
+                                key={option.id}
+                                text={
+                                    editedOptions[
+                                        option.id
+                                    ] ?? option.text
                                 }
-                                onChange={(e) =>
+                                isCorrect={
+                                    editedCorrect[
+                                        option.id
+                                    ] ?? option.is_correct
+                                }
+                                onTextChange={(value) =>
                                     setEditedOptions({
                                         ...editedOptions,
-                                        [option.id]:
-                                            e.target.value
+                                        [option.id]: value
                                     })
                                 }
-                            />
-
-                            <div className="flex gap-2 mt-2">
-
-                                <Button
-                                    onClick={async () => {
+                                onCorrectChange={(value) =>
+                                    setEditedCorrect({
+                                        ...editedCorrect,
+                                        [option.id]: value
+                                    })
+                                }
+                                onSave={async () => {
 
                                     await updateOption(
                                         option.id,
-                                        editedOptions[option.id] ??
-                                        option.text,
-                                        editedCorrect[option.id] ??
-                                        option.is_correct
+                                        editedOptions[
+                                            option.id
+                                        ] ?? option.text,
+                                        editedCorrect[
+                                            option.id
+                                        ] ?? option.is_correct
                                     );
 
-                                        setEditingOptionId(null);
+                                    setEditingOptionId(
+                                        null
+                                    );
 
-                                    }}
-                                >
-                                    Spara
-                                </Button>
+                                }}
+                                onCancel={() =>
+                                    setEditingOptionId(
+                                        null
+                                    )
+                                }
+                            />
 
-                                <Button
-                                    onClick={() =>
-                                        setEditingOptionId(null)
-                                    }
-                                >
-                                    Avbryt
-                                </Button>
+                        )
 
-                            </div>
+                        : (
 
-                        </>
+                            <OptionCard
+                                key={option.id}
+                                option={option}
+                                onEdit={() => {
 
-                    ) : (
+                                    setEditedOptions({
+                                        ...editedOptions,
+                                        [option.id]:
+                                            option.text
+                                    });
 
-                        <>
-                            <div className="flex-1 flex items-start gap-2">
+                                    setEditedCorrect({
+                                        ...editedCorrect,
+                                        [option.id]:
+                                            option.is_correct
+                                    });
 
-                                <MathContent
-                                    className="math-content flex-1"
-                                    value={option.text}
-                                />
-                                <div className="flex items-center gap-2 shrink-0"></div>
-                                {option.is_correct ? (
-                                    <span
-                                        className="
-                                            bg-green-100
-                                            text-green-800
-                                            text-sm
-                                            px-2
-                                            py-1
-                                            rounded
-                                        "
-                                    >
-                                        Korrekt
-                                    </span>
-                                ) : (
-                                    <span
-                                        className="
-                                            bg-red-100
-                                            text-red-800
-                                            text-sm
-                                            px-2
-                                            py-1
-                                            rounded
-                                        "
-                                    >
-                                        Felaktigt
-                                    </span>
-                                )}
-                                <div/>
+                                    setEditingOptionId(
+                                        option.id
+                                    );
 
-                                <Button
-                                    variant="outline"
-                                    onClick={() => {
+                                }}
+                                onDelete={() =>
+                                    setOptionToDelete(
+                                        option.id
+                                    )
+                                }
+                            />
 
-                                        setEditedOptions({
-                                            ...editedOptions,
-                                            [option.id]: option.text
-                                        });
+                        )
 
-                                        setEditedCorrect({
-                                            ...editedCorrect,
-                                            [option.id]: option.is_correct
-                                        });
+                ))}
 
-                                        setEditingOptionId(option.id);
-
-                                    }}
-                                >
-                                    Redigera
-                                </Button>
-
-                                <Button
-                                    variant="destructive"
-                                    onClick={() =>
-                                        setOptionToDelete(
-                                            option.id
-                                        )
-                                    }
-                                >
-                                    Ta bort
-                                </Button>
-
-                            </div>
-
-                        </>
-
-                    )}
-
-                </div>
-
-            ))}
+            </div>
 
             <div className="mt-4">
 
                 {!creatingOption && (
 
-                    <Button
-                        variant="outline"
+                    <div
+                        className="
+                            border-2
+                            border-dashed
+                            border-border
+
+                            rounded-xl
+
+                            p-6
+
+                            text-center
+
+                            cursor-pointer
+
+                            hover:bg-accent
+
+                            transition-colors
+                        "
                         onClick={() =>
                             setCreatingOption(true)
                         }
                     >
-                        Nytt alternativ
-                    </Button>
+                        + Nytt alternativ
+                    </div>
 
                 )}
 

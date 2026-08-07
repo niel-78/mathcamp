@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
-
 import CreateBlockDialog from "@/components/ui/CreateBlockDialog";
 import BlockLibrary from "@/components/ui/BlockLibrary";
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 import { Button } from "@/components/ui/button";
+import DropZone from "@/components/ui/DropZone";
 
 export default function SectionTab({
     sectionId,
@@ -111,6 +110,16 @@ export default function SectionTab({
                 }
 
             >
+                
+                <DropZone
+                    id={`section-${sectionId}`}
+                    text="
+                    Dra block hit för att koppla dem
+                    till denna boksektion
+                "
+                />
+                
+                
                 <BlockLibrary
                     blocks={blocks}
                     openTab={openTab}

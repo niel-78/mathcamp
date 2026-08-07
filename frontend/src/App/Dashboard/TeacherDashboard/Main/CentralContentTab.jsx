@@ -4,6 +4,7 @@ import { API_URL } from "@/config";
 import BlockLibrary from "@/components/ui/BlockLibrary";
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 import CreateBlockDialog from "@/components/ui/CreateBlockDialog";
+import DropZone from "@/components/ui/DropZone";
 import { Button } from "@/components/ui/button";
 import { authHeaders } from "@/api/authHeaders";
 
@@ -81,6 +82,7 @@ export default function CentralContentTab({
     };
 
     return (
+        
         <>
             <BaseTabLayout
 
@@ -101,6 +103,14 @@ export default function CentralContentTab({
                 }
 
             >
+
+                <DropZone
+                    id={`cc-${centralContentId}`}
+                    text="
+                        Dra block hit för att koppla dem
+                        till detta centrala innehåll
+                    "
+                />
 
                 <BlockLibrary
                     blocks={blocks}

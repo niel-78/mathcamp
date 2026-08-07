@@ -1,10 +1,43 @@
 import { useMemo, useState } from "react";
+import { Input } from "@/components/ui/input";
+import { gradeAnswer } from "@/utils/grading/gradeAnswer";
+import MathContent from "@/components/ui/MathContent";
 
-import { gradeAnswer }
-    from "@/utils/grading/gradeAnswer";
+function Field({
+    label,
+    children
+}) {
 
-import MathContent
-    from "@/components/ui/MathContent";
+    return (
+
+        <div
+            className="
+                grid
+                grid-cols-[120px_1fr]
+                items-start
+                gap-4
+            "
+        >
+
+            <div
+                className="
+                    text-sm
+                    font-medium
+                    pt-2
+                "
+            >
+                {label}
+            </div>
+
+            <div>
+                {children}
+            </div>
+
+        </div>
+
+    );
+
+}
 
 export default function QuestionTester({
     question
@@ -25,7 +58,8 @@ export default function QuestionTester({
 
     const correctAnswer =
         question.options?.find(
-            option => option.is_correct
+            option =>
+                option.is_correct
         )?.text ?? "";
 
     const isCorrect =
@@ -47,58 +81,80 @@ export default function QuestionTester({
 
         <div
             className="
-                border
-                rounded-lg
-                p-4
-                bg-slate-50
-                space-y-3
+                space-y-4
             "
         >
 
-            <h3 className="font-semibold">
-                Testa rättning
-            </h3>
+            <Field
+                label="Facit"
+            >
 
-            <div>
+                <div
+                    className="
+                        border
+                        border-border
+                        rounded-lg
+                        p-3
+                        bg-muted
+                    "
+                >
 
-                <strong>Facit:</strong>
+                    <MathContent
+                        value={correctAnswer}
+                    />
 
-                <MathContent
-                    value={correctAnswer}
+                </div>
+
+            </Field>
+
+            <Field
+                label="Elevsvar"
+            >
+
+                <Input
+                    className="
+                        input-standard
+                    "
+                    value={studentAnswer}
+                    onChange={e =>
+                        setStudentAnswer(
+                            e.target.value
+                        )
+                    }
+                    placeholder="
+                        Skriv elevsvar...
+                    "
                 />
 
-            </div>
+            </Field>
 
-            <input
-                className="input-standard"
-                value={studentAnswer}
-                onChange={e =>
-                    setStudentAnswer(
-                        e.target.value
-                    )
-                }
-                placeholder="Skriv elevsvar..."
-            />
+            <Field
+                label="Resultat"
+            >
 
-            <div>
-
-                <strong>Resultat:</strong>{" "}
-
-                <span
-                    className={
-                        isCorrect
-                            ? "text-green-600"
-                            : "text-red-600"
-                    }
+                <div
+                    className={`
+                        font-medium
+                        ${
+                            isCorrect
+                                ? "text-green-600"
+                                : "text-red-600"
+                        }
+                    `}
                 >
-                    {isCorrect
-                        ? "✓ Rätt"
-                        : "✗ Fel"}
-                </span>
 
-            </div>
+                    {
+                        isCorrect
+                            ? "✓ Rätt"
+                            : "✗ Fel"
+                    }
+
+                </div>
+
+            </Field>
 
         </div>
 
     );
+
 }

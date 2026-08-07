@@ -125,7 +125,7 @@ export default function AnswerConfigEditor({
             }
         );
 
-            await onChanged();
+        await onChanged();
 
             setEditing(false);
 
@@ -143,6 +143,42 @@ export default function AnswerConfigEditor({
         }
     };
 
+    function Field({
+        label,
+        children
+    }) {
+
+        return (
+
+            <div
+                className="
+                    grid
+                    grid-cols-[140px_1fr]
+                    items-start
+                    gap-4
+                "
+            >
+
+                <label
+                    className="
+                        text-sm
+                        font-medium
+                        pt-2
+                    "
+                >
+                    {label}
+                </label>
+
+                <div>
+                    {children}
+                </div>
+
+            </div>
+
+        );
+
+    }
+
     const renderSettings = () => {
 
         return (
@@ -153,11 +189,9 @@ export default function AnswerConfigEditor({
                     "default_answer"
                 ) && (
 
-                    <div>
-
-                        <label>
-                            Standardsvar
-                        </label>
+                    <Field
+                        label="Standardsvar"
+                    >
 
                         {!editing ? (
 
@@ -166,11 +200,13 @@ export default function AnswerConfigEditor({
                                     border
                                     rounded
                                     p-2
-                                    bg-gray-50
+                                    bg-muted
                                 "
                             >
-                                {defaultAnswer ||
-                                    "Saknas"}
+                                {
+                                    defaultAnswer ||
+                                    "Saknas"
+                                }
                             </div>
 
                         ) : (
@@ -190,7 +226,7 @@ export default function AnswerConfigEditor({
 
                         )}
 
-                    </div>
+                    </Field>
 
                 )}
 
@@ -198,21 +234,20 @@ export default function AnswerConfigEditor({
                     "ignore_variable_names"
                 ) && (
 
-                    <div>
+                    <Field label="">
 
                         {!editing ? (
 
                             <div>
-
                                 <strong>
-                                    Ignorera
-                                    variabelnamn:
-                                </strong>{" "}
-
-                                {ignoreVariableNames
-                                    ? "Ja"
-                                    : "Nej"}
-
+                                    Ignorera variabelnamn:
+                                </strong>
+                                {" "}
+                                {
+                                    ignoreVariableNames
+                                        ? "Ja"
+                                        : "Nej"
+                                }
                             </div>
 
                         ) : (
@@ -220,8 +255,8 @@ export default function AnswerConfigEditor({
                             <label
                                 className="
                                     flex
-                                    gap-2
                                     items-center
+                                    gap-2
                                 "
                             >
 
@@ -237,27 +272,23 @@ export default function AnswerConfigEditor({
                                     }
                                 />
 
-                                Ignorera
-                                variabelnamn
+                                Ignorera variabelnamn
 
                             </label>
 
                         )}
 
-                    </div>
+                    </Field>
 
                 )}
-
 
                 {modeConfig?.settings.includes(
                     "round_to"
                 ) && (
 
-                    <div>
-
-                        <label>
-                            Avrunda till närmaste
-                        </label>
+                    <Field
+                        label="Avrunda till"
+                    >
 
                         {!editing ? (
 
@@ -266,12 +297,14 @@ export default function AnswerConfigEditor({
                                     border
                                     rounded
                                     p-2
-                                    bg-gray-50
+                                    bg-muted
                                 "
                             >
-                                {roundTo === ""
-                                    ? "Ej angivet"
-                                    : roundTo}
+                                {
+                                    roundTo === ""
+                                        ? "Ej angivet"
+                                        : roundTo
+                                }
                             </div>
 
                         ) : (
@@ -297,34 +330,28 @@ export default function AnswerConfigEditor({
 
                         )}
 
-                    </div>
+                    </Field>
 
                 )}
-
 
                 {modeConfig?.settings.includes(
                     "require_simplified"
                 ) && (
 
-                    <div>
-
-                        <label>
-                            Maximalt förenklat bråk
-                        </label>
+                    <Field label="">
 
                         {!editing ? (
 
-                            <div
-                                className="
-                                    border
-                                    rounded
-                                    p-2
-                                    bg-gray-50
-                                "
-                            >
-                                {requireSimplified
-                                    ? "Ja"
-                                    : "Nej"}
+                            <div>
+                                <strong>
+                                    Förenklat bråk:
+                                </strong>
+                                {" "}
+                                {
+                                    requireSimplified
+                                        ? "Ja"
+                                        : "Nej"
+                                }
                             </div>
 
                         ) : (
@@ -332,8 +359,8 @@ export default function AnswerConfigEditor({
                             <label
                                 className="
                                     flex
-                                    gap-2
                                     items-center
+                                    gap-2
                                 "
                             >
 
@@ -355,7 +382,7 @@ export default function AnswerConfigEditor({
 
                         )}
 
-                    </div>
+                    </Field>
 
                 )}
 
@@ -363,25 +390,20 @@ export default function AnswerConfigEditor({
                     "allow_decimal"
                 ) && (
 
-                    <div>
-
-                        <label>
-                            Tillåt decimalform
-                        </label>
+                    <Field label="">
 
                         {!editing ? (
 
-                            <div
-                                className="
-                                    border
-                                    rounded
-                                    p-2
-                                    bg-gray-50
-                                "
-                            >
-                                {allowDecimal
-                                    ? "Ja"
-                                    : "Nej"}
+                            <div>
+                                <strong>
+                                    Tillåt decimalform:
+                                </strong>
+                                {" "}
+                                {
+                                    allowDecimal
+                                        ? "Ja"
+                                        : "Nej"
+                                }
                             </div>
 
                         ) : (
@@ -389,8 +411,8 @@ export default function AnswerConfigEditor({
                             <label
                                 className="
                                     flex
-                                    gap-2
                                     items-center
+                                    gap-2
                                 "
                             >
 
@@ -412,21 +434,17 @@ export default function AnswerConfigEditor({
 
                         )}
 
-                    </div>
+                    </Field>
 
                 )}
-
-
 
                 {modeConfig?.settings.includes(
                     "tolerance"
                 ) && (
 
-                    <div>
-
-                        <label>
-                            Tolerans
-                        </label>
+                    <Field
+                        label="Tolerans"
+                    >
 
                         {!editing ? (
 
@@ -435,12 +453,14 @@ export default function AnswerConfigEditor({
                                     border
                                     rounded
                                     p-2
-                                    bg-gray-50
+                                    bg-muted
                                 "
                             >
-                                {tolerance === ""
-                                    ? "Ej angivet"
-                                    : tolerance}
+                                {
+                                    tolerance === ""
+                                        ? "Ej angivet"
+                                        : tolerance
+                                }
                             </div>
 
                         ) : (
@@ -467,24 +487,17 @@ export default function AnswerConfigEditor({
 
                         )}
 
-                    </div>
+                    </Field>
 
                 )}
-
-
-
-
 
                 {modeConfig?.settings.includes(
                     "decimals"
                 ) && (
 
-                    <div>
-
-                        <label>
-                            Minsta antal
-                            korrekta decimaler
-                        </label>
+                    <Field
+                        label="Decimaler"
+                    >
 
                         {!editing ? (
 
@@ -493,12 +506,14 @@ export default function AnswerConfigEditor({
                                     border
                                     rounded
                                     p-2
-                                    bg-gray-50
+                                    bg-muted
                                 "
                             >
-                                {decimals === ""
-                                    ? "Ej angivet"
-                                    : decimals}
+                                {
+                                    decimals === ""
+                                        ? "Ej angivet"
+                                        : decimals
+                                }
                             </div>
 
                         ) : (
@@ -524,76 +539,91 @@ export default function AnswerConfigEditor({
 
                         )}
 
-                    </div>
+                    </Field>
 
                 )}
 
             </>
 
         );
+
     };
 
 
     return (
 
-        <div className="flex items-center gap-4">
+        <div className="space-y-4">
 
             {!editing ? (
 
-                <>
+                <div className="space-y-3">
 
-                    <div>
-                        <strong>Frågetyp:</strong>{" "}
-                        {getQuestionTypeLabel(
-                            questionType
-                        )}
-                    </div>
+                    <Field
+                        label="Frågetyp"
+                    >
+                        <div>
+                            {
+                                getQuestionTypeLabel(
+                                    questionType
+                                )
+                            }
+                        </div>
+                    </Field>
 
                     {questionType ===
                         QUESTION_TYPES.TEXT.value && (
+
                         <>
 
-                            <div>
-                                <strong>Rättningsmetod:</strong>{" "}
-                                {getGradingModeLabel(
-                                    gradingMode
-                                )}
-                            </div>
+                            <Field
+                                label="Rättningsmetod"
+                            >
+                                <div>
+                                    {
+                                        getGradingModeLabel(
+                                            gradingMode
+                                        )
+                                    }
+                                </div>
+                            </Field>
 
                             {renderSettings()}
 
-                        </>)}    
+                        </>
 
-                    <Button
-                        className="mt-2"
-                        onClick={() =>
-                            setEditing(true)
-                        }
+                    )}
+
+                    <div
+                        className="
+                            flex
+                            justify-end
+                        "
                     >
-                        Redigera
-                    </Button>
 
-                </>
+                        <Button
+                            onClick={() =>
+                                setEditing(true)
+                            }
+                        >
+                            Redigera
+                        </Button>
+
+                    </div>
+
+                </div>
 
             ) : (
 
-                <div className="flex items-center gap-4">
+                <div className="space-y-4">
 
-                    <div>
-
-                        <label
-                            className="
-                                text-sm
-                                font-medium
-                                block
-                                mb-1
-                            "
-                        >
-                            Frågetyp
-                        </label>
+                    <Field
+                        label="Frågetyp"
+                    >
 
                         <select
-                            className="input-standard"
+                            className="
+                                input-standard
+                            "
                             value={questionType}
                             onChange={(e) =>
                                 setQuestionType(
@@ -601,6 +631,7 @@ export default function AnswerConfigEditor({
                                 )
                             }
                         >
+
                             {Object.values(
                                 QUESTION_TYPES
                             ).map(type => (
@@ -613,29 +644,24 @@ export default function AnswerConfigEditor({
                                 </option>
 
                             ))}
+
                         </select>
 
-                    </div>
+                    </Field>
 
                     {questionType ===
                         QUESTION_TYPES.TEXT.value && (
+
                         <>
 
-                            <div>
-
-                                <label
-                                    className="
-                                        text-sm
-                                        font-medium
-                                        block
-                                        mb-1
-                                    "
-                                >
-                                    Rättningsmetod
-                                </label>
+                            <Field
+                                label="Rättningsmetod"
+                            >
 
                                 <select
-                                    className="input-standard"
+                                    className="
+                                        input-standard
+                                    "
                                     value={gradingMode}
                                     onChange={(e) =>
                                         setGradingMode(
@@ -643,6 +669,7 @@ export default function AnswerConfigEditor({
                                         )
                                     }
                                 >
+
                                     {Object.values(
                                         GRADING_MODES
                                     ).map(mode => (
@@ -655,16 +682,24 @@ export default function AnswerConfigEditor({
                                         </option>
 
                                     ))}
+
                                 </select>
 
-                            </div>
+                            </Field>
 
                             {renderSettings()}
 
                         </>
-                    )}    
 
-                    <div className="flex gap-2">
+                    )}
+
+                    <div
+                        className="
+                            flex
+                            justify-end
+                            gap-2
+                        "
+                    >
 
                         <Button
                             onClick={saveSettings}

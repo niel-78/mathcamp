@@ -5,6 +5,7 @@ import { API_URL } from "@/config";
 import { toast } from "sonner";
 import DeleteQuestionDialog from "@/components/ui/DeleteQuestionDialog";
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";    
+import MathContent from "@/components/ui/MathContent";
 
 export default function BlockContent({
     block,
@@ -124,7 +125,7 @@ export default function BlockContent({
     return (
         <>
             <BaseTabLayout
-                title={`BlockId: ${currentBlock.id}`}
+                title={`Block #${currentBlock.id}`}
                 actions={
                     <Button
                         onClick={createQuestion}
@@ -150,9 +151,7 @@ export default function BlockContent({
                             "
                         >
 
-                            <span>
-                                Uppgift {question.id}
-                            </span>
+                            <MathContent value={question.question} />
 
                             <div className="flex gap-2">
 
@@ -163,7 +162,7 @@ export default function BlockContent({
                                             {
                                                 id: `question-${question.id}`,
                                                 type: "question",
-                                                title: `Uppgift ${question.id}`,
+                                                title: `Uppgift #${question.id}`,
                                                 questionId: question.id
                                             },
                                             area

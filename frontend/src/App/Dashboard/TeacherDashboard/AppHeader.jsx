@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, Columns2, PanelLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function AppHeader({
@@ -83,8 +83,8 @@ export default function AppHeader({
                     }
                 >
                     {splitView
-                        ? "En vy"
-                        : "Delad vy"}
+                        ? <Columns2/>
+                        : <PanelLeft/>}
                 </Button>
 
                 <Button

@@ -190,8 +190,6 @@ export default function TeacherDashboard() {
             return;
         }
 
-        console.log("OVER ID", over.id);
-
         /*
         Importera block från blockTab till examTab
         */
@@ -253,13 +251,78 @@ export default function TeacherDashboard() {
                 return;
             }
 
+            const sourceTabs =
+                sourceArea === "left"
+                    ? leftTabs
+                    : rightTabs;
+
+            const sourceIndex =
+                sourceTabs.findIndex(
+                    t => t.id === tab.id
+                );
+
+            const remainingTabs =
+                sourceTabs.filter(
+                    t => t.id !== tab.id
+                );
+
+            // Aktivera föregående tabb i källpanelen
+
+            if (
+                sourceArea === "left" &&
+                activeLeftTab === tab.id
+            ) {
+
+                if (remainingTabs.length) {
+
+                    const newIndex =
+                        Math.max(
+                            0,
+                            sourceIndex - 1
+                        );
+
+                    setActiveLeftTab(
+                        remainingTabs[newIndex].id
+                    );
+
+                } else {
+
+                    setActiveLeftTab(null);
+
+                }
+
+            }
+
+            if (
+                sourceArea === "right" &&
+                activeRightTab === tab.id
+            ) {
+
+                if (remainingTabs.length) {
+
+                    const newIndex =
+                        Math.max(
+                            0,
+                            sourceIndex - 1
+                        );
+
+                    setActiveRightTab(
+                        remainingTabs[newIndex].id
+                    );
+
+                } else {
+
+                    setActiveRightTab(null);
+
+                }
+
+            }
+
+            // Flytta tabben
+
             if (sourceArea === "left") {
 
-                setLeftTabs(prev =>
-                    prev.filter(
-                        t => t.id !== tab.id
-                    )
-                );
+                setLeftTabs(remainingTabs);
 
                 setRightTabs(prev => {
 
@@ -282,11 +345,7 @@ export default function TeacherDashboard() {
 
             } else {
 
-                setRightTabs(prev =>
-                    prev.filter(
-                        t => t.id !== tab.id
-                    )
-                );
+                setRightTabs(remainingTabs);
 
                 setLeftTabs(prev => {
 
@@ -310,7 +369,9 @@ export default function TeacherDashboard() {
             }
 
             return;
+
         }
+
 
         /*
         Flytta block i examTab

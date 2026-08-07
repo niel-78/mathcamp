@@ -441,6 +441,165 @@ router.post("/:blockId/central-content/:centralContentId",
 
 
 
+//GET /api/teacher/blocks/question-levels
+router.get("/question-levels", async (req, res) => {
+
+    try {
+
+        const [levels] = await db.query(`
+            SELECT *
+            FROM question_levels
+            ORDER BY sort_order
+        `);
+
+        res.json(levels);
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            error: error.message
+        });
+
+    }
+
+});
+
+// POST /api/teacher/blocks/:blockId/questions
+router.post("/:blockId/questions", async (req, res) => {
+
+    const {
+        question = "",
+        question_type = 1,
+        answer_config = {}
+    } = req.body;
+
+    const [result] = await db.query(
+        `
+        INSERT INTO questions(
+            question,
+            block_id,
+            question_type,
+            created_by,
+            updated_by,
+            answer_config
+        )
+        VALUES (?, ?, ?, ?, ?, ?)
+        `,
+        [
+            question,
+            req.params.blockId,
+            question_type,
+            req.user.id,
+            req.user.id,
+            JSON.stringify(answer_config)
+        ]
+    );
+
+    res.json({
+        id: result.insertId
+    });
+
+});
+
+
+//DELETE /api/teacher/questions/:questionId
+router.delete("/questions/:questionId", async (req, res) => {
+
+    await db.query(
+        `
+        UPDATE questions
+        SET
+            deleted_at = NOW(),
+            updated_at = NOW(),
+            updated_by = ?
+        WHERE id = ?
+        `,
+        [
+            req.user.id,
+            req.params.questionId
+        ]
+    );
+
+    res.sendStatus(204);
+});
+
+
+// POST /api/teacher/blocks/questions/:questionId/options
+router.post("/questions/:questionId/options", async (req, res) => {
+
+    const {
+        text,
+        is_correct
+    } = req.body;
+
+    const [result] = await db.query(
+        `
+        INSERT INTO options(
+            question_id,
+            text,
+            is_correct,
+            created_by,
+            updated_by
+        )
+        VALUES (?, ?, ?, ?, ?)
+        `,
+        [
+            req.params.questionId,
+            text,
+            is_correct,
+            req.user.id,
+            req.user.id
+        ]
+    );
+
+    res.json({
+        id: result.insertId
+    });
+
+});
+
+// PUT /api/teacher/blocks/options/:optionId
+router.put("/options/:optionId", async (req, res) => {
+
+    const { text, is_correct } = req.body;
+
+    await db.query(
+        `
+        UPDATE options
+        SET
+            text = ?,
+            is_correct = ?
+        WHERE id = ?
+        `,
+        [
+            text,
+            is_correct,
+            req.params.optionId
+        ]
+    );
+
+    res.sendStatus(204);
+});
+
+// DELETE /api/teacher/blocks/questions/:questionId
+router.delete("/options/:optionId", async (req, res) => {
+
+    await db.query(
+        `
+        UPDATE options
+        SET deleted_at = NOW()
+        WHERE id = ?
+        `,
+        [req.params.optionId]
+    );
+
+    res.sendStatus(204);
+});
+
+
+
 
 
 
