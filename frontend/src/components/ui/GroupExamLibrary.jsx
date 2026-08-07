@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 
-import CreateGroupExam
-    from "@/components/ui/CreateGroupExam";
+import CreateGroupExam from "@/components/ui/CreateGroupExamDialog";
 
 export default function GroupExamLibrary({
     groupExams,
@@ -12,10 +11,6 @@ export default function GroupExamLibrary({
     return (
 
         <div className="space-y-6">
-
-            <CreateGroupExam
-                onCreated={onReload}
-            />
 
             {!groupExams?.length && (
 

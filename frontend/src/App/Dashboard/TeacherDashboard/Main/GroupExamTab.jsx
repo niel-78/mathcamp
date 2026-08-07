@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
-
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
+import BaseTabLayout from "@/components/layouts/BaseTabLayout";
+import DetailLayout from "@/components/layouts/DetailLayout";
+import CardSection from "@/components/layouts/CardSection";
+import ExamPreview from "@/components/ui/ExamPreview";
 import BlockLibrary from "@/components/ui/BlockLibrary";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
 
 export default function GroupExamTab({
     groupExamId,
@@ -18,6 +21,9 @@ export default function GroupExamTab({
 
     const [blocks, setBlocks] =
         useState([]);
+
+    const [saving, setSaving] =
+        useState(false);
 
     useEffect(() => {
 
@@ -69,83 +75,142 @@ export default function GroupExamTab({
 
     const save = async () => {
 
-        const response = await fetch(
-            `${API_URL}/api/group-exams/${groupExamId}`,
-            {
-                method: "PUT",
-                headers: {
-                    ...authHeaders(),
-                    "Content-Type":
-                        "application/json"
-                },
-                body: JSON.stringify({
+        setSaving(true);
 
-                    time_limit_minutes:
-                        groupExam.time_limit_minutes
-                            ? Number(
-                                groupExam.time_limit_minutes
-                            )
-                            : null,
+        try {
 
-                    max_attempts:
-                        Number(
-                            groupExam.max_attempts
-                        ),
+            const response = await fetch(
+                `${API_URL}/api/group-exams/${groupExamId}`,
+                {
+                    method: "PUT",
+                    headers: {
+                        ...authHeaders(),
+                        "Content-Type":
+                            "application/json"
+                    },
+                    body: JSON.stringify({
 
-                    passing_score:
-                        groupExam.passing_score
-                            ? Number(
-                                groupExam.passing_score
-                            )
-                            : null,
+                        time_limit_minutes:
+                            groupExam.time_limit_minutes
+                                ? Number(
+                                    groupExam.time_limit_minutes
+                                )
+                                : null,
 
-                    shuffle_questions:
-                        groupExam.shuffle_questions,
+                        max_attempts:
+                            Number(
+                                groupExam.max_attempts
+                            ),
 
-                    shuffle_options:
-                        groupExam.shuffle_options,
+                        passing_score:
+                            groupExam.passing_score
+                                ? Number(
+                                    groupExam.passing_score
+                                )
+                                : null,
 
-                    allow_previous:
-                        groupExam.allow_previous,
+                        shuffle_questions:
+                            groupExam.shuffle_questions,
 
-                    allow_same_question:
-                        groupExam.allow_same_question,
+                        shuffle_options:
+                            groupExam.shuffle_options,
 
-                    show_calculator:
-                        groupExam.show_calculator,
+                        allow_previous:
+                            groupExam.allow_previous,
 
-                    show_formula_sheet:
-                        groupExam.show_formula_sheet,
+                        allow_same_question:
+                            groupExam.allow_same_question,
 
-                    show_result_immediately:
-                        groupExam.show_result_immediately,
+                        show_calculator:
+                            groupExam.show_calculator,
 
-                    is_open:
-                        groupExam.is_open,
+                        show_formula_sheet:
+                            groupExam.show_formula_sheet,
 
-                    available_from:
-                        groupExam.available_from || null,
+                        show_result_immediately:
+                            groupExam.show_result_immediately,
 
-                    available_until:
-                        groupExam.available_until || null
+                        is_open:
+                            groupExam.is_open,
 
-                })
-            }
-        );
+                        available_from:
+                            groupExam.available_from || null,
 
-        if (!response.ok) {
+                        available_until:
+                            groupExam.available_until || null
 
-            console.error(
-                await response.text()
+                    })
+                }
             );
 
-            return;
+            if (!response.ok) {
+
+                console.error(
+                    await response.text()
+                );
+
+                toast.error(
+                    "Kunde inte spara provtillfället"
+                );
+
+                return;
+
+            }
+
+            await loadGroupExam();
+
+            toast.success(
+                "Provtillfället har sparats"
+            );
+
+        } catch (error) {
+
+            console.error(error);
+
+            toast.error(
+                "Kunde inte spara provtillfället"
+            );
+
+        } finally {
+
+            setSaving(false);
 
         }
 
-        await loadGroupExam();
-
     };
+
+    function Field({
+        label,
+        children
+    }) {
+
+        return (
+
+            <div
+                className="
+                    grid
+                    grid-cols-[180px_1fr]
+                    items-center
+                    gap-4
+                "
+            >
+
+                <div
+                    className="
+                        text-sm
+                        font-medium
+                    "
+                >
+                    {label}
+                </div>
+
+                {children}
+
+            </div>
+
+        );
+
+    }
 
     if (!groupExam) {
 
@@ -155,339 +220,348 @@ export default function GroupExamTab({
 
     return (
 
-        <div className="space-y-8">
+        <BaseTabLayout
 
-            <div>
+            title={groupExam.exam_title}
 
-                <h1 className="text-2xl font-bold">
-                    {groupExam.exam_title}
-                </h1>
+            actions={
 
-                <p className="text-muted-foreground">
-                    Grupp: {groupExam.group_name}
-                </p>
+            <Button
+                disabled={saving}
+                onClick={save}
+            >
+                {
+                    saving
+                        ? "Sparar..."
+                        : "Spara"
+                }
+            </Button>
 
-            </div>
+            }
 
-            <div className="grid gap-8 lg:grid-cols-2">
+        >
 
-                <div className="space-y-4">
+            <DetailLayout
 
-                    <h2 className="text-xl font-semibold">
-                        Inställningar
-                    </h2>
+                sidebar={
+                    <>
+                        <CardSection
+                            title="Information"
+                        >
 
-                    <div>
+                            <div className="space-y-3">
 
-                        <label>
-                            Nyckel
-                        </label>
+                                <div>
 
-                        <Input
-                            readOnly
-                            value={
-                                groupExam.group_exam_key || ""
-                            }
-                        />
+                                    <strong>Grupp:</strong>
+                                    {" "}
+                                    {groupExam.group_name}
 
-                    </div>
+                                </div>
 
-                    <div>
+                                <div>
 
-                        <label>
-                            Tidsgräns (minuter)
-                        </label>
+                                    <strong>Nyckel:</strong>
+                                    {" "}
+                                    {
+                                        groupExam.group_exam_key
+                                    }
 
-                        <Input
-                            type="number"
-                            value={
-                                groupExam.time_limit_minutes ?? ""
-                            }
-                            onChange={(e) =>
-                                setGroupExam({
-                                    ...groupExam,
-                                    time_limit_minutes:
-                                        e.target.value
-                                })
-                            }
-                        />
+                                </div>
 
-                    </div>
+                                <div>
 
-                    <div>
+                                    <strong>Status:</strong>
+                                    {" "}
 
-                        <label>
-                            Max försök
-                        </label>
+                                    {
+                                        groupExam.is_open
+                                            ? "Öppet"
+                                            : "Stängt"
+                                    }
 
-                        <Input
-                            type="number"
-                            value={
-                                groupExam.max_attempts ?? ""
-                            }
-                            onChange={(e) =>
-                                setGroupExam({
-                                    ...groupExam,
-                                    max_attempts:
-                                        e.target.value
-                                })
-                            }
-                        />
+                                </div>
 
-                    </div>
+                            </div>
 
-                    <div>
+                        </CardSection>
 
-                        <label>
-                            Godkändgräns
-                        </label>
+                        <CardSection
+                            title="Förhandsgranskning"
+                        >
 
-                        <Input
-                            type="number"
-                            value={
-                                groupExam.passing_score ?? ""
-                            }
-                            onChange={(e) =>
-                                setGroupExam({
-                                    ...groupExam,
-                                    passing_score:
-                                        e.target.value
-                                })
-                            }
-                        />
+                            <ExamPreview
+                                groupExamId={
+                                    groupExamId
+                                }
+                            />
 
-                    </div>
+                        </CardSection>
+                </>
+                }
 
-                    <div>
+            >
 
-                        <label>
-                            Tillgänglig från
-                        </label>
+                <CardSection
+                    title="Grundinställningar"
+                >
 
-                        <Input
-                            type="datetime-local"
-                            value={
-                                groupExam.available_from
-                                    ?.slice(0, 16) || ""
-                            }
-                            onChange={(e) =>
-                                setGroupExam({
-                                    ...groupExam,
-                                    available_from:
-                                        e.target.value
-                                })
-                            }
-                        />
+                    <div className="space-y-4">
 
-                    </div>
-
-                    <div>
-
-                        <label>
-                            Tillgänglig till
-                        </label>
-
-                        <Input
-                            type="datetime-local"
-                            value={
-                                groupExam.available_until
-                                    ?.slice(0, 16) || ""
-                            }
-                            onChange={(e) =>
-                                setGroupExam({
-                                    ...groupExam,
-                                    available_until:
-                                        e.target.value
-                                })
-                            }
-                        />
-
-                    </div>
-
-                    <div className="space-y-2">
-
-                        <label className="flex gap-2">
-
-                            <input
-                                type="checkbox"
-                                checked={!!groupExam.is_open}
+                        <Field label="Tidsgräns (min)">
+                            <Input
+                                type="number"
+                                value={
+                                    groupExam.time_limit_minutes ?? ""
+                                }
                                 onChange={(e) =>
                                     setGroupExam({
                                         ...groupExam,
-                                        is_open:
-                                            e.target.checked
+                                        time_limit_minutes:
+                                            e.target.value
+                                    })
+                                }
+                            />
+                        </Field>
+
+                        <Field label="Max försök">
+                            <Input
+                                type="number"
+                                value={
+                                    groupExam.max_attempts ?? ""
+                                }
+                                onChange={(e) =>
+                                    setGroupExam({
+                                        ...groupExam,
+                                        max_attempts:
+                                            e.target.value
+                                    })
+                                }
+                            />
+                        </Field>
+
+                        <Field label="Godkändgräns">
+                            <Input
+                                type="number"
+                                value={
+                                    groupExam.passing_score ?? ""
+                                }
+                                onChange={(e) =>
+                                    setGroupExam({
+                                        ...groupExam,
+                                        passing_score:
+                                            e.target.value
+                                    })
+                                }
+                            />
+                        </Field>
+
+                    </div>
+
+                </CardSection>
+
+                <CardSection
+                    title="Tillgänglighet"
+                >
+
+                    <div className="space-y-4">
+
+                        <Field label="Tillgänglig från">
+                            <Input
+                                type="datetime-local"
+                                value={
+                                    groupExam.available_from
+                                        ?.slice(0, 16) || ""
+                                }
+                                onChange={(e) =>
+                                    setGroupExam({
+                                        ...groupExam,
+                                        available_from:
+                                            e.target.value
+                                    })
+                                }
+                            />
+                        </Field>
+
+                        <Field label="Tillgänglig till">
+                            <Input
+                                type="datetime-local"
+                                value={
+                                    groupExam.available_until
+                                        ?.slice(0, 16) || ""
+                                }
+                                onChange={(e) =>
+                                    setGroupExam({
+                                        ...groupExam,
+                                        available_until:
+                                            e.target.value
+                                    })
+                                }
+                            />
+                        </Field>
+
+                    </div>
+
+                </CardSection>
+
+                <CardSection
+                    title="Genomförande"
+                >
+
+                    <div className="space-y-4">
+
+                        <Field label="Öppet">
+
+                            <Switch
+                                checked={
+                                    !!groupExam.is_open
+                                }
+                                onCheckedChange={(checked) =>
+                                    setGroupExam({
+                                        ...groupExam,
+                                        is_open: checked
                                     })
                                 }
                             />
 
-                            Öppet
+                        </Field>
 
-                        </label>
+                        <Field label="Slumpa frågor">
 
-                        <label className="flex gap-2">
-
-                            <input
-                                type="checkbox"
+                            <Switch
                                 checked={
                                     !!groupExam.shuffle_questions
                                 }
-                                onChange={(e) =>
+                                onCheckedChange={(checked) =>
                                     setGroupExam({
                                         ...groupExam,
                                         shuffle_questions:
-                                            e.target.checked
+                                            checked
                                     })
                                 }
                             />
 
-                            Slumpa frågor
+                        </Field>
 
-                        </label>
+                        <Field label="Slumpa alternativ">
 
-                        <label className="flex gap-2">
-
-                            <input
-                                type="checkbox"
+                            <Switch
                                 checked={
                                     !!groupExam.shuffle_options
                                 }
-                                onChange={(e) =>
+                                onCheckedChange={(checked) =>
                                     setGroupExam({
                                         ...groupExam,
                                         shuffle_options:
-                                            e.target.checked
+                                            checked
                                     })
                                 }
                             />
 
-                            Slumpa alternativ
+                        </Field>
 
-                        </label>
+                        <Field label="Tillåt föregående fråga">
 
-                        <label className="flex gap-2">
-
-                            <input
-                                type="checkbox"
+                            <Switch
                                 checked={
                                     !!groupExam.allow_previous
                                 }
-                                onChange={(e) =>
+                                onCheckedChange={(checked) =>
                                     setGroupExam({
                                         ...groupExam,
                                         allow_previous:
-                                            e.target.checked
+                                            checked
                                     })
                                 }
                             />
 
-                            Tillåt föregående fråga
+                        </Field>
 
-                        </label>
+                        <Field label="Tillåt samma fråga">
 
-                        <label className="flex gap-2">
-
-                            <input
-                                type="checkbox"
+                            <Switch
                                 checked={
                                     !!groupExam.allow_same_question
                                 }
-                                onChange={(e) =>
+                                onCheckedChange={(checked) =>
                                     setGroupExam({
                                         ...groupExam,
                                         allow_same_question:
-                                            e.target.checked
+                                            checked
                                     })
                                 }
                             />
 
-                            Tillåt samma fråga flera gånger
-
-                        </label>
-
-                        <label className="flex gap-2">
-
-                            <input
-                                type="checkbox"
-                                checked={
-                                    !!groupExam.show_calculator
-                                }
-                                onChange={(e) =>
-                                    setGroupExam({
-                                        ...groupExam,
-                                        show_calculator:
-                                            e.target.checked
-                                    })
-                                }
-                            />
-
-                            Visa miniräknare
-
-                        </label>
-
-                        <label className="flex gap-2">
-
-                            <input
-                                type="checkbox"
-                                checked={
-                                    !!groupExam.show_formula_sheet
-                                }
-                                onChange={(e) =>
-                                    setGroupExam({
-                                        ...groupExam,
-                                        show_formula_sheet:
-                                            e.target.checked
-                                    })
-                                }
-                            />
-
-                            Visa formelblad
-
-                        </label>
-
-                        <label className="flex gap-2">
-
-                            <input
-                                type="checkbox"
-                                checked={
-                                    !!groupExam.show_result_immediately
-                                }
-                                onChange={(e) =>
-                                    setGroupExam({
-                                        ...groupExam,
-                                        show_result_immediately:
-                                            e.target.checked
-                                    })
-                                }
-                            />
-
-                            Visa resultat direkt
-
-                        </label>
+                        </Field>
 
                     </div>
 
-                    <Button onClick={save}>
-                        Spara
-                    </Button>
+                </CardSection>
 
-                </div>
+                <CardSection
+                    title="Hjälpmedel"
+                >
 
-                <div>
+                    <div className="space-y-4">
 
-                    <h2 className="text-xl font-semibold mb-4">
-                        Förhandsgranskning
-                    </h2>
+                        <Field label="Visa miniräknare">
 
-                    <BlockLibrary
-                        blocks={blocks}
-                        openTab={openTab}
-                    />
+                            <Switch
+                                checked={
+                                    !!groupExam.show_calculator
+                                }
+                                onCheckedChange={(checked) =>
+                                    setGroupExam({
+                                        ...groupExam,
+                                        show_calculator:
+                                            checked
+                                    })
+                                }
+                            />
 
-                </div>
+                        </Field>
 
-            </div>
+                        <Field label="Visa formelblad">
 
-        </div>
+                            <Switch
+                                checked={
+                                    !!groupExam.show_formula_sheet
+                                }
+                                onCheckedChange={(checked) =>
+                                    setGroupExam({
+                                        ...groupExam,
+                                        show_formula_sheet:
+                                            checked
+                                    })
+                                }
+                            />
+
+                        </Field>
+
+                        <Field label="Visa resultat direkt">
+
+                            <Switch
+                                checked={
+                                    !!groupExam.show_result_immediately
+                                }
+                                onCheckedChange={(checked) =>
+                                    setGroupExam({
+                                        ...groupExam,
+                                        show_result_immediately:
+                                            checked
+                                    })
+                                }
+                            />
+
+                        </Field>
+
+                    </div>
+
+                </CardSection>
+
+            </DetailLayout>
+
+        </BaseTabLayout>
 
     );
 

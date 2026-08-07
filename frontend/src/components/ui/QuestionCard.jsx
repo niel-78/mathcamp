@@ -499,9 +499,110 @@ export default function QuestionCard({
                     title={`Uppgift ID: ${question.id}`}
                 >
 
-                    <MathContent
-                        value={question.question}
-                    />
+                    {!editingQuestionText ? (
+
+                        <div
+                            className="
+                                flex
+                                justify-between
+                                items-start
+                                gap-4
+                            "
+                        >
+
+                            <div className="flex-1">
+
+                                <MathContent
+                                    value={question.question}
+                                />
+
+                            </div>
+
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+
+                                    setQuestionText(
+                                        question.question
+                                    );
+
+                                    setEditingQuestionText(
+                                        true
+                                    );
+
+                                }}
+                            >
+                                Redigera
+                            </Button>
+
+                        </div>
+
+                    ) : (
+
+                        <div className="space-y-4">
+
+                            <div
+                                className="
+                                    math-preview
+                                    border
+                                    border-border
+                                    rounded-lg
+                                    p-3
+                                    bg-muted
+                                "
+                            >
+
+                                <MathContent
+                                    value={questionText}
+                                />
+
+                            </div>
+
+                            <textarea
+                                rows={4}
+                                className="
+                                    input-standard
+                                    w-full
+                                "
+                                value={questionText}
+                                onChange={(e) =>
+                                    setQuestionText(
+                                        e.target.value
+                                    )
+                                }
+                            />
+
+                            <div
+                                className="
+                                    flex
+                                    justify-end
+                                    gap-2
+                                "
+                            >
+
+                                <Button
+                                    onClick={saveQuestion}
+                                >
+                                    Spara
+                                </Button>
+
+                                <Button
+                                    variant="outline"
+                                    onClick={() =>
+                                        setEditingQuestionText(
+                                            false
+                                        )
+                                    }
+                                >
+                                    Avbryt
+                                </Button>
+
+                            </div>
+
+                        </div>
+
+                    )}
 
                 </CardSection>
 

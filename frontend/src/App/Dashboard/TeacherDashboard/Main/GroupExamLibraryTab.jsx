@@ -3,8 +3,10 @@ import { useEffect, useState } from "react";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 
-import GroupExamLibrary
-    from "@/components/ui/GroupExamLibrary";
+import GroupExamLibrary from "@/components/ui/GroupExamLibrary";
+import BaseTabLayout from "@/components/layouts/BaseTabLayout";
+import CreateGroupExamDialog from "@/components/ui/CreateGroupExamDialog";
+import { Button } from "@/components/ui/button";
 
 export default function GroupExamLibraryTab({
     openTab
@@ -12,6 +14,11 @@ export default function GroupExamLibraryTab({
 
     const [groupExams,
         setGroupExams] = useState([]);
+
+    const [
+        createDialogOpen,
+        setCreateDialogOpen
+    ] = useState(false);
 
     useEffect(() => {
 
@@ -41,11 +48,51 @@ export default function GroupExamLibraryTab({
 
     return (
 
-        <GroupExamLibrary
-            groupExams={groupExams}
-            openTab={openTab}
-            onReload={loadGroupExams}
-        />
+        <>
+            <BaseTabLayout
+
+                title="Provtillfällen"
+
+                actions={
+
+                    <Button
+                        onClick={() =>
+                            setCreateDialogOpen(
+                                true
+                            )
+                        }
+                    >
+                        Skapa provtillfälle
+                    </Button>
+
+                }
+
+            >
+
+                <GroupExamLibrary
+                    groupExams={groupExams}
+                    openTab={openTab}
+                    onReload={loadGroupExams}
+                />
+
+            </BaseTabLayout>
+
+            <CreateGroupExamDialog
+                open={createDialogOpen}
+                onOpenChange={
+                    setCreateDialogOpen
+                }
+                onCreated={async () => {
+
+                    await loadGroupExams();
+
+                    setCreateDialogOpen(
+                        false
+                    );
+
+                }}
+            />
+        </> 
 
     );
 

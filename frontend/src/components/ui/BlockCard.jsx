@@ -288,15 +288,18 @@ export default function BlockCard({
                     Öppna
                 </Button>
 
-                <Button
-                    variant="destructive"
-                    onPointerDown={(e) => {
-                        e.stopPropagation();
-                    }}
-                    onClick={() => onDelete(block.id)}
-                >
-                    Ta bort
-                </Button>
+                {onDelete && (
+
+                    <Button
+                        variant="destructive"
+                        onPointerDown={(e) => {
+                            e.stopPropagation();
+                        }}
+                        onClick={() => onDelete(block.id)}
+                    >
+                        Ta bort
+                    </Button>
+                )}    
 
             </div>
 

@@ -4,6 +4,7 @@ import crypto from "crypto";
 import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
 import { gradeAnswer } from "../utils/grading/gradeAnswer.js";
+import { buildExamSession } from "../utils/buildExamSession.js";
 
 
 const router = express.Router();
@@ -504,42 +505,20 @@ router.post("/start", async (req, res) => {
             ]
         );
 
-        /*
-         * Hämta alla frågor
-         */
-        const [questions] = await connection.query(
-            `
-            SELECT
-                q.id
-            FROM questions q
+        const session =
+            await buildExamSession(
+                connection,
+                groupExam.id
+            );
 
-            INNER JOIN blocks b
-                ON b.id = q.block_id
+        for (
+            let i = 0;
+            i < session.questions.length;
+            i++
+        ) {
 
-            INNER JOIN exam_blocks eb
-                ON eb.block_id = b.id
-
-            WHERE eb.exam_id = ?
-            `,
-            [groupExam.exam_id]
-        );
-
-        /*
-         * Slumpa frågor om inställningen säger det
-         */
-        const orderedQuestions =
-            groupExam.shuffle_questions
-                ? [...questions].sort(
-                    () => Math.random() - 0.5
-                )
-                : questions;
-
-        /*
-         * Spara frågorna + alternativordning
-         */
-        for (let i = 0; i < orderedQuestions.length; i++) {
-
-            const question = orderedQuestions[i];
+            const question =
+                session.questions[i];
 
             await connection.query(
                 `
@@ -557,34 +536,14 @@ router.post("/start", async (req, res) => {
                 ]
             );
 
-            /*
-             * Hämta alternativ för frågan
-             */
-            const [options] = await connection.query(
-                `
-                SELECT
-                    id
-                FROM options
-                WHERE question_id = ?
-                    AND deleted_at IS NULL
-                `,
-                [question.id]
-            );
+            for (
+                let j = 0;
+                j < question.options.length;
+                j++
+            ) {
 
-            /*
-             * Slumpa alternativ om inställningen säger det
-             */
-            const orderedOptions =
-                groupExam.shuffle_options
-                    ? [...options].sort(
-                        () => Math.random() - 0.5
-                    )
-                    : options;
-
-            /*
-             * Spara alternativordning
-             */
-            for (let j = 0; j < orderedOptions.length; j++) {
+                const option =
+                    question.options[j];
 
                 await connection.query(
                     `
@@ -597,12 +556,15 @@ router.post("/start", async (req, res) => {
                     `,
                     [
                         attemptId,
-                        orderedOptions[j].id,
+                        option.id,
                         j + 1
                     ]
                 );
+
             }
-        }
+
+        }            
+
 
         await connection.commit();
 

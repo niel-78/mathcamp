@@ -658,8 +658,7 @@ INSERT INTO exam_users (exam_id,user_id,is_owner) VALUES (1,2,TRUE);
 INSERT INTO group_users (group_id,user_id,is_owner) VALUES (1,2,TRUE);
 
 INSERT INTO exam_blocks (exam_id,block_id,sort_order) VALUES
-(1,5,3);
---(1,1,6),(1,2,2),(1,3,3),(1,4,4),(1,5,5),(1,6,1);
+(1,1,6),(1,2,2),(1,3,3),(1,4,4),(1,5,5),(1,6,1);
 
 
 INSERT INTO group_exams(`exam_id`,`group_id`,`group_exam_key`,`is_open`,`time_limit_minutes`,`shuffle_questions`,`shuffle_options`,`allow_previous`) VALUES(1,1,'A',TRUE,15,TRUE,TRUE,FALSE);

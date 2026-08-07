@@ -7,6 +7,7 @@ import hydrateBlocks from "../utils/hydrateBlocks.js";
 import formatDateTime from "../utils/formatDateTime.js";
 import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
+import { buildExamSession } from "../utils/buildExamSession.js";
 
 const router = express.Router();
 
@@ -279,6 +280,41 @@ router.delete("/:id", async (req, res) => {
 
     res.sendStatus(204);
 });
+
+// GET /api/group-exams/:id/preview
+router.get("/:id/preview",
+    async (req, res) => {
+
+        const connection =
+            await db.getConnection();
+
+        try {
+
+            const preview =
+                await buildExamSession(
+                    connection,
+                    Number(req.params.id)
+                );
+
+            res.json(preview);
+
+        } catch (error) {
+
+            console.error(error);
+
+            res.status(500).json({
+                error:
+                    error.message
+            });
+
+        } finally {
+
+            connection.release();
+
+        }
+
+    }
+)
 
 //GET /api/group-exams/:id/blocks
 router.get("/:id/blocks", async (req, res) => {
