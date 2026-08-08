@@ -48,9 +48,7 @@ export default function CentralContentFilter({
 
         const data = await response.json();
 
-
         setSubjects(data);
-        console.log(subjects[0]);
 
     };
 

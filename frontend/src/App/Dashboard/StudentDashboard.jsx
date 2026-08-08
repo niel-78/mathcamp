@@ -9,6 +9,7 @@ import Main from "./StudentDashboard/Main";
 import StartExamErrorDialog from "./StudentDashboard/Main/StartExamErrorDialog";
 import ExamPage from "./StudentDashboard/Main/ExamPage";
 import ResultPage from "./StudentDashboard/Main/ResultPage";
+import WaitingRoomPage from "./StudentDashboard/Main/WaitingRoomPage";
 
 const StudentDashboard = () => {
   const [examKey, setExamKey] = useState("");
@@ -18,32 +19,109 @@ const StudentDashboard = () => {
   const [errorMessage, setErrorMessage] = useState(null);
   const [errorOpen, setErrorOpen] = useState(false);
 
+  const [groupExam, setGroupExam] = useState(null);
 
-  const startExam = async () => {
-    const res = await fetch(`${API_URL}/api/exam-attempts/start`, {
-      method: "POST",
-      headers: {
-          ...authHeaders(),
-          "Content-Type": "application/json"
-      },
-      body: JSON.stringify( {group_exam_key: examKey })
-    });
+  const findExam = async () => {
 
-    const data = await res.json();
+      const res = await fetch(
+          `${API_URL}/api/group-exam-lobby/find`,
+          {
+              method: "POST",
+              headers: {
+                  ...authHeaders(),
+                  "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                  group_exam_key: examKey
+              })
+          }
+      );
 
-    if (!res.ok) {
+      const data = await res.json();
 
-        setErrorMessage(data.error);
+      if (!res.ok) {
 
-        setErrorOpen(true);
+          setErrorMessage(data.error);
+          setErrorOpen(true);
 
-        return;
-    }
+          return;
+      }
 
-    setAttemptId(data.attempt_id);
-    setExamConfig(data.exam_config);
-    setView("exam");
+      const joinRes = await fetch(
+          `${API_URL}/api/group-exam-lobby/join`,
+          {
+              method: "POST",
+              headers: {
+                  ...authHeaders(),
+                  "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                  group_exam_key: examKey
+              })
+          }
+      );
+
+      const joinData = await joinRes.json();
+
+      if (!joinRes.ok) {
+
+          setErrorMessage(joinData.error);
+          setErrorOpen(true);
+
+          return;
+      }
+
+      setGroupExam(data);
+      setView("waiting-room");
+
   };
+
+  const startExamAttempt = async () => {
+
+      const res = await fetch(
+          `${API_URL}/api/exam-attempts/start`,
+          {
+              method: "POST",
+              headers: {
+                  ...authHeaders(),
+                  "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                  group_exam_id:
+                      groupExam.group_exam_id
+              })
+          }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+
+          setErrorMessage(data.error);
+          setErrorOpen(true);
+
+          return;
+      }
+
+      setAttemptId(data.attempt_id);
+      setExamConfig(data.exam_config);
+      setView("exam");
+  };
+
+
+  if (view === "waiting-room") {
+
+      return (
+
+          <WaitingRoomPage
+              groupExam={groupExam}
+              onStart={startExamAttempt}
+          />
+
+      );
+
+  }
+
 
   if (view === "exam") {
     return (
@@ -94,9 +172,8 @@ const StudentDashboard = () => {
                     onChange={(e) => setExamKey(e.target.value)}
                   />
                   
-
-                  <Button onClick={startExam}>
-                      Start Exam
+                  <Button onClick={findExam}>
+                      Anslut
                   </Button>
 
               </div>

@@ -20,6 +20,7 @@ POST   /api/exam-attempts
 
 PUT    /api/exam-attempts/:id
 
+POST   /api/exam-attempts/join
 POST   /api/exam-attempts/start
 POST   /api/exam-attempts/:id/submit
 
@@ -28,7 +29,10 @@ GET    /api/exam-attempts/:id/results
 
 // GET /api/exam-attempts/:id
 router.get("/:id", async (req, res) => {
+
     const connection = await db.getConnection();
+
+    console.log("GET ATTEMPT endpoint");
 
     try {
         const { id } = req.params;
@@ -97,14 +101,17 @@ router.get("/:id", async (req, res) => {
             const [optionRows] = await connection.query(
                 `
                 SELECT
-                    id,
-                    question_id,
-                    text
-                FROM options
-                WHERE question_id IN (?)
-                AND deleted_at IS NULL
+                    o.id,
+                    o.question_id,
+                    o.text,
+                    ao.sort_order
+                FROM attempt_options ao
+                INNER JOIN options o
+                    ON o.id = ao.option_id
+                WHERE ao.attempt_id = ?
+                ORDER BY ao.sort_order
                 `,
-                [questionIds]
+                [id]
             );
 
             options = optionRows;
@@ -336,54 +343,46 @@ router.put("/:id", async (req, res) => {
 // POST /api/exam-attempts/start
 router.post("/start", async (req, res) => {
 
-    console.log("START ROUTE HIT");
+    console.log("START endpoint");
 
     const connection = await db.getConnection();
 
     try {
 
-        const { group_exam_key } = req.body;
+        const { group_exam_id } = req.body;
 
-        if (!group_exam_key) {
+        if (!group_exam_id) {
             return res.status(400).json({
-                error: "Exam key saknas."
+                error: "group_exam_id saknas."
             });
         }
 
         await connection.beginTransaction();
 
-        /*
-         * Hitta grupprovet
-         */
         const [groupExamRows] = await connection.query(
             `
             SELECT
-                ge.id,
-                ge.exam_id,
-                ge.group_id,
-                ge.group_exam_key,
-                ge.is_open,
-                ge.available_from,
-                ge.available_until,
-                ge.shuffle_order_questions,
-                ge.shuffle_order_options,
-                ge.time_limit_minutes,
-                ge.exam_config
-            FROM group_exams ge
-            INNER JOIN exams e
-                ON e.id = ge.exam_id
-            WHERE ge.group_exam_key = ?
+                id,
+                exam_id,
+                group_id,
+                exam_status,
+                available_from,
+                available_until,
+                exam_config
+            FROM group_exams
+            WHERE id = ?
             `,
-            [group_exam_key]
+            [group_exam_id]
         );
 
-        if (groupExamRows.length === 0) {
+        if (!groupExamRows.length) {
 
             await connection.rollback();
 
             return res.status(404).json({
-                error: "Ogiltig exam key."
+                error: "Provtillfället hittades inte."
             });
+
         }
 
         const groupExam = groupExamRows[0];
@@ -418,13 +417,21 @@ router.post("/start", async (req, res) => {
          */
         const now = new Date();
 
-        if (!groupExam.is_open) {
+        if (
+            groupExam.exam_status !== "open"
+        ) {
 
             await connection.rollback();
 
             return res.status(403).json({
-                error: "Provet är inte öppet."
+
+                error:
+                    groupExam.exam_status === "waiting"
+                        ? "Provet har inte startat ännu."
+                        : "Provet är stängt."
+
             });
+
         }
 
         if (
@@ -483,25 +490,52 @@ router.post("/start", async (req, res) => {
          */
         const attemptId = crypto.randomUUID();
 
+        const startedIp =
+            req.headers["x-forwarded-for"]
+                ?.split(",")[0]
+                ?.trim()
+            || req.socket.remoteAddress
+            || null;
+
+        const startedUserAgent =
+            req.headers["user-agent"]
+            || null;
+
         await connection.query(
             `
-            INSERT INTO exam_attempts (
-                id,
-                user_id,
-                group_exam_id,
-                exam_config,
-                started_at,
-                status
-            )
-            VALUES (
-                ?, ?, ?, ?, NOW(), 'in_progress'
-            )
+                INSERT INTO exam_attempts (
+                    id,
+                    user_id,
+                    group_exam_id,
+                    exam_config,
+                    started_at,
+                    started_ip,
+                    started_user_agent,
+                    status
+                )
+                VALUES (
+                    ?, ?, ?, ?, NOW(), ?, ?, 'in_progress'
+                )
             `,
             [
                 attemptId,
                 req.user.id,
                 groupExam.id,
-                groupExam.exam_config
+                groupExam.exam_config,
+                startedIp,
+                startedUserAgent
+            ]
+        );
+
+        await connection.query(
+            `
+            DELETE FROM exam_waiting_room
+            WHERE group_exam_id = ?
+            AND user_id = ?
+            `,
+            [
+                groupExam.id,
+                req.user.id
             ]
         );
 
@@ -681,6 +715,7 @@ router.post("/:id/submit", async (req, res) => {
         connection.release();
     }
 });
+
 
 // GET /api/exam-attempts/:id/results
 router.get("/:id/results", async (req, res) => {

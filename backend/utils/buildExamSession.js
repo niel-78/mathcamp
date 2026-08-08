@@ -50,6 +50,7 @@ export async function buildExamSession(
                 ON eb.block_id = b.id
 
             WHERE eb.exam_id = ?
+                AND b.deleted_at IS NULL
 
             ORDER BY
                 eb.sort_order
@@ -76,7 +77,7 @@ export async function buildExamSession(
                     level_id
                 FROM questions
                 WHERE block_id = ?
-                AND deleted_at IS NULL
+                    AND deleted_at IS NULL
                 `,
                 [block.id]
             );

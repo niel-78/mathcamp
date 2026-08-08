@@ -7,7 +7,6 @@ import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 import DetailLayout from "@/components/layouts/DetailLayout";
 import CardSection from "@/components/layouts/CardSection";
 import ExamPreview from "@/components/ui/ExamPreview";
-import BlockLibrary from "@/components/ui/BlockLibrary";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
@@ -19,16 +18,45 @@ export default function GroupExamTab({
     const [groupExam, setGroupExam] =
         useState(null);
 
+    const [savedGroupExam, setSavedGroupExam] =
+        useState(null);
+
     const [blocks, setBlocks] =
         useState([]);
 
     const [saving, setSaving] =
         useState(false);
 
+    const [waitingCount, setWaitingCount] =
+        useState(0);
+
+    const [monitorCount, setMonitorCount] =
+        useState(0);
+
+    useEffect(() => {
+
+        loadGroupExam();
+        loadWaitingRoomCount();
+        loadMonitorCount();
+
+        const interval = setInterval(() => {
+
+            loadGroupExam();
+            loadWaitingRoomCount();
+            loadMonitorCount();
+
+        }, 3000);
+
+        return () => clearInterval(interval);
+
+    }, [groupExamId]);
+
     useEffect(() => {
 
         loadGroupExam();
         loadBlocks();
+        loadWaitingRoomCount();
+        loadMonitorCount();
 
     }, [groupExamId]);
 
@@ -49,7 +77,10 @@ export default function GroupExamTab({
         const data =
             await response.json();
 
+        console.log("LOADED", data.exam_status);
+
         setGroupExam(data);
+        setSavedGroupExam(data);
 
     };
 
@@ -71,6 +102,77 @@ export default function GroupExamTab({
 
         setBlocks(data);
 
+    };
+
+    const loadWaitingRoomCount = async () => {
+
+        const response = await fetch(
+            `${API_URL}/api/group-exams/${groupExamId}/waiting-room`,
+            {
+                headers: authHeaders()
+            }
+        );
+
+        if (!response.ok) {
+            return;
+        }
+
+        const data = await response.json();
+
+        console.log(data);
+
+        setWaitingCount(data.length);
+    };
+
+    const loadMonitorCount = async () => {
+
+        console.log("LOAD MONITOR");
+
+        const response = await fetch(
+            `${API_URL}/api/group-exams/${groupExamId}/monitor`,
+            {
+                headers: authHeaders()
+            }
+        );
+
+        const data = await response.json();
+
+        const count = data.filter(
+            student =>
+                student.status === "in_progress"
+        ).length;
+
+        console.log("MONITOR COUNT", count);
+
+        setMonitorCount(count);
+
+    };
+
+
+    const openExam = async () => {
+
+        await fetch(
+            `${API_URL}/api/group-exams/${groupExamId}/open`,
+            {
+                method: "POST",
+                headers: authHeaders()
+            }
+        );
+
+        await loadGroupExam();
+    };
+
+    const closeExam = async () => {
+
+        await fetch(
+            `${API_URL}/api/group-exams/${groupExamId}/close`,
+            {
+                method: "POST",
+                headers: authHeaders()
+            }
+        );
+
+        await loadGroupExam();
     };
 
     const save = async () => {
@@ -102,6 +204,9 @@ export default function GroupExamTab({
                                 groupExam.max_attempts
                             ),
 
+                        waiting_room_open:
+                            groupExam.waiting_room_open,    
+
                         shuffle_order_questions:
                             groupExam.shuffle_order_questions,
 
@@ -125,9 +230,6 @@ export default function GroupExamTab({
 
                         show_result_immediately:
                             groupExam.show_result_immediately,
-
-                        is_open:
-                            groupExam.is_open,
 
                         available_from:
                             groupExam.available_from || null,
@@ -264,19 +366,87 @@ export default function GroupExamTab({
                                     }
 
                                 </div>
+                                <Button
+                                    className="w-full"
+                                    onClick={() =>
+                                        openTab({
+                                            id: `waiting-room-${groupExamId}`,
+                                            type: "group-exam-waiting-room",
+                                            title:
+                                                `${groupExam.exam_title} · Väntrum`,
+                                            groupExamId
+                                        })
+                                    }
+                                >
+                                    Väntrum ({waitingCount})
+                                </Button>
+                                <Button
+                                    className="w-full"
+                                    onClick={() =>
+                                        openTab({
+                                            id: `monitor-${groupExamId}`,
+                                            type: "group-exam-monitor",
+                                            title:
+                                                `${groupExam.exam_title} · Övervakning`,
+                                            groupExamId
+                                        })
+                                    }
+                                >
+                                    Övervakning ({monitorCount})
+                                </Button>
+                                <div>
+
+                                    <strong>Status:</strong>{" "}
+
+                                    {savedGroupExam?.exam_status === "waiting" &&
+                                        "Väntar"}
+
+                                    {savedGroupExam?.exam_status === "open" &&
+                                        "Pågående"}
+
+                                    {savedGroupExam?.exam_status === "closed" &&
+                                        "Stängt"}
+
+                                </div>
 
                                 <div>
 
-                                    <strong>Status:</strong>
-                                    {" "}
+                                    <strong>Väntrum:</strong>{" "}
 
-                                    {
-                                        groupExam.is_open
-                                            ? "Öppet"
-                                            : "Stängt"
-                                    }
+                                    {savedGroupExam?.waiting_room_open
+                                        ? "Öppet"
+                                        : "Stängt"}
 
                                 </div>
+
+                            </div>
+
+                        </CardSection>
+
+                        <CardSection title="Provstatus">
+
+                            <div className="space-y-2">
+
+                                <Button
+                                    className="w-full"
+                                    onClick={openExam}
+                                    disabled={
+                                        groupExam.exam_status === "open"
+                                    }
+                                >
+                                    Släpp in elever
+                                </Button>
+
+                                <Button
+                                    className="w-full"
+                                    variant="outline"
+                                    onClick={closeExam}
+                                    disabled={
+                                        groupExam.exam_status === "closed"
+                                    }
+                                >
+                                    Stäng dörren för nya insläpp
+                                </Button>
 
                             </div>
 
@@ -336,22 +506,6 @@ export default function GroupExamTab({
                             />
                         </Field>
 
-                        <Field label="Godkändgräns">
-                            <Input
-                                type="number"
-                                value={
-                                    groupExam.use_different_questions_in_block ?? ""
-                                }
-                                onChange={(e) =>
-                                    setGroupExam({
-                                        ...groupExam,
-                                        use_different_questions_in_block:
-                                            e.target.value
-                                    })
-                                }
-                            />
-                        </Field>
-
                     </div>
 
                 </CardSection>
@@ -359,6 +513,22 @@ export default function GroupExamTab({
                 <CardSection
                     title="Tillgänglighet"
                 >
+
+                    <Field label="Väntrum öppet">
+
+                        <Switch
+                            checked={
+                                !!groupExam.waiting_room_open
+                            }
+                            onCheckedChange={(checked) =>
+                                setGroupExam({
+                                    ...groupExam,
+                                    waiting_room_open: checked
+                                })
+                            }
+                        />
+
+                    </Field>
 
                     <div className="space-y-4">
 
@@ -405,22 +575,6 @@ export default function GroupExamTab({
                 >
 
                     <div className="space-y-4">
-
-                        <Field label="Öppet">
-
-                            <Switch
-                                checked={
-                                    !!groupExam.is_open
-                                }
-                                onCheckedChange={(checked) =>
-                                    setGroupExam({
-                                        ...groupExam,
-                                        is_open: checked
-                                    })
-                                }
-                            />
-
-                        </Field>
 
                         <Field label="Slumpa frågeordning">
 

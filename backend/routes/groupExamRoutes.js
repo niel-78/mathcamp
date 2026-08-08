@@ -171,6 +171,8 @@ router.get("/:id", async (req, res) => {
         return res.sendStatus(404);
     }
 
+    console.log(groupExam);
+
     res.json(groupExam);
 
 });
@@ -179,6 +181,7 @@ router.put("/:id", async (req, res) => {
 
     const {
         exam_config,
+        waiting_room_open,
         time_limit_minutes,
 
         shuffle_order_questions,
@@ -195,7 +198,7 @@ router.put("/:id", async (req, res) => {
         show_result_immediately,
         use_different_questions_in_block,
 
-        is_open,
+        exam_status,
 
         available_from,
         available_until
@@ -206,7 +209,7 @@ router.put("/:id", async (req, res) => {
         UPDATE group_exams
         SET
             exam_config = ?,
-
+            waiting_room_open = ?,
             time_limit_minutes = ?,
 
             shuffle_order_questions = ?,
@@ -223,8 +226,6 @@ router.put("/:id", async (req, res) => {
             show_result_immediately = ?,
             use_different_questions_in_block = ?,
 
-            is_open = ?,
-
             available_from = ?,
             available_until = ?
 
@@ -234,6 +235,7 @@ router.put("/:id", async (req, res) => {
             JSON.stringify(
                 exam_config || {}
             ),
+            waiting_room_open,
 
             time_limit_minutes,
 
@@ -251,8 +253,6 @@ router.put("/:id", async (req, res) => {
             show_result_immediately,
             use_different_questions_in_block,
 
-            is_open,
-
             formatDateTime(
                 available_from
             ),
@@ -267,7 +267,7 @@ router.put("/:id", async (req, res) => {
     res.sendStatus(204);
 
 });
-// DELETE /api/teacher/group-exams/:id
+// DELETE /api/group-exams/:id
 router.delete("/:id", async (req, res) => {
 
     await db.query(
@@ -282,8 +282,7 @@ router.delete("/:id", async (req, res) => {
 });
 
 // GET /api/group-exams/:id/preview
-router.get("/:id/preview",
-    async (req, res) => {
+router.get("/:id/preview", async (req, res) => {
 
         const connection =
             await db.getConnection();
@@ -328,6 +327,7 @@ router.get("/:id/blocks", async (req, res) => {
             JOIN blocks b
                 ON b.id = eb.block_id
             WHERE ge.id = ?
+                AND b.deleted_at IS NULL
             ORDER BY eb.sort_order
             `,
             [req.params.id]
@@ -340,6 +340,219 @@ router.get("/:id/blocks", async (req, res) => {
 
     }
 );
+
+// GET /api/group-exams/:id/waiting-room
+router.get("/:id/waiting-room", async (req, res) => {
+
+        const [rows] =
+            await db.query(
+                `
+                SELECT
+                    u.id,
+                    u.first_name,
+                    u.last_name,
+                    wr.joined_at
+
+                FROM exam_waiting_room wr
+
+                INNER JOIN users u
+                    ON u.id = wr.user_id
+
+                WHERE wr.group_exam_id = ?
+
+                ORDER BY wr.joined_at
+                `,
+                [req.params.id]
+            );
+
+        res.json(rows);
+
+    }
+);
+
+// GET /api/group-exams/:id/monitor
+router.get("/:id/monitor", async (req, res) => {
+
+    try {
+
+        const [rows] = await db.query(
+            `
+            SELECT
+                u.id AS user_id,
+                u.first_name,
+                u.last_name,
+
+                ea.id AS attempt_id,
+                ea.status,
+                ea.started_at,
+                ea.submitted_at,
+
+                ea.started_ip,
+                ea.started_user_agent
+
+            FROM group_students gs
+
+            INNER JOIN users u
+                ON u.id = gs.user_id
+
+            INNER JOIN group_exams ge
+                ON ge.group_id = gs.group_id
+
+            LEFT JOIN exam_attempts ea
+                ON ea.group_exam_id = ge.id
+                AND ea.user_id = gs.user_id
+
+            WHERE ge.id = ?
+
+            ORDER BY
+                u.first_name,
+                u.last_name
+            `,
+            [req.params.id]
+        );
+
+        res.json(rows);
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            error:
+                error.message ||
+                "Kunde inte hämta övervakningsdata."
+        });
+
+    }
+
+});
+
+
+// POST /api/group-exams/:id/open-waiting-room
+router.post("/:id/open-waiting-room", async (req, res) => {
+
+    try {
+
+        await db.query(
+            `
+            UPDATE group_exams
+            SET waiting_room_open = 1
+            WHERE id = ?
+            `,
+            [req.params.id]
+        );
+
+        res.json({
+            success: true
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            error:
+                "Kunde inte öppna väntrummet."
+        });
+
+    }
+
+});
+
+// POST /api/group-exams/:id/close-waiting-room
+router.post("/:id/close-waiting-room", async (req, res) => {
+
+    try {
+
+        await db.query(
+            `
+            UPDATE group_exams
+            SET waiting_room_open = 0
+            WHERE id = ?
+            `,
+            [req.params.id]
+        );
+
+        res.json({
+            success: true
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            error:
+                "Kunde inte stänga väntrummet."
+        });
+
+    }
+
+});
+
+
+// POST /api/group-exams/:id/open
+router.post("/:id/open", async (req, res) => {
+
+    try {
+
+        await db.query(
+            `
+            UPDATE group_exams
+            SET exam_status = 'open'
+            WHERE id = ?
+            `,
+            [req.params.id]
+        );
+
+        res.json({
+            success: true
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            error:
+                "Kunde inte öppna provet."
+        });
+
+    }
+
+});
+
+// POST /api/group-exams/:id/close
+router.post("/:id/close", async (req, res) => {
+
+    try {
+
+        await db.query(
+            `
+            UPDATE group_exams
+            SET exam_status = 'closed'
+            WHERE id = ?
+            `,
+            [req.params.id]
+        );
+
+        res.json({
+            success: true
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            error:
+                "Kunde inte stänga provet."
+        });
+
+    }
+
+});
+
 
 //GET /api/group-exams/:id/attempts
 

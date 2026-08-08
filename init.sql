@@ -31,6 +31,9 @@ DROP TABLE IF EXISTS questions;
 DROP TABLE IF EXISTS exams;
 DROP TABLE IF EXISTS blocks;
 DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS app_settings;
+DROP TABLE IF EXISTS user_settings;
+DROP TABLE IF EXISTS exam_waiting_room;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
@@ -279,6 +282,8 @@ CREATE TABLE group_exams (
     group_exam_key VARCHAR(50) UNIQUE,
     exam_config JSON DEFAULT JSON_OBJECT(),
 
+    waiting_room_open BOOLEAN NOT NULL DEFAULT FALSE,
+
     time_limit_minutes INT DEFAULT NULL,
 
     shuffle_order_questions BOOLEAN NOT NULL DEFAULT FALSE,
@@ -296,7 +301,11 @@ CREATE TABLE group_exams (
 
     show_result_immediately BOOLEAN DEFAULT TRUE,
 
-    is_open BOOLEAN DEFAULT FALSE,
+    exam_status ENUM(
+        'waiting',
+        'open',
+        'closed'
+    ) NOT NULL DEFAULT 'waiting',
     available_from DATETIME DEFAULT NULL,
     available_until DATETIME DEFAULT NULL,
 
@@ -313,6 +322,35 @@ CREATE TABLE group_exams (
         ON DELETE CASCADE,
 
     UNIQUE KEY unique_group_exam (group_id, exam_id)
+);
+
+CREATE TABLE exam_waiting_room (
+
+    group_exam_id INT NOT NULL,
+    user_id INT NOT NULL,
+
+    joined_at TIMESTAMP
+        DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (
+        group_exam_id,
+        user_id
+    ),
+
+    CONSTRAINT fk_waiting_room_exam
+        FOREIGN KEY (
+            group_exam_id
+        )
+        REFERENCES group_exams(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_waiting_room_user
+        FOREIGN KEY (
+            user_id
+        )
+        REFERENCES users(id)
+        ON DELETE CASCADE
+
 );
 
 /*Elever i grupper*/
@@ -364,6 +402,8 @@ CREATE TABLE exam_attempts (
     id VARCHAR(36) PRIMARY KEY,
     user_id INT,
     group_exam_id INT NOT NULL,
+    started_ip VARCHAR(45) NULL,
+    started_user_agent TEXT NULL,
     exam_config JSON,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     started_at DATETIME NULL,
@@ -570,6 +610,38 @@ CREATE TABLE level_books (
     FOREIGN KEY (book_id)
         REFERENCES books(id)
         ON DELETE CASCADE
+);
+
+CREATE TABLE app_settings (
+
+    id INT PRIMARY KEY,
+
+    settings JSON NOT NULL
+
+);
+
+INSERT INTO app_settings (
+    id,
+    settings
+)
+VALUES (
+    1,
+    JSON_OBJECT(
+        'first_question_in_block_can_be_deleted', FALSE
+    )
+);
+
+CREATE TABLE user_settings (
+
+    user_id INT PRIMARY KEY,
+
+    settings JSON NOT NULL,
+
+    CONSTRAINT fk_user_settings_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE
+
 );
 
 

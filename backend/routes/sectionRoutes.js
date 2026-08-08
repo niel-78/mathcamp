@@ -4,7 +4,6 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import requireAuth from "../middleware/requireAuth.js";
-import hydrateBlocks from "../utils/hydrateBlocks.js";
 import requireRole from "../middleware/requireRole.js";
 
 const router = express.Router();

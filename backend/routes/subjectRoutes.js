@@ -152,13 +152,6 @@ router.get("/", async (req, res) => {
                     [level.id]
                 );
 
-                console.log(
-                    "LEVEL",
-                    level.id,
-                    level.name,
-                    books
-                );
-
                 level.books = books;
 
             }

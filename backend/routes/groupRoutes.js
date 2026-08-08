@@ -2,7 +2,6 @@ import express from "express";
 import db from "../db.js";
 import bcrypt from "bcrypt";
 import generatePassword from "../utils/generatePassword.js";
-import hydrateBlocks from "../utils/hydrateBlocks.js";
 import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
 

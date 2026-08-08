@@ -3,9 +3,10 @@ import db from "../db.js";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import hydrateBlocks from "../utils/hydrateBlocks.js";
 import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
+
+import { getAppSettings } from "../utils/getAppSettings.js";
 
 const router = express.Router();
 
@@ -133,25 +134,110 @@ router.put("/:id", async (req, res) => {
     res.sendStatus(204);
 });
 
-//DELETE /api/questions/:id
+// DELETE /api/questions/:id
 router.delete("/:id", async (req, res) => {
 
-    await db.query(
-        `
-        UPDATE questions
-        SET
-            deleted_at = NOW(),
-            updated_at = NOW(),
-            updated_by = ?
-        WHERE id = ?
-        `,
-        [
-            req.user.id,
-            req.params.id
-        ]
-    );
+    const connection =
+        await db.getConnection();
 
-    res.sendStatus(204);
+    try {
+
+        const settings =
+            await getAppSettings(
+                connection
+            );
+
+        console.log(settings);
+        console.log(
+            settings.first_question_in_block_can_be_deleted
+        );
+
+        const [questionRows] =
+            await connection.query(
+                `
+                SELECT
+                    block_id
+                FROM questions
+                WHERE id = ?
+                    AND deleted_at IS NULL
+                `,
+                [req.params.id]
+            );
+
+        if (
+            questionRows.length === 0
+        ) {
+
+            return res.status(404).json({
+                error: "Frågan hittades inte."
+            });
+
+        }
+
+        const blockId =
+            questionRows[0].block_id;
+
+        if (
+            !settings.first_question_in_block_can_be_deleted
+        ) {
+
+            const [countRows] =
+                await connection.query(
+                    `
+                    SELECT
+                        COUNT(*) AS count
+                    FROM questions
+                    WHERE block_id = ?
+                        AND deleted_at IS NULL
+                    `,
+                    [blockId]
+                );
+
+            if (
+                countRows[0].count <= 1
+            ) {
+
+                return res.status(400).json({
+                    error:
+                        "Den sista frågan i blocket kan inte tas bort."
+                });
+
+            }
+
+        }
+
+        await connection.query(
+            `
+            UPDATE questions
+            SET
+                deleted_at = NOW(),
+                updated_at = NOW(),
+                updated_by = ?
+            WHERE id = ?
+            `,
+            [
+                req.user.id,
+                req.params.id
+            ]
+        );
+
+        res.sendStatus(204);
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            error:
+                "Kunde inte ta bort frågan."
+        });
+
+    } finally {
+
+        connection.release();
+
+    }
+
 });
 
 //POST /api/questions/:id/duplicate

@@ -11,6 +11,8 @@ import SectionTab from "./Main/SectionTab";
 import ExamTab from "./Main/ExamTab";
 import GroupExamLibraryTab from "./Main/GroupExamLibraryTab";
 import GroupExamTab from "./Main/GroupExamTab";
+import GroupExamWaitingRoomTab from "./Main/GroupExamWaitingRoomTab";
+import GroupExamMonitorTab from "./Main/GroupExamMonitorTab";
 
 
 export default function Main({
@@ -232,6 +234,29 @@ export default function Main({
                             }
                             openTab={(tab) =>
                                 openTab(tab, area)
+                            }
+                        />
+
+                    )}
+
+                    {currentTab?.type === "group-exam-waiting-room" && (
+
+                        <GroupExamWaitingRoomTab
+                            groupExamId={
+                                currentTab.groupExamId
+                            }
+                            openTab={(tab) =>
+                                openTab(tab, area)
+                            }
+                        />
+
+                    )}
+
+                    {currentTab?.type === "group-exam-monitor" && (
+
+                        <GroupExamMonitorTab
+                            groupExamId={
+                                currentTab.groupExamId
                             }
                         />
 

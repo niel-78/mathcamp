@@ -3,6 +3,8 @@ import path from "path";
 
 import authRoutes from "./routes/authRoutes.js";
 
+import appSettingsRoutes from "./routes/appSettingsRoutes.js";
+
 import subjectRoutes from "./routes/subjectRoutes.js";
 import centralContentRoutes from "./routes/centralContentRoutes.js";
 
@@ -22,6 +24,8 @@ import sectionRoutes from "./routes/sectionRoutes.js";
 
 import eventRoutes from "./routes/eventRoutes.js";
 import resultRoutes from "./routes/resultRoutes.js";
+
+import groupExamLobbyRoutes from "./routes/groupExamLobbyRoutes.js";
 
 import cors from "cors";
 
@@ -49,6 +53,8 @@ app.use(express.json());
 
 app.use("/api/auth", authRoutes);
 
+app.use("/api/app-settings",appSettingsRoutes);
+
 app.use("/api/subjects", subjectRoutes);
 app.use("/api/central-content", centralContentRoutes);
 
@@ -65,6 +71,8 @@ app.use("/api/students", studentRoutes);
 
 app.use("/api/books", bookRoutes);
 app.use("/api/sections", sectionRoutes);
+
+app.use("/api/group-exam-lobby", groupExamLobbyRoutes);
 
 app.use("/api/results", resultRoutes);
 app.use("/api/events", eventRoutes);
