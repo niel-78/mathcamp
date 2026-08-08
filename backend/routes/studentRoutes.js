@@ -141,5 +141,40 @@ router.put("/:studentId/password",
 // GET /api/students/:id/attempts
 // GET /api/students/:id/results
 
+// GET /api/students/:id/events
+router.get("/:id/students/:userId/events", async (req, res) => {
+
+        console.log("EVENTS ROUTE HIT");
+
+        const [rows] =
+            await db.query(
+                `
+                SELECT
+                    ee.*
+                FROM exam_events ee
+
+                INNER JOIN exam_attempts ea
+                    ON ea.id = ee.attempt_id
+
+                WHERE
+                    ea.group_exam_id = ?
+                    AND ea.user_id = ?
+
+                ORDER BY
+                    ee.created_at DESC
+                `,
+                [
+                    req.params.id,
+                    req.params.userId
+                ]
+            );
+
+            console.log(rows);
+
+        res.json(rows);
+
+    }
+);
+
 
 export default router

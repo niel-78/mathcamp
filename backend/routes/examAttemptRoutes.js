@@ -527,6 +527,22 @@ router.post("/start", async (req, res) => {
             ]
         );
 
+        
+        await connection.query(
+            `
+            INSERT INTO exam_events (
+                attempt_id,
+                event_type
+            )
+            VALUES (?, ?)
+            `,
+            [
+                attemptId,
+                "attempt_started"
+            ]
+        );
+
+
         await connection.query(
             `
             DELETE FROM exam_waiting_room

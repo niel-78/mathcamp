@@ -3,6 +3,9 @@ import { useEffect, useState } from "react";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 
+import { eventLabels } from "@/constants/eventLabels";
+import FormatTime from "@/utils/formatTime";
+import DetailLayout from "@/components/layouts/DetailLayout";
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 import CardSection from "@/components/layouts/CardSection";
 
@@ -15,6 +18,12 @@ export default function GroupExamMonitorTab({
 
     const [loading, setLoading] =
         useState(true);
+
+    const [selectedStudent, setSelectedStudent] =
+        useState(null);
+
+    const [events, setEvents] =
+        useState([]);
 
     useEffect(() => {
 
@@ -29,6 +38,29 @@ export default function GroupExamMonitorTab({
             clearInterval(interval);
 
     }, [groupExamId]);
+
+    useEffect(() => {
+
+        if (!selectedStudent) {
+            return;
+        }
+
+        loadEvents(
+            selectedStudent.user_id
+        );
+
+        const interval = setInterval(() => {
+
+            loadEvents(
+                selectedStudent.user_id
+            );
+
+        }, 3000);
+
+        return () =>
+            clearInterval(interval);
+
+    }, [selectedStudent]);
 
     const load = async () => {
 
@@ -62,6 +94,26 @@ export default function GroupExamMonitorTab({
 
     };
 
+    const loadEvents = async (userId) => {
+
+        const response = await fetch(
+            `${API_URL}/api/group-exams/${groupExamId}/students/${userId}/events`,
+            {
+                headers: authHeaders()
+            }
+        );
+
+        if (!response.ok) {
+            return;
+        }
+
+        const data =
+            await response.json();
+
+        setEvents(data);
+
+    };
+
     const total =
         students.length;
 
@@ -78,149 +130,235 @@ export default function GroupExamMonitorTab({
     return (
 
         <BaseTabLayout
-            title="Provövervakning"
+
+            title="Övervakning"
+
         >
 
-            <div className="space-y-6">
+            <DetailLayout
 
-                <CardSection title="Översikt">
+                sidebar={
 
-                    <div className="grid grid-cols-3 gap-4">
-
-                        <div className="rounded-lg border p-4">
-                            <div className="text-sm text-muted-foreground">
-                                Totalt
-                            </div>
-
-                            <div className="text-3xl font-bold">
-                                {total}
-                            </div>
-                        </div>
-
-                        <div className="rounded-lg border p-4">
-                            <div className="text-sm text-muted-foreground">
-                                Skriver nu
-                            </div>
-
-                            <div className="text-3xl font-bold text-blue-600">
-                                {started}
-                            </div>
-                        </div>
-
-                        <div className="rounded-lg border p-4">
-                            <div className="text-sm text-muted-foreground">
-                                Inlämnade
-                            </div>
-
-                            <div className="text-3xl font-bold text-green-600">
-                                {submitted}
-                            </div>
-                        </div>
-
-                    </div>
-
-                </CardSection>
-
-                <CardSection
-                    title={`Elever (${students.length})`}
-                >
-
-                    {loading ? (
-
-                        <p>Laddar...</p>
-
-                    ) : (
+                    <CardSection
+                        title={`Elever (${students.length})`}
+                    >
 
                         <div className="space-y-2">
 
                             {students.map(student => (
 
-                                <div
+                                <button
                                     key={student.user_id}
-                                    className="
-                                        flex
-                                        items-center
-                                        justify-between
+                                    className={`
+                                        w-full
                                         rounded-lg
                                         border
                                         p-3
-                                    "
+                                        text-left
+
+                                        ${
+                                            selectedStudent?.user_id ===
+                                            student.user_id
+                                                ? "border-blue-500 bg-blue-50"
+                                                : ""
+                                        }
+                                    `}
+                                    onClick={() => {
+
+                                        setSelectedStudent(
+                                            student
+                                        );
+
+                                        loadEvents(
+                                            student.user_id
+                                        );
+
+                                    }}
                                 >
 
-                                <div>
-
                                     <div className="font-medium">
+
                                         {student.first_name}
                                         {" "}
                                         {student.last_name}
-                                    </div>
-
-                                    {student.started_at && (
-
-                                        <div className="text-sm text-muted-foreground">
-                                            Start:
-                                            {" "}
-                                            {student.started_at}
-                                        </div>
-
-                                    )}
-
-                                    {student.started_ip && (
-
-                                        <div className="text-sm text-muted-foreground">
-                                            IP:
-                                            {" "}
-                                            {student.started_ip}
-                                        </div>
-
-                                    )}
-
-                                    {student.started_user_agent && (
-
-                                        <div className="text-xs text-muted-foreground break-all">
-                                            {student.started_user_agent}
-                                        </div>
-
-                                    )}
-
-                                </div>
-
-                                    <div>
-
-                                        {student.status === "submitted" && (
-                                            <span className="text-green-600 font-medium">
-                                                Inlämnad
-                                            </span>
-                                        )}
-
-                                        {student.status === "in_progress" && (
-                                            <span className="text-blue-600 font-medium">
-                                                Pågående
-                                            </span>
-                                        )}
-
-                                        {!student.status && (
-                                            <span className="text-muted-foreground">
-                                                Ej startat
-                                            </span>
-                                        )}
 
                                     </div>
 
-                                </div>
+                                    <div className="text-sm text-muted-foreground">
+
+                                        {student.status === "in_progress" &&
+                                            "Pågående"}
+
+                                        {student.status === "submitted" &&
+                                            "Inlämnad"}
+
+                                        {!student.status &&
+                                            "Ej startat"}
+
+                                    </div>
+
+                                </button>
 
                             ))}
 
                         </div>
 
-                    )}
+                    </CardSection>
 
-                </CardSection>
+                }
 
-            </div>
+            >
+
+                {!selectedStudent ? (
+
+                    <CardSection title="Information">
+
+                        <p className="text-muted-foreground">
+                            Välj en elev i listan.
+                        </p>
+
+                    </CardSection>
+
+                ) : (
+
+                    <>
+
+                        <CardSection title="Information">
+
+                            <div className="space-y-2">
+
+                                <div>
+
+                                    <strong>Elev:</strong>
+                                    {" "}
+                                    {selectedStudent.first_name}
+                                    {" "}
+                                    {selectedStudent.last_name}
+
+                                </div>
+
+                                <div>
+
+                                    <strong>Status:</strong>
+                                    {" "}
+
+                                    {selectedStudent.status ===
+                                        "in_progress" &&
+                                        "Pågående"}
+
+                                    {selectedStudent.status ===
+                                        "submitted" &&
+                                        "Inlämnad"}
+
+                                    {!selectedStudent.status &&
+                                        "Ej startat"}
+
+                                </div>
+
+                                <div>
+
+                                    <strong>Start:</strong>
+                                    {" "}
+                                    {selectedStudent.started_at || "-"}
+
+                                </div>
+
+                                <div>
+
+                                    <strong>IP-adress:</strong>
+                                    {" "}
+                                    {selectedStudent.started_ip || "-"}
+
+                                </div>
+
+                                <div>
+
+                                    <strong>User Agent:</strong>
+
+                                    <div className="
+                                        mt-1
+                                        break-all
+                                        text-sm
+                                        text-muted-foreground
+                                    ">
+                                        {
+                                            selectedStudent.started_user_agent
+                                            || "-"
+                                        }
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </CardSection>
+
+                        <CardSection title="Händelser">
+
+                            {!events.length ? (
+
+                                <p className="text-muted-foreground">
+                                    Inga händelser registrerade.
+                                </p>
+
+                            ) : (
+
+                                <div className="space-y-2">
+
+                                    {events.map(event => (
+
+                                        <div
+                                            key={event.id}
+                                            className="
+                                                rounded-lg
+                                                border
+                                                p-3
+                                            "
+                                        >
+
+                                            <div className="font-medium">
+
+                                                {
+                                                    eventLabels[
+                                                        event.event_type
+                                                    ] ||
+                                                    event.event_type
+                                                }
+
+                                            </div>
+
+                                            <div
+                                                className="
+                                                    text-xs
+                                                    text-muted-foreground
+                                                "
+                                            >
+
+                                                <FormatTime
+                                                    value={event.created_at}
+                                                />
+
+                                            </div>
+
+                                        </div>
+
+                                    ))}
+
+                                </div>
+
+                            )}
+
+                        </CardSection>
+
+                    </>
+
+                )}
+
+            </DetailLayout>
 
         </BaseTabLayout>
 
     );
 
 }
+

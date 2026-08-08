@@ -1,11 +1,25 @@
 import { useEffect } from "react";
+import { logEvent } from "@/utils/logEvent";
 
-export function useDisableContextMenu() {
+export function useDisableContextMenu(
+    attemptId
+) {
 
     useEffect(() => {
 
         const handleContextMenu = (event) => {
+
             event.preventDefault();
+
+            if (attemptId) {
+
+                logEvent(
+                    attemptId,
+                    "context_menu"
+                );
+
+            }
+
         };
 
         document.addEventListener(
@@ -14,11 +28,14 @@ export function useDisableContextMenu() {
         );
 
         return () => {
+
             document.removeEventListener(
                 "contextmenu",
                 handleContextMenu
             );
+
         };
 
-    }, []);
+    }, [attemptId]);
+
 }

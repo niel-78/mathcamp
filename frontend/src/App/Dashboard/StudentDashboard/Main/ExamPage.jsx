@@ -1,10 +1,10 @@
 import { useState } from "react";
-
 import { useExamAttempt } from "@/hooks/useExamAttempt";
-
 import { usePreventBackButton } from "@/hooks/usePreventBackButton";
 import { useDisableContextMenu } from "@/hooks/useDisableContextMenu";
-import { useTabSwitchDetection } from "@/hooks/useTabSwitchDetection";
+import useExamActivityLogging from "@/hooks/useExamActivityLogging";
+
+import { logEvent } from "@/utils/logEvent";
 
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
@@ -23,7 +23,8 @@ export default function ExamPage({
 
     usePreventBackButton();
     useDisableContextMenu();
-    useTabSwitchDetection();
+    useExamActivityLogging(attemptId);
+
 
     const [index, setIndex] = useState(0);
 
@@ -156,6 +157,11 @@ export default function ExamPage({
     };
 
     const submitExam = async () => {
+
+        await logEvent(
+            attemptId,
+            "attempt_submitted"
+        );
 
         await fetch(
             `${API_URL}/api/exam-attempts/${attemptId}/submit`,

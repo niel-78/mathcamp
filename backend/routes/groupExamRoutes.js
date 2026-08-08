@@ -56,6 +56,38 @@ router.get("/", async (req, res) => {
     res.json(rows);
 
 });
+
+// GET /api/group-exams/:id/students/:userId/events
+router.get( "/:id/students/:userId/events", async (req, res) => {
+
+        const [rows] = await db.query(
+            `
+            SELECT
+                ee.*
+            FROM exam_events ee
+
+            INNER JOIN exam_attempts ea
+                ON ea.id = ee.attempt_id
+
+            WHERE
+                ea.group_exam_id = ?
+                AND ea.user_id = ?
+
+            ORDER BY
+                ee.created_at DESC
+            `,
+            [
+                req.params.id,
+                req.params.userId
+            ]
+        );
+
+        res.json(rows);
+
+    }
+);
+
+
 // POST /api/group-exams
 router.post("/", async (req, res) => {
 
@@ -141,6 +173,8 @@ router.post("/", async (req, res) => {
     }
 
 });
+
+
 
 // GET /api/group-exams/:id
 router.get("/:id", async (req, res) => {
@@ -490,6 +524,39 @@ router.post("/:id/close-waiting-room", async (req, res) => {
 
 });
 
+// POST /api/group-exams/:id/events
+router.get("/:id/events", async (req, res) => {
+
+    const [rows] = await db.query(
+        `
+        SELECT
+            ee.id,
+            ee.event_type,
+            ee.created_at,
+
+            u.first_name,
+            u.last_name
+
+        FROM exam_events ee
+
+        INNER JOIN exam_attempts ea
+            ON ea.id = ee.attempt_id
+
+        INNER JOIN users u
+            ON u.id = ea.user_id
+
+        WHERE ea.group_exam_id = ?
+
+        ORDER BY ee.created_at DESC
+
+        LIMIT 100
+        `,
+        [req.params.id]
+    );
+
+    res.json(rows);
+
+});
 
 // POST /api/group-exams/:id/open
 router.post("/:id/open", async (req, res) => {
@@ -552,6 +619,8 @@ router.post("/:id/close", async (req, res) => {
     }
 
 });
+
+
 
 
 //GET /api/group-exams/:id/attempts

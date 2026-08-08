@@ -34,6 +34,7 @@ DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS app_settings;
 DROP TABLE IF EXISTS user_settings;
 DROP TABLE IF EXISTS exam_waiting_room;
+DROP TABLE IF EXISTS exam_events;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
@@ -237,6 +238,7 @@ CREATE TABLE exam_users (
         ON DELETE CASCADE
 );
 
+
 /*Elevgrupper*/
 CREATE TABLE groups (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -421,6 +423,29 @@ CREATE TABLE exam_attempts (
 CHARACTER SET utf8mb4
 COLLATE utf8mb4_unicode_ci;
 ;
+
+CREATE TABLE exam_events (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+
+    attempt_id VARCHAR(36) NOT NULL,
+
+    event_type VARCHAR(50) NOT NULL,
+
+    event_data JSON NULL,
+
+    created_at DATETIME NOT NULL
+        DEFAULT CURRENT_TIMESTAMP,
+
+    INDEX (attempt_id),
+
+    CONSTRAINT fk_exam_events_attempt
+        FOREIGN KEY (attempt_id)
+        REFERENCES exam_attempts(id)
+        ON DELETE CASCADE
+
+) ENGINE=InnoDB
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
 
 /*Elevsvar på uppgift*/
 CREATE TABLE answers (

@@ -36,12 +36,12 @@ export default function GroupExamTab({
     useEffect(() => {
 
         loadGroupExam();
+        loadBlocks();
         loadWaitingRoomCount();
         loadMonitorCount();
 
         const interval = setInterval(() => {
 
-            loadGroupExam();
             loadWaitingRoomCount();
             loadMonitorCount();
 
@@ -50,16 +50,6 @@ export default function GroupExamTab({
         return () => clearInterval(interval);
 
     }, [groupExamId]);
-
-    useEffect(() => {
-
-        loadGroupExam();
-        loadBlocks();
-        loadWaitingRoomCount();
-        loadMonitorCount();
-
-    }, [groupExamId]);
-
 
     const loadGroupExam = async () => {
 
