@@ -92,40 +92,6 @@ export default function UserProfileDialog({
 
                     </CardSection>
 
-                    <CardSection title="Sessionshistorik">
-
-                        {sessions.map(session => (
-
-                            <div
-                                key={session.id}
-                                className="
-                                    border-b
-                                    py-2
-                                "
-                            >
-
-                                <div>
-                                    Inloggad:
-                                    {" "}
-                                            
-                                    {session.logged_in_at}
-
-                                </div>
-
-                                <div>
-                                    Utloggad:
-                                    {" "}
-
-                                    {session.logged_out_at}
-
-                                </div>
-
-                            </div>
-
-                        ))}
-
-                    </CardSection>
-
                 </div>
 
                 <div className="pt-4 border-t">

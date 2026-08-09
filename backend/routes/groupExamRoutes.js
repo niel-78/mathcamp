@@ -620,7 +620,96 @@ router.post("/:id/close", async (req, res) => {
 
 });
 
+// POST /api/group-exams/:id/admit-student
+router.post("/:id/admit-student",
+    async (req, res) => {
 
+        console.log("ADMIT STUDENT ROUTE");
+
+        const {
+            user_id
+        } = req.body;
+
+        const [result] = await db.query(
+            `
+            DELETE
+            FROM exam_waiting_room
+            WHERE
+                group_exam_id = ?
+                AND user_id = ?
+            `,
+            [
+                req.params.id,
+                user_id
+            ]
+        );
+
+        console.log(result);
+
+        res.json({
+            success: true
+        });
+
+    }
+);
+
+
+// POST /api/group-exams/:id/terminate-all
+router.post("/:id/terminate-all",
+    async (req, res) => {
+
+        const groupExamId =
+            req.params.id;
+
+        const [attempts] =
+            await db.query(
+                `
+                SELECT id
+                FROM exam_attempts
+                WHERE
+                    group_exam_id = ?
+                    AND status = 'in_progress'
+                `,
+                [groupExamId]
+            );
+
+        await db.query(
+            `
+            UPDATE exam_attempts
+            SET
+                status = 'submitted',
+                submitted_at = NOW()
+            WHERE
+                group_exam_id = ?
+                AND status = 'in_progress'
+            `,
+            [groupExamId]
+        );
+
+        for (const attempt of attempts) {
+
+            await db.query(
+                `
+                INSERT INTO exam_events (
+                    attempt_id,
+                    event_type
+                )
+                VALUES (?, ?)
+                `,
+                [
+                    attempt.id,
+                    "terminated_all_by_teacher"
+                ]
+            );
+
+        }
+
+        res.json({
+            success: true
+        });
+
+    }
+);
 
 
 //GET /api/group-exams/:id/attempts

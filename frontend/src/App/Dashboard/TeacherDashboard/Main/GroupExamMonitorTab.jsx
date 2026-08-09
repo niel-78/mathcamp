@@ -2,12 +2,25 @@ import { useEffect, useState } from "react";
 
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
-
+import { Button } from "@/components/ui/button";
 import { eventLabels } from "@/constants/eventLabels";
 import DetailLayout from "@/components/layouts/DetailLayout";
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 import StudentMonitorCard from "@/components/ui/StudentMonitorCard";
 import CardSection from "@/components/layouts/CardSection";
+import FormatTime from "@/utils/FormatTime";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
 
 export default function GroupExamMonitorTab({
     groupExamId
@@ -24,6 +37,10 @@ export default function GroupExamMonitorTab({
 
     const [events, setEvents] =
         useState([]);
+
+    const [terminateAllOpen,
+        setTerminateAllOpen] =
+        useState(false);
 
     useEffect(() => {
 
@@ -62,6 +79,15 @@ export default function GroupExamMonitorTab({
 
     }, [selectedStudent]);
 
+    const handleTerminateAll =
+        async () => {
+
+            await terminateAll();
+
+            setTerminateAllOpen(false);
+
+        };
+    
     const load = async () => {
 
         try {
@@ -81,6 +107,25 @@ export default function GroupExamMonitorTab({
                 await response.json();
 
             setStudents(data);
+
+            if (selectedStudent) {
+
+                const updatedStudent =
+                    data.find(
+                        student =>
+                            student.user_id ===
+                            selectedStudent.user_id
+                    );
+
+                if (updatedStudent) {
+
+                    setSelectedStudent(
+                        updatedStudent
+                    );
+
+                }
+
+            }
 
         } catch (error) {
 
@@ -114,6 +159,66 @@ export default function GroupExamMonitorTab({
 
     };
 
+    const terminateAttempt =
+        async (attemptId) => {
+
+            await fetch(
+                `${API_URL}/api/exam-attempts/${attemptId}/terminate`,
+                {
+                    method: "POST",
+                    headers: authHeaders()
+                }
+            );
+
+            await load();
+
+            if (selectedStudent?.user_id) {
+
+                await loadEvents(
+                    selectedStudent.user_id
+                );
+
+            }
+
+        };
+
+    const resumeAttempt =
+        async (attemptId) => {
+
+            await fetch(
+                `${API_URL}/api/exam-attempts/${attemptId}/resume`,
+                {
+                    method: "POST",
+                    headers: authHeaders()
+                }
+            );
+
+            await load();
+
+            if (selectedStudent?.user_id) {
+
+                await loadEvents(
+                    selectedStudent.user_id
+                );
+
+            }
+
+        };
+    
+    const terminateAll = async () => {
+
+        await fetch(
+            `${API_URL}/api/group-exams/${groupExamId}/terminate-all`,
+            {
+                method: "POST",
+                headers: authHeaders()
+            }
+        );
+
+        load();
+
+    };
+
     const total =
         students.length;
 
@@ -131,6 +236,62 @@ return (
 
     <BaseTabLayout
         title="Övervakning"
+
+            actions={
+
+                <AlertDialog
+                    open={terminateAllOpen}
+                    onOpenChange={
+                        setTerminateAllOpen
+                    }
+                >
+
+                    <AlertDialogTrigger
+                        render={
+                            <Button
+                                variant="destructive"
+                            />
+                        }
+                    >
+                        Avsluta alla prov
+                    </AlertDialogTrigger>
+
+                    <AlertDialogContent>
+
+                        <AlertDialogHeader>
+
+                            <AlertDialogTitle>
+                                Avsluta alla prov?
+                            </AlertDialogTitle>
+
+                            <AlertDialogDescription>
+                                Samtliga pågående prov kommer att
+                                avslutas och lämnas in omedelbart.
+                                Åtgärden kan inte ångras.
+                            </AlertDialogDescription>
+
+                        </AlertDialogHeader>
+
+                        <AlertDialogFooter>
+
+                            <AlertDialogCancel>
+                                Avbryt
+                            </AlertDialogCancel>
+
+                            <AlertDialogAction
+                                variant="destructive"
+                                onClick={handleTerminateAll}
+                            >
+                                Avsluta alla
+                            </AlertDialogAction>
+
+                        </AlertDialogFooter>
+
+                    </AlertDialogContent>
+
+                </AlertDialog>
+
+            }
     >
 
         <DetailLayout
@@ -337,6 +498,18 @@ return (
                             );
 
                         }}
+                        onTerminate={() => {
+                                terminateAttempt(
+                                    student.attempt_id
+                                )
+                                console.log(student);
+                            }
+                        }
+                        onResume={() =>
+                            resumeAttempt(
+                                student.attempt_id
+                            )
+                        }
                     />
 
                 ))}

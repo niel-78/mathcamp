@@ -478,12 +478,30 @@ router.post("/start", async (req, res) => {
 
         if (existingAttempts.length > 0) {
 
+            const attempt =
+                existingAttempts[0];
+
             await connection.rollback();
 
-            return res.status(409).json({
-                error: "Du har redan startat provet."
-            });
+            if (attempt.status === "in_progress") {
+
+                return res.json({
+                    attempt_id: attempt.id,
+                    resume: true
+                });
+
+            }
+
+            if (attempt.status === "submitted") {
+
+                return res.status(409).json({
+                    error: "Provet är redan inlämnat."
+                });
+
+            }
+
         }
+
 
         /*
          * Skapa provförsök
@@ -539,19 +557,6 @@ router.post("/start", async (req, res) => {
             [
                 attemptId,
                 "attempt_started"
-            ]
-        );
-
-
-        await connection.query(
-            `
-            DELETE FROM exam_waiting_room
-            WHERE group_exam_id = ?
-            AND user_id = ?
-            `,
-            [
-                groupExam.id,
-                req.user.id
             ]
         );
 
@@ -732,6 +737,100 @@ router.post("/:id/submit", async (req, res) => {
     }
 });
 
+
+// POST /api/exam-attempts/:id/terminate
+router.post("/:id/terminate",
+    async (req, res) => {
+
+        const attemptId =
+            req.params.id;
+
+        console.log("TERMINATE", attemptId);
+
+        await db.query(
+            `
+            UPDATE exam_attempts
+            SET
+                status = 'submitted',
+                submitted_at = NOW()
+            WHERE id = ?
+            `,
+            [attemptId]
+        );
+
+        const [check] = await db.query(
+            `
+            SELECT
+                id,
+                status,
+                submitted_at
+            FROM exam_attempts
+            WHERE id = ?
+            `,
+            [attemptId]
+        );
+
+        console.log(check[0]);
+
+        res.json({
+            success: true
+        });
+
+        await db.query(
+            `
+            INSERT INTO exam_events (
+                attempt_id,
+                event_type
+            )
+            VALUES (?, ?)
+            `,
+            [
+                attemptId,
+                "terminated_by_teacher"
+            ]
+        );
+
+    }
+);
+
+// POST /api/exam-attempts/:id/resume
+router.post("/:id/resume",
+    async (req, res) => {
+
+        const attemptId =
+            req.params.id;
+
+        await db.query(
+            `
+            UPDATE exam_attempts
+            SET
+                status = 'in_progress',
+                submitted_at = NULL
+            WHERE id = ?
+            `,
+            [attemptId]
+        );
+
+        await db.query(
+            `
+            INSERT INTO exam_events (
+                attempt_id,
+                event_type
+            )
+            VALUES (?, ?)
+            `,
+            [
+                attemptId,
+                "resumed_by_teacher"
+            ]
+        );
+
+        res.json({
+            success: true
+        });
+
+    }
+);
 
 // GET /api/exam-attempts/:id/results
 router.get("/:id/results", async (req, res) => {

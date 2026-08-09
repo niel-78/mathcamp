@@ -35,6 +35,7 @@ DROP TABLE IF EXISTS app_settings;
 DROP TABLE IF EXISTS user_settings;
 DROP TABLE IF EXISTS exam_waiting_room;
 DROP TABLE IF EXISTS exam_events;
+DROP TABLE IF EXISTS user_sessions;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
@@ -80,7 +81,9 @@ VALUES (1, 'student', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpzt
 (3, 'admin', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas', 'Elofsson' , 'admin'),
 (4, 'Abba', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Abba', 'Babby' , 'student'),
 (5, 'Betty', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Betty', 'Blue' , 'student'),
-(6, 'Calle', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Calle', 'Arvidsson' , 'student');
+(6, 'Calle', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Calle', 'Arvidsson' , 'student'),
+(7, 'jol', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Joline', 'Arvidsson' , 'student'),
+(8, 'vil', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Vilhelm', 'Arvidsson' , 'student');
 
 
 CREATE TABLE user_sessions (
@@ -308,7 +311,7 @@ CREATE TABLE group_exams (
     group_exam_key VARCHAR(50) UNIQUE,
     exam_config JSON DEFAULT JSON_OBJECT(),
 
-    waiting_room_open BOOLEAN NOT NULL DEFAULT FALSE,
+    waiting_room_open BOOLEAN NOT NULL DEFAULT TRUE,
 
     time_limit_minutes INT DEFAULT NULL,
 
@@ -400,7 +403,7 @@ CREATE TABLE group_students (
 );
 
 INSERT INTO group_students (user_id, group_id)
-VALUES (1, 1),(4, 2),(5, 2),(6, 2);
+VALUES (1, 1),(7, 1),(8, 1),(4, 2),(5, 2),(6, 2);
 
 /*Typyppgifter i prov*/
 CREATE TABLE exam_blocks (
@@ -676,7 +679,17 @@ INSERT INTO app_settings (
 VALUES (
     1,
     JSON_OBJECT(
-        'first_question_in_block_can_be_deleted', FALSE
+
+        'first_question_in_block_can_be_deleted', FALSE,
+
+        'default_auto_logout_minutes', 15,
+
+
+
+        'student_auto_logout_minutes', 30,
+
+        'exam_auto_logout_minutes', 10.   
+
     )
 );
 

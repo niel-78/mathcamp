@@ -72,6 +72,33 @@ export default function GroupExamWaitingRoomTab({
         load();
     };
 
+    const admitStudent = async (
+        userId
+    ) => {
+
+            console.log(
+        "ADMIT STUDENT",
+        userId
+        );
+
+        await fetch(
+            `${API_URL}/api/group-exams/${groupExamId}/admit-student`,
+            {
+                method: "POST",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    user_id: userId
+                })
+            }
+        );
+
+        await load();
+
+    };
+
     return (
         <BaseTabLayout
             title="Väntrum"
@@ -100,6 +127,7 @@ export default function GroupExamWaitingRoomTab({
                     <WaitingRoomCard
                         key={student.id}
                         student={student}
+                        onAdmit={admitStudent}
                     />
 
                 ))}

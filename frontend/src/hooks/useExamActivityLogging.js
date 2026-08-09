@@ -63,6 +63,15 @@ export default function useExamActivityLogging(
 
         };
 
+        const handleBeforeUnload = () => {
+
+            logEvent(
+                attemptId,
+                "page_unload"
+            );
+
+        };
+
         window.addEventListener(
             "blur",
             handleBlur
@@ -81,6 +90,11 @@ export default function useExamActivityLogging(
         document.addEventListener(
             "contextmenu",
             handleContextMenu
+        );
+
+        window.addEventListener(
+            "beforeunload",
+            handleBeforeUnload
         );
 
         return () => {
@@ -103,6 +117,11 @@ export default function useExamActivityLogging(
             document.removeEventListener(
                 "contextmenu",
                 handleContextMenu
+            );
+
+            window.removeEventListener(
+                "beforeunload",
+                handleBeforeUnload
             );
 
         };

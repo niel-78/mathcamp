@@ -116,8 +116,6 @@ export default function GroupExamTab({
 
     const loadMonitorCount = async () => {
 
-        console.log("LOAD MONITOR");
-
         const response = await fetch(
             `${API_URL}/api/group-exams/${groupExamId}/monitor`,
             {
@@ -127,12 +125,24 @@ export default function GroupExamTab({
 
         const data = await response.json();
 
+        console.log("MONITOR DATA", data);
+
+        if (!Array.isArray(data)) {
+
+            console.error(
+                "Expected array but got:",
+                data
+            );
+
+            setMonitorCount(0);
+
+            return;
+        }
+
         const count = data.filter(
             student =>
                 student.status === "in_progress"
         ).length;
-
-        console.log("MONITOR COUNT", count);
 
         setMonitorCount(count);
 
@@ -314,16 +324,16 @@ export default function GroupExamTab({
 
             actions={
 
-            <Button
-                disabled={saving}
-                onClick={save}
-            >
-                {
-                    saving
-                        ? "Sparar..."
-                        : "Spara"
-                }
-            </Button>
+                <Button
+                    disabled={saving}
+                    onClick={save}
+                >
+                    {
+                        saving
+                            ? "Sparar..."
+                            : "Spara"
+                    }
+                </Button>
 
             }
 

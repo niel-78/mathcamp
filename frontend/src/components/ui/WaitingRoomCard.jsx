@@ -7,6 +7,7 @@ export default function WaitingRoomCard({
     onAdmit
 }) {
 
+    console.log(student);
     return (
 
         <CardSection
@@ -27,9 +28,11 @@ export default function WaitingRoomCard({
                 </div>
 
                 <Button
-                    className="w-full"
+                    onClick={() =>
+                        onAdmit(student.id)
+                    }
                 >
-                    Släpp in
+                    Släpp in elev
                 </Button>
 
             </div>

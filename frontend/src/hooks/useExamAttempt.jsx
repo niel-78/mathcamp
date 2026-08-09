@@ -13,13 +13,13 @@ export function useExamAttempt(attemptId) {
 
     useEffect(() => {
 
-        if (!attemptId) return;
+        if (!attemptId) {
+            return;
+        }
 
         const loadAttempt = async () => {
 
             try {
-
-                setLoading(true);
 
                 const res = await fetch(
                     `${API_URL}/api/exam-attempts/${attemptId}`,
@@ -40,72 +40,47 @@ export function useExamAttempt(attemptId) {
                 setAttempt(data.attempt);
 
                 const normalizedQuestions =
-                    (data.questions || []).map(question => ({
+                    (data.questions || []).map(
+                        question => ({
 
-                        ...question,
+                            ...question,
 
-                        answer_config:
-                            typeof question.answer_config === "string"
-                                ? JSON.parse(question.answer_config)
-                                : question.answer_config
+                            answer_config:
+                                typeof question.answer_config === "string"
+                                    ? JSON.parse(
+                                        question.answer_config
+                                    )
+                                    : question.answer_config
 
-                    }));
-
-                setQuestions(normalizedQuestions);
-
-                setQuestions(normalizedQuestions || []);
-
-                const answerMap = {};
-
-                data.questions?.forEach(question => {
-
-                    /*
-                     * Svar från backend
-                     */
-                    if (question.answer) {
-
-                        answerMap[question.id] =
-                            question.answer;
-                    }
-
-                    /*
-                     * Defaultvärde
-                     */
-                    else {
-
-                        const config =
-                            typeof question.answer_config === "string"
-                                ? JSON.parse(question.answer_config)
-                                : question.answer_config;
-
-                        if (config?.default) {
-                            answerMap[question.id] =
-                                config.default;
-                        }
-                    }
-                });
-
-                setAnswers(answerMap);
-
-                    toast.success("Hämtar ditt prov...");
-
-                } catch (err) {
-
-                    setError(err.message);
-
-                    toast.error(
-                        err.message ||
-                        "Kunde inte ladda provet"
+                        })
                     );
 
-                } finally {
+                setQuestions(
+                    normalizedQuestions
+                );
+
+            } catch (err) {
+
+                setError(err.message);
+
+            } finally {
 
                 setLoading(false);
 
             }
+
         };
 
         loadAttempt();
+
+        const interval =
+            setInterval(
+                loadAttempt,
+                5000
+            );
+
+        return () =>
+            clearInterval(interval);
 
     }, [attemptId]);
 

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { useExamAttempt } from "@/hooks/useExamAttempt";
 import { usePreventBackButton } from "@/hooks/usePreventBackButton";
 import { useDisableContextMenu } from "@/hooks/useDisableContextMenu";
@@ -37,6 +38,24 @@ export default function ExamPage({
         loading,
         error
     } = useExamAttempt(attemptId);
+
+    useEffect(() => {
+
+        if (!attempt) {
+            return;
+        }
+
+        if (attempt.status === "submitted") {
+
+            toast.error(
+                "Provet har avslutats av läraren."
+            );
+
+            onExit();
+
+        }
+
+    }, [attempt, onExit]);
 
     if (loading) {
         return <p>Laddar prov...</p>;

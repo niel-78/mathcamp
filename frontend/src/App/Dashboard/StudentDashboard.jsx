@@ -10,6 +10,7 @@ import StartExamErrorDialog from "./StudentDashboard/Main/StartExamErrorDialog";
 import ExamPage from "./StudentDashboard/Main/ExamPage";
 import ResultPage from "./StudentDashboard/Main/ResultPage";
 import WaitingRoomPage from "./StudentDashboard/Main/WaitingRoomPage";
+import { toast } from "sonner";
 
 const StudentDashboard = () => {
   const [examKey, setExamKey] = useState("");
@@ -103,9 +104,18 @@ const StudentDashboard = () => {
           return;
       }
 
-      setAttemptId(data.attempt_id);
-      setExamConfig(data.exam_config);
-      setView("exam");
+        setAttemptId(data.attempt_id);
+        setExamConfig(data.exam_config);
+
+        if (data.resume) {
+
+            toast.info(
+                "Du återupptar ett pågående prov."
+            );
+
+        }
+
+        setView("exam");
   };
 
 

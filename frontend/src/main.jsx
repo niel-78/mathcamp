@@ -3,12 +3,25 @@ import { createRoot } from 'react-dom/client'
 import "@/globals.css";
 import 'katex/dist/katex.min.css';
 import { AuthProvider } from "@/contexts/AuthContext"
+import { AppSettingsProvider } from "@/contexts/AppSettingsContext"
 import App from '@/App.jsx'
 
-createRoot(document.getElementById('root')).render(
-  <AuthProvider>
+createRoot(
+    document.getElementById("root")
+).render(
+
     <StrictMode>
-      <App />
+
+        <AppSettingsProvider>
+
+            <AuthProvider>
+
+                <App />
+
+            </AuthProvider>
+
+        </AppSettingsProvider>
+
     </StrictMode>
-  </AuthProvider>  ,
-)
+
+);
