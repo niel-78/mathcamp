@@ -20,6 +20,7 @@ import {
 export default function StudentMonitorCard({
     student,
     selected,
+    status,
     onSelect,
     onTerminate,
     onResume
@@ -48,14 +49,21 @@ export default function StudentMonitorCard({
                     <strong>Status:</strong>
                     {" "}
 
-                    {student.status === "in_progress" &&
-                        "Pågående"}
-
-                    {student.status === "submitted" &&
-                        "Inlämnad"}
-
-                    {!student.status &&
-                        "Ej startat"}
+                    <div
+                        className="
+                            rounded-md
+                            px-2
+                            py-1
+                            text-xs
+                            font-medium
+                            w-fit
+                        "
+                    >
+                        {status === "in_progress" && "Skriver prov"}
+                        {status === "waiting_room" && "Väntrum"}
+                        {status === "submitted" && "Inlämnat"}
+                        {status === "not_joined" && "Ej ansluten"}
+                    </div>
 
                 </div>
 
@@ -74,7 +82,7 @@ export default function StudentMonitorCard({
 
                 )}
 
-                {student.status === "in_progress" ? (
+                {status === "in_progress" ? (
 
                     <AlertDialog
                         open={open}
@@ -102,14 +110,11 @@ export default function StudentMonitorCard({
 
                                 <AlertDialogDescription>
 
-                                    Detta kommer att avsluta provet för
-                                    {" "}
+                                    Detta kommer att avsluta provet för{" "}
                                     <strong>
-                                        {student.first_name}
-                                        {" "}
+                                        {student.first_name}{" "}
                                         {student.last_name}
                                     </strong>.
-                                    {" "}
                                     Åtgärden kan inte ångras.
 
                                 </AlertDialogDescription>
@@ -135,7 +140,7 @@ export default function StudentMonitorCard({
 
                     </AlertDialog>
 
-                ) : (
+                ) : status === "submitted" ? (
 
                     <Button
                         variant="outline"
@@ -145,7 +150,7 @@ export default function StudentMonitorCard({
                         Återuppta prov
                     </Button>
 
-                )}
+                ) : null}
 
                 <Button
                     className="w-full"

@@ -361,6 +361,8 @@ CREATE TABLE exam_waiting_room (
     joined_at TIMESTAMP
         DEFAULT CURRENT_TIMESTAMP,
 
+    admitted_at DATETIME NULL,
+
     PRIMARY KEY (
         group_exam_id,
         user_id

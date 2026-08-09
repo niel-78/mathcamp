@@ -33,4 +33,7 @@ export const eventLabels = {
     resumed_by_teacher:
         "Provet återupptogs av läraren",
 
+    attempt_resumed:
+        "Eleven återupptog ett pågående prov",
+
 };

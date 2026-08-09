@@ -16,6 +16,8 @@ export default function WaitingRoomPage({
         const interval = setInterval(
             async () => {
 
+                console.log(groupExam.group_exam_id);
+
                 const response =
                     await fetch(
                         `${API_URL}/api/group-exam-lobby/${groupExam.group_exam_id}/status`,
@@ -32,13 +34,23 @@ export default function WaitingRoomPage({
                 const data =
                     await response.json();
 
+                console.log(
+                    "WAITING STATUS",
+                    data
+                );
+
                 setStatus(
                     data.exam_status
                 );
 
                 if (
-                    data.exam_status === "open"
+                    data.exam_status === "open" ||
+                    data.admitted
                 ) {
+
+                    console.log(
+                        "STARTING EXAM"
+                    );
 
                     clearInterval(
                         interval

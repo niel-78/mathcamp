@@ -155,7 +155,35 @@ export default function GroupExamMonitorTab({
         const data =
             await response.json();
 
-        setEvents(data);
+        //setEvents(data);
+
+        const parsedEvents = data.map(event => {
+
+            let eventData = {};
+
+            try {
+
+                eventData =
+                    typeof event.event_data === "string"
+                        ? JSON.parse(event.event_data)
+                        : (
+                            event.event_data || {}
+                        );
+
+            } catch {
+
+                eventData = {};
+
+            }
+
+            return {
+                ...event,
+                event_data: eventData
+            };
+
+        });
+
+        setEvents(parsedEvents);
 
     };
 
@@ -231,6 +259,39 @@ export default function GroupExamMonitorTab({
         students.filter(
             s => s.status === "submitted"
         ).length;
+
+
+    function getStudentStatus(student) {
+
+        if (
+            student.status === "in_progress"
+        ) {
+            return "in_progress";
+        }
+
+        if (
+            student.joined_at
+        ) {
+            return "waiting_room";
+        }
+
+        if (
+            student.status === "submitted"
+        ) {
+            return "submitted";
+        }
+
+        return "not_joined";
+
+    }
+
+    const selectedStudentStatus =
+        selectedStudent
+            ? getStudentStatus(
+                selectedStudent
+            )
+            : null;
+
 
 return (
 
@@ -335,16 +396,30 @@ return (
                                     <strong>Status:</strong>
                                     {" "}
 
-                                    {selectedStudent.status ===
-                                        "in_progress" &&
-                                        "Pågående"}
-
-                                    {selectedStudent.status ===
-                                        "submitted" &&
-                                        "Inlämnad"}
-
-                                    {!selectedStudent.status &&
-                                        "Ej startat"}
+                                    {
+                                        selectedStudentStatus === "in_progress" &&
+                                        <div className="text-green-600 font-medium">
+                                            Skriver prov
+                                        </div>
+                                    }
+                                    {
+                                        selectedStudentStatus === "waiting_room" &&
+                                        <div className="text-yellow-600 font-medium">
+                                            Väntrum
+                                        </div>
+                                    }
+                                    {
+                                        status === "submitted" &&
+                                        <div className="text-blue-600 font-medium">
+                                            Inlämnat
+                                        </div>
+                                    }
+                                    {
+                                        selectedStudentStatus === "submitted" &&
+                                        <div className="text-blue-600 font-medium">
+                                            Inlämnat
+                                        </div>
+                                    }
 
                                 </div>
 
@@ -483,6 +558,7 @@ return (
                     <StudentMonitorCard
                         key={student.user_id}
                         student={student}
+                        status={getStudentStatus(student)}
                         selected={
                             selectedStudent?.user_id ===
                             student.user_id

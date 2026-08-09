@@ -422,7 +422,10 @@ router.get("/:id/monitor", async (req, res) => {
                 ea.submitted_at,
 
                 ea.started_ip,
-                ea.started_user_agent
+                ea.started_user_agent,
+
+                wr.joined_at,
+                wr.admitted_at
 
             FROM group_students gs
 
@@ -436,9 +439,28 @@ router.get("/:id/monitor", async (req, res) => {
                 ON ea.group_exam_id = ge.id
                 AND ea.user_id = gs.user_id
 
+            LEFT JOIN exam_waiting_room wr
+                ON wr.group_exam_id = ge.id
+                AND wr.user_id = gs.user_id
+
             WHERE ge.id = ?
 
             ORDER BY
+                CASE
+
+                    WHEN ea.status = 'in_progress'
+                        THEN 1
+
+                    WHEN wr.joined_at IS NOT NULL
+                        THEN 2
+
+                    WHEN ea.status = 'submitted'
+                        THEN 3
+
+                    ELSE 4
+
+                END,
+
                 u.first_name,
                 u.last_name
             `,
@@ -624,16 +646,14 @@ router.post("/:id/close", async (req, res) => {
 router.post("/:id/admit-student",
     async (req, res) => {
 
-        console.log("ADMIT STUDENT ROUTE");
-
         const {
             user_id
         } = req.body;
 
-        const [result] = await db.query(
+        await db.query(
             `
-            DELETE
-            FROM exam_waiting_room
+            UPDATE exam_waiting_room
+            SET admitted_at = NOW()
             WHERE
                 group_exam_id = ?
                 AND user_id = ?
@@ -644,8 +664,6 @@ router.post("/:id/admit-student",
             ]
         );
 
-        console.log(result);
-
         res.json({
             success: true
         });
@@ -653,6 +671,23 @@ router.post("/:id/admit-student",
     }
 );
 
+// POST /api/group-exams/:id/admit-all
+router.post("/:id/admit-all", async (req, res) => {
+
+    await db.query(
+        `
+        UPDATE group_exams
+        SET exam_status = 'open'
+        WHERE id = ?
+        `,
+        [req.params.id]
+    );
+
+    res.json({
+        success: true
+    });
+
+});
 
 // POST /api/group-exams/:id/terminate-all
 router.post("/:id/terminate-all",

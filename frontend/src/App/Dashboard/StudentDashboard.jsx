@@ -94,7 +94,17 @@ const StudentDashboard = () => {
           }
       );
 
-      const data = await res.json();
+    const data = await res.json();
+
+    console.log(
+        "START STATUS",
+        res.status
+    );
+
+    console.log(
+        "START RESPONSE",
+        data
+    );
 
       if (!res.ok) {
 

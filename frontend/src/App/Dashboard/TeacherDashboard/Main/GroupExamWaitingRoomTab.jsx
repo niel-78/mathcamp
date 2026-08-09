@@ -55,10 +55,11 @@ export default function GroupExamWaitingRoomTab({
         }
     }
 
-    const openExam = async () => {
+    const admitAll = async () => {
 
+        console.log("ADMIT ALL");
         const response = await fetch(
-            `${API_URL}/api/group-exams/${groupExamId}/open`,
+            `${API_URL}/api/group-exams/${groupExamId}/admit-all`,
             {
                 method: "POST",
                 headers: authHeaders()
@@ -69,19 +70,25 @@ export default function GroupExamWaitingRoomTab({
             return;
         }
 
-        load();
+        console.log(
+            "ADMIT ALL STATUS",
+            response.status
+        );
+
+        console.log(
+            await response.text()
+        );    
+
+        await load();
+
     };
 
     const admitStudent = async (
         userId
     ) => {
 
-            console.log(
-        "ADMIT STUDENT",
-        userId
-        );
-
-        await fetch(
+        console.log("ADMIT STUDENT", userId);
+        const response = await fetch(
             `${API_URL}/api/group-exams/${groupExamId}/admit-student`,
             {
                 method: "POST",
@@ -95,20 +102,32 @@ export default function GroupExamWaitingRoomTab({
             }
         );
 
+        console.log(
+            "ADMIT STUDENT STATUS",
+            response.status
+        );
+
+        console.log(
+            await response.text()
+        );
+
         await load();
 
     };
+
 
     return (
         <BaseTabLayout
             title="Väntrum"
             actions={
-            <Button
-                size="lg"
-                onClick={openExam}
-            >
-                Släpp in elever
-            </Button>
+
+                <Button
+                    size="lg"
+                    onClick={admitAll}
+                >
+                    Släpp in elever
+                </Button>
+                
             }
         >
 

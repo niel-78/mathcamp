@@ -412,13 +412,37 @@ router.post("/start", async (req, res) => {
             });
         }
 
+
+
         /*
-         * Kontrollera om provet är öppet
-         */
+        * Kontrollera om eleven blivit insläppt
+        */
+        const [[waitingRoom]] =
+            await connection.query(
+                `
+                SELECT admitted_at
+                FROM exam_waiting_room
+                WHERE
+                    group_exam_id = ?
+                    AND user_id = ?
+                `,
+                [
+                    groupExam.id,
+                    req.user.id
+                ]
+            );
+
+        const isAdmitted =
+            !!waitingRoom?.admitted_at;
+
+        /*
+        * Kontrollera om provet är öppet
+        */
         const now = new Date();
 
         if (
-            groupExam.exam_status !== "open"
+            groupExam.exam_status !== "open" &&
+            !isAdmitted
         ) {
 
             await connection.rollback();
@@ -433,6 +457,7 @@ router.post("/start", async (req, res) => {
             });
 
         }
+
 
         if (
             groupExam.available_from &&
@@ -465,7 +490,8 @@ router.post("/start", async (req, res) => {
             `
             SELECT
                 id,
-                status
+                status,
+                started_ip
             FROM exam_attempts
             WHERE group_exam_id = ?
                 AND user_id = ?
@@ -481,9 +507,23 @@ router.post("/start", async (req, res) => {
             const attempt =
                 existingAttempts[0];
 
-            await connection.rollback();
-
             if (attempt.status === "in_progress") {
+
+                await connection.query(
+                    `
+                    DELETE
+                    FROM exam_waiting_room
+                    WHERE
+                        group_exam_id = ?
+                        AND user_id = ?
+                    `,
+                    [
+                        groupExam.id,
+                        req.user.id
+                    ]
+                );
+
+                await connection.commit();
 
                 return res.json({
                     attempt_id: attempt.id,
@@ -494,6 +534,8 @@ router.post("/start", async (req, res) => {
 
             if (attempt.status === "submitted") {
 
+                await connection.commit();
+
                 return res.status(409).json({
                     error: "Provet är redan inlämnat."
                 });
@@ -501,7 +543,6 @@ router.post("/start", async (req, res) => {
             }
 
         }
-
 
         /*
          * Skapa provförsök
@@ -565,6 +606,20 @@ router.post("/start", async (req, res) => {
                 connection,
                 groupExam.id
             );
+
+        await connection.query(
+            `
+            DELETE
+            FROM exam_waiting_room
+            WHERE
+                group_exam_id = ?
+                AND user_id = ?
+            `,
+            [
+                groupExam.id,
+                req.user.id
+            ]
+        );
 
         console.log(
             "Session questions:",
@@ -631,7 +686,7 @@ router.post("/start", async (req, res) => {
             exam_config: groupExam.exam_config
         });
 
-    } catch (error) {
+        } catch (error) {
 
         await connection.rollback();
 
@@ -645,10 +700,12 @@ router.post("/start", async (req, res) => {
 
     } finally {
 
-        connection.release();
+            connection.release();
 
-    }
+        }
 });
+
+
 // POST /api/exam-attempts/:id/submit
 router.post("/:id/submit", async (req, res) => {
 

@@ -152,7 +152,7 @@ export default function GroupExamTab({
     const openExam = async () => {
 
         await fetch(
-            `${API_URL}/api/group-exams/${groupExamId}/open`,
+            `${API_URL}/api/group-exams/${groupExamId}/admit-all`,
             {
                 method: "POST",
                 headers: authHeaders()
@@ -160,6 +160,7 @@ export default function GroupExamTab({
         );
 
         await loadGroupExam();
+
     };
 
     const closeExam = async () => {

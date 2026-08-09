@@ -46,12 +46,41 @@ router.get("/:id/status", async (req, res) => {
 
         }
 
-        res.json({
-            exam_status:
-                rows[0].exam_status,
-            waiting_room_open:
-                rows[0].waiting_room_open
-        });
+        const [waitingRows] =
+            await db.query(
+                `
+                SELECT admitted_at
+                FROM exam_waiting_room
+                WHERE
+                    group_exam_id = ?
+                    AND user_id = ?
+                `,
+                [
+                    req.params.id,
+                    req.user.id
+                ]
+            );
+
+            console.log({
+                exam_status: rows[0].exam_status,
+                admitted:
+                    waitingRows.length > 0 &&
+                    waitingRows[0].admitted_at !== null
+            });
+
+            res.json({
+
+                exam_status:
+                    rows[0].exam_status,
+
+                waiting_room_open:
+                    rows[0].waiting_room_open,
+
+                admitted:
+                    waitingRows.length > 0 &&
+                    waitingRows[0].admitted_at !== null
+
+            });
     }
 );
 
@@ -84,6 +113,36 @@ router.post("/join", async (req, res) => {
 
     }
 
+    const [[existingAttempt]] =
+        await db.query(
+            `
+            SELECT
+                id,
+                status
+            FROM exam_attempts
+            WHERE
+                group_exam_id = ?
+                AND user_id = ?
+            ORDER BY started_at DESC
+            LIMIT 1
+            `,
+            [
+                groupExam.id,
+                req.user.id
+            ]
+        );
+
+    if (
+        existingAttempt?.status === "submitted"
+    ) {
+
+        return res.status(409).json({
+            error:
+                "Du har redan lämnat in provet."
+        });
+
+    }
+
     if (!groupExam.waiting_room_open) {
 
         return res.status(403).json({
@@ -91,7 +150,7 @@ router.post("/join", async (req, res) => {
                 "Väntrummet är stängt."
         });
 
-}
+    }
 
     const [studentRows] =
         await db.query(
