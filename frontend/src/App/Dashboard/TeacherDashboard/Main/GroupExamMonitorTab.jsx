@@ -4,9 +4,9 @@ import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 
 import { eventLabels } from "@/constants/eventLabels";
-import FormatTime from "@/utils/formatTime";
 import DetailLayout from "@/components/layouts/DetailLayout";
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";
+import StudentMonitorCard from "@/components/ui/StudentMonitorCard";
 import CardSection from "@/components/layouts/CardSection";
 
 export default function GroupExamMonitorTab({
@@ -127,94 +127,24 @@ export default function GroupExamMonitorTab({
             s => s.status === "submitted"
         ).length;
 
-    return (
+return (
 
-        <BaseTabLayout
+    <BaseTabLayout
+        title="Övervakning"
+    >
 
-            title="Övervakning"
+        <DetailLayout
 
-        >
+            sidebar={
 
-            <DetailLayout
-
-                sidebar={
+                !selectedStudent ? (
 
                     <CardSection
-                        title={`Elever (${students.length})`}
+                        title="Information"
                     >
 
-                        <div className="space-y-2">
-
-                            {students.map(student => (
-
-                                <button
-                                    key={student.user_id}
-                                    className={`
-                                        w-full
-                                        rounded-lg
-                                        border
-                                        p-3
-                                        text-left
-
-                                        ${
-                                            selectedStudent?.user_id ===
-                                            student.user_id
-                                                ? "border-blue-500 bg-blue-50"
-                                                : ""
-                                        }
-                                    `}
-                                    onClick={() => {
-
-                                        setSelectedStudent(
-                                            student
-                                        );
-
-                                        loadEvents(
-                                            student.user_id
-                                        );
-
-                                    }}
-                                >
-
-                                    <div className="font-medium">
-
-                                        {student.first_name}
-                                        {" "}
-                                        {student.last_name}
-
-                                    </div>
-
-                                    <div className="text-sm text-muted-foreground">
-
-                                        {student.status === "in_progress" &&
-                                            "Pågående"}
-
-                                        {student.status === "submitted" &&
-                                            "Inlämnad"}
-
-                                        {!student.status &&
-                                            "Ej startat"}
-
-                                    </div>
-
-                                </button>
-
-                            ))}
-
-                        </div>
-
-                    </CardSection>
-
-                }
-
-            >
-
-                {!selectedStudent ? (
-
-                    <CardSection title="Information">
-
                         <p className="text-muted-foreground">
-                            Välj en elev i listan.
+                            Välj en elev för att visa detaljer.
                         </p>
 
                     </CardSection>
@@ -223,7 +153,9 @@ export default function GroupExamMonitorTab({
 
                     <>
 
-                        <CardSection title="Information">
+                        <CardSection
+                            title="Information"
+                        >
 
                             <div className="space-y-2">
 
@@ -259,7 +191,16 @@ export default function GroupExamMonitorTab({
 
                                     <strong>Start:</strong>
                                     {" "}
-                                    {selectedStudent.started_at || "-"}
+
+                                    {selectedStudent.started_at
+                                        ? (
+                                            <FormatTime
+                                                value={
+                                                    selectedStudent.started_at
+                                                }
+                                            />
+                                        )
+                                        : "-"}
 
                                 </div>
 
@@ -275,16 +216,20 @@ export default function GroupExamMonitorTab({
 
                                     <strong>User Agent:</strong>
 
-                                    <div className="
-                                        mt-1
-                                        break-all
-                                        text-sm
-                                        text-muted-foreground
-                                    ">
+                                    <div
+                                        className="
+                                            mt-1
+                                            break-all
+                                            text-sm
+                                            text-muted-foreground
+                                        "
+                                    >
+
                                         {
                                             selectedStudent.started_user_agent
                                             || "-"
                                         }
+
                                     </div>
 
                                 </div>
@@ -293,7 +238,9 @@ export default function GroupExamMonitorTab({
 
                         </CardSection>
 
-                        <CardSection title="Händelser">
+                        <CardSection
+                            title={`Händelser (${events.length})`}
+                        >
 
                             {!events.length ? (
 
@@ -335,7 +282,9 @@ export default function GroupExamMonitorTab({
                                             >
 
                                                 <FormatTime
-                                                    value={event.created_at}
+                                                    value={
+                                                        event.created_at
+                                                    }
                                                 />
 
                                             </div>
@@ -352,13 +301,53 @@ export default function GroupExamMonitorTab({
 
                     </>
 
-                )}
+                )
 
-            </DetailLayout>
+            }
 
-        </BaseTabLayout>
+        >
 
-    );
+            <div
+                className="
+                    grid
+                    gap-4
+                    grid-cols-1
+                    md:grid-cols-2
+                    xl:grid-cols-3
+                "
+            >
+
+                {students.map(student => (
+
+                    <StudentMonitorCard
+                        key={student.user_id}
+                        student={student}
+                        selected={
+                            selectedStudent?.user_id ===
+                            student.user_id
+                        }
+                        onSelect={() => {
+
+                            setSelectedStudent(
+                                student
+                            );
+
+                            loadEvents(
+                                student.user_id
+                            );
+
+                        }}
+                    />
+
+                ))}
+
+            </div>
+
+        </DetailLayout>
+
+    </BaseTabLayout>
+
+);
 
 }
 

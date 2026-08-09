@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { authHeaders } from "@/api/authHeaders";
+import { API_URL } from "@/config";
 
 const AuthContext = createContext();
 
@@ -8,25 +9,69 @@ export function AuthProvider({ children }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch("/api/auth/me", {
-            headers: authHeaders()
-        })
-        .then(res => res.json())
-        .then(data => {
-            setUser(data);
-            setLoading(false);
-        })
-        .catch(() => {
-            setUser(null);
-            setLoading(false);
-        });
+
+        fetch(
+            `${API_URL}/api/auth/me`,
+            {
+                headers: authHeaders()
+            }
+        )
+            .then(async res => {
+
+                if (!res.ok) {
+                    throw new Error("Unauthorized");
+                }
+
+                return res.json();
+
+            })
+            .then(data => {
+
+                console.log("AUTH USER", data);
+
+                setUser(data);
+
+                setLoading(false);
+
+            })
+            .catch(error => {
+
+                console.error(error);
+
+                localStorage.removeItem("token");
+
+                setUser(null);
+
+                setLoading(false);
+
+            });
+
     }, []);
 
     const token = localStorage.getItem("token");
 
-    const logout = () => {
+    const logout = async () => {
+
+        try {
+
+            await fetch(
+                `${API_URL}/api/auth/logout`,
+                {
+                    method: "POST",
+                    headers: authHeaders()
+                }
+            );
+
+        } catch (error) {
+
+            console.error(error);
+
+        }
+
         localStorage.removeItem("token");
+
         setUser(null);
+
     };
 
 

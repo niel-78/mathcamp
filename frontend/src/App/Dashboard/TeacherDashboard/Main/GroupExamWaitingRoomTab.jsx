@@ -2,13 +2,8 @@ import { useEffect, useState } from "react";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import WaitingRoomCard from "@/components/ui/WaitingRoomCard";
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";
-import DetailLayout from "@/components/layouts/DetailLayout";
-import CardSection from "@/components/layouts/CardSection";
-import ExamPreview from "@/components/ui/ExamPreview";
-import { Switch } from "@/components/ui/switch";
-import { toast } from "sonner";
 
 export default function GroupExamWaitingRoomTab({
     groupExamId
@@ -89,39 +84,28 @@ export default function GroupExamWaitingRoomTab({
             </Button>
             }
         >
-            <CardSection title="Anslutna elever">
 
-                <div className="space-y-2">
+            <div
+                className="
+                    grid
+                    gap-4
+                    grid-cols-1
+                    md:grid-cols-2
+                    xl:grid-cols-3
+                "
+            >
 
-                    {students.map(student => (
+                {students.map(student => (
 
-                        <div
-                            key={student.id}
-                            className="
-                                flex
-                                justify-between
-                                border
-                                rounded
-                                p-3
-                            "
-                        >
-                            <span>
-                                {student.first_name}
-                                {" "}
-                                {student.last_name}
-                            </span>
+                    <WaitingRoomCard
+                        key={student.id}
+                        student={student}
+                    />
 
-                            <span>
-                                Ansluten
-                            </span>
+                ))}
 
-                        </div>
+            </div>
 
-                    ))}
-
-                </div>
-
-            </CardSection>
         </BaseTabLayout>
     );
 }

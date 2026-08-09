@@ -82,6 +82,30 @@ VALUES (1, 'student', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpzt
 (5, 'Betty', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Betty', 'Blue' , 'student'),
 (6, 'Calle', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Calle', 'Arvidsson' , 'student');
 
+
+CREATE TABLE user_sessions (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+
+    user_id INT NOT NULL,
+
+    session_token VARCHAR(255) NOT NULL,
+
+    logged_in_at DATETIME NOT NULL
+        DEFAULT CURRENT_TIMESTAMP,
+
+    logged_out_at DATETIME NULL,
+
+    FOREIGN KEY (user_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE,
+
+    INDEX(user_id),
+    INDEX(session_token)
+) ENGINE=InnoDB
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
+
+
 /*Typuppgifter*/
 CREATE TABLE blocks (
     id INT AUTO_INCREMENT PRIMARY KEY,
