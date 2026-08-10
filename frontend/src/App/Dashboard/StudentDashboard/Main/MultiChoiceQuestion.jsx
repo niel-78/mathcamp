@@ -7,10 +7,6 @@ export default function MultiChoiceQuestion({
     onChange
 }) {
 
-    console.log("MultiChoiceQuestion");
-    console.log(question);
-    console.log(value);
-
     return (
         <>
             <h2>

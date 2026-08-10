@@ -2,6 +2,8 @@ USE mydb;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS schools;
+DROP TABLE IF EXISTS school_teachers;
 DROP TABLE IF EXISTS level_books;
 DROP TABLE IF EXISTS question_levels;
 DROP TABLE IF EXISTS block_sections;
@@ -43,6 +45,18 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- TABLES
 -- ======================
 
+CREATE TABLE schools (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO schools (
+    id,
+    name
+)
+VALUES (1,'School of Rock'),(2,'Chicagoskolan');
+
 
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -52,7 +66,9 @@ CREATE TABLE users (
     -- lösenord (aldrig plaintext!)
     password_hash VARCHAR(255) NOT NULL,
 
-    role ENUM('student', 'teacher', 'admin') NOT NULL DEFAULT 'student',
+    role ENUM('student', 'teacher') NOT NULL DEFAULT 'student',
+
+    active_school_id INT NULL,
 
     -- valfri visning
     first_name VARCHAR(255),
@@ -69,22 +85,26 @@ CREATE TABLE users (
     exam_started_at DATETIME,
 
     -- säkerhetsfält
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (active_school_id) REFERENCES schools(id)
 
 ) ENGINE=InnoDB 
 CHARACTER SET utf8mb4 
 COLLATE utf8mb4_unicode_ci;
 
+INSERT INTO users (id, username, password_hash, first_name, last_name, role, active_school_id)
+VALUES
+(1, 'teacher', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas', 'Elofsson' , 'teacher', 1),
+(2, 'teacher2', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas', 'Elofsson' , 'teacher', 1);
+
 INSERT INTO users (id, username, password_hash, first_name, last_name, role)
-VALUES (1, 'student', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas', 'Elofsson' , 'student'),
-(2, 'teacher', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas', 'Elofsson' , 'teacher'),
-(3, 'admin', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas', 'Elofsson' , 'admin'),
+VALUES (3, 'student', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas', 'Elofsson' , 'student'),
 (4, 'Abba', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Abba', 'Babby' , 'student'),
 (5, 'Betty', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Betty', 'Blue' , 'student'),
 (6, 'Calle', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Calle', 'Arvidsson' , 'student'),
 (7, 'jol', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Joline', 'Arvidsson' , 'student'),
 (8, 'vil', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Vilhelm', 'Arvidsson' , 'student');
-
 
 CREATE TABLE user_sessions (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -377,6 +397,7 @@ CREATE TABLE group_exams (
 
         'monitoring',
         JSON_OBJECT(
+            'lock_page_refresh', true,
             'lock_tab_hidden', true,
             'lock_window_blur', true,
             'lock_context_menu', true,
@@ -791,6 +812,29 @@ CREATE TABLE user_settings (
 
 );
 
+CREATE TABLE school_teachers (
+
+    school_id INT NOT NULL,
+    teacher_id INT NOT NULL,
+
+    is_admin BOOLEAN NOT NULL DEFAULT FALSE,
+
+    PRIMARY KEY (
+        school_id,
+        teacher_id
+    )
+);
+
+INSERT INTO school_teachers (
+    school_id,
+    teacher_id,
+    is_admin
+)
+VALUES
+    (1, 1, true),
+    (2, 1, false),
+    (1, 2, false);
+
 
 -- ======================
 -- BLOCK 1 (TEXT TAL)
@@ -873,9 +917,9 @@ INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUE
 
 INSERT INTO exams(`id`,`title`,subject_id,level_id,created_by,updated_by) VALUES(1,'Test',1,2,2,2);
 
-INSERT INTO exam_users (exam_id,user_id,is_owner) VALUES (1,2,TRUE);
+INSERT INTO exam_users (exam_id,user_id,is_owner) VALUES (1,1,TRUE);
 
-INSERT INTO group_users (group_id,user_id,is_owner) VALUES (1,2,TRUE);
+INSERT INTO group_users (group_id,user_id,is_owner) VALUES (1,1,TRUE);
 
 INSERT INTO exam_blocks (exam_id,block_id,sort_order) VALUES
 (1,1,6),(1,2,2),(1,3,3),(1,4,4),(1,5,5),(1,6,1);

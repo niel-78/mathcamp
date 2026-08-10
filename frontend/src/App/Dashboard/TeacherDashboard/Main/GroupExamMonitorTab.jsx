@@ -36,8 +36,8 @@ export default function GroupExamMonitorTab({
     const [loading, setLoading] =
         useState(true);
 
-    const [selectedStudent, setSelectedStudent] =
-        useState(null);
+    const [selectedStudentId, setSelectedStudentId
+    ] = useState(null);
 
     const [events, setEvents] =
         useState([]);
@@ -45,6 +45,13 @@ export default function GroupExamMonitorTab({
     const [terminateAllOpen,
         setTerminateAllOpen] =
         useState(false);
+
+    const selectedStudent =
+        students.find(
+            student =>
+                student.user_id ===
+                selectedStudentId
+        ) || null;
 
     useEffect(() => {
 
@@ -62,12 +69,12 @@ export default function GroupExamMonitorTab({
 
     useEffect(() => {
 
-        if (!selectedStudent) {
+        if (!selectedStudentId) {
             return;
         }
 
         loadEvents(
-            selectedStudent.user_id
+            selectedStudentId
         );
 
         const interval = setInterval(() => {
@@ -81,7 +88,7 @@ export default function GroupExamMonitorTab({
         return () =>
             clearInterval(interval);
 
-    }, [selectedStudent]);
+    }, [selectedStudentId]);
 
     const handleTerminateAll =
         async () => {
@@ -112,24 +119,6 @@ export default function GroupExamMonitorTab({
 
             setStudents(data);
 
-            if (selectedStudent) {
-
-                const updatedStudent =
-                    data.find(
-                        student =>
-                            student.user_id ===
-                            selectedStudent.user_id
-                    );
-
-                if (updatedStudent) {
-
-                    setSelectedStudent(
-                        updatedStudent
-                    );
-
-                }
-
-            }
 
         } catch (error) {
 
@@ -559,8 +548,8 @@ return (
                         }
                         onSelect={() => {
 
-                            setSelectedStudent(
-                                student
+                            setSelectedStudentId(
+                                student.user_id
                             );
 
                             loadEvents(

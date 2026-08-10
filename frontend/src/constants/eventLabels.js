@@ -18,6 +18,9 @@ export const eventLabels = {
     context_menu:
         "Försökte högerklicka",
 
+    page_refresh:
+        "Sidan uppdaterades",
+
     page_unload:
         "Eleven lämnade eller laddade om sidan",
 

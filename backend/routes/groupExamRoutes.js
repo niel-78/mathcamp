@@ -12,7 +12,7 @@ import { buildExamSession } from "../utils/buildExamSession.js";
 const router = express.Router();
 
 router.use(requireAuth);
-router.use(requireRole("teacher", "admin"));
+router.use(requireRole("teacher"));
 
 /* 
 GET    /api/group-exams
@@ -195,7 +195,6 @@ router.post("/", async (req, res) => {
 });
 
 
-
 // GET /api/group-exams/:id
 router.get("/:id", async (req, res) => {
 
@@ -228,6 +227,8 @@ router.get("/:id", async (req, res) => {
     res.json(groupExam);
 
 });
+
+
 // PUT /api/group-exams/:id
 router.put("/:id", async (req, res) => {
 
@@ -277,6 +278,8 @@ router.put("/:id", async (req, res) => {
     res.sendStatus(204);
 
 });
+
+
 // DELETE /api/group-exams/:id
 router.delete("/:id", async (req, res) => {
 
@@ -424,21 +427,12 @@ router.get("/:id/monitor", async (req, res) => {
             ORDER BY
 
             CASE
-
-                WHEN ea.status = 'in_progress'
-                    THEN 1
-
-                WHEN ea.status = 'locked'
-                    THEN 2
-
-                WHEN wr.joined_at IS NOT NULL
-                    THEN 3
-
-                WHEN ea.status = 'submitted'
-                    THEN 4
-
-                ELSE 5
-
+            
+                WHEN wr.joined_at IS NULL
+                    AND ea.status IS NULL
+                THEN 2
+                ELSE 1
+            
             END,
 
                 u.first_name,

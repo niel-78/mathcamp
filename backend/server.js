@@ -5,6 +5,8 @@ import authRoutes from "./routes/authRoutes.js";
 
 import appSettingsRoutes from "./routes/appSettingsRoutes.js";
 
+import userRoutes from "./routes/userRoutes.js";
+
 import subjectRoutes from "./routes/subjectRoutes.js";
 import centralContentRoutes from "./routes/centralContentRoutes.js";
 
@@ -54,6 +56,8 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 
 app.use("/api/app-settings",appSettingsRoutes);
+
+app.use("/api/users", userRoutes);
 
 app.use("/api/subjects", subjectRoutes);
 app.use("/api/central-content", centralContentRoutes);

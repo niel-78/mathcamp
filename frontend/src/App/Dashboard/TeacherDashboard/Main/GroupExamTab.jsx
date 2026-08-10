@@ -112,8 +112,6 @@ export default function GroupExamTab({
 
         const data = await response.json();
 
-        console.log(data);
-
         setWaitingCount(data.length);
     };
 
@@ -127,8 +125,6 @@ export default function GroupExamTab({
         );
 
         const data = await response.json();
-
-        console.log("MONITOR DATA", data);
 
         if (!Array.isArray(data)) {
 
@@ -659,6 +655,23 @@ export default function GroupExamTab({
                 >
 
                     <div className="space-y-4">
+
+                        <Field label="Lås vid siduppdatering">
+
+                            <Switch
+                                checked={
+                                    !!groupExam.exam_config?.monitoring?.lock_page_refresh
+                                }
+                                onCheckedChange={(checked) =>
+                                    updateConfig(
+                                        "monitoring",
+                                        "lock_page_refresh",
+                                        checked
+                                    )
+                                }
+                            />
+
+                        </Field>
 
                         <Field label="Lås vid flikbyte">
 

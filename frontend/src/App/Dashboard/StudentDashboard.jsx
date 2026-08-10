@@ -12,6 +12,7 @@ import ResultPage from "./StudentDashboard/Main/ResultPage";
 import WaitingRoomPage from "./StudentDashboard/Main/WaitingRoomPage";
 import LockedExamPage from "./StudentDashboard/Main/LockedExamPage";
 import { toast } from "sonner";
+import { logEvent } from "@/utils/logEvent";
 
 const StudentDashboard = () => {
     const [examKey, setExamKey] = useState("");
@@ -99,10 +100,23 @@ const StudentDashboard = () => {
 
         const data = await res.json();
 
-        console.log(
-            "START RESPONSE",
-            data
-        );
+        const navigation =
+            performance
+                .getEntriesByType(
+                    "navigation"
+                )[0];
+
+        if (
+            data.resume &&
+            navigation?.type === "reload"
+        ) {
+
+            logEvent(
+                data.attempt_id,
+                "page_refresh"
+            );
+
+        }
 
         if (!res.ok) {
 
@@ -129,7 +143,24 @@ const StudentDashboard = () => {
         setAttemptId(data.attempt_id);
         setExamConfig(data.exam_config);
 
-        if (data.resume) {
+        if (data.status === "locked") {
+
+            setAttemptId(
+                data.attempt_id
+            );
+
+            setView(
+                "locked"
+            );
+
+            return;
+
+        }
+
+        if (
+            data.resume &&
+            data.status !== "locked"
+        ) {
 
             toast.info(
                 "Du återupptar ett pågående prov."

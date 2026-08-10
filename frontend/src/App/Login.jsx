@@ -41,8 +41,10 @@ export default function Login() {
             mx-auto
             mt-20
             p-6
-            bg-white
             rounded-xl
+            border
+            bg-card
+            text-card-foreground
             shadow-lg
             flex
             flex-col

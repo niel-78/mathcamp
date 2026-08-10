@@ -10,7 +10,7 @@ import { buildExamSession } from "../utils/buildExamSession.js";
 const router = express.Router();
 
 router.use(requireAuth);
-router.use(requireRole("student", "teacher", "admin"));
+router.use(requireRole("student", "teacher"));
 
 /*
 GET    /api/exam-attempts/:id
@@ -525,30 +525,6 @@ router.post("/start", async (req, res) => {
                     ]
                 );
 
-                await connection.query(
-                    `
-                    INSERT INTO exam_events (
-                        attempt_id,
-                        event_type,
-                        event_data
-                    )
-                    VALUES (?, ?, ?)
-                    `,
-                    [
-                        attempt.id,
-                        "attempt_resumed",
-                        JSON.stringify({
-                            same_ip:
-                                currentIp ===
-                                attempt.started_ip,
-                            current_ip:
-                                currentIp,
-                            original_ip:
-                                attempt.started_ip
-                        })
-                    ]
-                );
-
                 await connection.commit();
 
                 return res.json({
@@ -559,6 +535,20 @@ router.post("/start", async (req, res) => {
             }
 
             if (attempt.status === "locked") {
+
+                await connection.query(
+                    `
+                    DELETE
+                    FROM exam_waiting_room
+                    WHERE
+                        group_exam_id = ?
+                        AND user_id = ?
+                    `,
+                    [
+                        groupExam.id,
+                        req.user.id
+                    ]
+                );
 
                 await connection.query(
                     `
@@ -578,7 +568,6 @@ router.post("/start", async (req, res) => {
 
                 return res.json({
                     attempt_id: attempt.id,
-                    resume: true,
                     status: "locked"
                 });
 
@@ -769,6 +758,7 @@ router.post("/:id/submit", async (req, res) => {
                 SELECT
                     id,
                     user_id,
+                    group_exam_id,
                     status
                 FROM exam_attempts
                 WHERE id = ?
@@ -814,6 +804,19 @@ router.post("/:id/submit", async (req, res) => {
             WHERE id = ?
             `,
             [id]
+        );
+
+        await connection.query(
+            `
+            DELETE
+            FROM exam_waiting_room
+            WHERE group_exam_id = ?
+                AND user_id = ?
+            `,
+            [
+                attempt.group_exam_id,
+                attempt.user_id
+            ]
         );
 
         await connection.commit();

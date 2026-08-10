@@ -12,7 +12,7 @@ import { buildExamSession } from "../utils/buildExamSession.js";
 const router = express.Router();
 
 router.use(requireAuth);
-router.use(requireRole("student", "teacher", "admin"));
+router.use(requireRole("student", "teacher"));
 
 /* 
 POST /group-exam-lobby/:id/join
@@ -97,7 +97,7 @@ router.get("/:id/status", async (req, res) => {
                 attempt_status:
                     attempt?.status || null
 
-            });
+            });o
     }
 );
 
@@ -154,6 +154,16 @@ router.post("/join", async (req, res) => {
         return res.status(409).json({
             error:
                 "Du har redan lämnat in provet."
+        });
+
+    }
+
+    if (existingAttempt) {
+
+        return res.json({
+            success: true,
+            group_exam_id: groupExam.id,
+            exam_status: groupExam.exam_status
         });
 
     }

@@ -16,8 +16,6 @@ DELETE /api/events/:id
 // POST /api/events
 router.post("/", async (req, res) => {
 
-    console.log("EVENT RECEIVED");
-
     const {
         attempt_id,
         event_type,
@@ -82,7 +80,10 @@ router.post("/", async (req, res) => {
                 "lock_context_menu",
 
             page_unload:
-                "lock_page_unload"
+                "lock_page_unload",
+
+            page_refresh:
+                "lock_page_refresh"
 
         };
 

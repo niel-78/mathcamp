@@ -34,7 +34,7 @@ GET    /api/blocks/sections/:sectionId
 */
 
 router.use(requireAuth);
-router.use(requireRole("teacher", "admin"));
+router.use(requireRole("teacher"));
 
 // GET /api/blocks/sections/:sectionId
 router.get("/sections/:sectionId", async (req, res) => {

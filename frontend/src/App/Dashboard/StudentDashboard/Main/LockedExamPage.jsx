@@ -101,11 +101,6 @@ export default function LockedExamPage({
             const data =
                 await response.json();
 
-            console.log(
-                "ATTEMPT STATUS",
-                attempt.status
-            );
-
             setReason(
                 data.reason
             );

@@ -16,75 +16,180 @@ POST   /api/auth/refresh
 //POST /api/auth/login
 router.post("/login", async (req, res) => {
 
-  try {
-    const { username, password } = req.body || {};
+    try {
 
-    if (!username || !password) {
-      return res.status(400).json({ error: "Missing fields" });
-    }
+        const {
+            username,
+            password
+        } = req.body || {};
 
-    const [rows] = await db.query(
-      "SELECT * FROM users WHERE username = ?",
-      [username]
-    );
+        if (!username || !password) {
 
+            return res.status(400).json({
+                error: "Missing fields"
+            });
 
-    if (rows.length === 0) {
-      return res.status(401).json({ error: "User not found" });
-    }
+        }
 
-    const user = rows[0];
+        const [rows] = await db.query(
+            `
+            SELECT *
+            FROM users
+            WHERE username = ?
+            `,
+            [username]
+        );
 
-    const valid = await bcrypt.compare(password, user.password_hash);
+        if (rows.length === 0) {
 
-    if (!valid) {
-      return res.status(401).json({ error: "Wrong password" });
-    }
+            return res.status(401).json({
+                error: "User not found"
+            });
 
-    const token = crypto.randomUUID();
+        }
 
-    await db.query(
-        `
-        UPDATE users
-        SET
-            session_token = ?
-        WHERE id = ?
-        `,
-        [
+        const user = rows[0];
+
+        const valid =
+            await bcrypt.compare(
+                password,
+                user.password_hash
+            );
+
+        if (!valid) {
+
+            return res.status(401).json({
+                error: "Wrong password"
+            });
+
+        }
+
+        const token =
+            crypto.randomUUID();
+
+        await db.query(
+            `
+            UPDATE users
+            SET session_token = ?
+            WHERE id = ?
+            `,
+            [
+                token,
+                user.id
+            ]
+        );
+
+        await db.query(
+            `
+            INSERT INTO user_sessions (
+                user_id,
+                session_token
+            )
+            VALUES (?, ?)
+            `,
+            [
+                user.id,
+                token
+            ]
+        );
+
+        const [schools] =
+            await db.query(
+                `
+                SELECT
+                    s.id,
+                    s.name,
+                    st.is_admin
+                FROM school_teachers st
+                INNER JOIN schools s
+                    ON s.id = st.school_id
+                WHERE st.teacher_id = ?
+                ORDER BY s.name
+                `,
+                [user.id]
+            );
+
+        let activeSchoolId =
+            user.active_school_id;
+
+        /*
+         * Om användaren saknar
+         * aktiv skola men är knuten
+         * till minst en skola
+         */
+        if (
+            !activeSchoolId &&
+            schools.length > 0
+        ) {
+
+            activeSchoolId =
+                schools[0].id;
+
+            await db.query(
+                `
+                UPDATE users
+                SET active_school_id = ?
+                WHERE id = ?
+                `,
+                [
+                    activeSchoolId,
+                    user.id
+                ]
+            );
+
+        }
+
+        const activeSchool =
+            schools.find(
+                school =>
+                    school.id ===
+                    activeSchoolId
+            ) || null;
+
+        res.json({
+
             token,
-            user.id
-        ]
-    );
 
-    await db.query(
-        `
-        INSERT INTO user_sessions (
-            user_id,
-            session_token
-        )
-        VALUES (?, ?)
-        `,
-        [
-            user.id,
-            token
-        ]
-    );
+            user: {
 
-    res.json({
-      token,
-      user: {
-        id: user.id,
-        username: user.username,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        role: user.role
-      }
-    });
+                id: user.id,
 
-  } catch (err) {
-    console.log("❌ ERROR:", err);
-    res.status(500).json({ error: err.message });
-  }
+                username:
+                    user.username,
+
+                first_name:
+                    user.first_name,
+
+                last_name:
+                    user.last_name,
+
+                role: user.role,
+
+                active_school_id:
+                    activeSchoolId,
+
+                active_school:
+                    activeSchool,
+
+                schools
+
+            }
+
+        });
+
+    } catch (err) {
+
+        console.log(
+            "❌ ERROR:",
+            err
+        );
+
+        res.status(500).json({
+            error: err.message
+        });
+
+    }
+
 });
 
 //POST /api/auth/logout
@@ -122,15 +227,60 @@ router.post("/logout", requireAuth,
 );
 
 // GET /api/auth/me
-router.get("/me", requireAuth, (req, res) => {
-  res.json({
-    id: req.user.id,
-    username: req.user.username,
-    first_name: req.user.first_name,
-    last_name: req.user.last_name,
-    role: req.user.role
-  });
-});
+router.get("/me",
+    requireAuth,
+    async (req, res) => {
+
+        const [schools] =
+            await db.query(
+                `
+                SELECT
+                    s.id,
+                    s.name,
+                    st.is_admin
+                FROM school_teachers st
+                INNER JOIN schools s
+                    ON s.id = st.school_id
+                WHERE st.teacher_id = ?
+                ORDER BY s.name
+                `,
+                [req.user.id]
+            );
+
+        const activeSchool =
+            schools.find(
+                school =>
+                    school.id ===
+                    req.user.active_school_id
+            ) || null;
+
+        res.json({
+
+            id: req.user.id,
+
+            username:
+                req.user.username,
+
+            first_name:
+                req.user.first_name,
+
+            last_name:
+                req.user.last_name,
+
+            role: req.user.role,
+
+            active_school_id:
+                req.user.active_school_id,
+
+            active_school:
+                activeSchool,
+
+            schools
+
+        });
+
+    }
+);
 
 // POST /api/auth/sessions
 router.get("/sessions", requireAuth,

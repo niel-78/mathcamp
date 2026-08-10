@@ -11,7 +11,7 @@ import { getAppSettings } from "../utils/getAppSettings.js";
 const router = express.Router();
 
 router.use(requireAuth);
-router.use(requireRole("teacher", "admin"));
+router.use(requireRole("teacher"));
 
 
 const storage = multer.diskStorage({
