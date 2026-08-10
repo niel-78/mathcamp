@@ -19,7 +19,8 @@ import { Card, CardContent } from "@/components/ui/card";
 
 export default function ExamPage({
     attemptId,
-    onExit
+    onExit,
+    onLocked
 }) {
 
     usePreventBackButton();
@@ -45,6 +46,17 @@ export default function ExamPage({
             return;
         }
 
+        if (attempt.status === "locked") {
+
+            toast.error(
+                "Provet har låsts."
+            );
+
+            onLocked();
+
+            return;
+        }
+
         if (attempt.status === "submitted") {
 
             toast.error(
@@ -55,7 +67,11 @@ export default function ExamPage({
 
         }
 
-    }, [attempt, onExit]);
+    }, [
+        attempt,
+        onExit,
+        onLocked
+    ]);
 
     if (loading) {
         return <p>Laddar prov...</p>;
@@ -96,10 +112,6 @@ export default function ExamPage({
         questionId,
         optionId
     ) => {
-        console.log("Valt alternativ:", {
-            questionId,
-            optionId,
-        });
 
         setAnswers(prev => {
             const next = {

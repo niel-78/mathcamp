@@ -61,12 +61,23 @@ router.get("/:id/status", async (req, res) => {
                 ]
             );
 
-            console.log({
-                exam_status: rows[0].exam_status,
-                admitted:
-                    waitingRows.length > 0 &&
-                    waitingRows[0].admitted_at !== null
-            });
+        const [[attempt]] =
+            await db.query(
+                `
+                SELECT
+                    id,
+                    status
+                FROM exam_attempts
+                WHERE
+                    group_exam_id = ?
+                    AND user_id = ?
+                LIMIT 1
+                `,
+                [
+                    req.params.id,
+                    req.user.id
+                ]
+            );
 
             res.json({
 
@@ -78,7 +89,13 @@ router.get("/:id/status", async (req, res) => {
 
                 admitted:
                     waitingRows.length > 0 &&
-                    waitingRows[0].admitted_at !== null
+                    waitingRows[0].admitted_at !== null,
+
+                attempt_id:
+                    attempt?.id || null,
+
+                attempt_status:
+                    attempt?.status || null
 
             });
     }
@@ -86,8 +103,6 @@ router.get("/:id/status", async (req, res) => {
 
 // POST /api/group-exams/join
 router.post("/join", async (req, res) => {
-
-    console.log("JOIN");
 
     const { group_exam_key } = req.body;
 
@@ -245,12 +260,6 @@ router.post("/find", async (req, res) => {
             });
 
         }
-
-        console.log(groupExam);
-        console.log(
-            typeof groupExam.waiting_room_open,
-            groupExam.waiting_room_open
-        );
 
         if (!groupExam.waiting_room_open) {
 

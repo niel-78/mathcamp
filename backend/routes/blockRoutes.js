@@ -511,7 +511,6 @@ router.post("/:blockId/questions", async (req, res) => {
 // DELETE /api/teacher/questions/:questionId
 router.delete("/questions/:questionId", async (req, res) => {
 
-        console.log("HIT!!!");
 
         const connection =
             await db.getConnection();

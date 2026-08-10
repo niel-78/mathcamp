@@ -20,6 +20,10 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+    statusLabels,
+    statusClasses
+} from "@/constants/studentStatuses";
 
 
 export default function GroupExamMonitorTab({
@@ -270,6 +274,12 @@ export default function GroupExamMonitorTab({
         }
 
         if (
+            student.status === "locked"
+        ) {
+            return "locked";
+        }
+
+        if (
             student.joined_at
         ) {
             return "waiting_room";
@@ -396,30 +406,14 @@ return (
                                     <strong>Status:</strong>
                                     {" "}
 
-                                    {
-                                        selectedStudentStatus === "in_progress" &&
-                                        <div className="text-green-600 font-medium">
-                                            Skriver prov
-                                        </div>
-                                    }
-                                    {
-                                        selectedStudentStatus === "waiting_room" &&
-                                        <div className="text-yellow-600 font-medium">
-                                            Väntrum
-                                        </div>
-                                    }
-                                    {
-                                        status === "submitted" &&
-                                        <div className="text-blue-600 font-medium">
-                                            Inlämnat
-                                        </div>
-                                    }
-                                    {
-                                        selectedStudentStatus === "submitted" &&
-                                        <div className="text-blue-600 font-medium">
-                                            Inlämnat
-                                        </div>
-                                    }
+                                    <div
+                                        className={`
+                                            ${statusClasses[selectedStudentStatus]}
+                                            font-medium
+                                        `}
+                                    >
+                                        {statusLabels[selectedStudentStatus]}
+                                    </div>
 
                                 </div>
 

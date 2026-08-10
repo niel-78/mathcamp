@@ -98,6 +98,24 @@ router.post("/", async (req, res) => {
             exam_id
         } = req.body;
 
+        const [[exam]] =
+        await db.query(
+            `
+            SELECT exam_config
+            FROM exams
+            WHERE id = ?
+            `,
+            [exam_id]
+        );
+
+        if (!exam) {
+
+            return res.status(404).json({
+                error: "Provet hittades inte."
+            });
+
+        }
+
         const generateUniqueGroupExamKey =
             async () => {
 
@@ -135,14 +153,16 @@ router.post("/", async (req, res) => {
                 INSERT INTO group_exams (
                     group_id,
                     exam_id,
-                    group_exam_key
+                    group_exam_key,
+                    exam_config
                 )
-                VALUES (?, ?, ?)
+                VALUES (?, ?, ?, ?)
                 `,
                 [
                     group_id,
                     exam_id,
-                    groupExamKey
+                    groupExamKey,
+                    exam.exam_config
                 ]
             );
 
@@ -205,8 +225,6 @@ router.get("/:id", async (req, res) => {
         return res.sendStatus(404);
     }
 
-    console.log(groupExam);
-
     res.json(groupExam);
 
 });
@@ -215,24 +233,9 @@ router.put("/:id", async (req, res) => {
 
     const {
         exam_config,
+
         waiting_room_open,
-        time_limit_minutes,
-
-        shuffle_order_questions,
-        shuffle_order_options,
-
-        allow_go_to_previous_question,
-        never_repeat_question,
-
-        show_calculator,
-        show_formula_sheet,
-
         max_attempts,
-
-        show_result_immediately,
-        use_different_questions_in_block,
-
-        exam_status,
 
         available_from,
         available_until
@@ -243,22 +246,9 @@ router.put("/:id", async (req, res) => {
         UPDATE group_exams
         SET
             exam_config = ?,
+
             waiting_room_open = ?,
-            time_limit_minutes = ?,
-
-            shuffle_order_questions = ?,
-            shuffle_order_options = ?,
-
-            allow_go_to_previous_question = ?,
-            never_repeat_question = ?,
-
-            show_calculator = ?,
-            show_formula_sheet = ?,
-
             max_attempts = ?,
-
-            show_result_immediately = ?,
-            use_different_questions_in_block = ?,
 
             available_from = ?,
             available_until = ?
@@ -269,23 +259,9 @@ router.put("/:id", async (req, res) => {
             JSON.stringify(
                 exam_config || {}
             ),
+
             waiting_room_open,
-
-            time_limit_minutes,
-
-            shuffle_order_questions,
-            shuffle_order_options,
-
-            allow_go_to_previous_question,
-            never_repeat_question,
-
-            show_calculator,
-            show_formula_sheet,
-
             max_attempts,
-
-            show_result_immediately,
-            use_different_questions_in_block,
 
             formatDateTime(
                 available_from
@@ -446,25 +422,33 @@ router.get("/:id/monitor", async (req, res) => {
             WHERE ge.id = ?
 
             ORDER BY
-                CASE
 
-                    WHEN ea.status = 'in_progress'
-                        THEN 1
+            CASE
 
-                    WHEN wr.joined_at IS NOT NULL
-                        THEN 2
+                WHEN ea.status = 'in_progress'
+                    THEN 1
 
-                    WHEN ea.status = 'submitted'
-                        THEN 3
+                WHEN ea.status = 'locked'
+                    THEN 2
 
-                    ELSE 4
+                WHEN wr.joined_at IS NOT NULL
+                    THEN 3
 
-                END,
+                WHEN ea.status = 'submitted'
+                    THEN 4
+
+                ELSE 5
+
+            END,
 
                 u.first_name,
                 u.last_name
             `,
             [req.params.id]
+        );
+
+        console.log(
+            JSON.stringify(rows, null, 2)
         );
 
         res.json(rows);

@@ -29,11 +29,20 @@ export const eventLabels = {
 
     terminated_all_by_teacher:
         "Provet avslutades när läraren avslutade samtliga prov",
-        
-    resumed_by_teacher:
-        "Provet återupptogs av läraren",
 
     attempt_resumed:
         "Eleven återupptog ett pågående prov",
+
+    attempt_locked:
+        "Provet låstes automatiskt",
+
+    unlocked_by_teacher:
+        "Provet låstes upp av läraren",
+
+    resumed_by_teacher:
+        "Provet återupptogs av läraren",
+
+    attempt_resumed_after_lock:
+        "Eleven återupptog provet efter låsning"
 
 };

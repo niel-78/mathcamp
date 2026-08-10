@@ -265,8 +265,6 @@ router.delete("/:id/students/:studentId", async (req, res) => {
             ]
         );
 
-        console.log(result);
-
         if (result.affectedRows === 0) {
             return res.status(404).json({
                 error: "Eleven finns inte i gruppen."

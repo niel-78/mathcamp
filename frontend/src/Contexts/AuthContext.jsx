@@ -11,8 +11,6 @@ export function AuthProvider({ children }) {
     const [loading, setLoading] = useState(true);
     const { appSettings } = useAppSettings();
 
-    console.log("APP SETTINGS", appSettings);
-
     useEffect(() => {
 
         const token = localStorage.getItem("token");
@@ -37,8 +35,6 @@ export function AuthProvider({ children }) {
 
             })
             .then(data => {
-
-                console.log("AUTH USER", data);
 
                 setUser(data);
 

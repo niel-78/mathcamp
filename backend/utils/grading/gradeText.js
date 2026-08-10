@@ -1,7 +1,6 @@
 import { normalizeAnswer }
     from "../normalizeAnswer.js";
 
-console.log("-> gradeText");
 
 export const gradeText = (
     studentAnswer,

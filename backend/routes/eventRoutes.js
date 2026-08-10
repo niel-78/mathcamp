@@ -16,6 +16,8 @@ DELETE /api/events/:id
 // POST /api/events
 router.post("/", async (req, res) => {
 
+    console.log("EVENT RECEIVED");
+
     const {
         attempt_id,
         event_type,
@@ -40,11 +42,145 @@ router.post("/", async (req, res) => {
         ]
     );
 
+    const [[attempt]] =
+        await db.query(
+            `
+            SELECT
+                exam_config
+            FROM exam_attempts
+            WHERE id = ?
+            `,
+            [attempt_id]
+        );
+
+    if (attempt) {
+
+        const config =
+            JSON.parse(
+                attempt.exam_config || "{}"
+            );
+            
+        console.log(
+            "EVENT TYPE",
+            event_type
+        );
+
+        console.log(
+            "CONFIG",
+            config
+        );
+
+        const eventLockMap = {
+
+            tab_hidden:
+                "lock_tab_hidden",
+
+            window_blur:
+                "lock_window_blur",
+
+            context_menu:
+                "lock_context_menu",
+
+            page_unload:
+                "lock_page_unload"
+
+        };
+
+        const configKey =
+            eventLockMap[event_type];
+        
+        console.log(
+            "CONFIG KEY",
+            configKey
+        );
+
+        const shouldLock =
+            configKey &&
+            config.monitoring?.[configKey];
+
+        console.log(
+            "SHOULD LOCK",
+            shouldLock
+        );
+
+        if (shouldLock) {
+
+            await db.query(
+                `
+                UPDATE exam_attempts
+                SET status = 'locked'
+                WHERE id = ?
+                `,
+                [attempt_id]
+            );
+
+            await db.query(
+                `
+                INSERT INTO exam_events (
+                    attempt_id,
+                    event_type,
+                    event_data
+                )
+                VALUES (?, ?, ?)
+                `,
+                [
+                    attempt_id,
+                    "attempt_locked",
+                    JSON.stringify({
+                        reason: event_type
+                    })
+                ]
+            );
+
+        }
+
+    }
+
     res.json({
         success: true
     });
 
 });
+
+
+// GET /api/events/attempt/:attemptId/lock-reason
+router.get("/attempt/:attemptId/lock-reason",
+    async (req, res) => {
+
+        const [[event]] =
+            await db.query(
+                `
+                SELECT event_data
+                FROM exam_events
+                WHERE
+                    attempt_id = ?
+                    AND event_type = 'attempt_locked'
+                ORDER BY created_at DESC
+                LIMIT 1
+                `,
+                [req.params.attemptId]
+            );
+
+        if (!event) {
+
+            return res.json({
+                reason: null
+            });
+
+        }
+
+        const data =
+            JSON.parse(
+                event.event_data || "{}"
+            );
+
+        res.json({
+            reason: data.reason
+        });
+
+    }
+);
+
 
 // GET /api/events/:id
 // DELETE /api/events/:id

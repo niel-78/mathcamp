@@ -147,11 +147,6 @@ router.delete("/:id", async (req, res) => {
                 connection
             );
 
-        console.log(settings);
-        console.log(
-            settings.first_question_in_block_can_be_deleted
-        );
-
         const [questionRows] =
             await connection.query(
                 `

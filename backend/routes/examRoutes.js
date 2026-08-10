@@ -155,7 +155,6 @@ router.get("/:examId", async (req, res) => {
 //PUT /api/exams/:examId
 router.put("/:examId", async (req, res) => {
     const { title } = req.body;
-    console.log("uppdatera titel")
     await db.query(
         `
         UPDATE exams
@@ -258,8 +257,6 @@ router.post("/:examId/library-blocks",
 
 //GET /api/exams/:examId/copy
 router.post("/:examId/copy", async (req, res) => {
-
-    console.log("COPY ROUTE HIT");
 
     const [examRows] = await db.query(
         `
@@ -604,10 +601,6 @@ router.delete("/:examId/blocks/:blockId", async (req, res) => {
 router.put("/:examId/blocks/:blockId/order",
     async (req, res) => {
 
-        console.log("ORDER ROUTE HIT!!");
-        console.log(req.params);
-        console.log(req.body);
-        
         const { sort_order } = req.body;
 
         await db.query(

@@ -242,7 +242,7 @@ CREATE TABLE exams (
 
     deleted_at DATETIME NULL,
 
-    exam_config JSON DEFAULT JSON_OBJECT('allowCalculator', 'false','allowFormulaSheet','true','defaultTimeLimit',60000)
+    exam_config JSON DEFAULT JSON_OBJECT('allowCalculator', false, 'allowFormulaSheet', true, 'defaultTimeLimitMinutes', 60000, 'lock_tab_hidden', true, 'lock_window_blur', true, 'lock_context_menu', true, 'lock_page_unload', false)
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 /*Personal kopplat till prov*/
@@ -302,6 +302,7 @@ VALUES
 (1, 'Niklas grupp'),(2, 'Jolines grupp');
 
 /*Provtillfällen*/
+/*
 CREATE TABLE group_exams (
     id INT AUTO_INCREMENT PRIMARY KEY,
 
@@ -309,7 +310,88 @@ CREATE TABLE group_exams (
     exam_id INT NOT NULL,
 
     group_exam_key VARCHAR(50) UNIQUE,
-    exam_config JSON DEFAULT JSON_OBJECT(),
+    exam_config JSON DEFAULT JSON_OBJECT('allowCalculator', false, 'allowFormulaSheet', true, 'defaultTimeLimitMinutes', 60000, 'lock_tab_hidden', true, 'lock_window_blur', true, 'lock_context_menu', true, 'lock_page_unload',false),
+
+    waiting_room_open BOOLEAN NOT NULL DEFAULT TRUE,
+
+    time_limit_minutes INT DEFAULT NULL,
+
+    shuffle_order_questions BOOLEAN NOT NULL DEFAULT FALSE,
+    shuffle_order_options BOOLEAN NOT NULL DEFAULT TRUE,
+
+    use_different_questions_in_block BOOLEAN NOT NULL DEFAULT TRUE,
+
+    allow_go_to_previous_question BOOLEAN NOT NULL DEFAULT TRUE,
+    never_repeat_question BOOLEAN NOT NULL DEFAULT TRUE,
+
+    show_calculator BOOLEAN NOT NULL DEFAULT FALSE,
+    show_formula_sheet BOOLEAN NOT NULL DEFAULT FALSE,
+
+    max_attempts INT NOT NULL DEFAULT 1,
+
+    show_result_immediately BOOLEAN DEFAULT TRUE,
+
+    exam_status ENUM(
+        'waiting',
+        'open',
+        'closed'
+    ) NOT NULL DEFAULT 'waiting',
+    available_from DATETIME DEFAULT NULL,
+    available_until DATETIME DEFAULT NULL,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_group_exams_group
+        FOREIGN KEY (group_id)
+        REFERENCES groups(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_group_exams_exam
+        FOREIGN KEY (exam_id)
+        REFERENCES exams(id)
+        ON DELETE CASCADE,
+
+    UNIQUE KEY unique_group_exam (group_id, exam_id)
+);
+*/
+
+CREATE TABLE group_exams (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    group_id INT NOT NULL,
+    exam_id INT NOT NULL,
+
+    group_exam_key VARCHAR(50) UNIQUE,
+    exam_config JSON DEFAULT JSON_OBJECT(
+
+        'exam',
+        JSON_OBJECT(
+            'defaultTimeLimitMinutes', 15
+        ),
+
+        'presentation',
+        JSON_OBJECT(
+            'allowCalculator', false,
+            'allowFormulaSheet', true
+        ),
+
+        'monitoring',
+        JSON_OBJECT(
+            'lock_tab_hidden', true,
+            'lock_window_blur', true,
+            'lock_context_menu', true,
+            'lock_page_unload', false
+        ),
+
+        'navigation',
+        JSON_OBJECT(
+            'allowGoToPreviousQuestion', true
+        ),
+
+        'question_selection',
+        JSON_OBJECT()
+
+    ),
 
     waiting_room_open BOOLEAN NOT NULL DEFAULT TRUE,
 
@@ -443,7 +525,8 @@ CREATE TABLE exam_attempts (
         'not_started',
         'in_progress',
         'submitted',
-        'graded'
+        'graded',
+        'locked'
     ) DEFAULT 'not_started',
     UNIQUE (group_exam_id, user_id),
     FOREIGN KEY (user_id) REFERENCES users(id),

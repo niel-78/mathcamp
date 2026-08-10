@@ -4,7 +4,8 @@ import { authHeaders } from "@/api/authHeaders";
 
 export default function WaitingRoomPage({
     groupExam,
-    onStart
+    onStart,
+    onLocked
 }) {
 
     const [status, setStatus] = useState(
@@ -15,8 +16,6 @@ export default function WaitingRoomPage({
 
         const interval = setInterval(
             async () => {
-
-                console.log(groupExam.group_exam_id);
 
                 const response =
                     await fetch(
@@ -42,6 +41,25 @@ export default function WaitingRoomPage({
                 setStatus(
                     data.exam_status
                 );
+                if (
+                    data.attempt_status === "locked"
+                ) {
+
+                    console.log(
+                        "LOCKED ATTEMPT FOUND"
+                    );
+
+                    clearInterval(
+                        interval
+                    );
+
+                    onLocked(
+                        data.attempt_id
+                    );
+
+                    return;
+
+                }
 
                 if (
                     data.exam_status === "open" ||

@@ -32,8 +32,6 @@ router.get("/:id", async (req, res) => {
 
     const connection = await db.getConnection();
 
-    console.log("GET ATTEMPT endpoint");
-
     try {
         const { id } = req.params;
 
@@ -343,8 +341,6 @@ router.put("/:id", async (req, res) => {
 // POST /api/exam-attempts/start
 router.post("/start", async (req, res) => {
 
-    console.log("START endpoint");
-
     const connection = await db.getConnection();
 
     try {
@@ -486,28 +482,34 @@ router.post("/start", async (req, res) => {
         /*
          * Har eleven redan startat?
          */
-        const [existingAttempts] = await connection.query(
-            `
-            SELECT
-                id,
-                status,
-                started_ip
-            FROM exam_attempts
-            WHERE group_exam_id = ?
-                AND user_id = ?
-            `,
-            [
-                groupExam.id,
-                req.user.id
-            ]
-        );
+        const [[attempt]] =
+            await connection.query(
+                `
+                SELECT
+                    id,
+                    status,
+                    started_ip
+                FROM exam_attempts
+                WHERE group_exam_id = ?
+                    AND user_id = ?
+                LIMIT 1
+                `,
+                [
+                    groupExam.id,
+                    req.user.id
+                ]
+            );
 
-        if (existingAttempts.length > 0) {
-
-            const attempt =
-                existingAttempts[0];
+        if (attempt) {
 
             if (attempt.status === "in_progress") {
+
+                const currentIp =
+                    req.headers["x-forwarded-for"]
+                        ?.split(",")[0]
+                        ?.trim()
+                    || req.socket.remoteAddress
+                    || null;
 
                 await connection.query(
                     `
@@ -523,11 +525,61 @@ router.post("/start", async (req, res) => {
                     ]
                 );
 
+                await connection.query(
+                    `
+                    INSERT INTO exam_events (
+                        attempt_id,
+                        event_type,
+                        event_data
+                    )
+                    VALUES (?, ?, ?)
+                    `,
+                    [
+                        attempt.id,
+                        "attempt_resumed",
+                        JSON.stringify({
+                            same_ip:
+                                currentIp ===
+                                attempt.started_ip,
+                            current_ip:
+                                currentIp,
+                            original_ip:
+                                attempt.started_ip
+                        })
+                    ]
+                );
+
                 await connection.commit();
 
                 return res.json({
                     attempt_id: attempt.id,
                     resume: true
+                });
+
+            }
+
+            if (attempt.status === "locked") {
+
+                await connection.query(
+                    `
+                    INSERT INTO exam_events (
+                        attempt_id,
+                        event_type
+                    )
+                    VALUES (?, ?)
+                    `,
+                    [
+                        attempt.id,
+                        "attempt_reopened_after_lock"
+                    ]
+                );
+
+                await connection.commit();
+
+                return res.json({
+                    attempt_id: attempt.id,
+                    resume: true,
+                    status: "locked"
                 });
 
             }
@@ -621,12 +673,6 @@ router.post("/start", async (req, res) => {
             ]
         );
 
-        console.log(
-            "Session questions:",
-            session.questions.map(
-                q => q.id
-            )
-        );
 
         for (let i = 0; i < session.questions.length; i++) {
 
@@ -802,8 +848,6 @@ router.post("/:id/terminate",
         const attemptId =
             req.params.id;
 
-        console.log("TERMINATE", attemptId);
-
         await db.query(
             `
             UPDATE exam_attempts
@@ -827,8 +871,6 @@ router.post("/:id/terminate",
             [attemptId]
         );
 
-        console.log(check[0]);
-
         res.json({
             success: true
         });
@@ -851,43 +893,66 @@ router.post("/:id/terminate",
 );
 
 // POST /api/exam-attempts/:id/resume
-router.post("/:id/resume",
-    async (req, res) => {
+router.post("/:id/resume", async (req, res) => {
 
-        const attemptId =
-            req.params.id;
-
+    const [[attempt]] =
         await db.query(
             `
-            UPDATE exam_attempts
-            SET
-                status = 'in_progress',
-                submitted_at = NULL
+            SELECT *
+            FROM exam_attempts
             WHERE id = ?
             `,
-            [attemptId]
+            [req.params.id]
         );
 
-        await db.query(
-            `
-            INSERT INTO exam_events (
-                attempt_id,
-                event_type
-            )
-            VALUES (?, ?)
-            `,
-            [
-                attemptId,
-                "resumed_by_teacher"
-            ]
-        );
+    if (!attempt) {
 
-        res.json({
-            success: true
+        return res.status(404).json({
+            error: "Provtillfället hittades inte."
         });
 
     }
-);
+
+    if (
+        attempt.status !== "submitted" &&
+        attempt.status !== "locked"
+    ) {
+
+        return res.status(400).json({
+            error: "Provet kan inte återupptas."
+        });
+
+    }
+
+    await db.query(
+        `
+        UPDATE exam_attempts
+        SET status = 'in_progress'
+        WHERE id = ?
+        `,
+        [req.params.id]
+    );
+
+    await db.query(
+        `
+        INSERT INTO exam_events (
+            attempt_id,
+            event_type
+        )
+        VALUES (?, ?)
+        `,
+        [
+            req.params.id,
+
+            attempt.status === "locked"
+                ? "unlocked_by_teacher"
+                : "resumed_by_teacher"
+        ]
+    );
+
+    res.sendStatus(204);
+
+});
 
 // GET /api/exam-attempts/:id/results
 router.get("/:id/results", async (req, res) => {

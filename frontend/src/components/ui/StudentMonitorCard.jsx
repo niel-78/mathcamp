@@ -4,7 +4,10 @@ import { Button } from "@/components/ui/button";
 import CardSection from "@/components/layouts/CardSection";
 
 import FormatTime from "@/utils/FormatTime";
-
+import {
+    statusLabels,
+    statusClasses
+} from "@/constants/studentStatuses";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -36,6 +39,9 @@ export default function StudentMonitorCard({
 
     };
 
+    const hasAttempt =
+        !!student.attempt_id;
+
     return (
 
         <CardSection
@@ -50,19 +56,17 @@ export default function StudentMonitorCard({
                     {" "}
 
                     <div
-                        className="
+                        className={`
                             rounded-md
                             px-2
                             py-1
                             text-xs
                             font-medium
                             w-fit
-                        "
+                            ${statusClasses[status]}
+                        `}
                     >
-                        {status === "in_progress" && "Skriver prov"}
-                        {status === "waiting_room" && "Väntrum"}
-                        {status === "submitted" && "Inlämnat"}
-                        {status === "not_joined" && "Ej ansluten"}
+                        {statusLabels[status]}
                     </div>
 
                 </div>
@@ -82,7 +86,7 @@ export default function StudentMonitorCard({
 
                 )}
 
-                {status === "in_progress" ? (
+                {status === "in_progress" && (
 
                     <AlertDialog
                         open={open}
@@ -140,7 +144,21 @@ export default function StudentMonitorCard({
 
                     </AlertDialog>
 
-                ) : status === "submitted" ? (
+                )}
+
+                {status === "locked" && (
+
+                    <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={onResume}
+                    >
+                        Lås upp prov
+                    </Button>
+
+                )}
+
+                {status === "submitted" && (
 
                     <Button
                         variant="outline"
@@ -150,21 +168,25 @@ export default function StudentMonitorCard({
                         Återuppta prov
                     </Button>
 
-                ) : null}
+                )}
 
-                <Button
-                    className="w-full"
-                    variant={
-                        selected
-                            ? "secondary"
-                            : "default"
-                    }
-                    onClick={onSelect}
-                >
-                    {selected
-                        ? "Vald"
-                        : "Visa detaljer"}
-                </Button>
+                {hasAttempt && (
+
+                    <Button
+                        className="w-full"
+                        variant={
+                            selected
+                                ? "secondary"
+                                : "default"
+                        }
+                        onClick={onSelect}
+                    >
+                        {selected
+                            ? "Vald"
+                            : "Visa detaljer"}
+                    </Button>
+
+                )}
 
             </div>
 

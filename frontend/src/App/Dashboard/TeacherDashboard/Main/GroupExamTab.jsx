@@ -67,7 +67,10 @@ export default function GroupExamTab({
         const data =
             await response.json();
 
-        console.log("LOADED", data.exam_status);
+        data.exam_config =
+            typeof data.exam_config === "string"
+                ? JSON.parse(data.exam_config)
+                : (data.exam_config || {});
 
         setGroupExam(data);
         setSavedGroupExam(data);
@@ -193,50 +196,22 @@ export default function GroupExamTab({
                     },
                     body: JSON.stringify({
 
-                        time_limit_minutes:
-                            groupExam.time_limit_minutes
-                                ? Number(
-                                    groupExam.time_limit_minutes
-                                )
-                                : null,
-
                         max_attempts:
                             Number(
                                 groupExam.max_attempts
                             ),
 
                         waiting_room_open:
-                            groupExam.waiting_room_open,    
-
-                        shuffle_order_questions:
-                            groupExam.shuffle_order_questions,
-
-                        shuffle_order_options:
-                            groupExam.shuffle_order_options,
-
-                        use_different_questions_in_block:
-                            groupExam.use_different_questions_in_block,
-
-                        allow_go_to_previous_question:
-                            groupExam.allow_go_to_previous_question,
-
-                        never_repeat_question:
-                            groupExam.never_repeat_question,
-
-                        show_calculator:
-                            groupExam.show_calculator,
-
-                        show_formula_sheet:
-                            groupExam.show_formula_sheet,
-
-                        show_result_immediately:
-                            groupExam.show_result_immediately,
+                            groupExam.waiting_room_open,
 
                         available_from:
                             groupExam.available_from || null,
 
                         available_until:
-                            groupExam.available_until || null
+                            groupExam.available_until || null,
+
+                        exam_config:
+                            groupExam.exam_config
 
                     })
                 }
@@ -276,6 +251,19 @@ export default function GroupExamTab({
 
         }
 
+    };
+
+    const updateConfig = (section, key, value) => {
+        setGroupExam((prev) => ({
+            ...prev,
+            exam_config: {
+                ...prev.exam_config,
+                [section]: {
+                    ...prev.exam_config?.[section],
+                    [key]: value,
+                },
+            },
+        }));
     };
 
     function Field({
@@ -479,16 +467,16 @@ export default function GroupExamTab({
                             <Input
                                 type="number"
                                 value={
-                                    groupExam.time_limit_minutes ?? ""
+                                    groupExam.exam_config?.exam?.defaultTimeLimitMinutes ?? ""
                                 }
                                 onChange={(e) =>
-                                    setGroupExam({
-                                        ...groupExam,
-                                        time_limit_minutes:
-                                            e.target.value
-                                    })
+                                    updateConfig(
+                                        "exam",
+                                        "defaultTimeLimitMinutes",
+                                        Number(e.target.value)
+                                    )
                                 }
-                            />
+                                                            />
                         </Field>
 
                         <Field label="Max försök">
@@ -581,14 +569,14 @@ export default function GroupExamTab({
 
                             <Switch
                                 checked={
-                                    !!groupExam.shuffle_order_questions
+                                    !!groupExam.exam_config?.question_selection?.shuffleQuestions
                                 }
                                 onCheckedChange={(checked) =>
-                                    setGroupExam({
-                                        ...groupExam,
-                                        shuffle_order_questions:
-                                            checked
-                                    })
+                                    updateConfig(
+                                        "question_selection",
+                                        "shuffleQuestions",
+                                        checked
+                                    )
                                 }
                             />
 
@@ -598,14 +586,14 @@ export default function GroupExamTab({
 
                             <Switch
                                 checked={
-                                    !!groupExam.shuffle_order_options
+                                    !!groupExam.exam_config?.question_selection?.shuffleOptions
                                 }
                                 onCheckedChange={(checked) =>
-                                    setGroupExam({
-                                        ...groupExam,
-                                        shuffle_order_options:
-                                            checked
-                                    })
+                                    updateConfig(
+                                        "question_selection",
+                                        "shuffleOptions",
+                                        checked
+                                    )
                                 }
                             />
 
@@ -615,31 +603,14 @@ export default function GroupExamTab({
 
                             <Switch
                                 checked={
-                                    !!groupExam.use_different_questions_in_block
+                                    !!groupExam.exam_config?.question_selection?.useDifferentQuestionsInBlock
                                 }
                                 onCheckedChange={(checked) =>
-                                    setGroupExam({
-                                        ...groupExam,
-                                        use_different_questions_in_block:
-                                            checked
-                                    })
-                                }
-                            />
-
-                        </Field>
-
-                        <Field label="Tillåt att gå tillbaka">
-
-                            <Switch
-                                checked={
-                                    !!groupExam.allow_go_to_previous_question
-                                }
-                                onCheckedChange={(checked) =>
-                                    setGroupExam({
-                                        ...groupExam,
-                                        allow_go_to_previous_question:
-                                            checked
-                                    })
+                                    updateConfig(
+                                        "question_selection",
+                                        "useDifferentQuestionsInBlock",
+                                        checked
+                                    )
                                 }
                             />
 
@@ -649,14 +620,109 @@ export default function GroupExamTab({
 
                             <Switch
                                 checked={
-                                    !!groupExam.never_repeat_question
+                                    !!groupExam.exam_config?.question_selection?.neverRepeatQuestion
                                 }
                                 onCheckedChange={(checked) =>
-                                    setGroupExam({
-                                        ...groupExam,
-                                        never_repeat_question:
-                                            checked
-                                    })
+                                    updateConfig(
+                                        "question_selection",
+                                        "neverRepeatQuestion",
+                                        checked
+                                    )
+                                }
+                            />
+
+                        </Field>
+
+                        <Field label="Tillåt att gå tillbaka">
+
+                            <Switch
+                                checked={
+                                    !!groupExam.exam_config?.navigation?.allowGoToPreviousQuestion
+                                }
+                                onCheckedChange={(checked) =>
+                                    updateConfig(
+                                        "navigation",
+                                        "allowGoToPreviousQuestion",
+                                        checked
+                                    )
+                                }
+                            />
+
+                        </Field>
+
+                    </div>
+
+                </CardSection>
+
+                <CardSection
+                    title="Övervakning och låsning"
+                >
+
+                    <div className="space-y-4">
+
+                        <Field label="Lås vid flikbyte">
+
+                            <Switch
+                                checked={
+                                    !!groupExam.exam_config?.monitoring?.lock_tab_hidden
+                                }
+                                onCheckedChange={(checked) =>
+                                    updateConfig(
+                                        "monitoring",
+                                        "lock_tab_hidden",
+                                        checked
+                                    )
+                                }
+                            />
+
+                        </Field>
+
+                        <Field label="Lås vid fokusförlust">
+
+                            <Switch
+                                checked={
+                                    !!groupExam.exam_config?.monitoring?.lock_window_blur
+                                }
+                                onCheckedChange={(checked) =>
+                                    updateConfig(
+                                        "monitoring",
+                                        "lock_window_blur",
+                                        checked
+                                    )
+                                }
+                            />
+
+                        </Field>
+
+                        <Field label="Lås vid högerklick">
+
+                            <Switch
+                                checked={
+                                    !!groupExam.exam_config?.monitoring?.lock_context_menu
+                                }
+                                onCheckedChange={(checked) =>
+                                    updateConfig(
+                                        "monitoring",
+                                        "lock_context_menu",
+                                        checked
+                                    )
+                                }
+                            />
+
+                        </Field>
+
+                        <Field label="Lås vid sidstängning">
+
+                            <Switch
+                                checked={
+                                    !!groupExam.exam_config?.monitoring?.lock_page_unload
+                                }
+                                onCheckedChange={(checked) =>
+                                    updateConfig(
+                                        "monitoring",
+                                        "lock_page_unload",
+                                        checked
+                                    )
                                 }
                             />
 
@@ -676,14 +742,14 @@ export default function GroupExamTab({
 
                             <Switch
                                 checked={
-                                    !!groupExam.show_calculator
+                                    groupExam.exam_config?.presentation?.allowCalculator
                                 }
                                 onCheckedChange={(checked) =>
-                                    setGroupExam({
-                                        ...groupExam,
-                                        show_calculator:
-                                            checked
-                                    })
+                                    updateConfig(
+                                        "presentation",
+                                        "allowCalculator",
+                                        checked
+                                    )
                                 }
                             />
 
@@ -693,14 +759,14 @@ export default function GroupExamTab({
 
                             <Switch
                                 checked={
-                                    !!groupExam.show_formula_sheet
+                                    groupExam.exam_config?.presentation?.allowFormulaSheet
                                 }
                                 onCheckedChange={(checked) =>
-                                    setGroupExam({
-                                        ...groupExam,
-                                        show_formula_sheet:
-                                            checked
-                                    })
+                                    updateConfig(
+                                        "presentation",
+                                        "allowFormulaSheet",
+                                        checked
+                                    )
                                 }
                             />
 
@@ -709,16 +775,16 @@ export default function GroupExamTab({
                         <Field label="Visa resultat direkt">
 
                             <Switch
-                                checked={
-                                    !!groupExam.show_result_immediately
-                                }
-                                onCheckedChange={(checked) =>
-                                    setGroupExam({
-                                        ...groupExam,
-                                        show_result_immediately:
-                                            checked
-                                    })
-                                }
+                            checked={
+                                !!groupExam.exam_config?.presentation?.showResultImmediately
+                            }
+                            onCheckedChange={(checked) =>
+                                updateConfig(
+                                    "presentation",
+                                    "showResultImmediately",
+                                    checked
+                                )
+                            }
                             />
 
                         </Field>
