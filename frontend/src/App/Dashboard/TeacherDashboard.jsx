@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import {
     DndContext,
-    pointerWithin
+    DragOverlay,
+    pointerWithin,
+    closestCenter
 } from "@dnd-kit/core";
 import {
     ResizablePanelGroup,
@@ -17,6 +19,8 @@ import Main from "./TeacherDashboard/Main";
 export default function TeacherDashboard() {
 
     const [splitView, setSplitView] = useState(false);
+    const [activeBlock, setActiveBlock] = useState(null);
+    const [activeDragType, setActiveDragType] = useState(null);
 
     const [darkMode, setDarkMode] =
     useState(
@@ -181,10 +185,17 @@ export default function TeacherDashboard() {
 
     };
 
+
     const handleDragEnd = async ({
         active,
         over
     }) => {
+
+        console.log(
+            "DRAG END",
+            active?.id,
+            over?.id
+        );
 
         if (!over) {
             return;
@@ -231,7 +242,7 @@ export default function TeacherDashboard() {
         */
         if (
             String(active.id).startsWith("tab-") &&
-            String(over.id).startsWith("panel-")
+            String(over.id).startsWith("tab-panel-")
         ) {
 
             const {
@@ -241,7 +252,7 @@ export default function TeacherDashboard() {
 
             const targetArea =
                 over.id.replace(
-                    "panel-",
+                    "tab-panel-",
                     ""
                 );
 
@@ -472,12 +483,46 @@ export default function TeacherDashboard() {
 
         <DndContext
             collisionDetection={pointerWithin}
-            onDragOver={({ over }) => {
-                setHoverTarget(over?.id ?? null);
+            onDragStart={({ active }) => {
+
+                const type =
+                    active.data.current?.type;
+
+                setActiveDragType(type);
+
+                if (active.data.current?.block) {
+
+                    setActiveBlock(
+                        active.data.current.block
+                    );
+
+                }
+
+            }}
+            onDragOver={(event) => {
+
+                console.log(
+                    "TYPE:",
+                    event.active.data.current?.type,
+                    "OVER:",
+                    event.over?.id
+                );
+
+                setHoverTarget(
+                    event.over?.id ?? null
+                );
+
             }}
             onDragEnd={(event) => {
+
+                setActiveDragType(null);
+
+                setActiveBlock(null);
+
                 setHoverTarget(null);
+
                 handleDragEnd(event);
+
             }}
         >
 
@@ -552,6 +597,7 @@ export default function TeacherDashboard() {
 
                                     <Main
                                         area="left"
+                                        activeDragType={activeDragType}
                                         hoverTarget={hoverTarget}
                                         tabs={leftTabs}
                                         activeTab={activeLeftTab}
@@ -577,6 +623,7 @@ export default function TeacherDashboard() {
 
                                             <Main
                                                 area="left"
+                                                activeDragType={activeDragType}
                                                 hoverTarget={hoverTarget}
                                                 tabs={leftTabs}
                                                 activeTab={activeLeftTab}
@@ -596,6 +643,7 @@ export default function TeacherDashboard() {
 
                                             <Main
                                                 area="right"
+                                                activeDragType={activeDragType}
                                                 hoverTarget={hoverTarget}
                                                 tabs={rightTabs}
                                                 activeTab={activeRightTab}
@@ -620,6 +668,26 @@ export default function TeacherDashboard() {
                 </ResizablePanelGroup>
 
             </div>
+
+            <DragOverlay>
+
+                {activeBlock && (
+
+                    <div
+                        className="
+                            card
+                            w-[500px]
+                            pointer-events-none
+                        "
+                    >
+
+                        {activeBlock.questions?.[0]?.question}
+
+                    </div>
+
+                )}
+
+            </DragOverlay>
 
         </DndContext>
 

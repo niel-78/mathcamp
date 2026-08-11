@@ -23,6 +23,7 @@ export default function Main({
     blockRefreshKey,
     openTab,
     area,
+    activeDragType,
     hoverTarget
 }) {
     
@@ -31,10 +32,6 @@ export default function Main({
     const [ selectedExamId,
             setSelectedExamId
             ] = useState(null);
-
-    const { setNodeRef } = useDroppable({
-        id: `panel-${area}`
-    });
 
     const closeTab = (tabId) => {
 
@@ -72,15 +69,9 @@ export default function Main({
     return (
 
         <div
-            ref={setNodeRef}
             className={`
                 h-full
                 transition-all
-                ${
-                    hoverTarget === `panel-${area}`
-                        ? "ring-2 ring-blue-500 bg-blue-50"
-                        : ""
-                }
             `}
         >
 
@@ -95,6 +86,7 @@ export default function Main({
 
                 <TabBar
                     tabs={tabs}
+                    activeDragType={activeDragType}
                     activeTab={activeTab}
                     setActiveTab={setActiveTab}
                     setTabs={setTabs}
@@ -135,6 +127,7 @@ export default function Main({
                         <ExamTab
                             examId={currentTab.examId}
                             examTitle={currentTab.title}
+                            activeDragType={activeDragType}
                             openTab={(tab) =>
                                 openTab(tab, area)
                             }

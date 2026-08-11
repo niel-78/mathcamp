@@ -146,143 +146,22 @@ export default function UserProfileDialog({
                     </div>
 
                     
-                    {isTeacher && (
+                    {user.school && (
 
-                        <>
-                        
-                            <CardSection title="Aktiv skola">
+                        <CardSection title="Skola">
 
-                                {user.active_school ? (
+                            <div>
+                                <strong>Skola:</strong>
+                                {" "}
+                                {user.school.name}
+                            </div>
 
-                                    <div className="space-y-2">
-
-                                        <div>
-
-                                            <strong>Skola:</strong>
-                                            {" "}
-                                            {user.active_school.name}
-
-                                        </div>
-
-                                        <div>
-
-                                            <strong>Behörighet:</strong>
-                                            {" "}
-                                            {user.active_school.is_admin
-                                                ? "Skoladministratör"
-                                                : "Lärare"}
-
-                                        </div>
-
-                                    </div>
-
-                                ) : (
-
-                                    <p className="text-muted-foreground">
-                                        Ingen aktiv skola vald.
-                                    </p>
-
-                                )}
-
-                            </CardSection>
-
-                            {user.schools.length > 1 && (
-
-                                <CardSection title="Byt skola">
-
-                                    <select
-                                        value={user.active_school_id}
-                                        onChange={handleSchoolChange}
-                                        className="
-                                            w-full
-                                            rounded-md
-                                            border
-                                            bg-background
-                                            p-2
-                                        "
-                                    >
-
-                                        {user.schools.map(
-                                            school => (
-
-                                                <option
-                                                    key={school.id}
-                                                    value={school.id}
-                                                >
-
-                                                    {school.name}
-                                                    {" "}
-                                                    (
-                                                    {school.is_admin
-                                                        ? "Administratör"
-                                                        : "Lärare"}
-                                                    )
-
-                                                </option>
-
-                                            )
-                                        )}
-
-                                    </select>
-
-                                </CardSection>
-
-                            )}
-
-                        </>
-
-                    )}
-
-                    {user.schools?.length > 0 && (
-
-                        <CardSection title="Mina skolor">
-
-                            <div className="space-y-2">
-
-                                {user.schools.map(
-                                    school => (
-
-                                        <div
-                                            key={school.id}
-                                            className="
-                                                flex
-                                                justify-between
-                                                rounded-md
-                                                border
-                                                p-2
-                                            "
-                                        >
-
-                                            <span>
-
-                                                {school.name}
-
-                                                {school.id ===
-                                                    user.active_school_id &&
-                                                    " ✓"}
-
-                                            </span>
-
-                                            <span
-                                                className="
-                                                    text-sm
-                                                    text-muted-foreground
-                                                "
-                                            >
-
-                                                {
-                                                    school.is_admin
-                                                        ? "Administratör"
-                                                        : "Lärare"
-                                                }
-
-                                            </span>
-
-                                        </div>
-
-                                    )
-                                )}
-
+                            <div>
+                                <strong>Behörighet:</strong>
+                                {" "}
+                                {user.school.is_admin
+                                    ? "Lärare och admin"
+                                    : "Lärare"}
                             </div>
 
                         </CardSection>

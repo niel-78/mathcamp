@@ -3,6 +3,7 @@ import db from "../db.js";
 import hydrateBlocks from "../utils/hydrateBlocks.js";
 import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
+import getExamRole from "../utils/getExamRole.js";
 
 const router = express.Router();
 
@@ -33,12 +34,15 @@ router.get("/", async (req, res) => {
         const [exams] = await db.query(
             `
             SELECT
-                e.*
+                e.*,
+                ep.role
             FROM exams e
-            INNER JOIN exam_users eu
-                ON eu.exam_id = e.id
-            WHERE e.deleted_at IS NULL AND eu.user_id = ?
-            ORDER BY e.title
+            INNER JOIN exam_permissions ep
+                ON ep.exam_id = e.id
+            WHERE
+                e.deleted_at IS NULL
+                AND ep.teacher_id = ?
+            ORDER BY e.title;
             `,
             [req.user.id]
         );
@@ -89,19 +93,22 @@ router.post("/", async (req, res) => {
 
     await db.query(
         `
-        INSERT INTO exam_users (
+        INSERT INTO exam_permissions (
             exam_id,
-            user_id,
-            is_owner
+            teacher_id,
+            role
         )
-        VALUES (?, ?, 1)
+        VALUES (
+            ?,
+            ?,
+            'owner'
+        )
         `,
-        [result.insertId, req.user.id]
+        [
+            result.insertId,
+            req.user.id
+        ]
     );
-    res.status(201).json({
-        id: result.insertId,
-        title
-    });
 });
 
 
@@ -122,6 +129,11 @@ router.get("/:examId", async (req, res) => {
             error: "Exam not found"
         });
     }
+
+    const role = await getExamRole(
+        req.params.examId,
+        req.user.id
+    );
 
     const [blocks] = await db.query(
         `
@@ -148,6 +160,7 @@ router.get("/:examId", async (req, res) => {
 
     res.json({
         ...examRows[0],
+        role,
         blocks,
         groupExams
     });
@@ -186,9 +199,9 @@ router.delete("/:examId", async (req, res) => {
 
         await db.query(
             `
-            DELETE FROM exam_users
+            DELETE FROM exam_permissions
             WHERE exam_id = ?
-                AND user_id = ?
+                AND teacher_id = ?
             `,
             [
                 req.params.examId,
@@ -514,6 +527,44 @@ router.post("/:examId/blocks", async (req, res) => {
         id: blockResult.insertId
     });
 });
+
+// DELETE /api//exams/:examId/blocks
+router.delete("/:examId/blocks/:blockId",
+    async (req, res) => {
+
+        const role =
+            await getExamRole(
+                req.params.examId,
+                req.user.id
+            );
+
+        if (
+            role !== "owner"
+        ) {
+
+            return res.status(403).json({
+                error: "Endast ägeren kan ta bort block."
+            });
+
+        }
+
+        await db.query(
+            `
+            DELETE FROM exam_blocks
+            WHERE exam_id = ?
+            AND block_id = ?
+            `,
+            [
+                req.params.examId,
+                req.params.blockId
+            ]
+        );
+
+        res.sendStatus(204);
+
+    }
+);
+
 
 // POST /api/exams/:examId/import-block
 router.post("/:examId/import-block",

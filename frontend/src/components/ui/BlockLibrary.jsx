@@ -9,8 +9,31 @@ export default function BlockLibrary({
     blocks,
     openTab,
     onDelete,
-    onReload
+    onReload,
+    dragPrefix
 }) {
+
+
+    const copyBlock = async (
+        blockId
+    ) => {
+
+        const response =
+            await fetch(
+                `${API_URL}/api/blocks/${blockId}/copy`,
+                {
+                    method: "POST",
+                    headers: authHeaders()
+                }
+            );
+
+        if (!response.ok) {
+            return;
+        }
+
+        onReload();
+
+    };
 
     const removeCentralContent = async (
         blockId,
@@ -47,6 +70,57 @@ export default function BlockLibrary({
     };
 
 
+    const myBlocks =
+        blocks.filter(
+            block =>
+                block.category === "mine"
+        );
+
+    const schoolBlocks =
+        blocks.filter(
+            block =>
+                block.category === "school"
+        );
+
+    const globalBlocks =
+        blocks.filter(
+            block =>
+                block.category === "global"
+        );
+
+    const renderBlocks = (
+        items
+    ) => (
+
+        <CardGridLayout
+            pageSize={12}
+            minCardWidth={500}
+        >
+
+            {items.map(block => (
+
+                <BlockCard
+                    key={block.id}
+                    dragPrefix={dragPrefix}
+                    block={block}
+                    openTab={openTab}
+                    onDelete={onDelete}
+                    onRemoveSection={
+                        removeSection
+                    }
+                    onRemoveCentralContent={
+                        removeCentralContent
+                    }
+                    onCopy={copyBlock}
+                />
+
+            ))}
+
+        </CardGridLayout>
+
+    );
+
+
     if (!blocks?.length) {
         return (
             <p>
@@ -57,38 +131,35 @@ export default function BlockLibrary({
 
     return (
 
-        <CardSection
-            title="Uppgiftsbank"
-            description="
-                Alla tillgängliga uppgiftsblock.
-            "
-        >
-
-            <CardGridLayout
-                pageSize={12}
-                minCardWidth={500}
+        <>
+            <CardSection
+                title="Mina block"
             >
 
-                {blocks.map(block => (
+                {renderBlocks(myBlocks)}
 
-                    <BlockCard
-                        key={block.id}
-                        dragPrefix="library"
-                        block={block}
-                        openTab={openTab}
-                        onDelete={onDelete}
-                        onRemoveSection={
-                            removeSection
-                        }
-                        onRemoveCentralContent={
-                            removeCentralContent
-                        }
-                    />
+            </CardSection>
 
-                ))}
+            <CardSection
+                title="Skolans block"
+            >
 
-            </CardGridLayout>
+                {renderBlocks(
+                    schoolBlocks
+                )}
 
-        </CardSection>
+            </CardSection>
+
+            <CardSection
+                title="Globala block"
+            >
+
+                {renderBlocks(
+                    globalBlocks
+                )}
+
+            </CardSection>
+        </>
+
     );
 }

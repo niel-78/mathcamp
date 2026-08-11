@@ -37,59 +37,199 @@ router.use(requireAuth);
 router.use(requireRole("teacher"));
 
 // GET /api/blocks/sections/:sectionId
-router.get("/sections/:sectionId", async (req, res) => {
+router.get("/sections/:sectionId",
+    async (req, res) => {
 
-    const [blocks] = await db.query(
-        `
-        SELECT
-            b.*
-        FROM blocks b
-        INNER JOIN block_sections bs
-            ON bs.block_id = b.id
-        WHERE bs.section_id = ?
-            AND b.deleted_at IS NULL
-        ORDER BY b.id
-        `,
-        [req.params.sectionId]
-    );
+        const [[teacher]] =
+            await db.query(
+                `
+                SELECT school_id
+                FROM school_teachers
+                WHERE teacher_id = ?
+                `,
+                [req.user.id]
+            );
 
-    const hydratedBlocks =
-        await hydrateBlocks(blocks);
+        const schoolId =
+            teacher?.school_id;
 
-    res.json(hydratedBlocks);
+        const [blocks] =
+            await db.query(
+                `
+                SELECT
+                    b.*
+                FROM blocks b
 
-});
+                INNER JOIN block_sections bs
+                    ON bs.block_id = b.id
+
+                WHERE
+                    bs.section_id = ?
+                    AND b.deleted_at IS NULL
+
+                    AND (
+
+                        b.created_by = ?
+
+                        OR (
+
+                            b.visibility = 'school'
+                            AND b.school_id = ?
+
+                        )
+
+                        OR (
+
+                            b.visibility = 'global'
+
+                        )
+
+                    )
+
+                ORDER BY b.id
+                `,
+                [
+                    req.params.sectionId,
+                    req.user.id,
+                    schoolId
+                ]
+            );
+
+        const hydratedBlocks =
+            await hydrateBlocks(blocks);
+
+        for (const block of hydratedBlocks) {
+
+            const isOwner =
+                block.created_by ===
+                req.user.id;
+
+            block.canEdit =
+                isOwner;
+
+            block.category =
+                isOwner
+                    ? "mine"
+                    : block.visibility === "global"
+                    ? "global"
+                    : "school";
+
+        }
+
+        res.json(
+            hydratedBlocks
+        );
+
+    }
+);
 
 // GET /api/central-content/:centralContentId
-router.get("/:centralContentId/:centralContentId", async (req, res) => {
+router.get("/central-content/:centralContentId",
+    async (req, res) => {
 
-    const [blocks] = await db.query(
-        `
-        SELECT
-            b.*,
-            cu.first_name AS created_by_first_name,
-            cu.last_name AS created_by_last_name,
-            uu.first_name AS updated_by_first_name,
-            uu.last_name AS updated_by_last_name
-        FROM blocks b
-        JOIN block_central_content bcc
-            ON b.id = bcc.block_id
-        LEFT JOIN users cu
-            ON cu.id = b.created_by
-        LEFT JOIN users uu
-            ON uu.id = b.updated_by
-        WHERE bcc.central_content_id = ?
-            AND b.deleted_at IS NULL
-        `,
-        [req.params.centralContentId]
-    );
+        const [[teacher]] =
+            await db.query(
+                `
+                SELECT school_id
+                FROM school_teachers
+                WHERE teacher_id = ?
+                `,
+                [req.user.id]
+            );
 
-    const hydratedBlocks =
-        await hydrateBlocks(blocks);
+        const schoolId =
+            teacher?.school_id;
 
-    res.json(hydratedBlocks);
+        const [blocks] =
+            await db.query(
+                `
+                SELECT
+                    b.*,
 
-});
+                    cu.first_name
+                        AS created_by_first_name,
+
+                    cu.last_name
+                        AS created_by_last_name,
+
+                    uu.first_name
+                        AS updated_by_first_name,
+
+                    uu.last_name
+                        AS updated_by_last_name
+
+                FROM blocks b
+
+                JOIN block_central_content bcc
+                    ON b.id = bcc.block_id
+
+                LEFT JOIN users cu
+                    ON cu.id = b.created_by
+
+                LEFT JOIN users uu
+                    ON uu.id = b.updated_by
+
+                WHERE
+
+                    bcc.central_content_id = ?
+
+                    AND b.deleted_at IS NULL
+
+                    AND (
+
+                        b.created_by = ?
+
+                        OR (
+
+                            b.visibility = 'school'
+                            AND b.school_id = ?
+
+                        )
+
+                        OR (
+
+                            b.visibility = 'global'
+
+                        )
+
+                    )
+                `,
+                [
+                    req.params.centralContentId,
+                    req.user.id,
+                    schoolId
+                ]
+            );
+
+        const hydratedBlocks =
+            await hydrateBlocks(
+                blocks
+            );
+
+        for (const block of hydratedBlocks) {
+
+            const isOwner =
+                block.created_by ===
+                req.user.id;
+
+            block.canEdit =
+                isOwner;
+
+            block.category =
+                isOwner
+                    ? "mine"
+                    : block.visibility === "global"
+                    ? "global"
+                    : "school";
+
+        }
+
+        res.json(
+            hydratedBlocks
+        );
+
+    }
+);
 
 // GET /api/blocks/:id
 router.get("/:blockId/", async (req, res) => {
@@ -123,25 +263,127 @@ router.get("/:blockId/", async (req, res) => {
 // GET /api/blocks/
 router.get("/", async (req, res) => {
 
-    const [blocks] = await db.query(`
-        SELECT
-            b.*,
-            cu.first_name AS created_by_first_name,
-            cu.last_name AS created_by_last_name,
-            uu.first_name AS updated_by_first_name,
-            uu.last_name AS updated_by_last_name
-        FROM blocks b
-        LEFT JOIN users cu
-            ON cu.id = b.created_by
-        LEFT JOIN users uu
-            ON uu.id = b.updated_by
-        WHERE b.deleted_at IS NULL
-    `);
+    const [[teacher]] =
+        await db.query(
+            `
+            SELECT school_id
+            FROM school_teachers
+            WHERE teacher_id = ?
+            `,
+            [req.user.id]
+        );
+
+    const schoolId =
+        teacher?.school_id;
+
+    const [[schoolSettings]] =
+        await db.query(
+            `
+            SELECT
+                enable_block_copying
+            FROM school_settings
+            WHERE school_id = ?
+            `,
+            [schoolId]
+        );
+
+    const [blocks] =
+        await db.query(
+            `
+            SELECT
+                b.*,
+
+                cu.first_name
+                    AS created_by_first_name,
+
+                cu.last_name
+                    AS created_by_last_name,
+
+                uu.first_name
+                    AS updated_by_first_name,
+
+                uu.last_name
+                    AS updated_by_last_name
+
+            FROM blocks b
+
+            LEFT JOIN users cu
+                ON cu.id = b.created_by
+
+            LEFT JOIN users uu
+                ON uu.id = b.updated_by
+
+            WHERE
+
+                b.deleted_at IS NULL
+
+                AND (
+
+                    b.created_by = ?
+
+                    OR (
+
+                        b.visibility = 'school'
+                        AND b.school_id = ?
+
+                    )
+
+                    OR (
+
+                        b.visibility = 'global'
+
+                    )
+
+                )
+            `,
+            [
+                req.user.id,
+                schoolId
+            ]
+        );
 
     const hydratedBlocks =
-        await hydrateBlocks(blocks);
+        await hydrateBlocks(
+            blocks
+        );
 
-    res.json(hydratedBlocks);
+    for (const block of hydratedBlocks) {
+
+        const isOwner =
+            block.created_by ===
+            req.user.id;
+
+        block.canEdit = isOwner;
+
+        block.canCopy =
+
+            !isOwner &&
+
+            schoolSettings?.enable_block_copying;
+
+        if (isOwner) {
+
+            block.category = "mine";
+
+        } else if (
+            block.visibility ===
+            "global"
+        ) {
+
+            block.category = "global";
+
+        } else {
+
+            block.category = "school";
+
+        }
+
+    }        
+
+    res.json(
+        hydratedBlocks
+    );
+
 });
 
 // POST /api/blocks
@@ -153,23 +395,49 @@ router.post("/", async (req, res) => {
             question,
             centralContentIds = [],
             sectionIds = [],
-            examId
+            examId,
+            visibility = "school"
         } = req.body;
+
+        if (
+            visibility === "global" &&
+            req.user.role !== "super"
+        ) {
+
+            return res.status(403).json({
+                error:
+                    "Endast superanvändare får skapa globala block."
+            });
+
+        }
+
+        const [[school]] =
+            await db.query(
+                `
+                SELECT school_id
+                FROM school_teachers
+                WHERE teacher_id = ?
+                `,
+                [req.user.id]
+            );
 
         const [blockResult] = await db.query(
             `
-            INSERT INTO blocks (
-                created_by,
-                updated_by
-            )
-            VALUES (?, ?)
+                INSERT INTO blocks (
+                    created_by,
+                    updated_by,
+                    school_id,
+                    visibility
+                )
+                VALUES (?, ?, ?, ?)
             `,
             [
                 req.user.id,
-                req.user.id
+                req.user.id,
+                school?.school_id || null,
+                visibility
             ]
         );
-
 
         const blockId = blockResult.insertId;
 
@@ -442,6 +710,328 @@ router.post("/:blockId/central-content/:centralContentId",
     }
 );
 
+
+// POST   /api/blocks/:id/copy
+router.post("/:id/copy",
+    async (req, res) => {
+
+        const connection = await db.getConnection();
+
+        try {
+
+            await connection.beginTransaction();
+
+            const { id } = req.params;
+
+            const [[teacher]] =
+                await connection.query(
+                    `
+                    SELECT school_id
+                    FROM school_teachers
+                    WHERE teacher_id = ?
+                    `,
+                    [req.user.id]
+                );
+
+            const schoolId =
+                teacher?.school_id;
+
+            const [[settings]] =
+                await connection.query(
+                    `
+                    SELECT
+                        enable_block_copying
+                    FROM school_settings
+                    WHERE school_id = ?
+                    `,
+                    [schoolId]
+                );
+
+            if (
+                !settings?.enable_block_copying
+            ) {
+
+                return res.status(403).json({
+                    error:
+                        "Skolan tillåter inte kopiering."
+                });
+
+            }
+
+            const [[block]] =
+                await connection.query(
+                    `
+                    SELECT *
+                    FROM blocks
+                    WHERE id = ?
+                        AND deleted_at IS NULL
+                    `,
+                    [id]
+                );
+
+            if (!block) {
+
+                return res.status(404).json({
+                    error:
+                        "Blocket hittades inte."
+                });
+
+            }
+
+            const canAccess =
+
+                block.created_by ===
+                req.user.id
+
+                ||
+
+                (
+                    block.visibility ===
+                        "school"
+                    &&
+                    block.school_id ===
+                        schoolId
+                )
+
+                ||
+
+                block.visibility ===
+                    "global";
+
+            if (!canAccess) {
+
+                return res.status(403).json({
+                    error:
+                        "Du saknar behörighet."
+                });
+
+            }
+
+            const [blockResult] =
+                await connection.query(
+                    `
+                    INSERT INTO blocks (
+
+                        created_by,
+                        updated_by,
+
+                        school_id,
+
+                        visibility
+
+                    )
+                    VALUES (?, ?, ?, ?)
+                    `,
+                    [
+                        req.user.id,
+                        req.user.id,
+                        schoolId,
+                        "private"
+                    ]
+                );
+
+            const newBlockId =
+                blockResult.insertId;
+
+            /*
+             * Kopiera centralt innehåll
+             */
+            await connection.query(
+                `
+                INSERT INTO
+                    block_central_content (
+                        block_id,
+                        central_content_id
+                    )
+                SELECT
+                    ?,
+                    central_content_id
+                FROM block_central_content
+                WHERE block_id = ?
+                `,
+                [
+                    newBlockId,
+                    block.id
+                ]
+            );
+
+            /*
+             * Kopiera sektioner
+             */
+            await connection.query(
+                `
+                INSERT INTO
+                    block_sections (
+                        block_id,
+                        section_id
+                    )
+                SELECT
+                    ?,
+                    section_id
+                FROM block_sections
+                WHERE block_id = ?
+                `,
+                [
+                    newBlockId,
+                    block.id
+                ]
+            );
+
+            const [questions] =
+                await connection.query(
+                    `
+                    SELECT *
+                    FROM questions
+                    WHERE block_id = ?
+                        AND deleted_at IS NULL
+                    `,
+                    [block.id]
+                );
+
+
+            for (const question of questions) {
+
+                const [questionResult] =
+                    await connection.query(
+                        `
+                        INSERT INTO questions (
+
+                            question,
+                            block_id,
+                            question_type,
+                            level_id,
+
+                            created_by,
+                            updated_by,
+
+                            answer_config
+
+                        )
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        `,
+                        [
+                            question.question,
+                            newBlockId,
+                            question.question_type,
+                            question.level_id,
+
+                            req.user.id,
+                            req.user.id,
+
+                            question.answer_config
+                        ]
+                    );
+
+                const newQuestionId =
+                    questionResult.insertId;
+
+
+                const [options] =
+                    await connection.query(
+                        `
+                        SELECT *
+                        FROM options
+                        WHERE question_id = ?
+                            AND deleted_at IS NULL
+                        `,
+                        [question.id]
+                    );
+
+                for (const option of options) {
+
+                    await connection.query(
+                        `
+                        INSERT INTO options (
+
+                            question_id,
+
+                            text,
+                            is_correct,
+
+                            created_by,
+                            updated_by
+
+                        )
+                        VALUES (?, ?, ?, ?, ?)
+                        `,
+                        [
+                            newQuestionId,
+
+                            option.text,
+                            option.is_correct,
+
+                            req.user.id,
+                            req.user.id
+                        ]
+                    );
+
+                }
+
+                const [media] =
+                    await connection.query(
+                        `
+                        SELECT *
+                        FROM question_media
+                        WHERE question_id = ?
+                        ORDER BY sort_order
+                        `,
+                        [question.id]
+                    );
+
+                for (const mediaItem of media) {
+
+                    await connection.query(
+                        `
+                        INSERT INTO question_media (
+
+                            question_id,
+
+                            media_type,
+                            media_url,
+                            sort_order
+
+                        )
+                        VALUES (?, ?, ?, ?)
+                        `,
+                        [
+                            newQuestionId,
+
+                            mediaItem.media_type,
+                            mediaItem.media_url,
+                            mediaItem.sort_order
+                        ]
+                    );
+
+                }
+
+
+            }        
+
+
+            res.status(201).json({
+
+                id: newBlockId
+
+            });
+
+            } catch (error) {
+
+                await connection.rollback();
+
+                console.error(error);
+
+                res.status(500).json({
+                    error: error.message
+                });
+
+            }   finally {
+
+                connection.release();
+            
+            }
+
+    }
+);
 
 
 

@@ -4,14 +4,17 @@ import { GripVertical } from "lucide-react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import MathContent from "@/components/ui/MathContent";
+import FormatDateTimeShort from "@/utils/FormatDateTimeShort";
 
 export default function BlockCard({
     block,
     dragPrefix = "block",
     openTab,
     onDelete,
+    onCopy,
     onRemoveCentralContent,
     onRemoveSection,
+    canRemoveFromExam,
     orderNumber
 
 }) {
@@ -34,19 +37,9 @@ export default function BlockCard({
         }
     });
 
-    const {
-        setNodeRef: setDropRef
-    } = useDroppable({
-        id: `exam-block-${block.id}`
-    });
-
     const setRefs = (node) => {
 
         setDragRef(node);
-
-        if (dragPrefix === "exam") {
-            setDropRef(node);
-        }
 
     };
 
@@ -54,7 +47,16 @@ export default function BlockCard({
         transform: transform
             ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
             : undefined,
-        opacity: transform ? 0.7 : 1
+
+        opacity: transform ? 0.7 : 1,
+
+        zIndex: transform
+            ? 9999
+            : undefined,
+
+        position: transform
+            ? "relative"
+            : undefined
     };
 
     const [showReferences, setShowReferences] = useState(false);
@@ -102,6 +104,31 @@ export default function BlockCard({
                     <span className="font-semibold">
                         ID: {block.id}
                     </span>
+
+                    <div className="mt-2">
+
+                        <span
+                            className="
+                                inline-block
+                                rounded-md
+                                bg-muted
+                                px-2
+                                py-1
+                                text-xs
+                            "
+                        >
+
+                            {
+                                block.visibility === "global"
+                                    ? "Globalt"
+                                    : block.visibility === "school"
+                                    ? "Skolan"
+                                    : "Privat"
+                            }
+
+                        </span>
+
+                    </div>
 
                 </div>
             
@@ -177,20 +204,23 @@ export default function BlockCard({
                                                 >
                                                     {item.content}
 
-                                                    <Button
-                                                        variant="ghost"
-                                                        className="
-                                                            text-red-500
-                                                        "
-                                                        onClick={() =>
-                                                            onRemoveCentralContent?.(
-                                                                block.id,
-                                                                item.id
-                                                            )
-                                                        }
-                                                    >
-                                                        <X size={14} />
-                                                    </Button>
+                                                    {block.canEdit && (
+
+                                                        <Button
+                                                            variant="ghost"
+                                                            className="text-red-500"
+                                                            onClick={() =>
+                                                                onRemoveCentralContent?.(
+                                                                    block.id,
+                                                                    item.id
+                                                                )
+                                                            }
+                                                        >
+                                                            <X size={14} />
+                                                        </Button>
+
+                                                    )}
+
                                                 </div>
                                             )
                                         )}
@@ -221,20 +251,23 @@ export default function BlockCard({
                                                 >
                                                     {section.title}
 
-                                                    <Button
-                                                        variant="ghost"
-                                                        className="
-                                                            text-red-500
-                                                        "
-                                                        onClick={() =>
-                                                            onRemoveSection?.(
-                                                                block.id,
-                                                                section.id
-                                                            )
-                                                        }
-                                                    >
-                                                        <X size={14} />
-                                                    </Button>
+                                                    {block.canEdit && (
+
+                                                        <Button
+                                                            variant="ghost"
+                                                            className="text-red-500"
+                                                            onClick={() =>
+                                                                onRemoveSection?.(
+                                                                    block.id,
+                                                                    section.id
+                                                                )
+                                                            }
+                                                        >
+                                                            <X size={14} />
+                                                        </Button>
+
+                                                    )}
+
                                                 </div>
                                             )
                                         )}
@@ -258,7 +291,7 @@ export default function BlockCard({
                     {" "}
                     den
                     {" "}
-                    <FormatDate value={block.created_at} />
+                    <FormatDateTimeShort value={block.created_at} />
                 </p>
 
                 <p>
@@ -270,7 +303,7 @@ export default function BlockCard({
                     {" "}
                     den
                     {" "}
-                    <FormatDate value={block.updated_at} />
+                    <FormatDateTimeShort value={block.updated_at} />
                 </p>
 
                 <Button
@@ -284,10 +317,27 @@ export default function BlockCard({
                         })
                     }
                 >
-                    Öppna
+                    {block.canEdit
+                        ? "Redigera"
+                        : "Visa"}
                 </Button>
 
-                {onDelete && (
+                {block.canCopy && (
+
+                    <Button
+                        variant="outline"
+                        onClick={() =>
+                            onCopy?.(block.id)
+                        }
+                    >
+
+                        Kopiera
+
+                    </Button>
+
+                )}
+
+                {onDelete && canRemoveFromExam && (
 
                     <Button
                         variant="destructive"

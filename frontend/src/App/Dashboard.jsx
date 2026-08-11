@@ -3,23 +3,18 @@ import StudentDashboard from "./Dashboard/StudentDashboard";
 
 function Dashboard({ user }) {
 
-    if (
-        user.active_school
-    ) {
-        return <TeacherDashboard />;
-    }
+    switch (user.role) {
 
-    if (
-        user.role === "student"
-    ) {
-        return <StudentDashboard />;
-    }
+        case "teacher":
+            return <TeacherDashboard />;
 
-    return (
-        <div>
-            Ingen behörighet
-        </div>
-    );
+        case "student":
+            return <StudentDashboard />;
+
+        default:
+            return <div>Ingen behörighet</div>;
+
+    }
 
 }
 

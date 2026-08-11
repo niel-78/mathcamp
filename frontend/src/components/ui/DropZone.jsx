@@ -1,5 +1,6 @@
 import { useDroppable } from "@dnd-kit/core";
 import { Inbox } from "lucide-react";
+import { useEffect } from "react";
 
 export default function DropZone({
     id,
@@ -13,6 +14,19 @@ export default function DropZone({
     } = useDroppable({
         id
     });
+
+    useEffect(() => {
+
+        if (isOver) {
+
+            console.log(
+                "DROPZONE REGISTERED",
+                id
+            );
+
+        }
+
+    }, [isOver, id]);
 
     return (
 

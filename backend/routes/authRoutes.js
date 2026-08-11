@@ -93,7 +93,7 @@ router.post("/login", async (req, res) => {
             ]
         );
 
-        const [schools] =
+        const [[school]] =
             await db.query(
                 `
                 SELECT
@@ -104,47 +104,10 @@ router.post("/login", async (req, res) => {
                 INNER JOIN schools s
                     ON s.id = st.school_id
                 WHERE st.teacher_id = ?
-                ORDER BY s.name
                 `,
                 [user.id]
             );
 
-        let activeSchoolId =
-            user.active_school_id;
-
-        /*
-         * Om användaren saknar
-         * aktiv skola men är knuten
-         * till minst en skola
-         */
-        if (
-            !activeSchoolId &&
-            schools.length > 0
-        ) {
-
-            activeSchoolId =
-                schools[0].id;
-
-            await db.query(
-                `
-                UPDATE users
-                SET active_school_id = ?
-                WHERE id = ?
-                `,
-                [
-                    activeSchoolId,
-                    user.id
-                ]
-            );
-
-        }
-
-        const activeSchool =
-            schools.find(
-                school =>
-                    school.id ===
-                    activeSchoolId
-            ) || null;
 
         res.json({
 
@@ -153,25 +116,18 @@ router.post("/login", async (req, res) => {
             user: {
 
                 id: user.id,
-
-                username:
-                    user.username,
-
-                first_name:
-                    user.first_name,
-
-                last_name:
-                    user.last_name,
-
+                username: user.username,
+                first_name: user.first_name,
+                last_name: user.last_name,
                 role: user.role,
 
-                active_school_id:
-                    activeSchoolId,
-
-                active_school:
-                    activeSchool,
-
-                schools
+                school: school
+                    ? {
+                        id: school.id,
+                        name: school.name,
+                        is_admin: !!school.is_admin
+                    }
+                    : null
 
             }
 
@@ -227,11 +183,10 @@ router.post("/logout", requireAuth,
 );
 
 // GET /api/auth/me
-router.get("/me",
-    requireAuth,
+router.get("/me", requireAuth,
     async (req, res) => {
 
-        const [schools] =
+        const [[school]] =
             await db.query(
                 `
                 SELECT
@@ -242,40 +197,25 @@ router.get("/me",
                 INNER JOIN schools s
                     ON s.id = st.school_id
                 WHERE st.teacher_id = ?
-                ORDER BY s.name
                 `,
                 [req.user.id]
             );
 
-        const activeSchool =
-            schools.find(
-                school =>
-                    school.id ===
-                    req.user.active_school_id
-            ) || null;
-
         res.json({
 
             id: req.user.id,
-
-            username:
-                req.user.username,
-
-            first_name:
-                req.user.first_name,
-
-            last_name:
-                req.user.last_name,
-
+            username: req.user.username,
+            first_name: req.user.first_name,
+            last_name: req.user.last_name,
             role: req.user.role,
 
-            active_school_id:
-                req.user.active_school_id,
-
-            active_school:
-                activeSchool,
-
-            schools
+            school: school
+                ? {
+                    id: school.id,
+                    name: school.name,
+                    is_admin: !!school.is_admin
+                }
+                : null
 
         });
 

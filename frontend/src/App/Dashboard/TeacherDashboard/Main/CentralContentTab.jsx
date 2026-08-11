@@ -114,6 +114,7 @@ export default function CentralContentTab({
 
                 <BlockLibrary
                     blocks={blocks}
+                    dragPrefix="cc"
                     openTab={openTab}
                     onReload={loadBlocks}
                     onDelete={removeBlock}

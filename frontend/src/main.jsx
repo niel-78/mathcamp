@@ -4,6 +4,7 @@ import "@/globals.css";
 import 'katex/dist/katex.min.css';
 import { AuthProvider } from "@/contexts/AuthContext"
 import { AppSettingsProvider } from "@/contexts/AppSettingsContext"
+import { SchoolSettingsProvider } from "@/contexts/SchoolSettingsContext"
 import App from '@/App.jsx'
 
 createRoot(
@@ -16,7 +17,11 @@ createRoot(
 
             <AuthProvider>
 
-                <App />
+                <SchoolSettingsProvider>
+
+                    <App />
+
+                </SchoolSettingsProvider>
 
             </AuthProvider>
 

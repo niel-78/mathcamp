@@ -3,6 +3,7 @@ USE mydb;
 SET FOREIGN_KEY_CHECKS = 0;
 
 DROP TABLE IF EXISTS schools;
+DROP TABLE IF EXISTS school_settings;
 DROP TABLE IF EXISTS school_teachers;
 DROP TABLE IF EXISTS level_books;
 DROP TABLE IF EXISTS question_levels;
@@ -18,7 +19,6 @@ DROP TABLE IF EXISTS levels;
 DROP TABLE IF EXISTS subjects;
 DROP TABLE IF EXISTS question_media;
 DROP TABLE IF EXISTS group_users;
-DROP TABLE IF EXISTS exam_users;
 DROP TABLE IF EXISTS group_students;
 DROP TABLE IF EXISTS groups;
 DROP TABLE IF EXISTS group_exams;
@@ -38,6 +38,7 @@ DROP TABLE IF EXISTS user_settings;
 DROP TABLE IF EXISTS exam_waiting_room;
 DROP TABLE IF EXISTS exam_events;
 DROP TABLE IF EXISTS user_sessions;
+DROP TABLE IF EXISTS exam_permissions;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
@@ -57,6 +58,21 @@ INSERT INTO schools (
 )
 VALUES (1,'School of Rock'),(2,'Chicagoskolan');
 
+CREATE TABLE school_settings (
+    school_id INT PRIMARY KEY,
+    enable_exam_templates BOOLEAN NOT NULL DEFAULT TRUE,
+    enable_block_copying BOOLEAN DEFAULT TRUE,
+    default_shared_blocks BOOLEAN DEFAULT TRUE,
+    default_shared_exams BOOLEAN DEFAULT TRUE,
+    enable_global_blocks BOOLEAN NOT NULL DEFAULT TRUE,
+    settings JSON NULL,
+    FOREIGN KEY (school_id)
+        REFERENCES schools(id)
+        ON DELETE CASCADE
+);
+
+INSERT INTO school_settings (school_id,enable_exam_templates,enable_block_copying,default_shared_blocks,default_shared_exams)VALUES (1,TRUE,TRUE,TRUE,TRUE);
+
 
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -66,9 +82,7 @@ CREATE TABLE users (
     -- lösenord (aldrig plaintext!)
     password_hash VARCHAR(255) NOT NULL,
 
-    role ENUM('student', 'teacher') NOT NULL DEFAULT 'student',
-
-    active_school_id INT NULL,
+    role ENUM('student', 'teacher', 'super') NOT NULL DEFAULT 'student',
 
     -- valfri visning
     first_name VARCHAR(255),
@@ -85,21 +99,18 @@ CREATE TABLE users (
     exam_started_at DATETIME,
 
     -- säkerhetsfält
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 
-    FOREIGN KEY (active_school_id) REFERENCES schools(id)
 
 ) ENGINE=InnoDB 
 CHARACTER SET utf8mb4 
 COLLATE utf8mb4_unicode_ci;
 
-INSERT INTO users (id, username, password_hash, first_name, last_name, role, active_school_id)
-VALUES
-(1, 'teacher', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas', 'Elofsson' , 'teacher', 1),
-(2, 'teacher2', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas', 'Elofsson' , 'teacher', 1);
-
 INSERT INTO users (id, username, password_hash, first_name, last_name, role)
-VALUES (3, 'student', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas', 'Elofsson' , 'student'),
+VALUES
+(1, 'teacher', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas', 'Elofsson' , 'teacher'),
+(2, 'teacher2', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas', 'Elofsson' , 'teacher'),
+(3, 'student', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas', 'Elofsson' , 'student'),
 (4, 'Abba', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Abba', 'Babby' , 'student'),
 (5, 'Betty', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Betty', 'Blue' , 'student'),
 (6, 'Calle', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Calle', 'Arvidsson' , 'student'),
@@ -133,6 +144,8 @@ COLLATE utf8mb4_unicode_ci;
 CREATE TABLE blocks (
     id INT AUTO_INCREMENT PRIMARY KEY,
 
+    school_id INT NOT NULL,
+
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by INT NOT NULL,
 
@@ -141,6 +154,17 @@ CREATE TABLE blocks (
     updated_by INT NOT NULL,
 
     deleted_at DATETIME NULL,
+
+    visibility ENUM(
+        'private',
+        'school',
+        'global'
+    )
+    NOT NULL DEFAULT 'school',
+
+    CONSTRAINT fk_blocks_school
+        FOREIGN KEY (school_id)
+        REFERENCES schools(id),
 
     CONSTRAINT fk_blocks_created_by
         FOREIGN KEY (created_by)
@@ -265,24 +289,25 @@ CREATE TABLE exams (
     exam_config JSON DEFAULT JSON_OBJECT('allowCalculator', false, 'allowFormulaSheet', true, 'defaultTimeLimitMinutes', 60000, 'lock_tab_hidden', true, 'lock_window_blur', true, 'lock_context_menu', true, 'lock_page_unload', false)
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-/*Personal kopplat till prov*/
-CREATE TABLE exam_users (
+CREATE TABLE exam_permissions (
     exam_id INT NOT NULL,
-    user_id INT NOT NULL,
+    teacher_id INT NOT NULL,
+    role ENUM(
+        'owner',
+        'editor',
+        'reader'
+    ) NOT NULL,
 
-    is_owner BOOLEAN NOT NULL DEFAULT FALSE,
-
-    granted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    PRIMARY KEY (exam_id, user_id),
+    PRIMARY KEY (
+        exam_id,
+        teacher_id
+    ),
 
     FOREIGN KEY (exam_id)
-        REFERENCES exams(id)
-        ON DELETE CASCADE,
+        REFERENCES exams(id),
 
-    FOREIGN KEY (user_id)
+    FOREIGN KEY (teacher_id)
         REFERENCES users(id)
-        ON DELETE CASCADE
 );
 
 
@@ -785,17 +810,10 @@ INSERT INTO app_settings (
 VALUES (
     1,
     JSON_OBJECT(
-
         'first_question_in_block_can_be_deleted', FALSE,
-
         'default_auto_logout_minutes', 15,
-
-
-
         'student_auto_logout_minutes', 30,
-
-        'exam_auto_logout_minutes', 10.   
-
+        'exam_auto_logout_minutes', 10
     )
 );
 
@@ -815,14 +833,18 @@ CREATE TABLE user_settings (
 CREATE TABLE school_teachers (
 
     school_id INT NOT NULL,
-    teacher_id INT NOT NULL,
+    teacher_id INT NOT NULL UNIQUE,
 
     is_admin BOOLEAN NOT NULL DEFAULT FALSE,
 
-    PRIMARY KEY (
-        school_id,
-        teacher_id
-    )
+    FOREIGN KEY (school_id)
+        REFERENCES schools(id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (teacher_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE
+
 );
 
 INSERT INTO school_teachers (
@@ -832,7 +854,6 @@ INSERT INTO school_teachers (
 )
 VALUES
     (1, 1, true),
-    (2, 1, false),
     (1, 2, false);
 
 
@@ -840,7 +861,7 @@ VALUES
 -- BLOCK 1 (TEXT TAL)
 -- ======================
 
-INSERT INTO blocks (id,created_by,updated_by) VALUES (1,2,2);
+INSERT INTO blocks (id,created_by,updated_by,school_id) VALUES (1,2,2,1);
 
 INSERT INTO questions (id,question,block_id,created_by,updated_by,answer_config,question_type) VALUES (NULL,'Skriv 1 074 000 med ord.',1,2,2,JSON_OBJECT('grading_mode', 'text','default_answer','en miljon sjuttiofyra tusen'),'text');
 SET @q = LAST_INSERT_ID();
@@ -852,7 +873,7 @@ INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUE
 -- BLOCK 2 (TALLINJE MCQ)
 -- ======================
 
-INSERT INTO blocks (id,created_by,updated_by) VALUES (2,2,2);
+INSERT INTO blocks (id,created_by,updated_by,school_id) VALUES (2,2,2,1);
 
 INSERT INTO questions (id,question,block_id,created_by,updated_by,answer_config,question_type) VALUES (NULL,'Vilket tal är närmast 35.1?',2,2,2,JSON_OBJECT(),'single_choice');
 SET @q = LAST_INSERT_ID();
@@ -866,7 +887,7 @@ INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUE
 -- BLOCK 3 (ARITMETIK)
 -- ======================
 
-INSERT INTO blocks (id,created_by,updated_by) VALUES (3,2,2);
+INSERT INTO blocks (id,created_by,updated_by,school_id) VALUES (3,2,2,1);
 
 INSERT INTO questions (id,question,block_id,created_by,updated_by,answer_config,question_type) VALUES (NULL,'Skriv $\\pi$ med minst 2 decimaler',3,2,2,JSON_OBJECT('grading_mode','numeric',"decimals",2,'default_answer','3.14'),'text');
 SET @q = LAST_INSERT_ID();
@@ -877,7 +898,7 @@ INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUE
 -- BLOCK 4 (NEGATIVA TAL)
 -- ======================
 
-INSERT INTO blocks (id,created_by,updated_by) VALUES (4,2,2);
+INSERT INTO blocks (id,created_by,updated_by,school_id) VALUES (4,2,2,1);
 
 INSERT INTO questions (id,question,block_id,created_by,updated_by,answer_config,question_type) VALUES (NULL,'Förenkla $2x-1+x+7$',4,2,2,JSON_OBJECT('grading_mode', 'algebra','default_answer','6+3x'),'text');
 SET @q = LAST_INSERT_ID();
@@ -888,7 +909,7 @@ INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUE
 -- BLOCK 5 (DECIMAL MCQ)
 -- ======================
 */
-INSERT INTO blocks (id,created_by,updated_by) VALUES (5,2,2);
+INSERT INTO blocks (id,created_by,updated_by,school_id) VALUES (5,2,2,1);
 
 INSERT INTO questions (id,question,block_id,created_by,updated_by,answer_config,question_type) VALUES (NULL,'Lös ekvationen $x^2-5x+6=0$',5,2,2,JSON_OBJECT('grading_mode', 'variables','ignore_variable_names', true,'default_answer','x_1=3,x_2=2'),'text');
 SET @q = LAST_INSERT_ID();
@@ -899,7 +920,7 @@ INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUE
 -- BLOCK 6 BRÅK (ska tas bort)
 -- ======================
 
-INSERT INTO blocks (id,created_by,updated_by) VALUES (6,2,2);
+INSERT INTO blocks (id,created_by,updated_by,school_id) VALUES (6,2,2,1);
 
 INSERT INTO questions (id,question,block_id,created_by,updated_by,answer_config,question_type) VALUES (NULL,'Vilka tal är lika stora?',2,2,2,JSON_OBJECT(),'multiple_choice');
 SET @q = LAST_INSERT_ID();
@@ -917,7 +938,13 @@ INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUE
 
 INSERT INTO exams(`id`,`title`,subject_id,level_id,created_by,updated_by) VALUES(1,'Test',1,2,2,2);
 
-INSERT INTO exam_users (exam_id,user_id,is_owner) VALUES (1,1,TRUE);
+INSERT INTO exam_permissions (
+    exam_id,
+    teacher_id,
+    role
+)
+VALUES (1,1,'owner'),(1,2,'reader');
+
 
 INSERT INTO group_users (group_id,user_id,is_owner) VALUES (1,1,TRUE);
 

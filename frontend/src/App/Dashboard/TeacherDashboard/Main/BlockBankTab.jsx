@@ -164,6 +164,7 @@ export default function BlockBankTab({
 
                 <BlockLibrary
                     blocks={filteredBlocks}
+                    dragPrefix="library"
                     openTab={openTab}
                     onDelete={setBlockToDelete}
                     onReload={loadBlocks}

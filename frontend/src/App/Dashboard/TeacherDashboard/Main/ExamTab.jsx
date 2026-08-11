@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useDroppable } from "@dnd-kit/core";
 import { authHeaders } from "@/api/authHeaders";
 import { API_URL } from "@/config";
 import { Button } from "@/components/ui/button";
@@ -15,14 +14,13 @@ import DropZone from "@/components/ui/DropZone";
 export default function ExamTab({
     examId,
     openTab,
-    examTitle
+    examTitle,
+    activeDragType
 }) {
 
     const [blocks, setBlocks] = useState([]);
 
-    const { setNodeRef } = useDroppable({
-        id: `exam-${examId}`
-    });
+    const [examRole, setExamRole] = useState(null);
 
     const [
         createBlockOpen,
@@ -33,6 +31,21 @@ export default function ExamTab({
         importDialogOpen,
         setImportDialogOpen
     ] = useState(false);
+
+    const loadExam = async () => {
+
+        const response = await fetch(
+            `${API_URL}/api/exams/${examId}`,
+            {
+                headers: authHeaders()
+            }
+        );
+
+        const data = await response.json();
+
+        setExamRole(data.role);
+
+    };
 
 
     const loadBlocks = async () => {
@@ -78,9 +91,12 @@ export default function ExamTab({
 
     };
 
+    const canEditExam = examRole === "owner";
+
     useEffect(() => {
 
         loadBlocks();
+        loadExam();
 
     }, [examId]);
 
@@ -242,6 +258,7 @@ export default function ExamTab({
                             <ExamBlock
                                 key={block.id}
                                 block={block}
+                                activeDragType={activeDragType}
                             >
 
                                 <BlockCard
@@ -249,6 +266,7 @@ export default function ExamTab({
                                     block={block}
                                     orderNumber={index + 1}
                                     onDelete={removeBlock}
+                                    canRemoveFromExam={canEditExam}
                                     openTab={openTab}
                                 />
 

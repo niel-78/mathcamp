@@ -17,6 +17,7 @@ export default function DraggableTab({
     } = useDraggable({
         id: `tab-${tab.id}`,
         data: {
+            type: "tab",
             tab,
             sourceArea: area
         }

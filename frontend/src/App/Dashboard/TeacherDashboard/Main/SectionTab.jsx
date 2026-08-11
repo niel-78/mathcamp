@@ -122,6 +122,7 @@ export default function SectionTab({
                 
                 <BlockLibrary
                     blocks={blocks}
+                    dragPrefix="section"
                     openTab={openTab}
                     onReload={loadBlocks}
                     onDelete={removeBlock}

@@ -5,6 +5,8 @@ import authRoutes from "./routes/authRoutes.js";
 
 import appSettingsRoutes from "./routes/appSettingsRoutes.js";
 
+import schoolSettingsRoutes from "./routes/schoolSettingsRoutes.js";
+
 import userRoutes from "./routes/userRoutes.js";
 
 import subjectRoutes from "./routes/subjectRoutes.js";
@@ -31,7 +33,7 @@ import groupExamLobbyRoutes from "./routes/groupExamLobbyRoutes.js";
 
 import cors from "cors";
 
-console.log("🔥 SERVER FILE START");
+console.log("SERVER FILE START");
 
 const app = express();
 
@@ -56,6 +58,8 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 
 app.use("/api/app-settings",appSettingsRoutes);
+
+app.use("/api/school-settings",schoolSettingsRoutes);
 
 app.use("/api/users", userRoutes);
 

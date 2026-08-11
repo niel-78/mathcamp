@@ -21,6 +21,21 @@ export default async function hydrateBlocks(blocks) {
         );
 
 
+        const [[owner]] = await db.query(
+            `
+            SELECT
+                id,
+                first_name,
+                last_name
+            FROM users
+            WHERE id = ?
+            `,
+            [block.created_by]
+        );
+
+        block.owner = owner;
+
+
         for (const question of questions) {
 
             const [options] = await db.query(

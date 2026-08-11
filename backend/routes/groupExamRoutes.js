@@ -39,15 +39,21 @@ router.get("/", async (req, res) => {
         SELECT
             ge.*,
             e.title AS exam_title,
-            g.name AS group_name
+            g.name AS group_name,
+            ep.role
         FROM group_exams ge
+
         JOIN exams e
             ON e.id = ge.exam_id
+
         JOIN groups g
             ON g.id = ge.group_id
-        JOIN exam_users eu
-            ON eu.exam_id = ge.exam_id
-        WHERE eu.user_id = ?
+
+        JOIN exam_permissions ep
+            ON ep.exam_id = ge.exam_id
+
+        WHERE ep.teacher_id = ?
+
         ORDER BY ge.created_at DESC
         `,
         [req.user.id]
@@ -203,16 +209,21 @@ router.get("/:id", async (req, res) => {
         SELECT
             ge.*,
             e.title AS exam_title,
-            g.name AS group_name
+            g.name AS group_name,
+            ep.role
         FROM group_exams ge
+
         JOIN exams e
             ON e.id = ge.exam_id
+
         JOIN groups g
             ON g.id = ge.group_id
-        JOIN exam_users eu
-            ON eu.exam_id = ge.exam_id
+
+        JOIN exam_permissions ep
+            ON ep.exam_id = ge.exam_id
+
         WHERE ge.id = ?
-        AND eu.user_id = ?
+            AND ep.teacher_id = ?
         `,
         [
             req.params.id,
