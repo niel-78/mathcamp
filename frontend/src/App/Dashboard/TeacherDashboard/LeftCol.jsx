@@ -12,6 +12,7 @@ import ResetPasswordDialog from "./LeftCol/ResetPasswordDialog";
 import ArchiveStudentDialog from "./LeftCol/ArchiveStudentDialog";
 import SectionTreeItem from "@/components/ui/SectionTreeItem";
 import CentralContentTreeItem from "@/components/ui/CentralContentTreeItem";
+import AbilityTreeItem from "@/components/ui/AbilityTreeItem";
 
 export default function LeftCol( {openTab, hoverTarget} ) {
 
@@ -22,6 +23,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
         exams: false,
         courses: false,
         books: false,
+        abilities: false
     });
     const [expandedGroups, setExpandedGroups] = useState({});
     const [subjects, setSubjects] = useState([]);
@@ -42,12 +44,14 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [expandedBooks, setExpandedBooks] = useState({});
     const [expandedChapters, setExpandedChapters] = useState({});
     const [expandedSubchapters, setExpandedSubchapters] = useState({});
+    const [abilities, setAbilities] = useState([]);
     
 
     useEffect(() => {
         loadGroups();
         loadSubjects();
         loadBooks();
+        loadAbilities();
     }, []);
 
     useEffect(() => {
@@ -84,8 +88,6 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
     const loadStudents = async (groupId) => {
 
-        console.log("load students ", groupId);
-
         const response = await fetch(
             `${API_URL}/api/groups/${groupId}/students`,
             {
@@ -94,8 +96,6 @@ export default function LeftCol( {openTab, hoverTarget} ) {
         );
 
         const data = await response.json();
-
-        console.log(data);
 
         setGroupStudents((prev) => ({
             ...prev,
@@ -126,6 +126,21 @@ export default function LeftCol( {openTab, hoverTarget} ) {
         const data = await response.json();
 
         setBooks(data);
+
+    };
+
+    const loadAbilities = async () => {
+
+        const response = await fetch(
+            `${API_URL}/api/abilities`,
+            {
+                headers: authHeaders()
+            }
+        );
+
+        const data = await response.json();
+
+        setAbilities(data);
 
     };
 
@@ -175,6 +190,11 @@ export default function LeftCol( {openTab, hoverTarget} ) {
             [areaId]: !prev[areaId],
         }));
     };
+
+    const [
+        expandedAbilitySubjects,
+        setExpandedAbilitySubjects
+    ] = useState({});
 
     return (
         <>
@@ -285,29 +305,58 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                         {contextMenu?.type === "students" && (
 
-                            <Button
-                                className="
-                                    block
-                                    w-full
-                                    p-2
-                                    items-center
-                                    text-left
-                                    hover:bg-accent
-                                "
-                                variant="inline"
-                                onClick={() => {
+                            <>
+                                <Button
+                                    className="
+                                        block
+                                        w-full
+                                        p-2
+                                        items-center
+                                        text-left
+                                        hover:bg-accent
+                                    "
+                                    variant="inline"
+                                    onClick={() => {
 
-                                    setCreateStudentDialog({
-                                        groupId: contextMenu.groupId,
-                                        groupName: contextMenu.groupName
-                                    });
+                                        setCreateStudentDialog({
+                                            groupId: contextMenu.groupId,
+                                            groupName: contextMenu.groupName
+                                        });
 
-                                    setContextMenu(null);
+                                        setContextMenu(null);
 
-                                }}
-                            >
-                                Lägg till elev
-                            </Button>
+                                    }}
+                                >
+                                    Lägg till elev
+                                </Button>
+
+                                <Button
+                                    className="
+                                        block
+                                        w-full
+                                        p-2
+                                        items-center
+                                        text-left
+                                        hover:bg-accent
+                                    "
+                                    variant="inline"
+                                    onClick={() => {
+
+                                        openTab({
+                                            id: `import-students-${contextMenu.groupId}`,
+                                            type: "import-students",
+                                            title: `Importera elever`,
+                                            groupId: contextMenu.groupId,
+                                            groupName: contextMenu.groupName
+                                        });
+
+                                        setContextMenu(null);
+
+                                    }}
+                                >
+                                    Importera elever
+                                </Button>
+                            </>
 
                         )}
 
@@ -863,6 +912,113 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                             </div>
 
                         ))}
+
+                    </div>
+
+                )}
+
+                <Button
+                    className="tree-folder"
+                    variant="ghost"
+                    size="lg"
+                    onClick={() =>
+                        toggle("abilities")
+                    }
+                >
+                    {show.abilities ? "▼" : "▶"} Förmågor
+                </Button>
+
+                {show.abilities && (
+
+                    <div className="ml-4">
+
+                        {[...subjects]
+                            .sort((a, b) =>
+                                a.name.localeCompare(b.name, "sv")
+                            )
+                            .map(subject => {
+
+                                const subjectAbilities = abilities
+                                    .filter(
+                                        ability =>
+                                            ability.subject_id ===
+                                            subject.id
+                                    )
+                                    .sort((a, b) =>
+                                        a.name.localeCompare(
+                                            b.name,
+                                            "sv"
+                                        )
+                                    );
+
+                                if (
+                                    subjectAbilities.length === 0
+                                ) {
+                                    return null;
+                                }
+
+                                return (
+                                    <div key={subject.id}>
+
+                                        <div
+                                            className="tree-folder"
+                                            onClick={() =>
+                                                setExpandedAbilitySubjects(
+                                                    prev => ({
+                                                        ...prev,
+                                                        [subject.id]:
+                                                            !prev[
+                                                                subject.id
+                                                            ]
+                                                    })
+                                                )
+                                            }
+                                        >
+                                            {
+                                                expandedAbilitySubjects[
+                                                    subject.id
+                                                ]
+                                                    ? "▼"
+                                                    : "▶"
+                                            }
+
+                                            {" "}
+
+                                            {subject.name}
+                                        </div>
+
+                                        {
+                                            expandedAbilitySubjects[
+                                                subject.id
+                                            ] && (
+                                                <div className="ml-4">
+
+                                                    {subjectAbilities.map(
+                                                        ability => (
+
+                                                            <AbilityTreeItem
+                                                                key={ability.id}
+                                                                ability={
+                                                                    ability
+                                                                }
+                                                                openTab={
+                                                                    openTab
+                                                                }
+                                                                hoverTarget={
+                                                                    hoverTarget
+                                                                }
+                                                            />
+
+                                                        )
+                                                    )}
+
+                                                </div>
+                                            )
+                                        }
+
+                                    </div>
+                                );
+                            })}
 
                     </div>
 

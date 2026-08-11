@@ -12,6 +12,9 @@ import userRoutes from "./routes/userRoutes.js";
 import subjectRoutes from "./routes/subjectRoutes.js";
 import centralContentRoutes from "./routes/centralContentRoutes.js";
 
+import abilitiesRoutes from "./routes/abilitiesRoutes.js";
+import blockPointRoutes from "./routes/blockPointRoutes.js";
+
 import blockRoutes from "./routes/blockRoutes.js";
 import questionRoutes from "./routes/questionRoutes.js";
 import questionLevelRoutes from "./routes/questionLevelRoutes.js";
@@ -65,6 +68,10 @@ app.use("/api/users", userRoutes);
 
 app.use("/api/subjects", subjectRoutes);
 app.use("/api/central-content", centralContentRoutes);
+
+app.use("/api/abilities", abilitiesRoutes);
+app.use("/api/block-points", blockPointRoutes);
+
 
 app.use("/api/blocks", blockRoutes);
 app.use("/api/questions", questionRoutes);

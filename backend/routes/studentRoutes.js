@@ -109,8 +109,6 @@ router.put("/:studentId", async (req, res) => {
 router.put("/:studentId/password",
     async (req, res) => {
 
-        console.log("PASSWORD ROUTE HIT");
-
         let { password } = req.body;
 
         if (!password?.trim()) {
@@ -144,8 +142,6 @@ router.put("/:studentId/password",
 // GET /api/students/:id/events
 router.get("/:id/students/:userId/events", async (req, res) => {
 
-        console.log("EVENTS ROUTE HIT");
-
         const [rows] =
             await db.query(
                 `
@@ -168,8 +164,6 @@ router.get("/:id/students/:userId/events", async (req, res) => {
                     req.params.userId
                 ]
             );
-
-            console.log(rows);
 
         res.json(rows);
 

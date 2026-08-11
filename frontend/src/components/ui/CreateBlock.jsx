@@ -27,12 +27,6 @@ export default function CreateBlock({
 
         try {
 
-            console.log({
-                examId,
-                centralContentIds,
-                sectionIds
-            });
-
             const response = await fetch(
                 `${API_URL}/api/blocks`,
                 {

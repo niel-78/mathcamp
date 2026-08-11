@@ -191,12 +191,6 @@ export default function TeacherDashboard() {
         over
     }) => {
 
-        console.log(
-            "DRAG END",
-            active?.id,
-            over?.id
-        );
-
         if (!over) {
             return;
         }
@@ -383,6 +377,72 @@ export default function TeacherDashboard() {
 
         }
 
+        /*
+        * Flytta tabbar inom samma panel
+        */
+        if (
+            active.data.current?.type === "tab" &&
+            String(over.id).startsWith("tab-")
+        ) {
+
+            const {
+                tab,
+                sourceArea
+            } = active.data.current;
+
+            const tabs =
+                sourceArea === "left"
+                    ? [...leftTabs]
+                    : [...rightTabs];
+
+            const targetTabId =
+                over.id.replace("tab-", "");
+
+            const oldIndex =
+                tabs.findIndex(
+                    t => String(t.id) === String(tab.id)
+                );
+
+            const newIndex =
+                tabs.findIndex(
+                    t => String(t.id) === String(targetTabId)
+                );;
+
+            if (
+                oldIndex === -1 ||
+                newIndex === -1
+            ) {
+                return;
+            }
+
+            const reordered = [...tabs];
+
+            const [moved] =
+                reordered.splice(
+                    oldIndex,
+                    1
+                );
+
+            reordered.splice(
+                newIndex,
+                0,
+                moved
+            );
+
+            if (sourceArea === "left") {
+
+                setLeftTabs(reordered);
+
+            } else {
+
+                setRightTabs(reordered);
+
+            }
+
+            return;
+        }
+
+
 
         /*
         Flytta block i examTab
@@ -476,6 +536,32 @@ export default function TeacherDashboard() {
                 prev => prev + 1
             );
         }
+        if (
+            String(over.id).startsWith("ability-")
+        ) {
+
+            const abilityId =
+                Number(
+                    over.id.replace(
+                        "ability-",
+                        ""
+                    )
+                );
+
+            await fetch(
+                `${API_URL}/api/blocks/${blockId}/abilities/${abilityId}`,
+                {
+                    method: "POST",
+                    headers: authHeaders()
+                }
+            );
+
+            setBlockRefreshKey(
+                prev => prev + 1
+            );
+
+            return;
+        }
 
     };
 
@@ -500,13 +586,6 @@ export default function TeacherDashboard() {
 
             }}
             onDragOver={(event) => {
-
-                console.log(
-                    "TYPE:",
-                    event.active.data.current?.type,
-                    "OVER:",
-                    event.over?.id
-                );
 
                 setHoverTarget(
                     event.over?.id ?? null

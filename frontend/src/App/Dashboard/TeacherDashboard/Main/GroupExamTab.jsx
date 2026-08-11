@@ -128,11 +128,6 @@ export default function GroupExamTab({
 
         if (!Array.isArray(data)) {
 
-            console.error(
-                "Expected array but got:",
-                data
-            );
-
             setMonitorCount(0);
 
             return;

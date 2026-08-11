@@ -13,20 +13,7 @@ export default function DropZone({
         isOver
     } = useDroppable({
         id
-    });
-
-    useEffect(() => {
-
-        if (isOver) {
-
-            console.log(
-                "DROPZONE REGISTERED",
-                id
-            );
-
-        }
-
-    }, [isOver, id]);
+    });;
 
     return (
 

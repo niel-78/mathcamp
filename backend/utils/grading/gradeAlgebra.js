@@ -5,8 +5,6 @@ export const gradeAlgebra = (
     correctAnswer
 ) => {
 
-    console.log("-> gradeAlgebra");
-
     try {
 
         return (

@@ -10,14 +10,6 @@ export const gradeNumeric = (
     const correct =
         Number(correctAnswer);
 
-    console.log({
-        studentAnswer,
-        correctAnswer,
-        student,
-        correct,
-        config
-    });
-
     if (
         Number.isNaN(student) ||
         Number.isNaN(correct)
@@ -34,16 +26,6 @@ export const gradeNumeric = (
             Math.abs(
                 student - correct
             ) <= config.tolerance;
-
-        console.log({
-            tolerance:
-                config.tolerance,
-            difference:
-                Math.abs(
-                    student - correct
-                ),
-            result
-        });
 
         return result;
     }
@@ -68,14 +50,6 @@ export const gradeNumeric = (
             roundedStudent ===
             roundedCorrect;
 
-        console.log({
-            roundTo:
-                config.round_to,
-            roundedStudent,
-            roundedCorrect,
-            result
-        });
-
         return result;
     }
 
@@ -92,18 +66,6 @@ export const gradeNumeric = (
             correct.toFixed(
                 config.decimals
             );
-
-        console.log({
-            roundedStudent:
-                student.toFixed(
-                    config.decimals
-                ),
-            roundedCorrect:
-                correct.toFixed(
-                    config.decimals
-                ),
-            result
-        });
 
         return result;
     }

@@ -452,10 +452,6 @@ router.get("/:id/monitor", async (req, res) => {
             [req.params.id]
         );
 
-        console.log(
-            JSON.stringify(rows, null, 2)
-        );
-
         res.json(rows);
 
     } catch (error) {

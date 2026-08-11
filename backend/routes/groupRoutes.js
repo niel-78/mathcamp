@@ -1,11 +1,16 @@
 import express from "express";
 import db from "../db.js";
 import bcrypt from "bcrypt";
+import multer from "multer";
+import XLSX from "xlsx";
+import crypto from "crypto";
 import generatePassword from "../utils/generatePassword.js";
 import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
 
 const router = express.Router();
+
+const upload = multer({storage: multer.memoryStorage()});
 
 router.use(requireAuth);
 router.use(requireRole("teacher"));
@@ -284,6 +289,175 @@ router.delete("/:id/students/:studentId", async (req, res) => {
     }
 });
 
+// POST /api/groups/:id/import-students
+router.post("/:id/import-students",
+    upload.single("file"),
+    async (req, res) => {
+
+        try {
+
+            if (!req.file) {
+                return res.status(400).json({
+                    error: "Ingen fil uppladdad"
+                });
+            }
+
+            const workbook = XLSX.read(
+                req.file.buffer
+            );
+
+            const sheet =
+                workbook.Sheets[
+                    workbook.SheetNames[0]
+                ];
+
+            const rows =
+                XLSX.utils.sheet_to_json(sheet);
+
+            const imported = [];
+
+            for (const row of rows) {
+
+                const firstName =
+                    row.Förnamn?.trim();
+
+                const lastName =
+                    row.Efternamn?.trim();
+
+                if (
+                    !firstName ||
+                    !lastName
+                ) {
+                    continue;
+                }
+
+                let username =
+                    (
+                        firstName.toLowerCase() +
+                        "." +
+                        lastName.toLowerCase()
+                    )
+                    .replace(/å/g, "a")
+                    .replace(/ä/g, "a")
+                    .replace(/ö/g, "o")
+                    .replace(/\s+/g, "");
+
+
+                let counter = 1;
+
+                while (true) {
+
+                    const [[existing]] = await db.query(
+                        `
+                        SELECT id
+                        FROM users
+                        WHERE username = ?
+                        `,
+                        [username]
+                    );
+
+                    if (!existing) {
+                        break;
+                    }
+
+                    counter++;
+
+                    username =
+                        (
+                            firstName.toLowerCase() +
+                            "." +
+                            lastName.toLowerCase()
+                        )
+                        .replace(/å/g, "a")
+                        .replace(/ä/g, "a")
+                        .replace(/ö/g, "o")
+                        .replace(/\s+/g, "")
+                        + counter;
+                }
+
+                const password = generatePassword();
+                
+                const passwordHash =
+                    await bcrypt.hash(
+                        password,
+                        10
+                    );
+
+                const userKey =
+                    crypto.randomUUID();
+
+                const [userResult] =
+                    await db.query(
+                        `
+                        INSERT INTO users (
+                            username,
+                            password_hash,
+                            role,
+                            first_name,
+                            last_name,
+                            user_key
+                        )
+                        VALUES (
+                            ?,
+                            ?,
+                            'student',
+                            ?,
+                            ?,
+                            ?
+                        )
+                        `,
+                        [
+                            username,
+                            passwordHash,
+                            firstName,
+                            lastName,
+                            userKey
+                        ]
+                    );
+
+                await db.query(
+                    `
+                    INSERT INTO group_students (
+                        user_id,
+                        group_id
+                    )
+                    VALUES (?, ?)
+                    `,
+                    [
+                        userResult.insertId,
+                        req.params.id
+                    ]
+                );
+
+                imported.push({
+                    id: userResult.insertId,
+                    firstName,
+                    lastName,
+                    username,
+                    password: password
+                });
+
+            }
+
+            res.json({
+                importedCount:
+                    imported.length,
+                students:
+                    imported
+            });
+
+        } catch (error) {
+
+            console.error(error);
+
+            res.status(500).json({
+                error: "Importen misslyckades"
+            });
+
+        }
+
+    }
+);
 
 //PUT /api/groups/:id/archive
 router.put("/:id/archive", async (req, res) => {

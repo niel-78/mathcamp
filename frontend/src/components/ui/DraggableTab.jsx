@@ -1,4 +1,4 @@
-import { useDraggable } from "@dnd-kit/core";
+import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { Button } from "@/components/ui/button";
 
 export default function DraggableTab({
@@ -12,7 +12,7 @@ export default function DraggableTab({
     const {
         attributes,
         listeners,
-        setNodeRef,
+        setNodeRef: setDragRef,
         transform
     } = useDraggable({
         id: `tab-${tab.id}`,
@@ -22,6 +22,19 @@ export default function DraggableTab({
             sourceArea: area
         }
     });
+
+    const {
+        setNodeRef: setDropRef
+    } = useDroppable({
+        id: `tab-${tab.id}`
+    });
+
+    const setRefs = (node) => {
+
+        setDragRef(node);
+        setDropRef(node);
+
+    };
 
     const isActive =
         activeTab === tab.id;
@@ -41,7 +54,7 @@ export default function DraggableTab({
     return (
 
         <div
-            ref={setNodeRef}
+            ref={setRefs}
             style={style}
             onClick={() =>
                 setActiveTab(tab.id)

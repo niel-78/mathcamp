@@ -2,6 +2,11 @@ USE mydb;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS abilities;
+DROP TABLE IF EXISTS block_abilities;
+DROP TABLE IF EXISTS competencies;
+DROP TABLE IF EXISTS competency_levels;
+DROP TABLE IF EXISTS block_points;
 DROP TABLE IF EXISTS schools;
 DROP TABLE IF EXISTS school_settings;
 DROP TABLE IF EXISTS school_teachers;
@@ -676,6 +681,20 @@ CREATE TABLE subjects (
     name VARCHAR(100)
 );
 
+--Matematik 
+
+INSERT INTO subjects (
+    id,
+    code,
+    name
+)
+VALUES (
+    '1',
+    'MATE',
+    'Matematik'
+);
+
+
 CREATE TABLE levels (
     id INT PRIMARY KEY AUTO_INCREMENT,
     subject_id INT NOT NULL,
@@ -702,6 +721,96 @@ CREATE TABLE central_content (
     FOREIGN KEY (area_id)
         REFERENCES content_areas(id)
 );
+
+--Förmågor (formativ bedömning)
+CREATE TABLE abilities (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    subject_id INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (subject_id)
+        REFERENCES subjects(id)
+);
+
+INSERT INTO abilities (
+    id,
+    subject_id,
+    name
+)
+VALUES
+(1, 1, 'Begreppet procent'),
+(2, 1, 'Begreppet förändringsfaktor'),
+(3, 1, 'Lösa linjära ekvationer'),
+(4, 1, 'Lösa ekvationssystem');
+
+CREATE TABLE block_abilities (
+    block_id INT NOT NULL,
+    ability_id INT NOT NULL,
+
+    PRIMARY KEY (
+        block_id,
+        ability_id
+    ),
+
+    FOREIGN KEY (block_id)
+        REFERENCES blocks(id),
+
+    FOREIGN KEY (ability_id)
+        REFERENCES abilities(id)
+);
+
+
+--Kunskapskrav (summativ bedömning)
+CREATE TABLE competencies (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    subject_id INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+
+    FOREIGN KEY (subject_id)
+        REFERENCES subjects(id)
+);
+
+
+
+CREATE TABLE competency_levels (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    competency_id INT NOT NULL,
+
+    level ENUM(
+        'E',
+        'C',
+        'A'
+    ) NOT NULL,
+
+    FOREIGN KEY (competency_id)
+        REFERENCES competencies(id)
+);
+
+
+-- Poängmodell
+CREATE TABLE block_points (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    block_id INT NOT NULL,
+
+    central_content_id INT NOT NULL,
+
+    competency_level_id INT NOT NULL,
+
+    FOREIGN KEY (block_id)
+        REFERENCES blocks(id),
+
+    FOREIGN KEY (central_content_id)
+        REFERENCES central_content(id),
+
+    FOREIGN KEY (competency_level_id)
+        REFERENCES competency_levels(id)
+);
+
+
 
 CREATE TABLE block_central_content (
     block_id INT NOT NULL,
@@ -954,18 +1063,35 @@ INSERT INTO exam_blocks (exam_id,block_id,sort_order) VALUES
 
 INSERT INTO group_exams(`exam_id`,`group_id`,`group_exam_key`) VALUES(1,1,'A');
 
---Matematik 
+INSERT INTO block_abilities (
+    block_id,
+    ability_id
+)
+VALUES
+(1, 1),
+(2, 2),
+(3, 3),
+(4, 4);
 
-INSERT INTO subjects (
+INSERT INTO competencies (
     id,
-    code,
+    subject_id,
     name
 )
-VALUES (
-    '1',
-    'MATE',
-    'Matematik'
-);
+VALUES
+(1, 1, 'Begrepp'),
+(2, 1, 'Procedur'),
+(3, 1, 'Problemlösning'),
+(4, 1, 'Resonemang');
+
+
+
+
+
+
+
+
+
 
 
 --Niva 1a
@@ -1646,3 +1772,52 @@ VALUES
 (38,'Register',392,3);
 
 INSERT INTO level_books (level_id, book_id) VALUES (2,1);
+
+INSERT INTO competency_levels (
+    id,
+    competency_id,
+    level
+)
+VALUES
+
+-- Begrepp
+(1, 1, 'E'),
+(2, 1, 'C'),
+(3, 1, 'A'),
+
+-- Procedur
+(4, 2, 'E'),
+(5, 2, 'C'),
+(6, 2, 'A'),
+
+-- Problemlösning
+(7, 3, 'E'),
+(8, 3, 'C'),
+(9, 3, 'A'),
+
+-- Resonemang
+(10, 4, 'E'),
+(11, 4, 'C'),
+(12, 4, 'A');
+
+
+INSERT INTO block_points (
+    block_id,
+    central_content_id,
+    competency_level_id
+)
+VALUES
+
+-- poäng 1
+(1, 1, 4),
+
+-- poäng 2
+(1, 1, 5),
+
+-- poäng 3
+(1, 1, 5),
+
+-- poäng 4
+(1, 1, 6);
+
+

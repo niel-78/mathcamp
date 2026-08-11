@@ -231,6 +231,71 @@ router.get("/central-content/:centralContentId",
     }
 );
 
+
+// GET /api/abilities/:abilityId
+router.get("/abilities/:abilityId", async (req, res) => {
+    const [[teacher]] = await db.query(
+        `
+        SELECT school_id
+        FROM school_teachers
+        WHERE teacher_id = ?
+        `,
+        [req.user.id]
+    );
+
+    const schoolId = teacher?.school_id;
+
+    const [blocks] = await db.query(
+        `
+        SELECT
+            b.*
+        FROM blocks b
+
+        INNER JOIN block_abilities ba
+            ON ba.block_id = b.id
+
+        WHERE
+            ba.ability_id = ?
+            AND b.deleted_at IS NULL
+
+            AND (
+                b.created_by = ?
+                OR (
+                    b.visibility = 'school'
+                    AND b.school_id = ?
+                )
+                OR (
+                    b.visibility = 'global'
+                )
+            )
+
+        ORDER BY b.id
+        `,
+        [
+            req.params.abilityId,
+            req.user.id,
+            schoolId
+        ]
+    );
+
+    const hydratedBlocks = await hydrateBlocks(blocks);
+
+    for (const block of hydratedBlocks) {
+        const isOwner =
+            block.created_by === req.user.id;
+
+        block.canEdit = isOwner;
+
+        block.category = isOwner
+            ? "mine"
+            : block.visibility === "global"
+            ? "global"
+            : "school";
+    }
+
+    res.json(hydratedBlocks);
+});
+
 // GET /api/blocks/:id
 router.get("/:blockId/", async (req, res) => {
 
@@ -1033,6 +1098,72 @@ router.post("/:id/copy",
     }
 );
 
+//GET /api/blocks/:id/abilities
+router.get("/:id/abilities",
+    async (req, res) => {
+
+        const [rows] = await db.query(
+            `
+            SELECT
+                a.*
+            FROM abilities a
+            JOIN block_abilities ba
+                ON ba.ability_id = a.id
+            WHERE ba.block_id = ?
+            ORDER BY a.name
+            `,
+            [req.params.id]
+        );
+
+        res.json(rows);
+
+    }
+);
+
+//POST /api/blocks/:id/abilities/:abilityId
+router.post("/:id/abilities/:abilityId",
+    async (req, res) => {
+
+        await db.query(
+            `
+            INSERT IGNORE INTO block_abilities (
+                block_id,
+                ability_id
+            )
+            VALUES (?, ?)
+            `,
+            [
+                req.params.id,
+                req.params.abilityId
+            ]
+        );
+
+        res.sendStatus(204);
+
+    }
+);
+
+//DELETE /api/blocks/:id/abilities/:abilityId
+router.delete("/:id/abilities/:abilityId",
+    async (req, res) => {
+
+        await db.query(
+            `
+            DELETE
+            FROM block_abilities
+            WHERE block_id = ?
+            AND ability_id = ?
+            `,
+            [
+                req.params.id,
+                req.params.abilityId
+            ]
+        );
+
+        res.sendStatus(204);
+
+    }
+);
 
 
 //GET /api/teacher/blocks/question-levels
@@ -1281,9 +1412,71 @@ router.delete("/options/:optionId", async (req, res) => {
 });
 
 
+// GET /api/blocks/:blockId/points
+router.get("/:id/points",
+    async (req, res) => {
 
+        const [rows] = await db.query(
+            `
+            SELECT
+                bp.*,
+                cc.content AS central_content,
+                c.name AS competency,
+                cl.level
+            FROM block_points bp
 
+            JOIN central_content cc
+                ON cc.id =
+                    bp.central_content_id
 
+            JOIN competency_levels cl
+                ON cl.id =
+                    bp.competency_level_id
 
+            JOIN competencies c
+                ON c.id =
+                    cl.competency_id
+
+            WHERE bp.block_id = ?
+            `,
+            [req.params.id]
+        );
+
+        res.json(rows);
+
+    }
+);
+
+// POST /api/blocks/:id/points
+router.post("/:id/points",
+    async (req, res) => {
+
+        const {
+            central_content_id,
+            competency_level_id
+        } = req.body;
+
+        const [result] = await db.query(
+            `
+            INSERT INTO block_points (
+                block_id,
+                central_content_id,
+                competency_level_id
+            )
+            VALUES (?, ?, ?)
+            `,
+            [
+                req.params.id,
+                central_content_id,
+                competency_level_id
+            ]
+        );
+
+        res.json({
+            id: result.insertId
+        });
+
+    }
+);
 
 export default router;

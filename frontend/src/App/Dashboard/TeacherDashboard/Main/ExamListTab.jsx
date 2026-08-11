@@ -153,11 +153,6 @@ export default function ExamListTab({
                 <CreateExam
                     onCreated={(exam) => {
 
-                        console.log(
-                            "received in ExamListTab",
-                            exam
-                        );
-
                         setCreatingExam(false);
 
                         loadExams();

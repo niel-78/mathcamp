@@ -20,11 +20,6 @@ export default function CentralContentTab({
 
     useEffect(() => {
 
-        console.log(
-            "CentralContentTab loadBlocks",
-            blockRefreshKey
-        );
-
         loadBlocks();
 
     }, [
@@ -38,11 +33,6 @@ export default function CentralContentTab({
     ] = useState(false);
 
     const loadBlocks = async () => {
-
-        console.log(
-            "loadBlocks",
-            centralContentId
-            );
 
         const response = await fetch(
             `${API_URL}/api/blocks/central-content/${centralContentId}`,

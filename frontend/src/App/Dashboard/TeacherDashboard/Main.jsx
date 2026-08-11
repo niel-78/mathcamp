@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useDroppable } from "@dnd-kit/core";
 import TabBar from "./Main/TabBar";
 import StartPage from "./Main/StartPage";
 import ExamListTab from "./Main/ExamListTab";
@@ -13,6 +12,8 @@ import GroupExamLibraryTab from "./Main/GroupExamLibraryTab";
 import GroupExamTab from "./Main/GroupExamTab";
 import GroupExamWaitingRoomTab from "./Main/GroupExamWaitingRoomTab";
 import GroupExamMonitorTab from "./Main/GroupExamMonitorTab";
+import AbilityTab from "./Main/AbilityTab";
+import ImportStudentsTab from "./Main/ImportStudentsTab";
 
 
 export default function Main({
@@ -209,6 +210,22 @@ export default function Main({
 
                     )}
 
+                    {currentTab?.type === "ability" && (
+
+                        <AbilityTab
+                            abilityId={
+                                currentTab.abilityId
+                            }
+                            openTab={(tab) =>
+                                openTab(tab, area)
+                            }
+                            blockRefreshKey={
+                                blockRefreshKey
+                            }
+                        />
+
+                    )}
+
                     {currentTab?.type === "group-exams" && (
 
                         <GroupExamLibraryTab
@@ -254,6 +271,17 @@ export default function Main({
                         />
 
                     )}
+
+                    {currentTab?.type === "import-students" && (
+
+                        <ImportStudentsTab
+                            key={currentTab.id}
+                            groupId={currentTab.groupId}
+                            groupName={currentTab.groupName}
+                        />
+
+                    )}
+
 
                 </div>
 

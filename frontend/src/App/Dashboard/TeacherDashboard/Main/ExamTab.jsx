@@ -71,8 +71,6 @@ export default function ExamTab({
 
     const removeBlock = async (blockId) => {
 
-        console.log("REMOVE", blockId);
-
         const response = await fetch(
             `${API_URL}/api/exams/${examId}/blocks/${blockId}`,
             {
@@ -80,8 +78,6 @@ export default function ExamTab({
                 headers: authHeaders()
             }
         );
-
-        console.log("STATUS", response.status);
 
         setBlocks(prev =>
             prev.filter(

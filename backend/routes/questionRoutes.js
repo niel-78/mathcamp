@@ -368,9 +368,6 @@ router.post("/:id/duplicate",
 router.post("/:id/media", upload.single("file"),
     async (req, res) => {
 
-        console.log("FILE:", req.file);
-        console.log("CWD:", process.cwd());
-
         const mediaType =
             req.file.mimetype.startsWith("video")
                 ? "video"
@@ -423,8 +420,6 @@ router.delete("/media/:mediaId", async (req, res) => {
         process.cwd(),
         rows[0].media_url.replace(/^\//, "")
     );
-
-    console.log("Deleting:", filePath);
 
     try {
         await fs.promises.unlink(filePath);

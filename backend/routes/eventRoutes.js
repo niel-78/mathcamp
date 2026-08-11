@@ -57,16 +57,6 @@ router.post("/", async (req, res) => {
             JSON.parse(
                 attempt.exam_config || "{}"
             );
-            
-        console.log(
-            "EVENT TYPE",
-            event_type
-        );
-
-        console.log(
-            "CONFIG",
-            config
-        );
 
         const eventLockMap = {
 
@@ -90,11 +80,6 @@ router.post("/", async (req, res) => {
         const configKey =
             eventLockMap[event_type];
         
-        console.log(
-            "CONFIG KEY",
-            configKey
-        );
-
         const shouldLock =
             configKey &&
             config.monitoring?.[configKey];

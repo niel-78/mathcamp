@@ -33,21 +33,12 @@ export default function WaitingRoomPage({
                 const data =
                     await response.json();
 
-                console.log(
-                    "WAITING STATUS",
-                    data
-                );
-
                 setStatus(
                     data.exam_status
                 );
                 if (
                     data.attempt_status === "locked"
                 ) {
-
-                    console.log(
-                        "LOCKED ATTEMPT FOUND"
-                    );
 
                     clearInterval(
                         interval

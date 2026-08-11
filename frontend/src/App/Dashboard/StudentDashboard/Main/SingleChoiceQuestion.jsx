@@ -27,7 +27,6 @@ export default function SingleChoiceQuestion({
                                 : "outline"
                             }
                             onClick={() => {
-                                console.log("BUTTON CLICK", opt.id);
                                 onChange(opt.id)
                             }}
                     >

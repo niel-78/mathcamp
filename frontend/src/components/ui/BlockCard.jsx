@@ -14,6 +14,7 @@ export default function BlockCard({
     onCopy,
     onRemoveCentralContent,
     onRemoveSection,
+    onRemoveAbility,
     canRemoveFromExam,
     orderNumber
 
@@ -61,7 +62,10 @@ export default function BlockCard({
 
     const [showReferences, setShowReferences] = useState(false);
 
-    const referenceCount = (block.centralContent?.length ?? 0) + (block.bookSections?.length ?? 0);
+    const referenceCount =
+        (block.centralContent?.length ?? 0) +
+        (block.bookSections?.length ?? 0) +
+        (block.abilities?.length ?? 0);
 
     return (
 
@@ -226,6 +230,56 @@ export default function BlockCard({
                                         )}
                                     </>
                                 )}
+
+                                {block.abilities?.length > 0 && (
+                                    <>
+                                        <p
+                                            className="
+                                                text-xs
+                                                text-muted-foreground
+                                                mt-2
+                                            "
+                                        >
+                                            Förmågor
+                                        </p>
+
+                                        {[...block.abilities]
+                                            .sort((a, b) =>
+                                                a.name.localeCompare(
+                                                    b.name,
+                                                    "sv"
+                                                )
+                                            )
+                                            .map(ability => (
+                                                <div
+                                                    key={ability.id}
+                                                    className="
+                                                        flex
+                                                        justify-between
+                                                        items-center
+                                                    "
+                                                >
+                                                    {ability.name}
+
+                                                    {block.canEdit && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            className="text-red-500"
+                                                            onClick={() =>
+                                                                onRemoveAbility?.(
+                                                                    block.id,
+                                                                    ability.id
+                                                                )
+                                                            }
+                                                        >
+                                                            <X size={14} />
+                                                        </Button>
+                                                    )}
+
+                                                </div>
+                                            ))}
+                                    </>
+                                )}                                    
 
                                 {block.bookSections?.length > 0 && (
                                     <>

@@ -57,7 +57,6 @@ export default function GroupExamWaitingRoomTab({
 
     const admitAll = async () => {
 
-        console.log("ADMIT ALL");
         const response = await fetch(
             `${API_URL}/api/group-exams/${groupExamId}/admit-all`,
             {
@@ -71,11 +70,6 @@ export default function GroupExamWaitingRoomTab({
         }
 
         console.log(
-            "ADMIT ALL STATUS",
-            response.status
-        );
-
-        console.log(
             await response.text()
         );    
 
@@ -87,7 +81,6 @@ export default function GroupExamWaitingRoomTab({
         userId
     ) => {
 
-        console.log("ADMIT STUDENT", userId);
         const response = await fetch(
             `${API_URL}/api/group-exams/${groupExamId}/admit-student`,
             {
@@ -100,11 +93,6 @@ export default function GroupExamWaitingRoomTab({
                     user_id: userId
                 })
             }
-        );
-
-        console.log(
-            "ADMIT STUDENT STATUS",
-            response.status
         );
 
         console.log(

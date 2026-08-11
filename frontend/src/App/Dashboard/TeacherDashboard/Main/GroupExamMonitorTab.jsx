@@ -561,7 +561,6 @@ return (
                                 terminateAttempt(
                                     student.attempt_id
                                 )
-                                console.log(student);
                             }
                         }
                         onResume={() =>

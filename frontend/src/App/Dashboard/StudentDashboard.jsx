@@ -81,8 +81,6 @@ const StudentDashboard = () => {
 
     const startExamAttempt = async () => {
 
-        console.log("START EXAM CLICKED");
-
         const res = await fetch(
             `${API_URL}/api/exam-attempts/start`,
             {

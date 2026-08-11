@@ -1,43 +1,62 @@
+import { useDroppable } from "@dnd-kit/core";
 import DraggableTab from "@/components/ui/DraggableTab";
-import TabDropZone from "@/components/ui/TabDropZone";
 
 export default function TabBar({
     tabs,
     activeTab,
     setActiveTab,
-    activeDragType,
     closeTab,
     area
 }) {
 
+    const {
+        setNodeRef,
+        isOver
+    } = useDroppable({
+        id: `tab-panel-${area}`
+    });
+
     return (
 
-        <>
-            {
-                activeDragType === "tab" && (
-                    <TabDropZone area={area} />
-                )
-            }
+        <div
+            ref={setNodeRef}
+            className={`
+                flex
+                gap-2
+                overflow-x-auto
+                whitespace-nowrap
 
-            <div className="flex gap-2 overflow-x-auto whitespace-nowrap">
+                ${tabs.length === 0
+                    ? "min-h-10 items-center"
+                    : ""
+                }
 
-                {tabs.map(tab => (
+                ${
+                    isOver
+                        ? "bg-blue-500/10"
+                        : ""
+                }
+            `}
+        >
 
-                    <DraggableTab
-                        key={tab.id}
-                        tab={tab}
-                        activeTab={activeTab}
-                        setActiveTab={setActiveTab}
-                        closeTab={closeTab}
-                        area={area}
-                        className="flex-shrink-0"
-                    />
+            {tabs.length === 0 && (
+                <span className="text-sm text-muted-foreground px-2">
+                    Dra en flik hit
+                </span>
+            )}
 
-                ))}
+            {tabs.map(tab => (
+                <DraggableTab
+                    key={tab.id}
+                    tab={tab}
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                    closeTab={closeTab}
+                    area={area}
+                />
+            ))}
 
-            </div>
-
-        </>
+        </div>
 
     );
 
