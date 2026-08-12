@@ -13,7 +13,7 @@ import GroupExamTab from "./Main/GroupExamTab";
 import GroupExamWaitingRoomTab from "./Main/GroupExamWaitingRoomTab";
 import GroupExamMonitorTab from "./Main/GroupExamMonitorTab";
 import AbilityTab from "./Main/AbilityTab";
-
+import GroupPlanningTab from "./Main/GroupPlanningTab";
 
 export default function Main({
     tabs,
@@ -267,6 +267,14 @@ export default function Main({
                             groupExamId={
                                 currentTab.groupExamId
                             }
+                        />
+
+                    )}
+
+                    {currentTab?.type === "group-planning" && (
+
+                        <GroupPlanningTab
+                            groupId={currentTab.groupId}
                         />
 
                     )}

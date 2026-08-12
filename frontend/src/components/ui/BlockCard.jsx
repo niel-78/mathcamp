@@ -16,6 +16,7 @@ export default function BlockCard({
     onRemoveCentralContent,
     onRemoveSection,
     onRemoveAbility,
+    onEditPoint,
     canRemoveFromExam,
     orderNumber
 
@@ -75,8 +76,6 @@ export default function BlockCard({
                 sum + Number(point.points),
             0
         ) ?? 0;
-
-    console.log(block.canEdit);
 
     return (
 
@@ -325,9 +324,7 @@ export default function BlockCard({
                                     size="sm"
                                     variant="outline"
                                     onClick={() =>
-                                        setPointDialog({
-                                            blockId: block.id
-                                        })
+                                        onEditPoint?.(null)
                                     }
                                 >
                                     +
@@ -342,14 +339,8 @@ export default function BlockCard({
                             <BlockPoints
                                 points={block.points}
                                 canEdit={block.canEdit}
-                                onEditPoint={(point) =>
-                                    setPointDialog({
-                                        blockId: block.id,
-                                        point
-                                    })
-                                }
+                                onEditPoint={onEditPoint}
                             />
-
 
                         )}
 

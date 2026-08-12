@@ -6,14 +6,18 @@ export default function TabBar({
     activeTab,
     setActiveTab,
     closeTab,
-    area
+    area,
+    activeDragType
 }) {
+
+    const enabled = activeDragType === "tab";
 
     const {
         setNodeRef,
         isOver
     } = useDroppable({
-        id: `tab-panel-${area}`
+        id: `tab-panel-${area}`,
+        disabled: !enabled
     });
 
     return (
@@ -53,6 +57,7 @@ export default function TabBar({
                     setActiveTab={setActiveTab}
                     closeTab={closeTab}
                     area={area}
+                    activeDragType={activeDragType}
                 />
             ))}
 

@@ -4,7 +4,8 @@ export default function CardSection({
     title,
     description,
     actions,
-    children
+    children,
+    className = ""
 }) {
 
     return (
@@ -15,6 +16,7 @@ export default function CardSection({
                 p-6
                 border-l-4
                 border-l-primary
+                ${className}
             "
         >
 

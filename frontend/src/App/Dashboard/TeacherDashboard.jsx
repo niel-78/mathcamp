@@ -196,6 +196,61 @@ export default function TeacherDashboard() {
         }
 
         /*
+        Lägga boksektion i lektionsplanering
+        */
+        if (
+            active.data.current?.type === "section" &&
+            over?.id?.startsWith("lesson-")
+        ) {
+
+            const lessonId = Number(
+                over.id.replace(
+                    "lesson-",
+                    ""
+                )
+            );
+
+            const sectionId =
+                active.data.current.sectionId;
+
+            try {
+
+                await fetch(
+                    `${API_URL}/api/lessons/lesson-sections`,
+                    {
+                        method: "POST",
+                        headers: {
+                            ...authHeaders(),
+                            "Content-Type":
+                                "application/json"
+                        },
+                        body: JSON.stringify({
+                            lesson_id: lessonId,
+                            section_id: sectionId
+                        })
+                    }
+                );
+
+                console.log(
+                    "Section linked",
+                    {
+                        lessonId,
+                        sectionId
+                    }
+                );
+
+            } catch (error) {
+
+                console.error(error);
+
+            }
+
+            return;
+
+        }
+
+
+        /*
         Importera block från blockTab till examTab
         */
         if (
@@ -492,30 +547,6 @@ export default function TeacherDashboard() {
         }
 
         if (
-            String(over.id).startsWith("cc-")
-        ) {
-
-            const centralContentId =
-                Number(
-                    over.id.slice(3)
-                );
-
-            await fetch(
-                `${API_URL}/api/blocks/${blockId}/central-content/${centralContentId}`,
-                {
-                    method: "POST",
-                    headers: authHeaders()
-                }
-            );
-
-            setBlockRefreshKey(
-                prev => prev + 1
-            );
-
-            return;
-        }
-
-        if (
             String(over.id).startsWith("section-")
         ) {
 
@@ -568,8 +599,10 @@ export default function TeacherDashboard() {
     return (
 
         <DndContext
-            collisionDetection={pointerWithin}
+            collisionDetection={closestCenter}
             onDragStart={({ active }) => {
+
+                console.log("DRAG START", active);
 
                 const type =
                     active.data.current?.type;
@@ -593,6 +626,12 @@ export default function TeacherDashboard() {
 
             }}
             onDragEnd={(event) => {
+
+                console.log("DRAG END");
+                
+                console.log("active", event.active);
+                
+                console.log("over", event.over);
 
                 setActiveDragType(null);
 

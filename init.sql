@@ -837,7 +837,7 @@ CREATE TABLE block_points (
 
     grading_ability_level_id INT NOT NULL,
 
-    points DECIMAL(5,2) NOT NULL DEFAULT 1,
+    points INT NOT NULL DEFAULT 1,
 
     comment TEXT NULL,
 
@@ -1861,3 +1861,157 @@ VALUES
 -- Block 6 (Kommunikation)
 (6, 4, 16, 1),
 (6, 4, 17, 2);
+
+
+--Gruppens återkommande lektionstider
+CREATE TABLE group_schedules (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    group_id INT NOT NULL,
+
+    weekday TINYINT NOT NULL,
+
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+
+    valid_from DATE NOT NULL,
+    valid_to DATE NOT NULL,
+
+    FOREIGN KEY (group_id)
+        REFERENCES groups(id)
+        ON DELETE CASCADE
+);
+
+-- Schemabrytande dagar
+CREATE TABLE group_schedule_exceptions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    group_id INT NOT NULL,
+
+    date DATE NOT NULL,
+
+    type ENUM(
+        'holiday',
+        'study_day',
+        'cancelled',
+        'other'
+    ) NOT NULL,
+
+    note VARCHAR(255),
+
+    FOREIGN KEY (group_id)
+        REFERENCES groups(id)
+        ON DELETE CASCADE
+);
+
+-- Faktiska lektionstillfällen
+CREATE TABLE lessons (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    group_id INT NOT NULL,
+
+    starts_at DATETIME NOT NULL,
+    ends_at DATETIME NOT NULL,
+
+    status ENUM(
+        'planned',
+        'cancelled'
+    ) DEFAULT 'planned',
+
+    FOREIGN KEY (group_id)
+        REFERENCES groups(id)
+        ON DELETE CASCADE
+);
+
+-- Koppling mellan lektion och boksektion
+CREATE TABLE lesson_sections (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    lesson_id INT NOT NULL,
+
+    section_id INT NOT NULL,
+
+    sort_order INT NOT NULL DEFAULT 0,
+
+    FOREIGN KEY (lesson_id)
+        REFERENCES lessons(id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (section_id)
+        REFERENCES sections(id)
+        ON DELETE CASCADE
+);
+
+INSERT INTO group_schedules (
+    group_id,
+    weekday,
+    start_time,
+    end_time,
+    valid_from,
+    valid_to
+)
+VALUES
+
+-- Grupp 1
+(1, 1, '08:00:00', '09:20:00', '2026-08-17', '2026-12-18'),
+(1, 4, '13:00:00', '14:20:00', '2026-08-17', '2026-12-18'),
+
+-- Grupp 2
+(2, 2, '10:00:00', '11:20:00', '2026-08-17', '2026-12-18'),
+(2, 5, '08:30:00', '09:50:00', '2026-08-17', '2026-12-18');
+
+
+INSERT INTO group_schedule_exceptions (
+    group_id,
+    date,
+    type,
+    note
+)
+VALUES
+
+-- Grupp 1
+(1, '2026-09-23', 'study_day', 'Studiedag'),
+(1, '2026-11-12', 'cancelled', 'Utvecklingssamtal'),
+(1, '2026-12-17', 'other', 'Gemensam aktivitetsdag'),
+
+-- Grupp 2
+(2, '2026-10-28', 'study_day', 'Studiedag'),
+(2, '2026-11-27', 'cancelled', 'Praouppföljning');
+
+
+INSERT INTO lessons (
+    group_id,
+    starts_at,
+    ends_at,
+    status
+)
+VALUES
+
+-- Grupp 1
+(1, '2026-08-17 08:00:00', '2026-08-17 09:20:00', 'planned'),
+(1, '2026-08-20 13:00:00', '2026-08-20 14:20:00', 'planned'),
+
+-- Grupp 2
+(2, '2026-08-18 10:00:00', '2026-08-18 11:20:00', 'planned'),
+(2, '2026-08-21 08:30:00', '2026-08-21 09:50:00', 'planned');
+
+INSERT INTO lesson_sections (
+    lesson_id,
+    section_id,
+    sort_order
+)
+VALUES
+
+-- Lektion 1
+(1, 1, 1),
+(1, 2, 2),
+
+-- Lektion 2
+(2, 3, 1),
+
+-- Lektion 3
+(3, 4, 1),
+(3, 5, 2),
+
+-- Lektion 4
+(4, 6, 1);

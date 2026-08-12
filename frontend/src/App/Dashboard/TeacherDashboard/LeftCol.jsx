@@ -642,7 +642,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                 {expandedGroups[group.id] && (
                                     <div className="ml-8 border-l border-border pl-4">
 
-                                        <div className="tree-file">
+                                        {/* <div className="tree-file">
                                             Kommande prov
                                         </div>
                                         <div className="tree-file">
@@ -650,9 +650,23 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                         </div>
                                         <div className="tree-file">
                                             Resultat
+                                        </div> */}
+
+                                        <div
+                                            className="tree-file cursor-pointer"
+                                            onClick={() =>
+                                                openTab({
+                                                    id: `group-planning-${group.id}`,
+                                                    type: "group-planning",
+                                                    title: `${group.name} - Planering`,
+                                                    groupId: group.id,
+                                                    group
+                                                })
+                                            }
+                                        >
+                                            Planering
                                         </div>
 
-                                        <div>
 
                                         <div
                                             className="tree-file cursor-pointer"
@@ -728,7 +742,6 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                                             )}
 
-                                        </div>
 
                                         <div className="tree-file">
                                             Inställningar

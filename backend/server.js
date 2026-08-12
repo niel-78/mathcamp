@@ -11,6 +11,8 @@ import userRoutes from "./routes/userRoutes.js";
 
 import subjectRoutes from "./routes/subjectRoutes.js";
 
+import lessonRoutes from "./routes/lessonRoutes.js";
+
 import abilitiesRoutes from "./routes/abilitiesRoutes.js";
 import blockPointRoutes from "./routes/blockPointRoutes.js";
 
@@ -65,7 +67,9 @@ app.use("/api/school-settings",schoolSettingsRoutes);
 
 app.use("/api/users", userRoutes);
 
-app.use("/api/subjects", subjectRoutes);
+app.use("/api/subjects", subjectRoutes)
+
+app.use("/api/lessons", lessonRoutes);
 
 app.use("/api/abilities", abilitiesRoutes);
 app.use("/api/block-points", blockPointRoutes);

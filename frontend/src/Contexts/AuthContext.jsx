@@ -37,7 +37,6 @@ export function AuthProvider({ children }) {
             .then(data => {
 
                 setUser(data);
-                console.log(data)
 
                 setLoading(false);
 

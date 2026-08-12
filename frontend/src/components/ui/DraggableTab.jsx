@@ -6,7 +6,8 @@ export default function DraggableTab({
     activeTab,
     setActiveTab,
     closeTab,
-    area
+    area,
+    activeDragType
 }) {
 
     const {
@@ -23,16 +24,28 @@ export default function DraggableTab({
         }
     });
 
+    const enabled = activeDragType === "tab";
+    const isPinned = tab.id === "start";
+    const draggable = !isPinned;
+
+
     const {
         setNodeRef: setDropRef
     } = useDroppable({
-        id: `tab-${tab.id}`
+        id: `tab-${tab.id}`,
+        data: {
+            type: "tab"
+        },
+        disabled: !enabled
     });
 
     const setRefs = (node) => {
 
         setDragRef(node);
-        setDropRef(node);
+
+        if (enabled) {
+            setDropRef(node);
+        }
 
     };
 
@@ -63,6 +76,10 @@ export default function DraggableTab({
                 flex
                 items-center
                 gap-2
+
+                h-14
+                min-h-14
+                max-h-14
 
                 px-3
                 py-2
@@ -101,21 +118,22 @@ export default function DraggableTab({
                 }
             `}
         >
-
-            <span
-                {...listeners}
-                {...attributes}
-                onClick={(e) =>
-                    e.stopPropagation()
-                }
-                className="
-                    cursor-grab
-                    text-muted-foreground
-                    shrink-0
-                "
-            >
-                ⠿
-            </span>
+            {draggable && (
+                <span
+                    {...listeners}
+                    {...attributes}
+                    onClick={(e) =>
+                        e.stopPropagation()
+                    }
+                    className="
+                        cursor-grab
+                        text-muted-foreground
+                        shrink-0
+                    "
+                >
+                    ⠿
+                </span>
+            )}
 
             <div
                 className="
@@ -145,6 +163,7 @@ export default function DraggableTab({
 
             </div>
 
+            {!isPinned && (
             <Button
                 type="button"
                 variant="ghost"
@@ -169,6 +188,7 @@ export default function DraggableTab({
             >
                 ×
             </Button>
+            )}
 
         </div>
 

@@ -757,10 +757,18 @@ router.post("/:blockId/points", requireAuth,
     async (req, res) => {
 
         const {
-            centralContentId,
-            gradingAbilityLevelId,
+            central_content_id,
+            grading_ability_level_id,
             points
         } = req.body;
+
+        if (
+            !Number.isInteger(Number(points))
+        ) {
+            return res.status(400).json({
+                error: "Poäng måste vara ett heltal."
+            });
+        }
 
         const [result] = await db.query(
             `
@@ -774,8 +782,8 @@ router.post("/:blockId/points", requireAuth,
             `,
             [
                 req.params.blockId,
-                centralContentId,
-                gradingAbilityLevelId,
+                central_content_id,
+                grading_ability_level_id,
                 points
             ]
         );
@@ -944,6 +952,53 @@ router.post("/import",upload.single("file"),
             });
 
         }
+
+    }
+);
+
+// GET /api/blocks/:id/point-metadata
+router.get("/:id/point-metadata",
+    async (req, res) => {
+
+        const [centralContent] =
+            await db.query(
+                `
+                SELECT
+                    cc.id,
+                    cc.content
+
+                FROM central_content cc
+
+                ORDER BY cc.content
+                `
+            );
+
+        const [gradingAbilityLevels] =
+            await db.query(
+                `
+                SELECT
+                    gal.id,
+
+                    gal.level,
+
+                    ga.name
+
+                FROM grading_ability_levels gal
+
+                JOIN grading_abilities ga
+                    ON ga.id =
+                        gal.grading_ability_id
+
+                ORDER BY
+                    ga.name,
+                    gal.level
+                `
+            );
+
+        res.json({
+            centralContent,
+            gradingAbilityLevels
+        });
 
     }
 );
