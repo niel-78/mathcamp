@@ -13,7 +13,7 @@ const router = express.Router();
 const upload = multer({storage: multer.memoryStorage()});
 
 router.use(requireAuth);
-router.use(requireRole("teacher"));
+router.use(requireRole("teacher","super"));
 
 /*
 GET    /api/groups
@@ -35,17 +35,43 @@ PUT    /api/groups/:id/archive
 // GET /api/groups
 router.get("/", async (req, res) => {
 
-    const [groups] = await db.query(`
-        SELECT *
-        FROM groups
-        WHERE archived IS false
-    `);
+    let groups;
+
+    if (req.user.role === "super") {
+
+        [groups] = await db.query(
+            `
+            SELECT *
+            FROM groups
+            WHERE archived IS FALSE
+            ORDER BY name
+            `
+        );
+
+    } else {
+
+        [groups] = await db.query(
+            `
+            SELECT g.*
+            FROM groups g
+            INNER JOIN group_permissions gp
+                ON gp.group_id = g.id
+            WHERE gp.teacher_id = ?
+            AND g.archived IS FALSE
+            ORDER BY g.name
+            `,
+            [req.user.id]
+        );
+
+    }
 
     res.json(groups);
 
 });
+
 // POST /api/groups
 router.post("/", async (req, res) => {
+
     const { name } = req.body;
 
     const [result] = await db.query(
@@ -56,62 +82,85 @@ router.post("/", async (req, res) => {
         [name]
     );
 
+    await db.query(
+        `
+        INSERT INTO group_permissions (
+            group_id,
+            teacher_id,
+            role
+        )
+        VALUES (?, ?, 'owner')
+        `,
+        [
+            result.insertId,
+            req.user.id
+        ]
+    );
+
     res.status(201).json({
         id: result.insertId,
-        name
+        name,
+        role: "owner"
     });
+
 });
 
 
 // GET /api/groups/:id
 router.get("/:id", async (req, res) => {
-    try {
+    const [[group]] = await db.query(
+        `
+        SELECT
+            g.*,
+            gp.role
+        FROM groups g
 
-        const [groupRows] = await db.query(
-            `
-            SELECT *
-            FROM groups
-            WHERE id = ?
-            `,
-            [req.params.id]
-        );
+        INNER JOIN group_permissions gp
+            ON gp.group_id = g.id
 
-        if (groupRows.length === 0) {
-            return res.status(404).json({
-                error: "Gruppen hittades inte."
-            });
-        }
+        WHERE g.id = ?
+        AND gp.teacher_id = ?
+        `,
+        [
+            req.params.id,
+            req.user.id
+        ]
+    );
 
-        const [students] = await db.query(
-            `
-            SELECT
-                u.id,
-                u.first_name,
-                u.last_name
-            FROM group_users gu
-            INNER JOIN users u
-                ON u.id = gu.user_id
-            WHERE gu.group_id = ?
-            AND u.role = 'student'
-            ORDER BY u.last_name, u.first_name
-            `,
-            [req.params.id]
-        );
+    if (!group) {
 
-        res.json({
-            ...groupRows[0],
-            students
-        });
-
-    } catch (err) {
-
-        console.error(err);
-
-        res.status(500).json({
-            error: "Kunde inte hämta gruppen."
+        return res.status(404).json({
+            error: "Group not found"
         });
 
     }
+
+    const [students] = await db.query(
+        `
+        SELECT
+            u.id,
+            u.first_name,
+            u.last_name,
+            u.username,
+            u.user_key
+        FROM group_students gs
+
+        INNER JOIN users u
+            ON u.id = gs.user_id
+
+        WHERE gs.group_id = ?
+
+        ORDER BY
+            u.last_name,
+            u.first_name
+        `,
+        [req.params.id]
+    );
+
+    group.students = students;
+
+    res.json(group);
+
 });
 // PUT /api/groups/:id
 router.put("/:id", async (req, res) => {

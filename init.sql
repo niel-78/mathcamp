@@ -2,10 +2,11 @@ USE mydb;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS grading_abilities;
+DROP TABLE IF EXISTS grading_ability_levels;
 DROP TABLE IF EXISTS abilities;
 DROP TABLE IF EXISTS block_abilities;
 DROP TABLE IF EXISTS competencies;
-DROP TABLE IF EXISTS competency_levels;
 DROP TABLE IF EXISTS block_points;
 DROP TABLE IF EXISTS schools;
 DROP TABLE IF EXISTS school_settings;
@@ -17,15 +18,14 @@ DROP TABLE IF EXISTS sections;
 DROP TABLE IF EXISTS subchapters;
 DROP TABLE IF EXISTS chapters;
 DROP TABLE IF EXISTS books;
-DROP TABLE IF EXISTS block_central_content;
 DROP TABLE IF EXISTS central_content;
 DROP TABLE IF EXISTS content_areas;
 DROP TABLE IF EXISTS levels;
 DROP TABLE IF EXISTS subjects;
 DROP TABLE IF EXISTS question_media;
-DROP TABLE IF EXISTS group_users;
 DROP TABLE IF EXISTS group_students;
 DROP TABLE IF EXISTS groups;
+DROP TABLE IF EXISTS group_permissions;
 DROP TABLE IF EXISTS group_exams;
 DROP TABLE IF EXISTS answer_options;
 DROP TABLE IF EXISTS answers;
@@ -120,7 +120,8 @@ VALUES
 (5, 'Betty', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Betty', 'Blue' , 'student'),
 (6, 'Calle', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Calle', 'Arvidsson' , 'student'),
 (7, 'jol', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Joline', 'Arvidsson' , 'student'),
-(8, 'vil', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Vilhelm', 'Arvidsson' , 'student');
+(8, 'vil', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Vilhelm', 'Arvidsson' , 'student'),
+(9, 'super', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas', 'Elofsson' , 'super');
 
 CREATE TABLE user_sessions (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -328,21 +329,28 @@ CREATE TABLE groups (
 );
 
 /*Personal som är kopplad till grupp*/
-CREATE TABLE group_users (
+CREATE TABLE group_permissions (
     group_id INT NOT NULL,
-    user_id INT NOT NULL,
+    teacher_id INT NOT NULL,
 
-    is_owner BOOLEAN NOT NULL DEFAULT FALSE,
+    role ENUM(
+        'owner',
+        'editor',
+        'reader'
+    ) NOT NULL,
 
-    granted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
-    PRIMARY KEY (group_id, user_id),
+    PRIMARY KEY (
+        group_id,
+        teacher_id
+    ),
 
     FOREIGN KEY (group_id)
         REFERENCES groups(id)
         ON DELETE CASCADE,
 
-    FOREIGN KEY (user_id)
+    FOREIGN KEY (teacher_id)
         REFERENCES users(id)
         ON DELETE CASCADE
 );
@@ -350,6 +358,23 @@ CREATE TABLE group_users (
 INSERT INTO groups (id, name)
 VALUES
 (1, 'Niklas grupp'),(2, 'Jolines grupp');
+
+INSERT INTO group_permissions (
+    group_id,
+    teacher_id,
+    role
+)
+VALUES
+(
+    1,
+    1,
+    'owner'
+),
+(
+    2,
+    1,
+    'owner'
+);
 
 /*Provtillfällen*/
 /*
@@ -772,12 +797,23 @@ CREATE TABLE competencies (
         REFERENCES subjects(id)
 );
 
-
-
-CREATE TABLE competency_levels (
+-- Bedömningsförmågor (summativt)
+CREATE TABLE grading_abilities (
     id INT AUTO_INCREMENT PRIMARY KEY,
 
-    competency_id INT NOT NULL,
+    subject_id INT NOT NULL,
+
+    name VARCHAR(100) NOT NULL,
+
+    FOREIGN KEY (subject_id)
+        REFERENCES subjects(id)
+);
+
+-- Kunskapskrav / nivåer
+CREATE TABLE grading_ability_levels (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    grading_ability_id INT NOT NULL,
 
     level ENUM(
         'E',
@@ -785,8 +821,9 @@ CREATE TABLE competency_levels (
         'A'
     ) NOT NULL,
 
-    FOREIGN KEY (competency_id)
-        REFERENCES competencies(id)
+    FOREIGN KEY (grading_ability_id)
+        REFERENCES grading_abilities(id)
+        ON DELETE CASCADE
 );
 
 
@@ -798,7 +835,11 @@ CREATE TABLE block_points (
 
     central_content_id INT NOT NULL,
 
-    competency_level_id INT NOT NULL,
+    grading_ability_level_id INT NOT NULL,
+
+    points DECIMAL(5,2) NOT NULL DEFAULT 1,
+
+    comment TEXT NULL,
 
     FOREIGN KEY (block_id)
         REFERENCES blocks(id),
@@ -806,29 +847,11 @@ CREATE TABLE block_points (
     FOREIGN KEY (central_content_id)
         REFERENCES central_content(id),
 
-    FOREIGN KEY (competency_level_id)
-        REFERENCES competency_levels(id)
+    FOREIGN KEY (grading_ability_level_id)
+        REFERENCES grading_ability_levels(id)
 );
 
 
-
-CREATE TABLE block_central_content (
-    block_id INT NOT NULL,
-    central_content_id INT NOT NULL,
-
-    PRIMARY KEY (
-        block_id,
-        central_content_id
-    ),
-
-    FOREIGN KEY (block_id)
-        REFERENCES blocks(id)
-        ON DELETE CASCADE,
-
-    FOREIGN KEY (central_content_id)
-        REFERENCES central_content(id)
-        ON DELETE CASCADE
-);
 
 CREATE TABLE books (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -1054,9 +1077,6 @@ INSERT INTO exam_permissions (
 )
 VALUES (1,1,'owner'),(1,2,'reader');
 
-
-INSERT INTO group_users (group_id,user_id,is_owner) VALUES (1,1,TRUE);
-
 INSERT INTO exam_blocks (exam_id,block_id,sort_order) VALUES
 (1,1,6),(1,2,2),(1,3,3),(1,4,4),(1,5,5),(1,6,1);
 
@@ -1236,12 +1256,6 @@ VALUES
 (9, 'Problemlösning med särskild utgångspunkt i utbildningens karaktär, privatekonomi och samhällsliv, däribland frågeställningar som berör hållbar utveckling och hur matematik kan användas för kritisk granskning av fakta och påståenden.', 2),
 (9, 'Tillämpning och formulering av matematiska modeller i realistiska situationer. Utvärdering av matematiska modellers egenskaper och begränsningar.', 3),
 (9, 'Orientering om något ur matematikens historia, till exempel hur ett matematiskt begrepp utvecklats, matematikens roll i något historiskt skeende, en betydande person inom matematiken eller ett historiskt matematiskt problem.', 4);
-
-
-
-INSERT INTO block_central_content (block_id, central_content_id)
-VALUES (1, 1),(2, 1),(3, 2),(4,2);
-
 
 INSERT INTO levels (
     subject_id,
@@ -1773,51 +1787,77 @@ VALUES
 
 INSERT INTO level_books (level_id, book_id) VALUES (2,1);
 
-INSERT INTO competency_levels (
-    id,
-    competency_id,
+
+INSERT INTO grading_abilities (
+    subject_id,
+    name
+)
+VALUES
+(1, 'Begrepp'),
+(1, 'Procedurer'),
+(1, 'Problemlösning'),
+(1, 'Modellering'),
+(1, 'Resonemang'),
+(1, 'Kommunikation');
+
+INSERT INTO grading_ability_levels (
+    grading_ability_id,
     level
 )
 VALUES
+(1, 'E'),
+(1, 'C'),
+(1, 'A'),
 
--- Begrepp
-(1, 1, 'E'),
-(2, 1, 'C'),
-(3, 1, 'A'),
+(2, 'E'),
+(2, 'C'),
+(2, 'A'),
 
--- Procedur
-(4, 2, 'E'),
-(5, 2, 'C'),
-(6, 2, 'A'),
+(3, 'E'),
+(3, 'C'),
+(3, 'A'),
 
--- Problemlösning
-(7, 3, 'E'),
-(8, 3, 'C'),
-(9, 3, 'A'),
+(4, 'E'),
+(4, 'C'),
+(4, 'A'),
 
--- Resonemang
-(10, 4, 'E'),
-(11, 4, 'C'),
-(12, 4, 'A');
+(5, 'E'),
+(5, 'C'),
+(5, 'A'),
+
+(6, 'E'),
+(6, 'C'),
+(6, 'A');
 
 
 INSERT INTO block_points (
     block_id,
     central_content_id,
-    competency_level_id
+    grading_ability_level_id,
+    points
 )
 VALUES
 
--- poäng 1
-(1, 1, 4),
+-- Block 1 (Begrepp)
+(1, 1, 1, 1),
+(1, 1, 2, 2),
 
--- poäng 2
-(1, 1, 5),
+-- Block 2 (Problemlösning)
+(2, 1, 7, 1),
+(2, 1, 8, 2),
 
--- poäng 3
-(1, 1, 5),
+-- Block 3 (Procedurer)
+(3, 2, 4, 1),
+(3, 2, 5, 2),
 
--- poäng 4
-(1, 1, 6);
+-- Block 4 (Resonemang)
+(4, 2, 13, 1),
+(4, 2, 14, 2),
 
+-- Block 5 (Modellering)
+(5, 3, 10, 1),
+(5, 3, 11, 2),
 
+-- Block 6 (Kommunikation)
+(6, 4, 16, 1),
+(6, 4, 17, 2);

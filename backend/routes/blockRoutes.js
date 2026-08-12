@@ -1,6 +1,7 @@
 import express from "express";
 import db from "../db.js";
-
+import multer from "multer";
+import XLSX from "xlsx";
 import path from "path";
 import fs from "fs";
 import hydrateBlocks from "../utils/hydrateBlocks.js";
@@ -11,30 +12,12 @@ import { getAppSettings } from "../utils/getAppSettings.js";
 
 const router = express.Router();
 
-/*
-GET    /api/blocks
-POST   /api/blocks
-
-GET    /api/blocks/:id
-PUT    /api/blocks/:id
-DELETE /api/blocks/:id
-
-POST   /api/blocks/:id/questions
-POST   /api/blocks/:id/options
-POST   /api/blocks/:id/attachments
-
-DELETE /api/blocks/:id/sections/:sectionId
-DELETE /api/blocks/:id/central-content/:centralContentId
-
-POST   /api/blocks/:id/sections/:sectionId
-POST   /api/blocks/:id/central-content/:centralContentId
-
-GET    /api/blocks/sections/:sectionId
-
-*/
+const upload = multer({
+    storage: multer.memoryStorage()
+});
 
 router.use(requireAuth);
-router.use(requireRole("teacher"));
+router.use(requireRole("teacher","super"));
 
 // GET /api/blocks/sections/:sectionId
 router.get("/sections/:sectionId",
@@ -123,7 +106,7 @@ router.get("/sections/:sectionId",
     }
 );
 
-// GET /api/central-content/:centralContentId
+// GET /api/blocks/central-content/:centralContentId
 router.get("/central-content/:centralContentId",
     async (req, res) => {
 
@@ -143,7 +126,7 @@ router.get("/central-content/:centralContentId",
         const [blocks] =
             await db.query(
                 `
-                SELECT
+                SELECT DISTINCT
                     b.*,
 
                     cu.first_name
@@ -160,8 +143,8 @@ router.get("/central-content/:centralContentId",
 
                 FROM blocks b
 
-                JOIN block_central_content bcc
-                    ON b.id = bcc.block_id
+                JOIN block_points bp
+                    ON bp.block_id = b.id
 
                 LEFT JOIN users cu
                     ON cu.id = b.created_by
@@ -171,7 +154,7 @@ router.get("/central-content/:centralContentId",
 
                 WHERE
 
-                    bcc.central_content_id = ?
+                    bp.central_content_id = ?
 
                     AND b.deleted_at IS NULL
 
@@ -180,16 +163,12 @@ router.get("/central-content/:centralContentId",
                         b.created_by = ?
 
                         OR (
-
                             b.visibility = 'school'
                             AND b.school_id = ?
-
                         )
 
                         OR (
-
                             b.visibility = 'global'
-
                         )
 
                     )
@@ -206,7 +185,9 @@ router.get("/central-content/:centralContentId",
                 blocks
             );
 
-        for (const block of hydratedBlocks) {
+        for (
+            const block of hydratedBlocks
+        ) {
 
             const isOwner =
                 block.created_by ===
@@ -352,60 +333,96 @@ router.get("/", async (req, res) => {
             [schoolId]
         );
 
-    const [blocks] =
-        await db.query(
-            `
-            SELECT
-                b.*,
+        let blocks;
 
-                cu.first_name
-                    AS created_by_first_name,
+        if (req.user.role === "super") {
 
-                cu.last_name
-                    AS created_by_last_name,
+            [blocks] = await db.query(
+                `
+                SELECT
+                    b.*,
 
-                uu.first_name
-                    AS updated_by_first_name,
+                    cu.first_name
+                        AS created_by_first_name,
 
-                uu.last_name
-                    AS updated_by_last_name
+                    cu.last_name
+                        AS created_by_last_name,
 
-            FROM blocks b
+                    uu.first_name
+                        AS updated_by_first_name,
 
-            LEFT JOIN users cu
-                ON cu.id = b.created_by
+                    uu.last_name
+                        AS updated_by_last_name
 
-            LEFT JOIN users uu
-                ON uu.id = b.updated_by
+                FROM blocks b
 
-            WHERE
+                LEFT JOIN users cu
+                    ON cu.id = b.created_by
 
-                b.deleted_at IS NULL
+                LEFT JOIN users uu
+                    ON uu.id = b.updated_by
 
-                AND (
+                WHERE b.deleted_at IS NULL
+                `
+            );
 
-                    b.created_by = ?
+        } else {
 
-                    OR (
+            [blocks] = await db.query(
+                `
+                SELECT
+                    b.*,
 
-                        b.visibility = 'school'
-                        AND b.school_id = ?
+                    cu.first_name
+                        AS created_by_first_name,
+
+                    cu.last_name
+                        AS created_by_last_name,
+
+                    uu.first_name
+                        AS updated_by_first_name,
+
+                    uu.last_name
+                        AS updated_by_last_name
+
+                FROM blocks b
+
+                LEFT JOIN users cu
+                    ON cu.id = b.created_by
+
+                LEFT JOIN users uu
+                    ON uu.id = b.updated_by
+
+                WHERE
+
+                    b.deleted_at IS NULL
+
+                    AND (
+
+                        b.created_by = ?
+
+                        OR (
+
+                            b.visibility = 'school'
+                            AND b.school_id = ?
+
+                        )
+
+                        OR (
+
+                            b.visibility = 'global'
+
+                        )
 
                     )
+                `,
+                [
+                    req.user.id,
+                    schoolId
+                ]
+            );
 
-                    OR (
-
-                        b.visibility = 'global'
-
-                    )
-
-                )
-            `,
-            [
-                req.user.id,
-                schoolId
-            ]
-        );
+        }
 
     const hydratedBlocks =
         await hydrateBlocks(
@@ -415,15 +432,14 @@ router.get("/", async (req, res) => {
     for (const block of hydratedBlocks) {
 
         const isOwner =
-            block.created_by ===
-            req.user.id;
+            block.created_by === req.user.id;
 
-        block.canEdit = isOwner;
+        block.canEdit =
+            req.user.role === "super" ||
+            isOwner;
 
         block.canCopy =
-
             !isOwner &&
-
             schoolSettings?.enable_block_copying;
 
         if (isOwner) {
@@ -431,8 +447,7 @@ router.get("/", async (req, res) => {
             block.category = "mine";
 
         } else if (
-            block.visibility ===
-            "global"
+            block.visibility === "global"
         ) {
 
             block.category = "global";
@@ -443,7 +458,7 @@ router.get("/", async (req, res) => {
 
         }
 
-    }        
+    }      
 
     res.json(
         hydratedBlocks
@@ -458,7 +473,7 @@ router.post("/", async (req, res) => {
 
         const {
             question,
-            centralContentIds = [],
+            points = [],
             sectionIds = [],
             examId,
             visibility = "school"
@@ -559,23 +574,28 @@ router.post("/", async (req, res) => {
             ]
         );
 
-        for (const centralContentId of centralContentIds) {
+        for (const pointRow of points) {
 
             await db.query(
                 `
-                INSERT INTO block_central_content (
+                INSERT INTO block_points (
                     block_id,
-                    central_content_id
+                    central_content_id,
+                    grading_ability_level_id,
+                    points
                 )
-                VALUES (?, ?)
+                VALUES (?, ?, ?, ?)
                 `,
                 [
                     blockId,
-                    centralContentId
+                    pointRow.centralContentId,
+                    pointRow.gradingAbilityLevelId,
+                    pointRow.points
                 ]
             );
 
         }
+
 
         for (const sectionId of sectionIds) {
 
@@ -708,27 +728,6 @@ router.delete("/:blockId/book-sections/:sectionId",
         res.sendStatus(204);
     }
 );
-// DELETE /api/blocks/:id/central-content/:centralContentId
-router.delete("/:blockId/central-content/:centralContentId",
-    requireAuth,
-    async (req, res) => {
-
-        await db.query(
-            `
-            DELETE FROM block_central_content
-            WHERE
-                block_id = ?
-                AND central_content_id = ?
-            `,
-            [
-                req.params.blockId,
-                req.params.centralContentId
-            ]
-        );
-
-        res.sendStatus(204);
-    }
-);
 
 // POST   /api/blocks/:id/sections/:sectionId
 router.post("/:blockId/book-sections/:sectionId",
@@ -752,26 +751,200 @@ router.post("/:blockId/book-sections/:sectionId",
         res.sendStatus(204);
     }
 );
-// POST   /api/blocks/:id/central-content/:centralContentId
-router.post("/:blockId/central-content/:centralContentId",
-    requireAuth,
+
+// POST   /api/blocks/:id/points
+router.post("/:blockId/points", requireAuth,
     async (req, res) => {
 
-        await db.query(
+        const {
+            centralContentId,
+            gradingAbilityLevelId,
+            points
+        } = req.body;
+
+        const [result] = await db.query(
             `
-            INSERT IGNORE INTO block_central_content (
+            INSERT INTO block_points (
                 block_id,
-                central_content_id
+                central_content_id,
+                grading_ability_level_id,
+                points
             )
-            VALUES (?, ?)
+            VALUES (?, ?, ?, ?)
             `,
             [
                 req.params.blockId,
-                req.params.centralContentId
+                centralContentId,
+                gradingAbilityLevelId,
+                points
             ]
         );
 
-        res.sendStatus(204);
+        res.status(201).json({
+            id: result.insertId
+        });
+
+    }
+);
+
+// POST /api/blocks/import
+router.post("/import",upload.single("file"),
+    async (req, res) => {
+
+        try {
+
+            if (!req.file) {
+                return res.status(400).json({
+                    error: "Ingen fil uppladdad"
+                });
+            }
+
+            const [[teacher]] =
+                await db.query(
+                    `
+                    SELECT school_id
+                    FROM school_teachers
+                    WHERE teacher_id = ?
+                    `,
+                    [req.user.id]
+                );
+
+            const [blockResult] =
+                await db.query(
+                    `
+                    INSERT INTO blocks (
+                        school_id,
+                        created_by,
+                        updated_by
+                    )
+                    VALUES (?, ?, ?)
+                    `,
+                    [
+                        teacher.school_id,
+                        req.user.id,
+                        req.user.id
+                    ]
+                );
+
+            const blockId =
+                blockResult.insertId;
+
+            if (req.body.abilityId) {
+
+                await db.query(
+                    `
+                    INSERT INTO block_abilities (
+                        block_id,
+                        ability_id
+                    )
+                    VALUES (?, ?)
+                    `,
+                    [
+                        blockId,
+                        req.body.abilityId
+                    ]
+                );
+
+            }
+
+            if (req.body.sectionId) {
+
+                await db.query(
+                    `
+                    INSERT INTO block_sections (
+                        block_id,
+                        section_id
+                    )
+                    VALUES (?, ?)
+                    `,
+                    [
+                        blockId,
+                        req.body.sectionId
+                    ]
+                );
+
+            }
+
+            const workbook =
+                XLSX.read(
+                    req.file.buffer
+                );
+
+            const sheet =
+                workbook.Sheets[
+                    workbook.SheetNames[0]
+                ];
+
+            const rows =
+                XLSX.utils.sheet_to_json(
+                    sheet
+                );
+
+            for (const row of rows) {
+
+                const question =
+                    row.Fråga ||
+                    row.fråga ||
+                    row.Question ||
+                    row.question;
+
+                if (!question) {
+                    continue;
+                }
+
+
+                await db.query(
+                    `
+                    INSERT INTO questions (
+                        block_id,
+                        question,
+                        question_type,
+                        created_by,
+                        updated_by
+                    )
+                    VALUES (
+                        ?, ?, 'text', ?, ?
+                    )
+                    `,
+                    [
+                        blockId,
+                        question,
+                        req.user.id,
+                        req.user.id
+                    ]
+                );
+
+            }
+
+            const [blocks] = await db.query(
+                `
+                SELECT *
+                FROM blocks
+                WHERE id = ?
+                `,
+                [blockId]
+            );
+
+            const [block] =
+                await hydrateBlocks(blocks);
+
+            res.json({
+                success: true,
+                blockId,
+                questionCount: rows.length,
+                block
+            });
+
+        } catch (error) {
+
+            console.error(error);
+
+            res.status(500).json({
+                error: "Import failed"
+            });
+
+        }
+
     }
 );
 
@@ -899,19 +1072,22 @@ router.post("/:id/copy",
                 blockResult.insertId;
 
             /*
-             * Kopiera centralt innehåll
-             */
+            * Kopiera poängkopplingar
+            */
             await connection.query(
                 `
-                INSERT INTO
-                    block_central_content (
-                        block_id,
-                        central_content_id
-                    )
+                INSERT INTO block_points (
+                    block_id,
+                    central_content_id,
+                    grading_ability_level_id,
+                    points
+                )
                 SELECT
                     ?,
-                    central_content_id
-                FROM block_central_content
+                    central_content_id,
+                    grading_ability_level_id,
+                    points
+                FROM block_points
                 WHERE block_id = ?
                 `,
                 [
@@ -919,6 +1095,7 @@ router.post("/:id/copy",
                     block.id
                 ]
             );
+
 
             /*
              * Kopiera sektioner
@@ -934,6 +1111,27 @@ router.post("/:id/copy",
                     ?,
                     section_id
                 FROM block_sections
+                WHERE block_id = ?
+                `,
+                [
+                    newBlockId,
+                    block.id
+                ]
+            );
+
+            /*
+            * Kopiera förmågor
+            */
+            await connection.query(
+                `
+                INSERT INTO block_abilities (
+                    block_id,
+                    ability_id
+                )
+                SELECT
+                    ?,
+                    ability_id
+                FROM block_abilities
                 WHERE block_id = ?
                 `,
                 [
@@ -1073,10 +1271,10 @@ router.post("/:id/copy",
             }        
 
 
+            await connection.commit();
+
             res.status(201).json({
-
                 id: newBlockId
-
             });
 
             } catch (error) {
@@ -1420,22 +1618,26 @@ router.get("/:id/points",
             `
             SELECT
                 bp.*,
+
                 cc.content AS central_content,
-                c.name AS competency,
-                cl.level
+
+                ga.name AS grading_ability,
+
+                gal.level
+
             FROM block_points bp
 
             JOIN central_content cc
                 ON cc.id =
                     bp.central_content_id
 
-            JOIN competency_levels cl
-                ON cl.id =
-                    bp.competency_level_id
+            JOIN grading_ability_levels gal
+                ON gal.id =
+                    bp.grading_ability_level_id
 
-            JOIN competencies c
-                ON c.id =
-                    cl.competency_id
+            JOIN grading_abilities ga
+                ON ga.id =
+                    gal.grading_ability_id
 
             WHERE bp.block_id = ?
             `,
@@ -1453,7 +1655,8 @@ router.post("/:id/points",
 
         const {
             central_content_id,
-            competency_level_id
+            grading_ability_level_id,
+            points
         } = req.body;
 
         const [result] = await db.query(
@@ -1461,14 +1664,16 @@ router.post("/:id/points",
             INSERT INTO block_points (
                 block_id,
                 central_content_id,
-                competency_level_id
+                grading_ability_level_id,
+                points
             )
-            VALUES (?, ?, ?)
+            VALUES (?, ?, ?, ?)
             `,
             [
                 req.params.id,
                 central_content_id,
-                competency_level_id
+                grading_ability_level_id,
+                points
             ]
         );
 

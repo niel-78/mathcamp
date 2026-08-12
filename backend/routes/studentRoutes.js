@@ -12,7 +12,7 @@ import requireRole from "../middleware/requireRole.js";
 const router = express.Router();
 
 router.use(requireAuth);
-router.use(requireRole("teacher"));
+router.use(requireRole("teacher","super"));
 
 /*
 GET    /api/students

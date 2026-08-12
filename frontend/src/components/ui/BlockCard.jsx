@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import MathContent from "@/components/ui/MathContent";
 import FormatDateTimeShort from "@/utils/FormatDateTimeShort";
+import BlockPoints from "@/components/ui/BlockPoints";
 
 export default function BlockCard({
     block,
@@ -61,11 +62,21 @@ export default function BlockCard({
     };
 
     const [showReferences, setShowReferences] = useState(false);
+    const [showPoints, setShowPoints] = useState(false);
+    const pointsCount = block.points?.length ?? 0;
 
     const referenceCount =
-        (block.centralContent?.length ?? 0) +
         (block.bookSections?.length ?? 0) +
         (block.abilities?.length ?? 0);
+
+    const totalPoints =
+        block.points?.reduce(
+            (sum, point) =>
+                sum + Number(point.points),
+            0
+        ) ?? 0;
+
+    console.log(block.canEdit);
 
     return (
 
@@ -185,52 +196,6 @@ export default function BlockCard({
 
                             <div className="mt-2">
 
-                                {block.centralContent?.length > 0 && (
-                                    <>
-                                        <p
-                                            className="
-                                                text-xs
-                                                text-muted-foreground
-                                            "
-                                        >
-                                            Centralt innehåll
-                                        </p>
-
-                                        {block.centralContent.map(
-                                            item => (
-                                                <div
-                                                    key={item.id}
-                                                    className="
-                                                        flex
-                                                        justify-between
-                                                        items-center
-                                                    "
-                                                >
-                                                    {item.content}
-
-                                                    {block.canEdit && (
-
-                                                        <Button
-                                                            variant="ghost"
-                                                            className="text-red-500"
-                                                            onClick={() =>
-                                                                onRemoveCentralContent?.(
-                                                                    block.id,
-                                                                    item.id
-                                                                )
-                                                            }
-                                                        >
-                                                            <X size={14} />
-                                                        </Button>
-
-                                                    )}
-
-                                                </div>
-                                            )
-                                        )}
-                                    </>
-                                )}
-
                                 {block.abilities?.length > 0 && (
                                     <>
                                         <p
@@ -329,6 +294,62 @@ export default function BlockCard({
                                 )}
 
                             </div>
+
+                        )}
+
+                    </div>
+
+                )}
+
+                {totalPoints > 0 && (
+
+                    <div className="mt-3">
+
+                        <div className="flex items-center gap-2">
+
+                            <Button
+                                type="button"
+                                onClick={() =>
+                                    setShowPoints(!showPoints)
+                                }
+                            >
+                                {showPoints ? "▼" : "▶"}
+                                {" "}
+                                Poäng
+                                ({totalPoints} p)
+                            </Button>
+
+                            {block.canEdit && (
+
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                        setPointDialog({
+                                            blockId: block.id
+                                        })
+                                    }
+                                >
+                                    +
+                                </Button>
+
+                            )}
+
+                        </div>
+
+                        {showPoints && (
+
+                            <BlockPoints
+                                points={block.points}
+                                canEdit={block.canEdit}
+                                onEditPoint={(point) =>
+                                    setPointDialog({
+                                        blockId: block.id,
+                                        point
+                                    })
+                                }
+                            />
+
 
                         )}
 

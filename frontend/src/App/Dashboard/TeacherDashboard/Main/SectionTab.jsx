@@ -6,6 +6,7 @@ import BlockLibrary from "@/components/ui/BlockLibrary";
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 import { Button } from "@/components/ui/button";
 import DropZone from "@/components/ui/DropZone";
+import CreateBlockFromExcelDialog from "@/components/ui/CreateBlockFromExcelDialog";
 
 export default function SectionTab({
     sectionId,
@@ -15,11 +16,8 @@ export default function SectionTab({
 
     const [section, setSection] = useState(null);
     const [blocks, setBlocks] = useState([]);
-
-    const [
-        createBlockOpen,
-        setCreateBlockOpen
-    ] = useState(false);
+    const [createBlockOpen, setCreateBlockOpen] = useState(false);
+    const [importOpen, setImportOpen] = useState(false);
 
     useEffect(() => {
 
@@ -98,15 +96,26 @@ export default function SectionTab({
                 title={`${section.chapter_number}. ${section.chapter_title} > ${section.subchapter_number} > ${section.subchapter_title}`}
 
                 actions={
+                    <div className="flex gap-2">
 
-                    <Button
-                        onClick={() =>
-                            setCreateBlockOpen(true)
-                        }
-                    >
-                        Skapa eget block
-                    </Button>
+                        <Button
+                            variant="outline"
+                            onClick={() =>
+                                setImportOpen(true)
+                            }
+                        >
+                            Skapa block från Excel
+                        </Button>
 
+                        <Button
+                            onClick={() =>
+                                setCreateBlockOpen(true)
+                            }
+                        >
+                            Skapa eget block
+                        </Button>
+
+                    </div>
                 }
 
             >
@@ -129,12 +138,34 @@ export default function SectionTab({
                 />
 
             </BaseTabLayout>
+            
             <CreateBlockDialog
                 open={createBlockOpen}
                 onOpenChange={setCreateBlockOpen}
                 sectionIds={[sectionId]}
                 onCreated={loadBlocks}
             />
+
+            <CreateBlockFromExcelDialog
+                open={importOpen}
+                onOpenChange={setImportOpen}
+                sectionId={sectionId}
+                onCreated={(block) => {
+
+                    loadBlocks();
+
+                    openTab({
+                        id: `block-${block.id}`,
+                        title: `Block #${block.id}`,
+                        type: "block",
+                        block
+                    });
+
+                    setImportOpen(false);
+
+                }}
+            />
+
         </>    
 
     );

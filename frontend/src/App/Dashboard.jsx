@@ -8,6 +8,9 @@ function Dashboard({ user }) {
         case "teacher":
             return <TeacherDashboard />;
 
+        case "super":
+            return <TeacherDashboard />;
+
         case "student":
             return <StudentDashboard />;
 

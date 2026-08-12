@@ -3,7 +3,8 @@ import { useDroppable } from "@dnd-kit/core";
 export default function AbilityTreeItem({
     ability,
     hoverTarget,
-    openTab
+    openTab,
+    setContextMenu
 }) {
 
     const {
@@ -17,6 +18,7 @@ export default function AbilityTreeItem({
 
         <div
             ref={setNodeRef}
+
             onClick={() => {
 
                 openTab({
@@ -27,6 +29,21 @@ export default function AbilityTreeItem({
                 });
 
             }}
+
+            onContextMenu={(e) => {
+
+                e.preventDefault();
+
+                setContextMenu({
+                    type: "ability",
+                    x: e.clientX,
+                    y: e.clientY,
+                    abilityId: ability.id,
+                    name: ability.name
+                });
+
+            }}
+
             className={`
                 tree-file
                 cursor-pointer

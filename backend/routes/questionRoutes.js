@@ -11,7 +11,7 @@ import { getAppSettings } from "../utils/getAppSettings.js";
 const router = express.Router();
 
 router.use(requireAuth);
-router.use(requireRole("teacher"));
+router.use(requireRole("teacher","super"));
 
 
 const storage = multer.diskStorage({
@@ -423,7 +423,6 @@ router.delete("/media/:mediaId", async (req, res) => {
 
     try {
         await fs.promises.unlink(filePath);
-        console.log("File deleted");
     } catch (err) {
         console.error("Delete failed:", err);
     }

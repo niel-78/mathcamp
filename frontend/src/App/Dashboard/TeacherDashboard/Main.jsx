@@ -13,7 +13,6 @@ import GroupExamTab from "./Main/GroupExamTab";
 import GroupExamWaitingRoomTab from "./Main/GroupExamWaitingRoomTab";
 import GroupExamMonitorTab from "./Main/GroupExamMonitorTab";
 import AbilityTab from "./Main/AbilityTab";
-import ImportStudentsTab from "./Main/ImportStudentsTab";
 
 
 export default function Main({
@@ -271,17 +270,6 @@ export default function Main({
                         />
 
                     )}
-
-                    {currentTab?.type === "import-students" && (
-
-                        <ImportStudentsTab
-                            key={currentTab.id}
-                            groupId={currentTab.groupId}
-                            groupName={currentTab.groupName}
-                        />
-
-                    )}
-
 
                 </div>
 

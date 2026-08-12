@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,7 @@ import BlockLibrary from "@/components/ui/BlockLibrary";
 import CentralContentFilter from "@/components/ui/CentralContentFilter";
 import BookSectionFilter from "@/components/ui/BookSectionFilter";
 import DeleteBlockDialog from "@/components/ui/DeleteBlockDialog";
-
+import CreateBlockFromExcelDialog from "@/components/ui/CreateBlockFromExcelDialog";
 
 export default function BlockBankTab({
     openTab,
@@ -20,15 +19,9 @@ export default function BlockBankTab({
 
     const [blocks, setBlocks] = useState([]);
     const [blockToDelete, setBlockToDelete] = useState(null);
-
-    const [centralContentId,
-        setCentralContentId] =
-        useState("");
-
-    const [sectionId,
-        setSectionId] =
-        useState("");
-
+    const [importBlocksOpen, setImportBlocksOpen] = useState(false);
+    const [centralContentId,setCentralContentId] = useState("");
+    const [sectionId,setSectionId] = useState("");
 
     useEffect(() => {
         loadBlocks();
@@ -111,17 +104,30 @@ export default function BlockBankTab({
                 title="Blockbank"
 
                 actions={
+                    <div className="flex gap-2">
 
-                    <Button
-                        onClick={() =>
-                            setCreateBlockOpen(
-                                true
-                            )
-                        }
-                    >
-                        Skapa eget block
-                    </Button>
+                        <Button
+                            variant="outline"
+                            onClick={() =>
+                                setImportBlocksOpen(
+                                    true
+                                )
+                            }
+                        >
+                            Importera från Excel
+                        </Button>
 
+                        <Button
+                            onClick={() =>
+                                setCreateBlockOpen(
+                                    true
+                                )
+                            }
+                        >
+                            Skapa eget block
+                        </Button>
+
+                    </div>
                 }
 
             >
@@ -170,18 +176,6 @@ export default function BlockBankTab({
                     onReload={loadBlocks}
                 />
 
-                <DeleteBlockDialog
-                    open={blockToDelete !== null}
-                    onOpenChange={(open) => {
-
-                        if (!open) {
-                            setBlockToDelete(null);
-                        }
-
-                    }}
-                    onDelete={deleteBlock}
-                />
-
             </BaseTabLayout>
 
             <CreateBlockDialog
@@ -190,7 +184,36 @@ export default function BlockBankTab({
                     setCreateBlockOpen
                 }
                 onCreated={loadBlocks}
-            />      
+            />
+
+            <DeleteBlockDialog
+                open={blockToDelete !== null}
+                onOpenChange={(open) => {
+
+                    if (!open) {
+                        setBlockToDelete(null);
+                    }
+
+                }}
+                onDelete={deleteBlock}
+            />
+
+            <CreateBlockFromExcelDialog
+                open={importBlocksOpen}
+                onOpenChange={setImportBlocksOpen}
+                onCreated={(block) => {
+
+                    loadBlocks();
+
+                    openTab({
+                        id: `block-${block.id}`,
+                        title: `Block #${block.id}`,
+                        type: "block",
+                        block
+                    });
+
+                }}
+            />
 
         </>
     );

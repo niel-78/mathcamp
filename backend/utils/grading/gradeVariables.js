@@ -6,9 +6,6 @@ export const gradeVariables = (
     config = {}
 ) => {
 
-    console.log("gradeVariables");
-    console.log(config);
-
     try {
 
         const parse = (text) => {

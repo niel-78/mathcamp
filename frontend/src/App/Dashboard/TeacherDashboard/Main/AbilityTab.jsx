@@ -4,6 +4,8 @@ import { authHeaders } from "@/api/authHeaders";
 import BlockLibrary from "@/components/ui/BlockLibrary";
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 import DropZone from "@/components/ui/DropZone";
+import { Button } from "@/components/ui/button";
+import CreateBlockFromExcelDialog from "@/components/ui/CreateBlockFromExcelDialog";
 
 export default function AbilityTab({
     abilityId,
@@ -11,11 +13,9 @@ export default function AbilityTab({
     blockRefreshKey
 }) {
 
-    const [ability, setAbility] =
-        useState(null);
-
-    const [blocks, setBlocks] =
-        useState([]);
+    const [ability, setAbility] = useState(null);
+    const [blocks, setBlocks] = useState([]);
+    const [importOpen, setImportOpen] = useState(false);
 
     useEffect(() => {
 
@@ -30,7 +30,7 @@ export default function AbilityTab({
     const loadAbility = async () => {
 
         const response = await fetch(
-            `${API_URL}/api/blocks/abilities/${abilityId}`,
+            `${API_URL}/api/abilities/${abilityId}`,
             {
                 headers: authHeaders()
             }
@@ -86,31 +86,61 @@ export default function AbilityTab({
     }
 
     return (
+        <>
+            <BaseTabLayout
 
-        <BaseTabLayout
+                title={ability.name}
 
-            title={ability.name}
+                actions={
+                    <Button
+                        variant="outline"
+                        onClick={() =>
+                            setImportOpen(true)
+                        }
+                    >
+                        Skapa block från Excel
+                    </Button>
+                }
 
-        >
+            >
 
-            <DropZone
-                id={`ability-${abilityId}`}
-                text="
-                    Dra block hit för att
-                    koppla dem till denna
-                    förmåga
-                "
+                <DropZone
+                    id={`ability-${abilityId}`}
+                    text="
+                        Dra block hit för att
+                        koppla dem till denna
+                        förmåga
+                    "
+                />
+
+                <BlockLibrary
+                    blocks={blocks}
+                    dragPrefix="ability"
+                    openTab={openTab}
+                    onReload={loadBlocks}
+                    onDelete={removeBlock}
+                />
+
+            </BaseTabLayout>
+
+            <CreateBlockFromExcelDialog
+                open={importOpen}
+                onOpenChange={setImportOpen}
+                abilityId={abilityId}
+                onCreated={(block) => {
+
+                    loadBlocks();
+
+                    openTab({
+                        id: `block-${block.id}`,
+                        title: `Block #${block.id}`,
+                        type: "block",
+                        block
+                    });
+
+                }}
             />
-
-            <BlockLibrary
-                blocks={blocks}
-                dragPrefix="ability"
-                openTab={openTab}
-                onReload={loadBlocks}
-                onDelete={removeBlock}
-            />
-
-        </BaseTabLayout>
+        </>
 
     );
 

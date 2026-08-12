@@ -7,7 +7,6 @@ import BlockCard from "@/components/ui/BlockCard";
 import CardSection from "@/components/layouts/CardSection";
 import CardGridLayout from "@/components/layouts/CardGridLayout";
 import CreateBlockDialog from "@/components/ui/CreateBlockDialog";
-import ImportBlocksDialog from "@/components/ui/ImportBlocksDialog";
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 import DropZone from "@/components/ui/DropZone";
 
@@ -219,16 +218,6 @@ export default function ExamTab({
                         >
                             Skapa eget block
                         </Button>     
-                        
-                        
-                        <Button
-                            variant="outline"
-                            onClick={() =>
-                                setImportDialogOpen(true)
-                            }
-                        >
-                            Importera block (uu)
-                        </Button>
 
                     </div>
 
@@ -275,14 +264,6 @@ export default function ExamTab({
                 </CardSection>
 
             </BaseTabLayout>
-
-
-            <ImportBlocksDialog
-                open={importDialogOpen}
-                onOpenChange={setImportDialogOpen}
-                examId={examId}
-                onImported={loadBlocks}
-            />
 
             <CreateBlockDialog
                 open={createBlockOpen}

@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { API_URL } from "@/config";
-
 import BlockLibrary from "@/components/ui/BlockLibrary";
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 import CreateBlockDialog from "@/components/ui/CreateBlockDialog";
 import DropZone from "@/components/ui/DropZone";
 import { Button } from "@/components/ui/button";
 import { authHeaders } from "@/api/authHeaders";
+import CreateBlockFromExcelDialog from "@/components/ui/CreateBlockFromExcelDialog";
 
 export default function CentralContentTab({
     centralContentId,
@@ -17,6 +17,8 @@ export default function CentralContentTab({
 }) {
 
     const [blocks, setBlocks] = useState([]);
+    const [createBlockOpen, setCreateBlockOpen] = useState(false);
+    const [importOpen, setImportOpen] = useState(false);
 
     useEffect(() => {
 
@@ -26,11 +28,6 @@ export default function CentralContentTab({
         centralContentId,
         blockRefreshKey
     ]);
-
-    const [
-        createBlockOpen,
-        setCreateBlockOpen
-    ] = useState(false);
 
     const loadBlocks = async () => {
 
@@ -76,20 +73,17 @@ export default function CentralContentTab({
         <>
             <BaseTabLayout
 
-                title={`${levelCode} > ${centralContentTitle}`}
+                title={centralContentTitle}
 
                 actions={
-
                     <Button
+                        variant="outline"
                         onClick={() =>
-                            setCreateBlockOpen(
-                                true
-                            )
+                            setImportOpen(true)
                         }
                     >
-                        Skapa eget block
+                        Skapa block från Excel
                     </Button>
-
                 }
 
             >
@@ -121,6 +115,26 @@ export default function CentralContentTab({
                     centralContentId
                 ]}
                 onCreated={loadBlocks}
+            />
+
+            <CreateBlockFromExcelDialog
+                open={importOpen}
+                onOpenChange={setImportOpen}
+                centralContentId={centralContentId}
+                onCreated={(block) => {
+
+                    loadBlocks();
+
+                    openTab({
+                        id: `block-${block.id}`,
+                        title: `Block #${block.id}`,
+                        type: "block",
+                        block
+                    });
+
+                    setImportOpen(false);
+
+                }}
             />
 
         </>    

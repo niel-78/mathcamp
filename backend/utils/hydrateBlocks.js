@@ -66,18 +66,36 @@ export default async function hydrateBlocks(blocks) {
 
         block.questions = questions;
 
-        const [centralContent] = await db.query(
+        const [points] = await db.query(
             `
-            SELECT cc.*
-            FROM block_central_content bcc
+            SELECT
+                bp.*,
+
+                cc.content AS central_content,
+
+                gal.level,
+
+                ga.id AS grading_ability_id,
+
+                ga.name AS grading_ability_name
+
+            FROM block_points bp
+
             JOIN central_content cc
-                ON cc.id = bcc.central_content_id
-            WHERE bcc.block_id = ?
+                ON cc.id = bp.central_content_id
+
+            JOIN grading_ability_levels gal
+                ON gal.id = bp.grading_ability_level_id
+
+            JOIN grading_abilities ga
+                ON ga.id = gal.grading_ability_id
+
+            WHERE bp.block_id = ?
             `,
             [block.id]
         );
 
-        block.centralContent = centralContent;
+        block.points = points;
 
         const [bookSections] = await db.query(
             `
@@ -114,8 +132,6 @@ export default async function hydrateBlocks(blocks) {
 
         block.abilities = abilities;
 
-        block.abilities = abilities;
-
         const [books] = await db.query(
             `
             SELECT DISTINCT
@@ -142,55 +158,6 @@ export default async function hydrateBlocks(blocks) {
         );
 
         block.books = books;
-
-        const [subjects] = await db.query(
-            `
-            SELECT DISTINCT
-                s.id,
-                s.name
-            FROM block_central_content bcc
-
-            JOIN central_content cc
-                ON cc.id = bcc.central_content_id
-
-            JOIN content_areas ca
-                ON ca.id = cc.area_id
-
-            JOIN levels l
-                ON l.id = ca.level_id
-
-            JOIN subjects s
-                ON s.id = l.subject_id
-
-            WHERE bcc.block_id = ?
-            `,
-            [block.id]
-        );
-
-        block.subjects = subjects;
-
-        const [levels] = await db.query(
-            `
-            SELECT DISTINCT
-                l.id,
-                l.name
-            FROM block_central_content bcc
-
-            JOIN central_content cc
-                ON cc.id = bcc.central_content_id
-
-            JOIN content_areas ca
-                ON ca.id = cc.area_id
-
-            JOIN levels l
-                ON l.id = ca.level_id
-
-            WHERE bcc.block_id = ?
-            `,
-            [block.id]
-        );
-
-        block.levels = levels;
 
     }
 

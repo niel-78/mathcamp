@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 import UserProfile from "@/components/ui/UserProfile";
 import CreateGroupDialog from "./LeftCol/CreateGroupDialog";
 import RenameGroupDialog from "./LeftCol/RenameGroupDialog";
@@ -10,9 +11,14 @@ import CreateStudentDialog from "./LeftCol/CreateStudentDialog";
 import RenameStudentDialog from "./LeftCol/RenameStudentDialog";
 import ResetPasswordDialog from "./LeftCol/ResetPasswordDialog";
 import ArchiveStudentDialog from "./LeftCol/ArchiveStudentDialog";
+import ImportStudentsDialog from "./LeftCol/ImportStudentsDialog";
 import SectionTreeItem from "@/components/ui/SectionTreeItem";
+import CreateAbilityDialog from "./LeftCol/CreateAbilityDialog";
 import CentralContentTreeItem from "@/components/ui/CentralContentTreeItem";
 import AbilityTreeItem from "@/components/ui/AbilityTreeItem";
+import RenameAbilityDialog from "./LeftCol/RenameAbilityDialog";
+import DeleteAbilityDialog from "./LeftCol/DeleteAbilityDialog";
+import CreateAbilitiesFromExcelDialog from "./LeftCol/CreateAbilitiesFromExcelDialog";
 
 export default function LeftCol( {openTab, hoverTarget} ) {
 
@@ -25,6 +31,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
         books: false,
         abilities: false
     });
+    const { user } = useAuth();
     const [expandedGroups, setExpandedGroups] = useState({});
     const [subjects, setSubjects] = useState([]);
     const [expandedSubjects, setExpandedSubjects] = useState({});
@@ -45,6 +52,11 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [expandedChapters, setExpandedChapters] = useState({});
     const [expandedSubchapters, setExpandedSubchapters] = useState({});
     const [abilities, setAbilities] = useState([]);
+    const [importStudentsDialog,setImportStudentsDialog] = useState(null);
+    const [createAbilityDialog, setCreateAbilityDialog] = useState(null);
+    const [importAbilitiesDialog, setImportAbilitiesDialog] = useState(null);
+    const [renameAbilityDialog, setRenameAbilityDialog] = useState(null);
+    const [deleteAbilityDialog, setDeleteAbilityDialog] = useState(null);
     
 
     useEffect(() => {
@@ -331,21 +343,10 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                 </Button>
 
                                 <Button
-                                    className="
-                                        block
-                                        w-full
-                                        p-2
-                                        items-center
-                                        text-left
-                                        hover:bg-accent
-                                    "
                                     variant="inline"
                                     onClick={() => {
 
-                                        openTab({
-                                            id: `import-students-${contextMenu.groupId}`,
-                                            type: "import-students",
-                                            title: `Importera elever`,
+                                        setImportStudentsDialog({
                                             groupId: contextMenu.groupId,
                                             groupName: contextMenu.groupName
                                         });
@@ -356,7 +357,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                 >
                                     Importera elever
                                 </Button>
-                            </>
+                                                            </>
 
                         )}
 
@@ -447,7 +448,123 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                         )}
 
+                        {contextMenu?.type === "ability-subject" &&
+                        user?.role === "super" && (
 
+                            <>
+
+                                <Button
+                                    className="
+                                        block
+                                        w-full
+                                        p-2
+                                        items-center
+                                        text-left
+                                        hover:bg-accent
+                                    "
+                                    variant="inline"
+                                    onClick={() => {
+
+                                        setCreateAbilityDialog({
+                                            subjectId:
+                                                contextMenu.subjectId,
+                                            subjectName:
+                                                contextMenu.subjectName
+                                        });
+
+                                        setContextMenu(null);
+
+                                    }}
+                                >
+                                    Lägg till förmåga
+                                </Button>
+
+                                <Button
+                                    className="
+                                        block
+                                        w-full
+                                        p-2
+                                        items-center
+                                        text-left
+                                        hover:bg-accent
+                                    "
+                                    variant="inline"
+                                    onClick={() => {
+
+                                        setImportAbilitiesDialog({
+                                            subjectId:
+                                                contextMenu.subjectId,
+                                            subjectName:
+                                                contextMenu.subjectName
+                                        });
+
+                                        setContextMenu(null);
+
+                                    }}
+                                >
+                                    Lägg till förmågor via Excel
+                                </Button>
+
+                            </>
+
+                        )}
+
+                        {contextMenu?.type === "ability" &&
+                        user?.role === "super" && (
+
+                            <>
+
+                                <Button
+                                    className="
+                                        block
+                                        w-full
+                                        p-2
+                                        items-center
+                                        text-left
+                                        hover:bg-accent
+                                    "
+                                    variant="inline"
+                                    onClick={() => {
+
+                                        setRenameAbilityDialog({
+                                            id: contextMenu.abilityId,
+                                            name: contextMenu.name
+                                        });
+
+                                        setContextMenu(null);
+
+                                    }}
+                                >
+                                    Byt namn
+                                </Button>
+
+                                <Button
+                                    className="
+                                        block
+                                        w-full
+                                        p-2
+                                        items-center
+                                        text-left
+                                        hover:bg-accent
+                                    "
+                                    variant="inline"
+                                    onClick={() => {
+
+                                        setDeleteAbilityDialog({
+                                            id: contextMenu.abilityId,
+                                            name: contextMenu.name
+                                        });
+
+                                        setContextMenu(null);
+
+                                    }}
+                                >
+                                    Radera
+                                </Button>
+
+                            </>
+
+                        )}
 
                     </div>
 
@@ -962,6 +1079,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                                         <div
                                             className="tree-folder"
+
                                             onClick={() =>
                                                 setExpandedAbilitySubjects(
                                                     prev => ({
@@ -973,7 +1091,22 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                     })
                                                 )
                                             }
+
+                                            onContextMenu={(e) => {
+
+                                                e.preventDefault();
+
+                                                setContextMenu({
+                                                    type: "ability-subject",
+                                                    x: e.clientX,
+                                                    y: e.clientY,
+                                                    subjectId: subject.id,
+                                                    subjectName: subject.name
+                                                });
+
+                                            }}
                                         >
+
                                             {
                                                 expandedAbilitySubjects[
                                                     subject.id
@@ -996,18 +1129,13 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                     {subjectAbilities.map(
                                                         ability => (
 
-                                                            <AbilityTreeItem
-                                                                key={ability.id}
-                                                                ability={
-                                                                    ability
-                                                                }
-                                                                openTab={
-                                                                    openTab
-                                                                }
-                                                                hoverTarget={
-                                                                    hoverTarget
-                                                                }
-                                                            />
+                                                        <AbilityTreeItem
+                                                            key={ability.id}
+                                                            ability={ability}
+                                                            openTab={openTab}
+                                                            hoverTarget={hoverTarget}
+                                                            setContextMenu={setContextMenu}
+                                                        />
 
                                                         )
                                                     )}
@@ -1094,6 +1222,55 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                     )
                 }
             />
+
+            <ImportStudentsDialog
+                group={importStudentsDialog}
+                open={!!importStudentsDialog}
+                onOpenChange={() =>
+                    setImportStudentsDialog(null)
+                }
+            />
+
+            <CreateAbilityDialog
+                open={!!createAbilityDialog}
+                onOpenChange={() =>
+                    setCreateAbilityDialog(null)
+                }
+                subjectId={
+                    createAbilityDialog?.subjectId
+                }
+                onCreated={loadAbilities}
+            />
+
+            <CreateAbilitiesFromExcelDialog
+                open={!!importAbilitiesDialog}
+                onOpenChange={() =>
+                    setImportAbilitiesDialog(null)
+                }
+                subjectId={
+                    importAbilitiesDialog?.subjectId
+                }
+                onCreated={loadAbilities}
+            />
+
+            <RenameAbilityDialog
+                open={!!renameAbilityDialog}
+                onOpenChange={() =>
+                    setRenameAbilityDialog(null)
+                }
+                ability={renameAbilityDialog}
+                onRenamed={loadAbilities}
+            />
+
+            <DeleteAbilityDialog
+                open={!!deleteAbilityDialog}
+                onOpenChange={() =>
+                    setDeleteAbilityDialog(null)
+                }
+                ability={deleteAbilityDialog}
+                onDeleted={loadAbilities}
+            />
+
         </>
     )
 }                
