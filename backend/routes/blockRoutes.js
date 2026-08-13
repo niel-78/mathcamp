@@ -305,6 +305,42 @@ router.get("/:blockId/", async (req, res) => {
 
 });
 
+// POST /api/blocks/4/archive
+router.post("/:id/archive", requireAuth,
+    async (req, res) => {
+
+        const [rows] =
+            await db.query(
+                `
+                SELECT id
+                FROM blocks
+                WHERE id = ?
+                AND created_by = ?
+                `,
+                [
+                    req.params.id,
+                    req.user.id
+                ]
+            );
+
+        if (!rows.length) {
+            return res.sendStatus(403);
+        }
+
+        await db.query(
+            `
+            UPDATE blocks
+            SET archived_at = NOW()
+            WHERE id = ?
+            `,
+            [req.params.id]
+        );
+
+        res.sendStatus(204);
+
+    }
+);
+
 
 // GET /api/blocks/
 router.get("/", async (req, res) => {
@@ -363,6 +399,7 @@ router.get("/", async (req, res) => {
                     ON uu.id = b.updated_by
 
                 WHERE b.deleted_at IS NULL
+                AND b.archived_at IS NULL
                 `
             );
 
@@ -396,6 +433,7 @@ router.get("/", async (req, res) => {
                 WHERE
 
                     b.deleted_at IS NULL
+                    AND b.archived_at IS NULL
 
                     AND (
 
@@ -434,6 +472,8 @@ router.get("/", async (req, res) => {
         const isOwner =
             block.created_by === req.user.id;
 
+        block.isOwner = isOwner;
+
         block.canEdit =
             req.user.role === "super" ||
             isOwner;
@@ -458,7 +498,7 @@ router.get("/", async (req, res) => {
 
         }
 
-    }      
+    }  
 
     res.json(
         hydratedBlocks

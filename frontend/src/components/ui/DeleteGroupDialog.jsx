@@ -1,8 +1,7 @@
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 
-import { Button }
-    from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 
 import {
     Dialog,
@@ -11,17 +10,17 @@ import {
     DialogTitle
 } from "@/components/ui/dialog";
 
-export default function DeleteExamDialog({
+export default function DeleteGroupDialog({
     open,
     onOpenChange,
-    exam,
+    group,
     onDeleted
 }) {
 
-    const deleteExam = async () => {
+    const deleteGroup = async () => {
 
         const res = await fetch(
-            `${API_URL}/api/archive/exams/${exam.id}`,
+            `${API_URL}/api/archive/groups/${group.id}`,
             {
                 method: "DELETE",
                 headers: authHeaders()
@@ -33,10 +32,6 @@ export default function DeleteExamDialog({
             onOpenChange(false);
 
             onDeleted?.();
-
-            window.dispatchEvent(
-                new Event("exams-changed")
-            );
 
         }
 
@@ -54,18 +49,18 @@ export default function DeleteExamDialog({
                 <DialogHeader>
 
                     <DialogTitle>
-                        Radera prov
+                        Radera grupp
                     </DialogTitle>
 
                 </DialogHeader>
 
                 <p>
 
-                    Vill du radera provet
+                    Vill du radera gruppen
 
                     <strong>
                         {" "}
-                        {exam?.title}
+                        {group?.name}
                         {" "}
                     </strong>
 
@@ -73,16 +68,11 @@ export default function DeleteExamDialog({
 
                 </p>
 
-                <div
-                    className="
-                        flex
-                        justify-end
-                    "
-                >
+                <div className="flex justify-end">
 
                     <Button
                         variant="destructive"
-                        onClick={deleteExam}
+                        onClick={deleteGroup}
                     >
                         Radera
                     </Button>

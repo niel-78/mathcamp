@@ -35,18 +35,34 @@ router.get("/", requireAuth,
                 SELECT
                     l.*,
                     g.name AS group_name
-
                 FROM lessons l
-
                 JOIN groups g
                     ON g.id = l.group_id
-
                 WHERE l.group_id IN (${placeholders})
-
                 ORDER BY l.starts_at
                 `,
                 groupIds
             );
+
+        for (const lesson of lessons) {
+
+            const [sections] =
+                await db.query(
+                    `
+                    SELECT
+                        s.*
+                    FROM lesson_sections ls
+                    JOIN sections s
+                        ON s.id = ls.section_id
+                    WHERE ls.lesson_id = ?
+                    ORDER BY s.page_number
+                    `,
+                    [lesson.id]
+                );
+
+            lesson.sections = sections;
+
+        }
 
         res.json(lessons);
 

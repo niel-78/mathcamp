@@ -13,6 +13,7 @@ export default function BlockCard({
     openTab,
     onDelete,
     onCopy,
+    onArchive,
     onRemoveCentralContent,
     onRemoveSection,
     onRemoveAbility,
@@ -396,9 +397,20 @@ export default function BlockCard({
                             onCopy?.(block.id)
                         }
                     >
-
                         Kopiera
+                    </Button>
 
+                )}
+
+                {block.isOwner && (
+
+                    <Button
+                        variant="outline"
+                        onClick={() =>
+                            onArchive?.(block)
+                        }
+                    >
+                        Arkivera
                     </Button>
 
                 )}
@@ -410,11 +422,16 @@ export default function BlockCard({
                         onPointerDown={(e) => {
                             e.stopPropagation();
                         }}
-                        onClick={() => onDelete(block.id)}
+                        onClick={() =>
+                            onDelete(block.id)
+                        }
                     >
                         Ta bort
                     </Button>
-                )}    
+
+                )}
+
+            
 
             </div>
 

@@ -43,7 +43,7 @@ router.get("/", async (req, res) => {
             `
             SELECT *
             FROM groups
-            WHERE archived IS FALSE
+            WHERE archived_at IS NULL
             ORDER BY name
             `
         );
@@ -57,7 +57,7 @@ router.get("/", async (req, res) => {
             INNER JOIN group_permissions gp
                 ON gp.group_id = g.id
             WHERE gp.teacher_id = ?
-            AND g.archived IS FALSE
+            AND g.archived_at IS NULL
             ORDER BY g.name
             `,
             [req.user.id]
@@ -219,6 +219,7 @@ router.get("/:id/students", async (req, res) => {
                 ON u.id = gs.user_id
             WHERE gs.group_id = ?
             AND u.role = 'student'
+            AND gs.deleted_at IS NULL
             ORDER BY u.last_name, u.first_name
             `,
             [req.params.id]
@@ -309,9 +310,10 @@ router.delete("/:id/students/:studentId", async (req, res) => {
 
         const [result] = await db.query(
             `
-            DELETE FROM group_students
-            WHERE group_id = ?
-              AND user_id = ?
+                UPDATE group_students
+                SET deleted_at = NOW()
+                WHERE group_id = ?
+                AND user_id = ?
             `,
             [
                 req.params.id,

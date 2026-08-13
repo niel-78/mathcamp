@@ -5,6 +5,8 @@ import authRoutes from "./routes/authRoutes.js";
 
 import appSettingsRoutes from "./routes/appSettingsRoutes.js";
 
+import archiveRoutes from "./routes/archiveRoutes.js";
+
 import schoolSettingsRoutes from "./routes/schoolSettingsRoutes.js";
 
 import userRoutes from "./routes/userRoutes.js";
@@ -62,6 +64,8 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 
 app.use("/api/app-settings",appSettingsRoutes);
+
+app.use("/api/archive",archiveRoutes);
 
 app.use("/api/school-settings",schoolSettingsRoutes);
 

@@ -2,6 +2,10 @@ USE mydb;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS group_schedules;
+DROP TABLE IF EXISTS group_schedule_exceptions;
+DROP TABLE IF EXISTS lessons;
+DROP TABLE IF EXISTS lesson_sections;
 DROP TABLE IF EXISTS grading_abilities;
 DROP TABLE IF EXISTS grading_ability_levels;
 DROP TABLE IF EXISTS abilities;
@@ -93,6 +97,8 @@ CREATE TABLE users (
     first_name VARCHAR(255),
     last_name VARCHAR(255),
 
+    deleted_at DATETIME NULL,
+
     -- för koppling till prov
     user_key VARCHAR(100) UNIQUE,
 
@@ -158,6 +164,8 @@ CREATE TABLE blocks (
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP,
     updated_by INT NOT NULL,
+
+    archived_at DATETIME NULL,
 
     deleted_at DATETIME NULL,
 
@@ -290,6 +298,8 @@ CREATE TABLE exams (
         ON UPDATE CURRENT_TIMESTAMP,
     updated_by INT NOT NULL,
 
+    archived_at DATETIME NULL,
+
     deleted_at DATETIME NULL,
 
     exam_config JSON DEFAULT JSON_OBJECT('allowCalculator', false, 'allowFormulaSheet', true, 'defaultTimeLimitMinutes', 60000, 'lock_tab_hidden', true, 'lock_window_blur', true, 'lock_context_menu', true, 'lock_page_unload', false)
@@ -317,15 +327,17 @@ CREATE TABLE exam_permissions (
 );
 
 
-/*Elevgrupper*/
 CREATE TABLE groups (
     id INT AUTO_INCREMENT PRIMARY KEY,
 
     name VARCHAR(100) NOT NULL,
-    archived BOOLEAN NOT NULL DEFAULT FALSE,
     description TEXT,
 
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    archived_at DATETIME NULL,
+    deleted_at DATETIME NULL,
+
+    created_at DATETIME NOT NULL
+        DEFAULT CURRENT_TIMESTAMP
 );
 
 /*Personal som är kopplad till grupp*/
@@ -355,9 +367,9 @@ CREATE TABLE group_permissions (
         ON DELETE CASCADE
 );
 
-INSERT INTO groups (id, name)
+INSERT INTO groups (id, name, archived_at)
 VALUES
-(1, 'Niklas grupp'),(2, 'Jolines grupp');
+(1, 'Niklas grupp',NULL),(2, 'Jolines grupp',CURRENT_TIMESTAMP);
 
 INSERT INTO group_permissions (
     group_id,
@@ -549,6 +561,8 @@ CREATE TABLE group_students (
 
     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
+    deleted_at DATETIME NULL,
+
     PRIMARY KEY (user_id, group_id),
 
     CONSTRAINT fk_group_students_user
@@ -563,7 +577,10 @@ CREATE TABLE group_students (
 );
 
 INSERT INTO group_students (user_id, group_id)
-VALUES (1, 1),(7, 1),(8, 1),(4, 2),(5, 2),(6, 2);
+VALUES (7, 1),(8, 1),(4, 2),(5, 2),(6, 2);
+
+INSERT INTO group_students (user_id, group_id, deleted_at)
+VALUES (1, 1, CURRENT_TIMESTAMP);
 
 /*Typyppgifter i prov*/
 CREATE TABLE exam_blocks (
@@ -993,7 +1010,7 @@ VALUES
 -- BLOCK 1 (TEXT TAL)
 -- ======================
 
-INSERT INTO blocks (id,created_by,updated_by,school_id) VALUES (1,2,2,1);
+INSERT INTO blocks (id,created_by,updated_by,school_id,archived_at) VALUES (1,2,2,1,CURRENT_TIMESTAMP);
 
 INSERT INTO questions (id,question,block_id,created_by,updated_by,answer_config,question_type) VALUES (NULL,'Skriv 1 074 000 med ord.',1,2,2,JSON_OBJECT('grading_mode', 'text','default_answer','en miljon sjuttiofyra tusen'),'text');
 SET @q = LAST_INSERT_ID();
@@ -1068,7 +1085,7 @@ INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUE
 -- EXAM BLOCKS
 -- ======================
 
-INSERT INTO exams(`id`,`title`,subject_id,level_id,created_by,updated_by) VALUES(1,'Test',1,2,2,2);
+INSERT INTO exams(`id`,`title`,subject_id,level_id,created_by,updated_by, archived_at) VALUES(1,'Test',1,2,2,2,CURRENT_TIMESTAMP);
 
 INSERT INTO exam_permissions (
     exam_id,
@@ -1978,7 +1995,6 @@ VALUES
 (2, '2026-10-28', 'study_day', 'Studiedag'),
 (2, '2026-11-27', 'cancelled', 'Praouppföljning');
 
-
 INSERT INTO lessons (
     group_id,
     starts_at,
@@ -1990,28 +2006,32 @@ VALUES
 -- Grupp 1
 (1, '2026-08-17 08:00:00', '2026-08-17 09:20:00', 'planned'),
 (1, '2026-08-20 13:00:00', '2026-08-20 14:20:00', 'planned'),
+(1, '2026-08-23 08:00:00', '2026-08-23 09:20:00', 'planned'),
+(1, '2026-08-27 13:00:00', '2026-08-27 14:20:00', 'planned'),
 
 -- Grupp 2
 (2, '2026-08-18 10:00:00', '2026-08-18 11:20:00', 'planned'),
-(2, '2026-08-21 08:30:00', '2026-08-21 09:50:00', 'planned');
+(2, '2026-08-21 08:30:00', '2026-08-21 09:50:00', 'planned'),
+(2, '2026-08-25 10:00:00', '2026-08-25 11:20:00', 'planned'),
+(2, '2026-08-28 08:30:00', '2026-08-28 09:50:00', 'planned');
 
-INSERT INTO lesson_sections (
-    lesson_id,
-    section_id,
-    sort_order
-)
-VALUES
+-- INSERT INTO lesson_sections (
+--     lesson_id,
+--     section_id,
+--     sort_order
+-- )
+-- VALUES
 
--- Lektion 1
-(1, 1, 1),
-(1, 2, 2),
+-- -- Lektion 1
+-- (1, 1, 1),
+-- (1, 2, 2),
 
--- Lektion 2
-(2, 3, 1),
+-- -- Lektion 2
+-- (2, 3, 1),
 
--- Lektion 3
-(3, 4, 1),
-(3, 5, 2),
+-- -- Lektion 3
+-- (3, 4, 1),
+-- (3, 5, 2),
 
--- Lektion 4
-(4, 6, 1);
+-- -- Lektion 4
+-- (4, 6, 1);

@@ -10,7 +10,7 @@ import {
 export default function ExamCard({
     exam,
     openTab,
-    onDelete
+    onArchive
 }) {
 
     return (
@@ -149,6 +149,19 @@ export default function ExamCard({
                 "
             >
 
+                {exam.role === "owner" && (
+
+                    <Button
+                        variant="outline"
+                        onClick={() =>
+                            onArchive?.(exam)
+                        }
+                    >
+                        Arkivera
+                    </Button>
+
+                )}
+
                 <Button
                     onClick={() =>
                         openTab({
@@ -160,18 +173,6 @@ export default function ExamCard({
                     }
                 >
                     Öppna
-                </Button>
-
-                <Button
-                    variant="destructive"
-                    onPointerDown={(e) => {
-                        e.stopPropagation();
-                    }}
-                    onClick={() =>
-                        onDelete(exam)
-                    }
-                >
-                    Ta bort
                 </Button>
 
             </div>

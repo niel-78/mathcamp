@@ -14,6 +14,10 @@ import GroupExamWaitingRoomTab from "./Main/GroupExamWaitingRoomTab";
 import GroupExamMonitorTab from "./Main/GroupExamMonitorTab";
 import AbilityTab from "./Main/AbilityTab";
 import GroupPlanningTab from "./Main/GroupPlanningTab";
+import ArchivedGroupsTab from "./Main/ArchivedGroupsTab";
+import ArchivedStudentsTab from "./Main/ArchivedStudentsTab";
+import ArchivedExamsTab from "./Main/ArchivedExamsTab";
+import ArchivedBlocksTab from "./Main/ArchivedBlocksTab";
 
 export default function Main({
     tabs,
@@ -101,7 +105,6 @@ export default function Main({
                         min-h-0
                     "
                 >
-
                     {currentTab?.type === "home" && (
                         <StartPage
                             openTab={(tab) =>
@@ -278,6 +281,28 @@ export default function Main({
                         />
 
                     )}
+
+                    {currentTab?.type === "archived-groups" && (
+
+                        <ArchivedGroupsTab />
+
+                    )}
+                    {currentTab?.type === "archived-students" && (
+
+                        <ArchivedStudentsTab />
+
+                    )}
+                    {currentTab?.type === "archived-exams" && (
+
+                        <ArchivedExamsTab />
+
+                    )}
+                    {currentTab?.type === "archived-blocks" && (
+
+                        <ArchivedBlocksTab />
+
+                    )}
+
 
                 </div>
 

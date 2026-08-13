@@ -57,6 +57,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [importAbilitiesDialog, setImportAbilitiesDialog] = useState(null);
     const [renameAbilityDialog, setRenameAbilityDialog] = useState(null);
     const [deleteAbilityDialog, setDeleteAbilityDialog] = useState(null);
+    const [archiveOpen, setArchiveOpen] = useState(false);
     
 
     useEffect(() => {
@@ -81,6 +82,30 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                 "click",
                 handleClick
             );
+
+    }, []);
+
+    useEffect(() => {
+
+        loadGroups();
+
+        const reload = () => {
+            loadGroups();
+        };
+
+        window.addEventListener(
+            "group-restored",
+            reload
+        );
+
+        return () => {
+
+            window.removeEventListener(
+                "group-restored",
+                reload
+            );
+
+        };
 
     }, []);
 
@@ -442,7 +467,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                                     }}
                                 >
-                                    Arkivera
+                                    Ta bort från grupp
                                 </Button>
                             </>
 
@@ -1165,6 +1190,99 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                 )}
 
+                <div className="mt-6 border-t pt-2">
+
+                    <div
+                        className="tree-folder"
+                        onClick={() =>
+                            setArchiveOpen(
+                                prev => !prev
+                            )
+                        }
+                    >
+                        <span>
+                            {archiveOpen ? "▼" : "▶"}
+                        </span>
+
+                        <span>Arkiv</span>
+
+                    </div>
+
+                    {archiveOpen && (
+
+                        <div className="ml-6">
+
+                            <div
+                                className="tree-file"
+                                onClick={() =>
+                                    openTab({
+                                        id: "archived-groups",
+                                        type: "archived-groups",
+                                        title: "Grupper"
+                                    })
+
+                                }
+                            >
+                                Grupper
+                            </div>
+
+                            <div
+                                className="tree-file"
+                                onClick={() =>
+                                    openTab({
+                                        id: "archived-students",
+                                        title: "Elever",
+                                        type: "archived-students"
+                                    })
+                                }
+                            >
+                                Elever
+                            </div>
+
+                            <div
+                                className="tree-file"
+                                onClick={() =>
+                                    openTab({
+                                        id: "archived-exams",
+                                        type: "archived-exams",
+                                        title: "Prov"
+                                    })
+                                }
+                            >
+                                Prov
+                            </div>
+
+                            <div
+                                className="tree-file"
+                                onClick={() =>
+                                    openTab({
+                                        id: "archived-blocks",
+                                        title: "Block",
+                                        type: "archived-blocks"
+                                    })
+                                }
+                            >
+                                Block
+                            </div>
+
+                            <div
+                                className="tree-file"
+                                onClick={() =>
+                                    openTab({
+                                        id: "archive-assignments",
+                                        title: "Uppgifter",
+                                        type: "archive-assignments"
+                                    })
+                                }
+                            >
+                                Uppgifter
+                            </div>
+
+                        </div>
+
+                    )}
+
+                </div>
 
             </div>    
 

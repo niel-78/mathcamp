@@ -9,7 +9,7 @@ import ExamCard from "@/components/ui/ExamCard";
 import CreateExam from "@/components/ui/CreateExam";
 
 import NewExamDialog from "@/components/ui/NewExamDialog";
-import DeleteExamDialog from "@/components/ui/DeleteExamDialog";
+import ArchiveExamDialog from "@/components/ui/ArchiveExamDialog";
 
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 
@@ -25,12 +25,12 @@ export default function ExamListTab({
         setCreatingExam] =
         useState(false);
 
-    const [examToDelete,
-        setExamToDelete] =
+    const [examToArchive,
+        setExamToArchive] =
         useState(null);
 
-    const [deleteOpen,
-        setDeleteOpen] =
+    const [archiveOpen,
+        setArchiveOpen] =
         useState(false);
 
     const loadExams = async () => {
@@ -69,13 +69,13 @@ export default function ExamListTab({
 
     }, []);
 
-    const handleDeleteExam = (
+    const handleArchiveExam = (
         exam
     ) => {
 
-        setExamToDelete(exam);
+        setExamToArchive(exam);
 
-        setDeleteOpen(true);
+        setArchiveOpen(true);
 
     };
 
@@ -119,28 +119,26 @@ export default function ExamListTab({
                             key={exam.id}
                             exam={exam}
                             selected={
-                                selectedExamId ===
-                                exam.id
+                                selectedExamId === exam.id
                             }
                             openTab={openTab}
-                            onDelete={
-                                handleDeleteExam
+                            onArchive={
+                                handleArchiveExam
                             }
                         />
-
                     ))}
 
                 </div>
 
             </BaseTabLayout>
 
-            <DeleteExamDialog
-                exam={examToDelete}
-                open={deleteOpen}
+            <ArchiveExamDialog
+                exam={examToArchive}
+                open={archiveOpen}
                 onOpenChange={
-                    setDeleteOpen
+                    setArchiveOpen
                 }
-                onDeleted={loadExams}
+                onArchived={loadExams}
             />
 
             <NewExamDialog

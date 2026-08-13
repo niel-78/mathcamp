@@ -41,6 +41,7 @@ router.get("/", async (req, res) => {
                 ON ep.exam_id = e.id
             WHERE
                 e.deleted_at IS NULL
+                AND e.archived_at IS NULL
                 AND ep.teacher_id = ?
             ORDER BY e.title;
             `,
@@ -223,10 +224,46 @@ router.delete("/:examId", async (req, res) => {
 });
 
 
+// POST /api/exams/:id/archive
+router.post("/:id/archive",
+    async (req, res) => {
 
+        const examId = req.params.id;
 
+        const [permissions] =
+            await db.query(
+                `
+                SELECT 1
+                FROM exam_permissions
+                WHERE exam_id = ?
+                AND teacher_id = ?
+                AND role = 'owner'
+                `,
+                [
+                    examId,
+                    req.user.id
+                ]
+            );
 
+        if (!permissions.length) {
 
+            return res.sendStatus(403);
+
+        }
+
+        await db.query(
+            `
+            UPDATE exams
+            SET archived_at = NOW()
+            WHERE id = ?
+            `,
+            [examId]
+        );
+
+        res.sendStatus(204);
+
+    }
+);
 
 
 

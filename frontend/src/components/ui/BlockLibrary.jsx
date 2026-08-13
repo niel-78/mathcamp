@@ -3,6 +3,7 @@ import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 import BlockCard from "@/components/ui/BlockCard";
 import PointDialog from "@/components/ui/PointDialog";
+import ArchiveBlockDialog from "@/components/ui/ArchiveBlockDialog";
 import CardSection from "@/components/layouts/CardSection";
 import CardGridLayout from "@/components/layouts/CardGridLayout";
 
@@ -71,6 +72,7 @@ export default function BlockLibrary({
     };
 
     const [pointDialog, setPointDialog] = useState(null);
+    const [blockToArchive, setBlockToArchive] = useState(null);
 
 
     const myBlocks =
@@ -102,22 +104,23 @@ export default function BlockLibrary({
 
             {items.map(block => (
 
-            <BlockCard
-                key={block.id}
-                dragPrefix={dragPrefix}
-                block={block}
-                openTab={openTab}
-                onDelete={onDelete}
-                onRemoveSection={removeSection}
-                onRemoveCentralContent={removeCentralContent}
-                onCopy={copyBlock}
-                onEditPoint={(point) =>
-                    setPointDialog({
-                        blockId: block.id,
-                        point
-                    })
-                }
-            />
+                <BlockCard
+                    key={block.id}
+                    dragPrefix={dragPrefix}
+                    block={block}
+                    openTab={openTab}
+                    onDelete={onDelete}
+                    onRemoveSection={removeSection}
+                    onRemoveCentralContent={removeCentralContent}
+                    onCopy={copyBlock}
+                    onArchive={setBlockToArchive}
+                    onEditPoint={(point) =>
+                        setPointDialog({
+                            blockId: block.id,
+                            point
+                        })
+                    }
+                />
 
             ))}
 
@@ -171,6 +174,20 @@ export default function BlockLibrary({
                 open={!!pointDialog}
                 onOpenChange={() => setPointDialog(null)}
                 onSaved={onReload}
+            />
+            <ArchiveBlockDialog
+                block={blockToArchive}
+                open={!!blockToArchive}
+                onOpenChange={(open) => {
+
+                    if (!open) {
+
+                        setBlockToArchive(null);
+
+                    }
+
+                }}
+                onArchived={onReload}
             />
         </>
 
