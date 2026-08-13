@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 
 export default function PlanningBoard({
     lessons = [],
-    loading = false
+    loading = false,
+    onReload
 }) {
 
     const [viewMode, setViewMode] = useState("week");
@@ -102,6 +103,7 @@ export default function PlanningBoard({
                 <WeekView
                     lessons={lessons}
                     selectedWeek={selectedWeek}
+                    onReload={onReload}
                 />
             )}
 
@@ -109,12 +111,14 @@ export default function PlanningBoard({
                 <CompactWeekView
                     lessons={lessons}
                     selectedWeek={selectedWeek}
+                    onReload={onReload}
                 />
             )}
 
             {viewMode === "list" && (
                 <ListView
                     lessons={lessons}
+                    onReload={onReload}
                 />
             )}
 

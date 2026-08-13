@@ -1,11 +1,7 @@
-import CardSection
-    from "@/components/layouts/CardSection";
-
-import DropZone
-    from "@/components/ui/DropZone";
-
-import FormatDateTimeShort
-    from "@/utils/FormatDateTimeShort";
+import CardSection from "@/components/layouts/CardSection";
+import DropZone from "@/components/ui/DropZone";
+import FormatDateTimeShort from "@/utils/FormatDateTimeShort";
+import LessonSection from "./LessonSection";
 
 export default function LessonCard({
     lesson,
@@ -64,36 +60,11 @@ export default function LessonCard({
                     {lesson.sections?.map(
                         section => (
 
-                            <div
-                                key={section.id}
-                                className="
-                                    rounded-md
-                                    border
-                                    p-2
-                                    bg-card
-                                "
-                            >
-
-                                <div>
-                                    {section.title}
-                                </div>
-
-                                <div
-                                    className="
-                                        text-xs
-                                        text-muted-foreground
-                                    "
-                                >
-                                    s.
-                                    {section.page_number}
-
-                                    {section.end_page >
-                                    section.page_number
-                                        ? `-${section.end_page}`
-                                        : ""}
-                                </div>
-
-                            </div>
+                            <LessonSection
+                                key={`${lesson.id}-${section.id}`}
+                                section={section}
+                                lessonId={lesson.id}
+                            />
 
                         )
                     )}

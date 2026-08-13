@@ -57,10 +57,6 @@ export default function WaitingRoomPage({
                     data.admitted
                 ) {
 
-                    console.log(
-                        "STARTING EXAM"
-                    );
-
                     clearInterval(
                         interval
                     );

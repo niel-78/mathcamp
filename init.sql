@@ -217,6 +217,7 @@ CREATE TABLE questions (
         ON UPDATE CURRENT_TIMESTAMP,
     updated_by INT NOT NULL,
 
+    archived_at DATETIME NULL,
     deleted_at DATETIME NULL,
     
     answer_config JSON DEFAULT JSON_OBJECT('mode', 'numeric'),
@@ -1012,7 +1013,7 @@ VALUES
 
 INSERT INTO blocks (id,created_by,updated_by,school_id,archived_at) VALUES (1,2,2,1,CURRENT_TIMESTAMP);
 
-INSERT INTO questions (id,question,block_id,created_by,updated_by,answer_config,question_type) VALUES (NULL,'Skriv 1 074 000 med ord.',1,2,2,JSON_OBJECT('grading_mode', 'text','default_answer','en miljon sjuttiofyra tusen'),'text');
+INSERT INTO questions (id,question,block_id,created_by,updated_by,answer_config,question_type, archived_at) VALUES (NULL,'Skriv 1 074 000 med ord.',1,2,2,JSON_OBJECT('grading_mode', 'text','default_answer','en miljon sjuttiofyra tusen'),'text', CURRENT_TIMESTAMP);
 SET @q = LAST_INSERT_ID();
 
 INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUES (NULL,@q,'en miljon sjuttiofyra tusen',1,2,2);
@@ -1927,16 +1928,20 @@ CREATE TABLE lessons (
 
     group_id INT NOT NULL,
 
+    group_schedule_id INT NOT NULL,
+
     starts_at DATETIME NOT NULL,
     ends_at DATETIME NOT NULL,
 
-    status ENUM(
-        'planned',
-        'cancelled'
-    ) DEFAULT 'planned',
+    cancelled_at DATETIME NULL,
+    deleted_at DATETIME NULL,
 
     FOREIGN KEY (group_id)
         REFERENCES groups(id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (group_schedule_id)
+        REFERENCES group_schedules(id)
         ON DELETE CASCADE
 );
 
@@ -1995,25 +2000,26 @@ VALUES
 (2, '2026-10-28', 'study_day', 'Studiedag'),
 (2, '2026-11-27', 'cancelled', 'Praouppföljning');
 
-INSERT INTO lessons (
-    group_id,
-    starts_at,
-    ends_at,
-    status
-)
-VALUES
 
--- Grupp 1
-(1, '2026-08-17 08:00:00', '2026-08-17 09:20:00', 'planned'),
-(1, '2026-08-20 13:00:00', '2026-08-20 14:20:00', 'planned'),
-(1, '2026-08-23 08:00:00', '2026-08-23 09:20:00', 'planned'),
-(1, '2026-08-27 13:00:00', '2026-08-27 14:20:00', 'planned'),
+-- INSERT INTO lessons (
+--     group_id,
+--     starts_at,
+--     ends_at,
+--     status
+-- )
+-- VALUES
 
--- Grupp 2
-(2, '2026-08-18 10:00:00', '2026-08-18 11:20:00', 'planned'),
-(2, '2026-08-21 08:30:00', '2026-08-21 09:50:00', 'planned'),
-(2, '2026-08-25 10:00:00', '2026-08-25 11:20:00', 'planned'),
-(2, '2026-08-28 08:30:00', '2026-08-28 09:50:00', 'planned');
+-- -- Grupp 1
+-- (1, '2026-08-17 08:00:00', '2026-08-17 09:20:00', 'planned'),
+-- (1, '2026-08-20 13:00:00', '2026-08-20 14:20:00', 'planned'),
+-- (1, '2026-08-23 08:00:00', '2026-08-23 09:20:00', 'planned'),
+-- (1, '2026-08-27 13:00:00', '2026-08-27 14:20:00', 'planned'),
+
+-- -- Grupp 2
+-- (2, '2026-08-18 10:00:00', '2026-08-18 11:20:00', 'planned'),
+-- (2, '2026-08-21 08:30:00', '2026-08-21 09:50:00', 'planned'),
+-- (2, '2026-08-25 10:00:00', '2026-08-25 11:20:00', 'planned'),
+-- (2, '2026-08-28 08:30:00', '2026-08-28 09:50:00', 'planned');
 
 -- INSERT INTO lesson_sections (
 --     lesson_id,

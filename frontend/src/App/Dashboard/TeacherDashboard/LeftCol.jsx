@@ -19,6 +19,7 @@ import AbilityTreeItem from "@/components/ui/AbilityTreeItem";
 import RenameAbilityDialog from "./LeftCol/RenameAbilityDialog";
 import DeleteAbilityDialog from "./LeftCol/DeleteAbilityDialog";
 import CreateAbilitiesFromExcelDialog from "./LeftCol/CreateAbilitiesFromExcelDialog";
+import CreateLessonSeriesDialog from "./LeftCol/CreateLessonSeriesDialog";
 
 export default function LeftCol( {openTab, hoverTarget} ) {
 
@@ -58,6 +59,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [renameAbilityDialog, setRenameAbilityDialog] = useState(null);
     const [deleteAbilityDialog, setDeleteAbilityDialog] = useState(null);
     const [archiveOpen, setArchiveOpen] = useState(false);
+    const [createLessonSeriesDialog, setCreateLessonSeriesDialog] = useState(null);
     
 
     useEffect(() => {
@@ -336,6 +338,38 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                 >
                                     Arkivera
                                 </Button>
+                            </>
+
+                        )}
+
+                        {contextMenu?.type === "planning" && (
+
+                            <>
+
+                                <Button
+                                    className="
+                                        block
+                                        w-full
+                                        p-2
+                                        items-center
+                                        text-left
+                                        hover:bg-accent
+                                    "
+                                    variant="inline"
+                                    onClick={() => {
+
+                                        setCreateLessonSeriesDialog({
+                                            groupId: contextMenu.groupId,
+                                            groupName: contextMenu.groupName
+                                        });
+
+                                        setContextMenu(null);
+
+                                    }}
+                                >
+                                    Skapa lektioner
+                                </Button>
+
                             </>
 
                         )}
@@ -688,10 +722,22 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                     group
                                                 })
                                             }
+                                            onContextMenu={(e) => {
+
+                                                e.preventDefault();
+
+                                                setContextMenu({
+                                                    type: "planning",
+                                                    groupId: group.id,
+                                                    groupName: group.name,
+                                                    x: e.clientX,
+                                                    y: e.clientY
+                                                });
+
+                                            }}
                                         >
                                             Planering
                                         </div>
-
 
                                         <div
                                             className="tree-file cursor-pointer"
@@ -1269,9 +1315,9 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                 className="tree-file"
                                 onClick={() =>
                                     openTab({
-                                        id: "archive-assignments",
+                                        id: "archived-questions",
                                         title: "Uppgifter",
-                                        type: "archive-assignments"
+                                        type: "archived-questions"
                                     })
                                 }
                             >
@@ -1400,6 +1446,13 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                 }
                 ability={deleteAbilityDialog}
                 onDeleted={loadAbilities}
+            />
+            <CreateLessonSeriesDialog
+                open={!!createLessonSeriesDialog}
+                group={createLessonSeriesDialog}
+                onOpenChange={() =>
+                    setCreateLessonSeriesDialog(null)
+                }
             />
 
         </>

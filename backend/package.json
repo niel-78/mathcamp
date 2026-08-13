@@ -15,6 +15,7 @@
   "dependencies": {
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
+    "dayjs": "^1.11.21",
     "express": "^5.2.1",
     "mathjs": "^15.2.0",
     "multer": "^2.2.0",

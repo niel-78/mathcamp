@@ -16,6 +16,7 @@ export default async function hydrateBlocks(blocks) {
                 ON ql.id = q.level_id
             WHERE q.block_id = ?
             AND q.deleted_at IS NULL
+            AND q.archived_at IS NULL
             `,
             [block.id]
         );

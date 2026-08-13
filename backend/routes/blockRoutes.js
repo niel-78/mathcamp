@@ -301,6 +301,8 @@ router.get("/:blockId/", async (req, res) => {
     const hydratedBlocks =
         await hydrateBlocks(blocks);
 
+    hydratedBlocks[0].isOwner = hydratedBlocks[0].created_by === req.user.id;
+
     res.json(hydratedBlocks[0]);
 
 });

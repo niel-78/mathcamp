@@ -1,41 +1,36 @@
 import { useEffect, useState } from "react";
-
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
+import BaseTabLayout from "@/components/layouts/BaseTabLayout";
+import CardSection from "@/components/layouts/CardSection";
+import DeleteQuestionDialog from "@/components/ui/DeleteQuestionDialog";
+import { Button } from "@/components/ui/button";
 
-import BaseTabLayout
-    from "@/components/layouts/BaseTabLayout";
+export default function ArchivedQuestionsTab() {
 
-import CardSection
-    from "@/components/layouts/CardSection";
+    const [questions, setQuestions] =
+        useState([]);
 
-import { Button }
-    from "@/components/ui/button";
+    const [loading, setLoading] =
+        useState(true);
 
-import DeleteBlockDialog
-    from "@/components/ui/DeleteBlockDialog";
-
-export default function ArchivedBlocksTab() {
-
-    const [blocks, setBlocks] = useState([]);
-
-    const [loading, setLoading] = useState(true);
-
-    const [blockToDelete, setBlockToDelete] = useState(null);
+    const [questionToDelete,
+        setQuestionToDelete] =
+        useState(null);
 
     useEffect(() => {
 
-        loadBlocks();
+        loadQuestions();
 
     }, []);
 
-    const loadBlocks = async () => {
+    const loadQuestions = async () => {
 
         try {
 
             const response =
                 await fetch(
-                    `${API_URL}/api/archive/blocks`,
+                    `${API_URL}/api/archive/questions`,
                     {
                         headers:
                             authHeaders()
@@ -49,7 +44,7 @@ export default function ArchivedBlocksTab() {
             const data =
                 await response.json();
 
-            setBlocks(data);
+            setQuestions(data);
 
         } catch (error) {
 
@@ -63,14 +58,14 @@ export default function ArchivedBlocksTab() {
 
     };
 
-    const restoreBlock = async (
-        blockId
+    const restoreQuestion = async (
+        questionId
     ) => {
 
         try {
 
             await fetch(
-                `${API_URL}/api/archive/blocks/${blockId}/restore`,
+                `${API_URL}/api/archive/questions/${questionId}/restore`,
                 {
                     method: "POST",
                     headers:
@@ -79,10 +74,10 @@ export default function ArchivedBlocksTab() {
             );
 
             window.dispatchEvent(
-                new Event("blocks-changed")
+                new Event("questions-changed")
             );
 
-            await loadBlocks();
+            await loadQuestions();
 
         } catch (error) {
 
@@ -92,25 +87,25 @@ export default function ArchivedBlocksTab() {
 
     };
 
-    const deleteBlock = async () => {
+    const deleteQuestion = async () => {
 
-        if (!blockToDelete) {
+        if (!questionToDelete) {
             return;
         }
 
         try {
 
             await fetch(
-                `${API_URL}/api/archive/blocks/${blockToDelete.id}`,
+                `${API_URL}/api/archive/questions/${questionToDelete.id}`,
                 {
                     method: "DELETE",
                     headers: authHeaders()
                 }
             );
 
-            setBlockToDelete(null);
+            setQuestionToDelete(null);
 
-            await loadBlocks();
+            await loadQuestions();
 
         } catch (error) {
 
@@ -120,16 +115,17 @@ export default function ArchivedBlocksTab() {
 
     };
 
+
     return (
 
         <>
             <BaseTabLayout
-                title="Arkiverade block"
+                title="Arkiverade uppgifter"
             >
 
                 <CardSection
-                    title="Arkiverade block"
-                    description="Block som du har skapat och arkiverat."
+                    title="Arkiverade uppgifter"
+                    description="Uppgifter från dina block som har arkiverats."
                 >
 
                     {loading && (
@@ -141,7 +137,7 @@ export default function ArchivedBlocksTab() {
                     )}
 
                     {!loading &&
-                    blocks.length === 0 && (
+                    questions.length === 0 && (
 
                         <div
                             className="
@@ -149,17 +145,17 @@ export default function ArchivedBlocksTab() {
                                 text-muted-foreground
                             "
                         >
-                            Inga arkiverade block.
+                            Inga arkiverade uppgifter.
                         </div>
 
                     )}
 
                     <div className="space-y-4">
 
-                        {blocks.map(block => (
+                        {questions.map(question => (
 
                             <div
-                                key={block.id}
+                                key={question.id}
                                 className="
                                     border
                                     rounded-lg
@@ -178,7 +174,7 @@ export default function ArchivedBlocksTab() {
                                             font-medium
                                         "
                                     >
-                                        Block #{block.id}
+                                        Uppgift #{question.id}
                                     </div>
 
                                     <div
@@ -187,9 +183,9 @@ export default function ArchivedBlocksTab() {
                                             text-muted-foreground
                                         "
                                     >
-                                        Synlighet:
+                                        Block:
                                         {" "}
-                                        {block.visibility}
+                                        {question.block_id}
                                     </div>
 
                                 </div>
@@ -204,8 +200,8 @@ export default function ArchivedBlocksTab() {
                                     <Button
                                         variant="outline"
                                         onClick={() =>
-                                            restoreBlock(
-                                                block.id
+                                            restoreQuestion(
+                                                question.id
                                             )
                                         }
                                     >
@@ -215,8 +211,8 @@ export default function ArchivedBlocksTab() {
                                     <Button
                                         variant="destructive"
                                         onClick={() =>
-                                            setBlockToDelete(
-                                                block
+                                            setQuestionToDelete(
+                                                question
                                             )
                                         }
                                     >
@@ -235,16 +231,18 @@ export default function ArchivedBlocksTab() {
 
             </BaseTabLayout>
 
-            <DeleteBlockDialog
-                open={!!blockToDelete}
+            <DeleteQuestionDialog
+                open={!!questionToDelete}
                 onOpenChange={(open) => {
 
                     if (!open) {
-                        setBlockToDelete(null);
+
+                        setQuestionToDelete(null);
+
                     }
 
                 }}
-                onDelete={deleteBlock}
+                onDelete={deleteQuestion}
             />
 
         </>

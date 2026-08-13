@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { authHeaders } from "@/api/authHeaders";
 import { API_URL } from "@/config";
 import { toast } from "sonner";
-import DeleteQuestionDialog from "@/components/ui/DeleteQuestionDialog";
+import ArchiveQuestionDialog from "@/components/ui/ArchiveQuestionDialog";
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";    
 import MathContent from "@/components/ui/MathContent";
 
@@ -15,10 +15,7 @@ export default function BlockContent({
 
     const [currentBlock, setCurrentBlock] = useState(block);    
 
-    const [
-        questionToDelete,
-        setQuestionToDelete
-    ] = useState(null);
+    const [questionToArchive, setQuestionToArchive] = useState(null);
 
     useEffect(() => {
         setCurrentBlock(block);
@@ -39,6 +36,7 @@ export default function BlockContent({
 
         const data = await response.json();
         setCurrentBlock(data);
+        console.log(data);
 
     };
 
@@ -102,25 +100,6 @@ export default function BlockContent({
             );
         };
 
-    const deleteQuestion = async (
-        questionId
-    ) => {
-
-        await fetch(
-            `${API_URL}/api/questions/${questionId}`,
-            {
-                method: "DELETE",
-                headers: authHeaders()
-            }
-        );
-
-        await loadBlock();
-
-        toast.success(
-            "Uppgift borttagen"
-        );
-
-    };
 
     return (
         <>
@@ -184,17 +163,21 @@ export default function BlockContent({
                                     Duplicera
                                 </Button>
 
-                                <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={() =>
-                                        setQuestionToDelete(
-                                            question.id
-                                        )
-                                    }
-                                >
-                                    Ta bort
-                                </Button>
+                                {currentBlock.isOwner && (
+
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() =>
+                                            setQuestionToArchive(
+                                                question
+                                            )
+                                        }
+                                    >
+                                        Arkivera
+                                    </Button>
+
+                                )}
 
                             </div>
 
@@ -205,25 +188,25 @@ export default function BlockContent({
                 </div>
             </BaseTabLayout>
 
-            <DeleteQuestionDialog
-                open={questionToDelete !== null}
+            <ArchiveQuestionDialog
+                question={questionToArchive}
+                open={!!questionToArchive}
                 onOpenChange={(open) => {
 
                     if (!open) {
-                        setQuestionToDelete(null);
+
+                        setQuestionToArchive(null);
+
                     }
 
                 }}
-                onDelete={async () => {
+                onArchived={async () => {
 
-                    await deleteQuestion(
-                        questionToDelete
-                    );
-
-                    setQuestionToDelete(null);
+                    await loadBlock();
 
                 }}
             />
+
 
         </>    
     );

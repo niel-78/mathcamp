@@ -18,6 +18,7 @@ import ArchivedGroupsTab from "./Main/ArchivedGroupsTab";
 import ArchivedStudentsTab from "./Main/ArchivedStudentsTab";
 import ArchivedExamsTab from "./Main/ArchivedExamsTab";
 import ArchivedBlocksTab from "./Main/ArchivedBlocksTab";
+import ArchivedQuestionsTab from "./Main/ArchivedQuestionsTab";
 
 export default function Main({
     tabs,
@@ -300,6 +301,11 @@ export default function Main({
                     {currentTab?.type === "archived-blocks" && (
 
                         <ArchivedBlocksTab />
+
+                    )}
+                    {currentTab?.type === "archived-questions" && (
+
+                        <ArchivedQuestionsTab />
 
                     )}
 

@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import {
     DndContext,
     DragOverlay,
-    pointerWithin,
     closestCenter
 } from "@dnd-kit/core";
 import {
@@ -15,6 +14,7 @@ import { API_URL } from "@/config";
 import LeftCol from "./TeacherDashboard/LeftCol";
 import AppHeader from "./TeacherDashboard/AppHeader";
 import Main from "./TeacherDashboard/Main";
+import { toast } from "sonner";
 
 export default function TeacherDashboard() {
 
@@ -213,10 +213,74 @@ export default function TeacherDashboard() {
             const sectionId =
                 active.data.current.sectionId;
 
-            try {
+                try {
 
+                    const response = await fetch(
+                        `${API_URL}/api/lessons/lesson-sections`,
+                        {
+                            method: "POST",
+                            headers: {
+                                ...authHeaders(),
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({
+                                lesson_id: lessonId,
+                                section_id: sectionId
+                            })
+                        }
+                    );
+
+                    if (response.status === 409) {
+
+                        toast.error(
+                            "Sektionen finns redan i lektionen."
+                        );
+
+                        return;
+
+                    }
+
+                    window.dispatchEvent(
+                        new Event("lesson-section-added")
+                    );
+
+                } catch (error) {
+
+                    console.error(error);
+
+                }
+
+
+            return;
+
+        }
+
+        /*
+        Lägga boksektion från lektion till annan lektion
+        */
+        if (
+            active.data.current?.type ===
+                "lesson-section" &&
+            over?.id?.startsWith("lesson-")
+        ) {
+
+            const targetLessonId =
+                Number(
+                    over.id.replace(
+                        "lesson-",
+                        ""
+                    )
+                );
+
+            const sectionId =
+                active.data.current.sectionId;
+
+            const sourceLessonId =
+                active.data.current.lessonId;
+
+            const response =
                 await fetch(
-                    `${API_URL}/api/lessons/lesson-sections`,
+                    `${API_URL}/api/lessons/move-section`,
                     {
                         method: "POST",
                         headers: {
@@ -225,25 +289,30 @@ export default function TeacherDashboard() {
                                 "application/json"
                         },
                         body: JSON.stringify({
-                            lesson_id: lessonId,
-                            section_id: sectionId
+                            section_id: sectionId,
+                            source_lesson_id:
+                                sourceLessonId,
+                            target_lesson_id:
+                                targetLessonId
                         })
                     }
                 );
 
-                console.log(
-                    "Section linked",
-                    {
-                        lessonId,
-                        sectionId
-                    }
+            if (response.status === 409) {
+
+                toast.error(
+                    "Sektionen finns redan i lektionen."
                 );
 
-            } catch (error) {
-
-                console.error(error);
+                return;
 
             }
+
+            window.dispatchEvent(
+                new Event(
+                    "lesson-section-added"
+                )
+            );
 
             return;
 
@@ -602,8 +671,6 @@ export default function TeacherDashboard() {
             collisionDetection={closestCenter}
             onDragStart={({ active }) => {
 
-                console.log("DRAG START", active);
-
                 const type =
                     active.data.current?.type;
 
@@ -626,12 +693,6 @@ export default function TeacherDashboard() {
 
             }}
             onDragEnd={(event) => {
-
-                console.log("DRAG END");
-                
-                console.log("active", event.active);
-                
-                console.log("over", event.over);
 
                 setActiveDragType(null);
 

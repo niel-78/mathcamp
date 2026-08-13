@@ -18,6 +18,24 @@ export default function GroupPlanningTab({
 
         loadLessons();
 
+        const reload = () => {
+            loadLessons();
+        };
+
+        window.addEventListener(
+            "lesson-section-added",
+            reload
+        );
+
+        return () => {
+
+            window.removeEventListener(
+                "lesson-section-added",
+                reload
+            );
+
+        };
+
     }, [groupId]);
 
     const loadLessons = async () => {
@@ -41,7 +59,6 @@ export default function GroupPlanningTab({
 
             setLessons(data);
 
-            console.log(data);
 
         } finally {
 

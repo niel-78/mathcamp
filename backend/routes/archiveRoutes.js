@@ -306,4 +306,71 @@ router.delete("/blocks/:id", requireAuth,
     }
 );
 
+// GET /api/archive/questions
+router.get("/questions",requireAuth,
+    async (req, res) => {
+
+        const [questions] =
+            await db.query(
+                `
+                SELECT
+                    q.*,
+
+                    b.id AS block_id
+
+                FROM questions q
+
+                JOIN blocks b
+                    ON b.id = q.block_id
+
+                WHERE q.archived_at IS NOT NULL
+                AND q.deleted_at IS NULL
+                AND b.created_by = ?
+
+                ORDER BY q.updated_at DESC
+                `,
+                [req.user.id]
+            );
+
+        res.json(questions);
+
+    }
+);
+
+// POST /api/archive/questions/:id/restore
+router.post("/questions/:id/restore", requireAuth,
+    async (req, res) => {
+
+        await db.query(
+            `
+            UPDATE questions
+            SET archived_at = NULL
+            WHERE id = ?
+            `,
+            [req.params.id]
+        );
+
+        res.sendStatus(204);
+
+    }
+);
+
+// DELETE /api/archive/questions/:id
+router.delete("/questions/:id", requireAuth,
+    async (req, res) => {
+
+        await db.query(
+            `
+            UPDATE questions
+            SET deleted_at = NOW()
+            WHERE id = ?
+            `,
+            [req.params.id]
+        );
+
+        res.sendStatus(204);
+
+    }
+);
+
 export default router

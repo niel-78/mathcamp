@@ -438,6 +438,24 @@ router.delete("/media/:mediaId", async (req, res) => {
     res.sendStatus(204);
 });
 
+// POST /api/questions/:id/archive
+router.post("/:id/archive",
+    async (req, res) => {
+
+        await db.query(
+            `
+            UPDATE questions
+            SET archived_at = NOW()
+            WHERE id = ?
+            `,
+            [req.params.id]
+        );
+
+        res.sendStatus(204);
+
+    }
+);
+
 
 
 export default router;

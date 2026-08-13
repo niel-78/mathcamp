@@ -79,6 +79,30 @@ router.post("/lesson-sections",
             section_id
         } = req.body;
 
+
+        const [existing] = await db.query(
+            `
+            SELECT id
+            FROM lesson_sections
+            WHERE lesson_id = ?
+            AND section_id = ?
+            `,
+            [
+                lesson_id,
+                section_id
+            ]
+        );
+
+        if (existing.length) {
+
+            return res
+                .status(409)
+                .send(
+                    "Sektionen finns redan i lektionen."
+                );
+
+        }
+
         await db.query(
             `
             INSERT INTO lesson_sections
@@ -86,8 +110,7 @@ router.post("/lesson-sections",
                 lesson_id,
                 section_id
             )
-            VALUES
-            (?, ?)
+            VALUES (?, ?)
             `,
             [
                 lesson_id,
@@ -97,8 +120,70 @@ router.post("/lesson-sections",
 
         res.sendStatus(201);
 
+
     }
 );
 
+// POST /api/lessons/move-section
+router.post("/move-section", requireAuth,
+    async (req, res) => {
+
+        const {
+            section_id,
+            source_lesson_id,
+            target_lesson_id
+        } = req.body;
+
+        if (
+            source_lesson_id ===
+            target_lesson_id
+        ) {
+
+            return res.sendStatus(204);
+
+        }
+
+        const [existing] =
+            await db.query(
+                `
+                SELECT id
+                FROM lesson_sections
+                WHERE lesson_id = ?
+                AND section_id = ?
+                `,
+                [
+                    target_lesson_id,
+                    section_id
+                ]
+            );
+
+        if (existing.length) {
+
+            return res
+                .status(409)
+                .send(
+                    "Sektionen finns redan i lektionen."
+                );
+
+        }
+
+        await db.query(
+            `
+            UPDATE lesson_sections
+            SET lesson_id = ?
+            WHERE lesson_id = ?
+            AND section_id = ?
+            `,
+            [
+                target_lesson_id,
+                source_lesson_id,
+                section_id
+            ]
+        );
+
+        res.sendStatus(204);
+
+    }
+);
 
 export default router

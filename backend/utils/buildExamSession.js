@@ -78,6 +78,7 @@ export async function buildExamSession(
                 FROM questions
                 WHERE block_id = ?
                     AND deleted_at IS NULL
+                    AND archived_at IS NULL
                 `,
                 [block.id]
             );
