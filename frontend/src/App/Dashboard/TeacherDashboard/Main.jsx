@@ -19,6 +19,7 @@ import ArchivedStudentsTab from "./Main/ArchivedStudentsTab";
 import ArchivedExamsTab from "./Main/ArchivedExamsTab";
 import ArchivedBlocksTab from "./Main/ArchivedBlocksTab";
 import ArchivedQuestionsTab from "./Main/ArchivedQuestionsTab";
+import GroupSchedulesTab from "./Main/GroupSchedulesTab";
 
 export default function Main({
     tabs,
@@ -282,6 +283,15 @@ export default function Main({
                         />
 
                     )}
+
+                    {currentTab?.type === "group-schedules" && (
+
+                            <GroupSchedulesTab
+                                groupId={currentTab.groupId}
+                            />
+
+                        )
+                    }
 
                     {currentTab?.type === "archived-groups" && (
 

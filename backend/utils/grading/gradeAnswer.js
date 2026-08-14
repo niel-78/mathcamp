@@ -10,8 +10,6 @@ export const gradeAnswer = ({
     config = {}
 }) => {
 
-    console.log(config.grading_mode);
-
     const mode =
         config.grading_mode || "text";
 

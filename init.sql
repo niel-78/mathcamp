@@ -1964,23 +1964,23 @@ CREATE TABLE lesson_sections (
         ON DELETE CASCADE
 );
 
-INSERT INTO group_schedules (
-    group_id,
-    weekday,
-    start_time,
-    end_time,
-    valid_from,
-    valid_to
-)
-VALUES
+-- INSERT INTO group_schedules (
+--     group_id,
+--     weekday,
+--     start_time,
+--     end_time,
+--     valid_from,
+--     valid_to
+-- )
+-- VALUES
 
--- Grupp 1
-(1, 1, '08:00:00', '09:20:00', '2026-08-17', '2026-12-18'),
-(1, 4, '13:00:00', '14:20:00', '2026-08-17', '2026-12-18'),
+-- -- Grupp 1
+-- (1, 1, '08:00:00', '09:20:00', '2026-08-17', '2026-12-18'),
+-- (1, 4, '13:00:00', '14:20:00', '2026-08-17', '2026-12-18'),
 
--- Grupp 2
-(2, 2, '10:00:00', '11:20:00', '2026-08-17', '2026-12-18'),
-(2, 5, '08:30:00', '09:50:00', '2026-08-17', '2026-12-18');
+-- -- Grupp 2
+-- (2, 2, '10:00:00', '11:20:00', '2026-08-17', '2026-12-18'),
+-- (2, 5, '08:30:00', '09:50:00', '2026-08-17', '2026-12-18');
 
 
 INSERT INTO group_schedule_exceptions (

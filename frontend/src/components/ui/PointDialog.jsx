@@ -68,16 +68,6 @@ export default function PointDialog({
 
     }, [point]);
 
-    useEffect(() => {
-
-        if (!point) {
-            return;
-        }
-
-        console.log("EDIT POINT", point);
-
-    }, [point]);
-
     const loadData = async () => {
 
         const response =

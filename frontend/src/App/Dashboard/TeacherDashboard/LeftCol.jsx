@@ -369,6 +369,31 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                 >
                                     Skapa lektioner
                                 </Button>
+                                <Button
+                                    variant="inline"
+                                    className="
+                                        block
+                                        w-full
+                                        p-2
+                                        items-center
+                                        text-left
+                                        hover:bg-accent
+                                    "
+                                    onClick={() => {
+
+                                        openTab({
+                                            id: `group-schedules-${contextMenu.groupId}`,
+                                            type: "group-schedules",
+                                            title: `${contextMenu.groupName} - Scheman`,
+                                            groupId: contextMenu.groupId
+                                        });
+
+                                        setContextMenu(null);
+
+                                    }}
+                                >
+                                    Hantera schema
+                                </Button>
 
                             </>
 

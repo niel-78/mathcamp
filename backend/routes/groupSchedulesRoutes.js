@@ -13,6 +13,29 @@ const router = express.Router();
 router.use(requireAuth);
 router.use(requireRole("student", "teacher"));
 
+// GET /api/group-schedules
+router.get("/",requireAuth,
+    async (req, res) => {
+
+        const [rows] =
+            await db.query(
+                `
+                SELECT *
+                FROM group_schedules
+                WHERE group_id = ?
+                ORDER BY weekday
+                `,
+                [
+                    req.query.groupId
+                ]
+            );
+
+        res.json(rows);
+
+    }
+);
+
+// POST /api/group-schedules
 router.post("/", requireAuth,
     async (req, res) => {
 
@@ -70,6 +93,7 @@ router.post("/", requireAuth,
                 mysqlWeekday === weekday
             ) {
 
+
                 const startsAt =
                     dayjs(
                         `${current.format("YYYY-MM-DD")} ${start_time}`
@@ -112,6 +136,93 @@ router.post("/", requireAuth,
         res.status(201).json({
             id: scheduleId
         });
+
+    }
+);
+
+// PUT /api/group-schedules/:id
+router.put("/:id", requireAuth,
+    async (req, res) => {
+
+        const {
+            start_time,
+            end_time,
+            scope,
+            effective_from
+        } = req.body;
+
+        if (scope === "all") {
+
+            await db.query(
+                `
+                UPDATE group_schedules
+                SET
+                    start_time = ?,
+                    end_time = ?
+                WHERE id = ?
+                `,
+                [
+                    start_time,
+                    end_time,
+                    req.params.id
+                ]
+            );
+
+            await db.query(
+                `
+                UPDATE lessons
+                SET
+                    starts_at = CONCAT(
+                        DATE(starts_at),
+                        ' ',
+                        ?
+                    ),
+                    ends_at = CONCAT(
+                        DATE(ends_at),
+                        ' ',
+                        ?
+                    )
+                WHERE group_schedule_id = ?
+                `,
+                [
+                    start_time,
+                    end_time,
+                    req.params.id
+                ]
+            );
+
+        }
+
+        if (scope === "future") {
+
+            await db.query(
+                `
+                UPDATE lessons
+                SET
+                    starts_at = CONCAT(
+                        DATE(starts_at),
+                        ' ',
+                        ?
+                    ),
+                    ends_at = CONCAT(
+                        DATE(ends_at),
+                        ' ',
+                        ?
+                    )
+                WHERE group_schedule_id = ?
+                AND DATE(starts_at) >= ?
+                `,
+                [
+                    start_time,
+                    end_time,
+                    req.params.id,
+                    effective_from
+                ]
+            );
+
+        }
+
+        res.sendStatus(204);
 
     }
 );
