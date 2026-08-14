@@ -2,6 +2,7 @@ USE mydb;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS presentations;
 DROP TABLE IF EXISTS group_planning_sections;
 DROP TABLE IF EXISTS group_schedules;
 DROP TABLE IF EXISTS group_schedule_exceptions;
@@ -2074,3 +2075,105 @@ VALUES
 
 -- -- Lektion 4
 -- (4, 6, 1);
+
+CREATE TABLE presentations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    title VARCHAR(255) NOT NULL,
+
+    content LONGTEXT NOT NULL,
+
+    section_id INT NULL,
+
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (section_id)
+        REFERENCES sections(id)
+        ON DELETE SET NULL
+);
+
+INSERT INTO presentations (
+    title,
+    content,
+    section_id
+)
+VALUES (
+    'Potensregler',
+'
+# Potensregler
+
+Välkommen!
+
+Vi ska repetera potensregler.
+
+$$
+a^m \cdot a^n = a^{m+n}
+$$
+
+---
+
+# Multiplikation
+
+Exempel:
+
+$$
+x^2 \cdot x^3 = x^5
+$$
+
+Eftersom:
+
+$$
+2 + 3 = 5
+$$
+
+---
+
+# Division
+
+$$
+\frac{a^m}{a^n}=a^{m-n}
+$$
+
+Exempel:
+
+$$
+\frac{x^7}{x^2}=x^5
+$$
+
+---
+
+# Potens av potens
+
+$$
+(a^m)^n=a^{mn}
+$$
+
+Exempel:
+
+$$
+(x^2)^3=x^6
+$$
+
+---
+
+# Quiz
+
+{{group_exam:42}}
+
+När alla är klara går vi vidare.
+
+---
+
+# Sammanfattning
+
+* Multiplikation: addera exponenter
+* Division: subtrahera exponenter
+* Potens av potens: multiplicera exponenter
+
+Bra jobbat!
+',
+125
+);

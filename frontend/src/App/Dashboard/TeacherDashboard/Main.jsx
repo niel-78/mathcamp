@@ -17,10 +17,12 @@ import GroupPlanningTab from "./Main/GroupPlanningTab";
 import ArchivedGroupsTab from "./Main/ArchivedGroupsTab";
 import ArchivedStudentsTab from "./Main/ArchivedStudentsTab";
 import ArchivedExamsTab from "./Main/ArchivedExamsTab";
-import ArchivedBlocksTab from "./Main/ArchivedBlocksTab";
 import ArchivedQuestionsTab from "./Main/ArchivedQuestionsTab";
 import GroupSchedulesTab from "./Main/GroupSchedulesTab";
-import PlanningQueueTab from "./Main/PlanningQueueTab";
+import PlanningQueueTab from "./Main/PlanningQueueTab"
+import PresentationsTab from "./Main/PresentationsTab";
+import PresentationEditorTab from "@/components/ui/PresentationEditorTab";
+import PresentationPlayerTab from "@/components/ui/PresentationPlayerTab";
 
 export default function Main({
     tabs,
@@ -317,14 +319,36 @@ export default function Main({
                         <ArchivedExamsTab />
 
                     )}
-                    {currentTab?.type === "archived-blocks" && (
-
-                        <ArchivedBlocksTab />
-
-                    )}
                     {currentTab?.type === "archived-questions" && (
 
                         <ArchivedQuestionsTab />
+
+                    )}
+                    {currentTab?.type === "presentations" && (
+
+                        <PresentationsTab 
+                            openTab={(tab) =>
+                                openTab(tab, area)
+                            }
+                        />
+
+                    )}
+                    {currentTab?.type === "presentation-editor" && (
+
+                        <PresentationEditorTab
+                            presentation={
+                                currentTab.presentation
+                            }
+                            openTab={openTab}
+                        />
+                    )}
+                    {currentTab?.type === "presentation-player" && (
+
+                        <PresentationPlayerTab
+                            presentationId={
+                                currentTab.presentationId
+                            }
+                        />
 
                     )}
 

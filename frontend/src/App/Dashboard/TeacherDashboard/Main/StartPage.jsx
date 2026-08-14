@@ -45,6 +45,17 @@ export default function StartPage({
             >
                 Provtillfällen
             </Button>
+            <Button
+                onClick={() =>
+                    openTab({
+                        id: "presentations",
+                        title: "Presentationer",
+                        type: "presentations"
+                    })
+                }
+            >
+                Presentationer
+            </Button>
 
         </BaseTabLayout>
     );

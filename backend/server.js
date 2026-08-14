@@ -38,6 +38,8 @@ import resultRoutes from "./routes/resultRoutes.js";
 
 import groupExamLobbyRoutes from "./routes/groupExamLobbyRoutes.js";
 
+import presentationRoutes from "./routes/presentationRoutes.js";
+
 import cors from "cors";
 
 console.log("SERVER FILE START");
@@ -96,6 +98,8 @@ app.use("/api/books", bookRoutes);
 app.use("/api/sections", sectionRoutes);
 
 app.use("/api/group-exam-lobby", groupExamLobbyRoutes);
+
+app.use("/api/presentations", presentationRoutes);
 
 app.use("/api/results", resultRoutes);
 app.use("/api/events", eventRoutes);
