@@ -1,5 +1,12 @@
+import { API_URL } from "@/config";
+import { authHeaders } from "@/api/authHeaders";
 import { useDraggable } from "@dnd-kit/core";
 import { GripVertical } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+    Pin,
+    PinOff
+} from "lucide-react";
 
 export default function LessonSection({
     section,
@@ -20,6 +27,39 @@ export default function LessonSection({
         }
     });
 
+    const togglePin = async (
+        lessonSectionId,
+        pinned
+    ) => {
+
+        const response =
+            await fetch(
+                `${API_URL}/api/lessons/lesson-sections/${lessonSectionId}/pin`,
+                {
+                    method: "PUT",
+                    headers: {
+                        ...authHeaders(),
+                        "Content-Type":
+                            "application/json"
+                    },
+                    body: JSON.stringify({
+                        pinned
+                    })
+                }
+            );
+
+        if (!response.ok) {
+            return;
+        }
+
+        window.dispatchEvent(
+            new Event(
+                "lesson-section-added"
+            )
+        );
+
+    };
+
     const style = {
         transform: transform
             ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
@@ -38,55 +78,41 @@ export default function LessonSection({
                 bg-card
             "
         >
-
             <div
                 className="
                     flex
-                    justify-between
                     items-center
+                    justify-between
                     gap-2
                 "
             >
 
-                <div className="flex-1">
-
-                    <div>
-                        {section.title}
-                    </div>
-
-                    <div
-                        className="
-                            text-xs
-                            text-muted-foreground
-                        "
-                    >
-
-                        s.{section.page_number}
-
-                        {section.end_page >
-                        section.page_number
-                            ? `-${section.end_page}`
-                            : ""}
-
-                    </div>
-
+                <div>
+                    {section.title}
                 </div>
 
-                <button
-                    type="button"
-                    {...listeners}
-                    {...attributes}
-                    className="
-                        text-muted-foreground
-                        hover:text-foreground
-                        cursor-grab
-                        active:cursor-grabbing
-                    "
+                <Button
+                    size="icon"
+                    variant={
+                        section.pinned
+                            ? "default"
+                            : "ghost"
+                    }
+                    onClick={() =>
+                        togglePin(
+                            section.lesson_section_id,
+                            !section.pinned
+                        )
+                    }
                 >
 
-                    <GripVertical size={18} />
+                    {
+                        section.pinned
+                            ? <Pin size={14} />
+                            : <PinOff size={14} />
+                    }
 
-                </button>
+                </Button>
 
             </div>
 

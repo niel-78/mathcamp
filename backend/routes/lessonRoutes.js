@@ -50,7 +50,9 @@ router.get("/", requireAuth,
                 await db.query(
                     `
                     SELECT
-                        s.*
+                        s.*,
+                        ls.id AS lesson_section_id,
+                        ls.pinned
                     FROM lesson_sections ls
                     JOIN sections s
                         ON s.id = ls.section_id
@@ -440,6 +442,43 @@ router.put("/:id/restore",requireAuth,
             WHERE id = ?
             `,
             [req.params.id]
+        );
+
+        res.sendStatus(204);
+
+    }
+);
+
+// PUT /api/lessons-section:id/pin
+router.put("/lesson-sections/:id/pin", requireAuth,
+    async (req, res) => {
+
+        const { pinned } =
+            req.body;
+
+        const [rows] =
+            await db.query(
+                `
+                SELECT
+                    *
+                FROM lesson_sections
+                WHERE id = ?
+                `,
+                [req.params.id]
+            );
+
+        console.log(rows);
+
+        await db.query(
+            `
+            UPDATE lesson_sections
+            SET pinned = ?
+            WHERE id = ?
+            `,
+            [
+                pinned ? 1 : 0,
+                req.params.id
+            ]
         );
 
         res.sendStatus(204);

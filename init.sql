@@ -1959,6 +1959,8 @@ CREATE TABLE lesson_sections (
 
     section_id INT NOT NULL,
 
+    pinned TINYINT(1) NOT NULL DEFAULT 0,
+
     sort_order INT NOT NULL DEFAULT 0,
 
     FOREIGN KEY (lesson_id)

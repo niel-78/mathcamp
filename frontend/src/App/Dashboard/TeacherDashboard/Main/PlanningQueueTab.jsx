@@ -273,7 +273,7 @@ export default function PlanningQueueTab({
                                         }
                                         onCheckedChange={
                                             checked =>
-                                                toggleSection(
+                                                toggleAll(
                                                     section.id,
                                                     checked
                                                 )

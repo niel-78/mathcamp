@@ -610,6 +610,27 @@ router.put("/:id/planning-sections", requireAuth,
 
         }
 
+        console.log(
+            "SAVE PLANNING",
+            req.params.id,
+            req.body
+        );
+
+            const [rows] =
+            await db.query(
+                `
+                SELECT COUNT(*) AS count
+                FROM group_planning_sections
+                WHERE group_id = ?
+                `,
+                [req.params.id]
+            );
+
+        console.log(
+            "AFTER SAVE",
+            rows[0]
+        );
+
         res.sendStatus(204);
 
     }
@@ -713,7 +734,9 @@ router.post("/:groupId/fill-planning",
 
             return res
                 .status(404)
-                .send("Gruppen hittades inte");
+                .send(
+                    "Gruppen hittades inte"
+                );
 
         }
 
@@ -721,16 +744,37 @@ router.post("/:groupId/fill-planning",
             await db.query(
                 `
                 SELECT
-                    id,
-                    starts_at
-                FROM lessons
-                WHERE group_id = ?
-                AND cancelled_at IS NULL
-                AND deleted_at IS NULL
-                ORDER BY starts_at
+                    l.id,
+                    l.starts_at,
+
+                    EXISTS (
+                        SELECT 1
+                        FROM lesson_sections ls
+                        WHERE ls.lesson_id = l.id
+                        AND ls.pinned = 1
+                    ) AS has_pinned
+
+                FROM lessons l
+
+                WHERE l.group_id = ?
+                AND l.cancelled_at IS NULL
+                AND l.deleted_at IS NULL
+
+                ORDER BY l.starts_at
                 `,
                 [groupId]
             );
+
+        console.log(
+            lessons
+                .slice(0, 20)
+                .map((lesson, index) => ({
+                    index,
+                    id: lesson.id,
+                    starts_at: lesson.starts_at,
+                    has_pinned: lesson.has_pinned
+                }))
+        );
 
         const [sections] =
             await db.query(
@@ -750,41 +794,372 @@ router.post("/:groupId/fill-planning",
                 `,
                 [groupId]
             );
+        
+        const queueSectionIds =
+            sections.map(
+                section => section.id
+            );
 
-        if (
-            lessons.length === 0 ||
-            sections.length === 0
-        ) {
+        console.log(
+            "Första id i kön:",
+            queueSectionIds.slice(0, 20)
+        );
 
-            return res.json({
-                lessonsFilled: 0,
-                sectionsPlaced: 0
-            });
+        console.log(
+            "groupId",
+            groupId
+        );
 
+        const [gps] =
+            await db.query(
+                `
+                SELECT *
+                FROM group_planning_sections
+                WHERE group_id = ?
+                `,
+                [groupId]
+            );
+
+        console.log(
+            "gps rows",
+            gps.length
+        );
+
+
+        const [pinnedSections] =
+            await db.query(
+                `
+                SELECT
+                    ls.lesson_id,
+                    ls.section_id
+
+                FROM lesson_sections ls
+
+                JOIN lessons l
+                    ON l.id = ls.lesson_id
+
+                WHERE l.group_id = ?
+                AND ls.pinned = 1
+
+                ORDER BY l.starts_at
+                `,
+                [groupId]
+            );
+
+        // --------------------------------------------------
+        // 1. Räkna ut hur många sidor varje sektion omfattar
+        // --------------------------------------------------
+
+        for (let i = 0; i < sections.length; i++) {
+            const current = sections[i];
+            const next = sections[i + 1];
+
+            current.page_count = next
+                ? Math.max(
+                    1,
+                    next.page_number - current.page_number
+                )
+                : 1;
         }
 
-        for (
-            let i = 0;
-            i < sections.length;
-            i++
-        ) {
+
+        // --------------------------------------------------
+        // 2. Hitta alla pinnade sektioner och deras index
+        // --------------------------------------------------
+
+        const pinnedWithIndex = pinnedSections
+            .map(pinned => {
+
+                const sectionIndex = sections.findIndex(
+                    section =>
+                        section.id === pinned.section_id
+                );
+
+                const lessonIndex = lessons.findIndex(
+                    lesson =>
+                        lesson.id === pinned.lesson_id
+                );
+
+                return {
+                    ...pinned,
+                    sectionIndex,
+                    lessonIndex
+                };
+            })
+            .filter(pinned =>
+                pinned.sectionIndex !== -1 &&
+                pinned.lessonIndex !== -1
+            )
+            .sort(
+                (a, b) =>
+                    a.sectionIndex - b.sectionIndex
+            );
+
+
+        // --------------------------------------------------
+        // 3. Kontrollera att pinnarna ligger i rätt ordning
+        // --------------------------------------------------
+
+        for (let i = 1; i < pinnedWithIndex.length; i++) {
+
+            const previous =
+                pinnedWithIndex[i - 1];
 
             const current =
-                sections[i];
+                pinnedWithIndex[i];
 
-            const next =
-                sections[i + 1];
-
-            current.page_count =
-                next
-                    ? Math.max(
-                        1,
-                        next.page_number -
-                        current.page_number
-                    )
-                    : 1;
-
+            if (
+                current.lessonIndex <
+                previous.lessonIndex
+            ) {
+                return res
+                    .status(400)
+                    .send(
+                        "Nålade sektioner ligger i fel ordning."
+                    );
+            }
         }
+
+
+        // --------------------------------------------------
+        // 4. Kontrollera att samma sektion inte är pinnad
+        //    flera gånger
+        // --------------------------------------------------
+
+        const pinnedSectionIds =
+            new Set();
+
+        for (const pinned of pinnedWithIndex) {
+
+            if (
+                pinnedSectionIds.has(
+                    pinned.section_id
+                )
+            ) {
+                return res
+                    .status(400)
+                    .send(
+                        "En sektion är pinnad flera gånger."
+                    );
+            }
+
+            pinnedSectionIds.add(
+                pinned.section_id
+            );
+        }
+
+
+        // --------------------------------------------------
+        // 5. Kontrollera att samma lektion inte har flera
+        //    olika pinnade sektioner
+        //
+        //    Ta bort detta block om du faktiskt vill tillåta
+        //    flera pinnade sektioner på samma lektion.
+        // --------------------------------------------------
+
+        const pinnedLessonIds =
+            new Set();
+
+        for (const pinned of pinnedWithIndex) {
+
+            if (
+                pinnedLessonIds.has(
+                    pinned.lesson_id
+                )
+            ) {
+                return res
+                    .status(400)
+                    .send(
+                        "En lektion kan inte ha flera pinnade sektioner."
+                    );
+            }
+
+            pinnedLessonIds.add(
+                pinned.lesson_id
+            );
+        }
+
+
+        // --------------------------------------------------
+        // 6. Mål för antal sidor per lektion
+        // --------------------------------------------------
+
+        const targetPages =
+            Number(group.pages_per_lesson) || 8;
+
+
+        // --------------------------------------------------
+        // 7. Funktion som fyller ett block
+        // --------------------------------------------------
+
+        function fillBlock(
+            blockSections,
+            blockLessons
+        ) {
+
+            const assignments = [];
+
+            let lessonIndex = 0;
+            let lessonPages = 0;
+            let sortOrder = 1;
+
+            for (
+                const section of blockSections
+            ) {
+
+                // Finns det ingen lektion kvar?
+                if (
+                    lessonIndex >=
+                    blockLessons.length
+                ) {
+                    throw new Error(
+                        `Sektion ${section.id} får inte plats.`
+                    );
+                }
+
+
+                // --------------------------------------------------
+                // Om sektionen inte får plats i aktuell lektion,
+                // gå vidare till nästa lektion.
+                // --------------------------------------------------
+
+                if (
+                    lessonPages > 0 &&
+                    lessonPages +
+                        section.page_count >
+                        targetPages
+                ) {
+
+                    lessonIndex++;
+
+                    lessonPages = 0;
+
+                    sortOrder = 1;
+                }
+
+
+                // Fortfarande ingen lektion?
+                if (
+                    lessonIndex >=
+                    blockLessons.length
+                ) {
+                    throw new Error(
+                        `Sektion ${section.id} får inte plats inom blockets lektioner.`
+                    );
+                }
+
+
+                const lesson =
+                    blockLessons[lessonIndex];
+
+
+                // --------------------------------------------------
+                // Placera sektionen
+                // --------------------------------------------------
+
+                assignments.push({
+                    lesson_id: lesson.id,
+                    section_id: section.id,
+                    sort_order: sortOrder
+                });
+
+
+                // --------------------------------------------------
+                // Uppdatera antal sidor
+                // --------------------------------------------------
+
+                lessonPages +=
+                    section.page_count;
+
+                sortOrder++;
+            }
+
+            return assignments;
+        }
+
+
+        // --------------------------------------------------
+        // 8. Skapa block mellan pinnarna
+        // --------------------------------------------------
+
+        const blocks = [];
+
+        let previousSectionIndex = 0;
+        let previousLessonIndex = 0;
+
+
+        for (
+            const pinned of pinnedWithIndex
+        ) {
+
+            const pinnedSectionIndex =
+                pinned.sectionIndex;
+
+            const pinnedLessonIndex =
+                pinned.lessonIndex;
+
+
+            // Sektionerna FÖRE pinnen
+            const blockSections =
+                sections.slice(
+                    previousSectionIndex,
+                    pinnedSectionIndex
+                );
+
+
+            // Lektionerna FÖRE pinnen
+            //
+            // pinnedLessonIndex ingår INTE.
+            // Den lektionen är reserverad för pinnen.
+            const blockLessons =
+                lessons.slice(
+                    previousLessonIndex,
+                    pinnedLessonIndex
+                );
+
+
+            blocks.push({
+                sections: blockSections,
+                lessons: blockLessons,
+
+                pinnedSection:
+                    pinned.section_id,
+
+                pinnedLesson:
+                    pinned.lesson_id
+            });
+
+
+            // Nästa block börjar efter pinnen
+            previousSectionIndex =
+                pinnedSectionIndex + 1;
+
+            previousLessonIndex =
+                pinnedLessonIndex + 1;
+        }
+
+
+        // --------------------------------------------------
+        // 9. Sista blocket efter sista pinnen
+        // --------------------------------------------------
+
+        blocks.push({
+
+            sections:
+                sections.slice(
+                    previousSectionIndex
+                ),
+
+            lessons:
+                lessons.slice(
+                    previousLessonIndex
+                )
+        });
+
+
+        // --------------------------------------------------
+        // 10. Ta bort alla opinnade placeringar
+        // --------------------------------------------------
 
         await db.query(
             `
@@ -793,80 +1168,110 @@ router.post("/:groupId/fill-planning",
             JOIN lessons l
                 ON l.id = ls.lesson_id
             WHERE l.group_id = ?
+            AND ls.pinned = 0
             `,
             [groupId]
         );
 
-        const targetPages =
-            group.pages_per_lesson || 8;
 
-        let lessonIndex = 0;
-        let lessonPages = 0;
-        let lessonPosition = 1;
+        // --------------------------------------------------
+        // 11. Fyll blocken
+        // --------------------------------------------------
+
         let sectionsPlaced = 0;
 
-        for (
-            const section of sections
-        ) {
+        try {
 
-            if (
-                lessonIndex >=
-                lessons.length
-            ) {
-                break;
-            }
-
-            if (
-                lessonPages > 0 &&
-                (
-                    lessonPages +
-                    section.page_count
-                ) > targetPages
+            for (
+                const block of blocks
             ) {
 
-                lessonIndex++;
-                lessonPages = 0;
-                lessonPosition = 1;
+                console.log(
+                    "BLOCK",
+                    {
+                        sections:
+                            block.sections.map(
+                                s => s.id
+                            ),
 
+                        lessons:
+                            block.lessons.map(
+                                l => l.id
+                            ),
+
+                        pinnedSection:
+                            block.pinnedSection,
+
+                        pinnedLesson:
+                            block.pinnedLesson
+                    }
+                );
+
+
+                // Fyll blocket
+                const assignments =
+                    fillBlock(
+                        block.sections,
+                        block.lessons
+                    );
+
+
+                // Spara placeringarna
+                for (
+                    const assignment
+                    of assignments
+                ) {
+
+                    console.log(
+                        "PLACERAR",
+                        assignment.section_id,
+                        "I LEKTION",
+                        assignment.lesson_id
+                    );
+
+
+                    await db.query(
+                        `
+                        INSERT INTO lesson_sections (
+                            lesson_id,
+                            section_id,
+                            sort_order
+                        )
+                        VALUES (?, ?, ?)
+                        `,
+                        [
+                            assignment.lesson_id,
+                            assignment.section_id,
+                            assignment.sort_order
+                        ]
+                    );
+
+
+                    sectionsPlaced++;
+                }
             }
 
-            if (
-                lessonIndex >=
-                lessons.length
-            ) {
-                break;
-            }
+        } catch (error) {
 
-            await db.query(
-                `
-                INSERT INTO lesson_sections (
-                    lesson_id,
-                    section_id,
-                    sort_order
-                )
-                VALUES (?, ?, ?)
-                `,
-                [
-                    lessons[
-                        lessonIndex
-                    ].id,
-                    section.id,
-                    lessonPosition
-                ]
+            console.error(
+                "Kunde inte fylla planeringen:",
+                error
             );
 
-            lessonPages +=
-                section.page_count;
-
-            lessonPosition++;
-
-            sectionsPlaced++;
-
+            return res
+                .status(400)
+                .send(error.message);
         }
 
-        res.json({
+
+        // --------------------------------------------------
+        // 12. Svara
+        // --------------------------------------------------
+
+        return res.json({
             lessonsFilled:
-                lessonIndex + 1,
+                lessons.length,
+
             sectionsPlaced
         });
 
