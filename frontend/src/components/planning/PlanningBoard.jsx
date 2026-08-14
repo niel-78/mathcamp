@@ -2,17 +2,62 @@ import { useState } from "react";
 import WeekView from "./WeekView";
 import CompactWeekView from "./CompactWeekView";
 import ListView from "./ListView";
-import { getCurrentWeek } from "@/utils/planningDates";
 import { Button } from "@/components/ui/button";
+import {
+    getCurrentWeek,
+    getWeekNumber
+} from "@/utils/planningDates";
 
 export default function PlanningBoard({
-    lessons = [],
-    loading = false,
-    onReload
-}) {
+    lessons,
+    loading,
+    onReload,
+    onEditLesson,
+    onCancelLesson,
+    onDeleteLesson
+}) {  
+
 
     const [viewMode, setViewMode] = useState("week");
-    const [selectedWeek, setSelectedWeek] = useState(getCurrentWeek());
+    const [selectedDate, setSelectedDate] =
+        useState(new Date());
+
+    const selectedWeek =
+        getWeekNumber(selectedDate);
+
+    const previousWeek = () => {
+
+        setSelectedDate(prev => {
+
+            const date =
+                new Date(prev);
+
+            date.setDate(
+                date.getDate() - 7
+            );
+
+            return date;
+
+        });
+
+    };
+
+    const nextWeek = () => {
+
+        setSelectedDate(prev => {
+
+            const date =
+                new Date(prev);
+
+            date.setDate(
+                date.getDate() + 7
+            );
+
+            return date;
+
+        });
+
+    };
 
     return (
 
@@ -22,11 +67,7 @@ export default function PlanningBoard({
 
                 <Button
                     variant="outline"
-                    onClick={() =>
-                        setSelectedWeek(
-                            prev => prev - 1
-                        )
-                    }
+                    onClick={previousWeek}
                 >
                     ◀
                 </Button>
@@ -34,8 +75,8 @@ export default function PlanningBoard({
                 <Button
                     variant="outline"
                     onClick={() =>
-                        setSelectedWeek(
-                            getCurrentWeek()
+                        setSelectedDate(
+                            new Date()
                         )
                     }
                 >
@@ -44,11 +85,7 @@ export default function PlanningBoard({
 
                 <Button
                     variant="outline"
-                    onClick={() =>
-                        setSelectedWeek(
-                            prev => prev + 1
-                        )
-                    }
+                    onClick={nextWeek}
                 >
                     ▶
                 </Button>
@@ -104,6 +141,9 @@ export default function PlanningBoard({
                     lessons={lessons}
                     selectedWeek={selectedWeek}
                     onReload={onReload}
+                    onEditLesson={onEditLesson}
+                    onCancelLesson={onCancelLesson}
+                    onDeleteLesson={onDeleteLesson}
                 />
             )}
 

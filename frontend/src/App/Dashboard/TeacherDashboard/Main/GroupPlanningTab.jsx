@@ -3,18 +3,20 @@ import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 import PlanningBoard from "@/components/planning/PlanningBoard";
+import EditLessonDialog from "@/components/ui/EditLessonDialog";
+import CancelLessonDialog from "@/components/ui/CancelLessonDialog";
 
 export default function GroupPlanningTab({
     groupId
 }) {
 
-    const [lessons, setLessons] =
-        useState([]);
+    const [lessons, setLessons] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [editLesson, setEditLesson] = useState(null);
+    const [lessonStatusDialog, setLessonStatusDialog] = useState(null);
+    const [deleteLesson, setDeleteLesson] = useState(null);
 
-    const [loading, setLoading] =
-        useState(true);
-
-    useEffect(() => {
+        useEffect(() => {
 
         loadLessons();
 
@@ -69,18 +71,40 @@ export default function GroupPlanningTab({
     };
 
     return (
-
-        <BaseTabLayout
-            title="Planering"
-        >
+        <>
+            <BaseTabLayout
+                title="Planering"
+            >
 
             <PlanningBoard
                 lessons={lessons}
                 loading={loading}
                 onReload={loadLessons}
+                onEditLesson={setEditLesson}
+                onCancelLesson={setLessonStatusDialog}
+                onDeleteLesson={setDeleteLesson}
             />
 
-        </BaseTabLayout>
+            </BaseTabLayout>
+
+            <EditLessonDialog
+                lesson={editLesson}
+                open={!!editLesson}
+                onOpenChange={() =>
+                    setEditLesson(null)
+                }
+                onSaved={loadLessons}
+            />
+
+            <CancelLessonDialog
+                lesson={lessonStatusDialog}
+                open={!!lessonStatusDialog}
+                onOpenChange={() =>
+                    setLessonStatusDialog(null)
+                }
+                onSaved={loadLessons}
+            />
+        </>
 
     );
 

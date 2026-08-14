@@ -2,6 +2,7 @@ USE mydb;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS group_planning_sections;
 DROP TABLE IF EXISTS group_schedules;
 DROP TABLE IF EXISTS group_schedule_exceptions;
 DROP TABLE IF EXISTS lessons;
@@ -334,6 +335,11 @@ CREATE TABLE groups (
     name VARCHAR(100) NOT NULL,
     description TEXT,
 
+    course_id INT NULL,
+    book_id INT NULL,
+
+    pages_per_lesson INT NULL DEFAULT 4,
+
     archived_at DATETIME NULL,
     deleted_at DATETIME NULL,
 
@@ -368,9 +374,9 @@ CREATE TABLE group_permissions (
         ON DELETE CASCADE
 );
 
-INSERT INTO groups (id, name, archived_at)
+INSERT INTO groups (id, name, archived_at,book_id)
 VALUES
-(1, 'Niklas grupp',NULL),(2, 'Jolines grupp',CURRENT_TIMESTAMP);
+(1, 'Niklas grupp',NULL,2),(2, 'Jolines grupp',CURRENT_TIMESTAMP,2);
 
 INSERT INTO group_permissions (
     group_id,
@@ -1963,6 +1969,31 @@ CREATE TABLE lesson_sections (
         REFERENCES sections(id)
         ON DELETE CASCADE
 );
+
+
+CREATE TABLE group_planning_sections (
+
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    group_id INT NOT NULL,
+
+    section_id INT NOT NULL,
+
+    sort_order INT NOT NULL,
+
+    created_at DATETIME NOT NULL
+        DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_gps_group
+        FOREIGN KEY (group_id)
+        REFERENCES groups(id),
+
+    CONSTRAINT fk_gps_section
+        FOREIGN KEY (section_id)
+        REFERENCES sections(id)
+
+);
+
 
 -- INSERT INTO group_schedules (
 --     group_id,

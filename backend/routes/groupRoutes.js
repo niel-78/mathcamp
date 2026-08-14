@@ -536,5 +536,343 @@ router.put("/:id/archive", async (req, res) => {
     }
 });
 
+//GET /api/groups/:id/planning-sections
+router.get("/:id/planning-sections", requireAuth,
+    async (req, res) => {
+
+        const [rows] = await db.query(
+            `
+            SELECT
+                gps.*,
+                s.title
+            FROM group_planning_sections gps
+            JOIN sections s
+                ON s.id = gps.section_id
+            WHERE gps.group_id = ?
+            ORDER BY gps.sort_order
+            `,
+            [req.params.id]
+        );
+
+        res.json(rows);
+
+    }
+);
+
+//PUT /api/groups/:id/planning-sections
+router.put("/:id/planning-sections", requireAuth,
+    async (req, res) => {
+
+        const {
+            sectionIds,
+            pages_per_lesson
+        } = req.body;
+
+        await db.query(
+            `
+            UPDATE groups
+            SET pages_per_lesson = ?
+            WHERE id = ?
+            `,
+            [
+                pages_per_lesson,
+                req.params.id
+            ]
+        );
+
+        await db.query(
+            `
+            DELETE
+            FROM group_planning_sections
+            WHERE group_id = ?
+            `,
+            [req.params.id]
+        );
+
+        for (let i = 0; i < sectionIds.length; i++) {
+
+            await db.query(
+                `
+                INSERT INTO
+                group_planning_sections (
+                    group_id,
+                    section_id,
+                    sort_order
+                )
+                VALUES (?, ?, ?)
+                `,
+                [
+                    req.params.id,
+                    sectionIds[i],
+                    i + 1
+                ]
+            );
+
+        }
+
+        res.sendStatus(204);
+
+    }
+);
+
+//GET /api/groups/:groupId/planning-sections/edit
+router.get("/:groupId/planning-sections/edit", requireAuth,
+    async (req, res) => {
+
+        const [[group]] =
+            await db.query(
+                `
+                SELECT 
+                    book_id,
+                    pages_per_lesson
+                FROM groups
+                WHERE id = ?
+                `,
+                [req.params.groupId]
+            );
+
+        if (!group?.book_id) {
+
+            return res.json([]);
+
+        }
+
+        const [rows] =
+            await db.query(
+                `
+                SELECT
+
+                    s.id,
+
+                    c.chapter_number,
+                    sc.subchapter_number,
+
+                    s.title,
+
+                    CASE
+                        WHEN gps.id IS NULL
+                        THEN FALSE
+                        ELSE TRUE
+                    END AS selected
+
+                FROM sections s
+
+                JOIN subchapters sc
+                    ON sc.id = s.subchapter_id
+
+                JOIN chapters c
+                    ON c.id = sc.chapter_id
+
+                LEFT JOIN group_planning_sections gps
+                    ON gps.section_id = s.id
+                    AND gps.group_id = ?
+
+                WHERE c.book_id = ?
+
+                ORDER BY
+                    c.sort_order,
+                    sc.sort_order,
+                    s.sort_order
+                `,
+                [
+                    req.params.groupId,
+                    group.book_id
+                ]
+            );
+
+        res.json({
+            pages_per_lesson:
+                group.pages_per_lesson,
+
+            sections: rows
+        });
+
+    }
+);
+
+// POST /api/groups/:groupId/fill-planning
+router.post("/:groupId/fill-planning",
+    requireAuth,
+    async (req, res) => {
+
+        const groupId =
+            req.params.groupId;
+
+        const [[group]] =
+            await db.query(
+                `
+                SELECT
+                    pages_per_lesson
+                FROM groups
+                WHERE id = ?
+                `,
+                [groupId]
+            );
+
+        if (!group) {
+
+            return res
+                .status(404)
+                .send("Gruppen hittades inte");
+
+        }
+
+        const [lessons] =
+            await db.query(
+                `
+                SELECT
+                    id,
+                    starts_at
+                FROM lessons
+                WHERE group_id = ?
+                AND cancelled_at IS NULL
+                AND deleted_at IS NULL
+                ORDER BY starts_at
+                `,
+                [groupId]
+            );
+
+        const [sections] =
+            await db.query(
+                `
+                SELECT
+                    s.id,
+                    s.page_number
+
+                FROM group_planning_sections gps
+
+                JOIN sections s
+                    ON s.id = gps.section_id
+
+                WHERE gps.group_id = ?
+
+                ORDER BY gps.sort_order
+                `,
+                [groupId]
+            );
+
+        if (
+            lessons.length === 0 ||
+            sections.length === 0
+        ) {
+
+            return res.json({
+                lessonsFilled: 0,
+                sectionsPlaced: 0
+            });
+
+        }
+
+        for (
+            let i = 0;
+            i < sections.length;
+            i++
+        ) {
+
+            const current =
+                sections[i];
+
+            const next =
+                sections[i + 1];
+
+            current.page_count =
+                next
+                    ? Math.max(
+                        1,
+                        next.page_number -
+                        current.page_number
+                    )
+                    : 1;
+
+        }
+
+        await db.query(
+            `
+            DELETE ls
+            FROM lesson_sections ls
+            JOIN lessons l
+                ON l.id = ls.lesson_id
+            WHERE l.group_id = ?
+            `,
+            [groupId]
+        );
+
+        const targetPages =
+            group.pages_per_lesson || 8;
+
+        let lessonIndex = 0;
+        let lessonPages = 0;
+        let lessonPosition = 1;
+        let sectionsPlaced = 0;
+
+        for (
+            const section of sections
+        ) {
+
+            if (
+                lessonIndex >=
+                lessons.length
+            ) {
+                break;
+            }
+
+            if (
+                lessonPages > 0 &&
+                (
+                    lessonPages +
+                    section.page_count
+                ) > targetPages
+            ) {
+
+                lessonIndex++;
+                lessonPages = 0;
+                lessonPosition = 1;
+
+            }
+
+            if (
+                lessonIndex >=
+                lessons.length
+            ) {
+                break;
+            }
+
+            await db.query(
+                `
+                INSERT INTO lesson_sections (
+                    lesson_id,
+                    section_id,
+                    sort_order
+                )
+                VALUES (?, ?, ?)
+                `,
+                [
+                    lessons[
+                        lessonIndex
+                    ].id,
+                    section.id,
+                    lessonPosition
+                ]
+            );
+
+            lessonPages +=
+                section.page_count;
+
+            lessonPosition++;
+
+            sectionsPlaced++;
+
+        }
+
+        res.json({
+            lessonsFilled:
+                lessonIndex + 1,
+            sectionsPlaced
+        });
+
+    }
+);
+
+
 
 export default router

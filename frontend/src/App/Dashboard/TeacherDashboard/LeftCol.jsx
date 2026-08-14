@@ -394,6 +394,31 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                 >
                                     Hantera schema
                                 </Button>
+                                <Button
+                                    variant="inline"
+                                    className="
+                                        block
+                                        w-full
+                                        p-2
+                                        items-center
+                                        text-left
+                                        hover:bg-accent
+                                    "
+                                    onClick={() => {
+
+                                        openTab({
+                                            id: `planning-queue-${contextMenu.groupId}`,
+                                            type: "planning-queue",
+                                            title: `${contextMenu.groupName} - Planeringskö`,
+                                            groupId: contextMenu.groupId
+                                        });
+
+                                        setContextMenu(null);
+
+                                    }}
+                                >
+                                    Planeringskö
+                                </Button>
 
                             </>
 

@@ -15,7 +15,10 @@ const weekdays = [
 
 export default function WeekView({
     lessons,
-    selectedWeek
+    selectedWeek,
+    onEditLesson,
+    onCancelLesson,
+    onDeleteLesson
 }) {
 
     const weekLessons =
@@ -111,10 +114,13 @@ export default function WeekView({
                                     {dayLessons.map(
                                         lesson => (
 
-                                            <LessonCard
-                                                key={lesson.id}
-                                                lesson={lesson}
-                                            />
+                                        <LessonCard
+                                            key={lesson.id}
+                                            lesson={lesson}
+                                            onEditLesson={onEditLesson}
+                                            onCancelLesson={onCancelLesson}
+                                            onDeleteLesson={onDeleteLesson}
+                                        />
 
                                         )
                                     )}

@@ -15,12 +15,16 @@ import LeftCol from "./TeacherDashboard/LeftCol";
 import AppHeader from "./TeacherDashboard/AppHeader";
 import Main from "./TeacherDashboard/Main";
 import { toast } from "sonner";
+import MoveSectionDialog from "@/components/ui/MoveSectionDialog";
 
 export default function TeacherDashboard() {
 
     const [splitView, setSplitView] = useState(false);
     const [activeBlock, setActiveBlock] = useState(null);
     const [activeDragType, setActiveDragType] = useState(null);
+    const [hoverTarget, setHoverTarget] = useState(null);
+    const [blockRefreshKey, setBlockRefreshKey] = useState(0);
+    const [moveSectionDialog,setMoveSectionDialog] = useState(null);
 
     const [darkMode, setDarkMode] =
     useState(
@@ -80,9 +84,6 @@ export default function TeacherDashboard() {
                 "activeRightTab"
             )
         );
-
-    const [hoverTarget, setHoverTarget] = useState(null);
-    const [blockRefreshKey, setBlockRefreshKey] = useState(0);
 
     useEffect(() => {
 
@@ -278,41 +279,11 @@ export default function TeacherDashboard() {
             const sourceLessonId =
                 active.data.current.lessonId;
 
-            const response =
-                await fetch(
-                    `${API_URL}/api/lessons/move-section`,
-                    {
-                        method: "POST",
-                        headers: {
-                            ...authHeaders(),
-                            "Content-Type":
-                                "application/json"
-                        },
-                        body: JSON.stringify({
-                            section_id: sectionId,
-                            source_lesson_id:
-                                sourceLessonId,
-                            target_lesson_id:
-                                targetLessonId
-                        })
-                    }
-                );
-
-            if (response.status === 409) {
-
-                toast.error(
-                    "Sektionen finns redan i lektionen."
-                );
-
-                return;
-
-            }
-
-            window.dispatchEvent(
-                new Event(
-                    "lesson-section-added"
-                )
-            );
+            setMoveSectionDialog({
+                sectionId,
+                sourceLessonId,
+                targetLessonId
+            });
 
             return;
 
@@ -666,209 +637,291 @@ export default function TeacherDashboard() {
     };
 
     return (
+        <>
+            <DndContext
+                collisionDetection={closestCenter}
+                onDragStart={({ active }) => {
 
-        <DndContext
-            collisionDetection={closestCenter}
-            onDragStart={({ active }) => {
+                    const type =
+                        active.data.current?.type;
 
-                const type =
-                    active.data.current?.type;
+                    setActiveDragType(type);
 
-                setActiveDragType(type);
+                    if (active.data.current?.block) {
 
-                if (active.data.current?.block) {
+                        setActiveBlock(
+                            active.data.current.block
+                        );
 
-                    setActiveBlock(
-                        active.data.current.block
+                    }
+
+                }}
+                onDragOver={(event) => {
+
+                    setHoverTarget(
+                        event.over?.id ?? null
                     );
 
-                }
+                }}
+                onDragEnd={(event) => {
 
-            }}
-            onDragOver={(event) => {
+                    setActiveDragType(null);
 
-                setHoverTarget(
-                    event.over?.id ?? null
-                );
+                    setActiveBlock(null);
 
-            }}
-            onDragEnd={(event) => {
+                    setHoverTarget(null);
 
-                setActiveDragType(null);
+                    handleDragEnd(event);
 
-                setActiveBlock(null);
+                }}
+            >
 
-                setHoverTarget(null);
+                <div className="h-screen">
 
-                handleDragEnd(event);
-
-            }}
-        >
-
-            <div className="h-screen">
-
-                <ResizablePanelGroup
-                    direction="horizontal"
-                    className="h-full w-full"
-                >
-
-                    <ResizablePanel
-                        defaultSize={20}
+                    <ResizablePanelGroup
+                        direction="horizontal"
+                        className="h-full w-full"
                     >
 
-                        <div
-                            className="
-                                h-full
-                                overflow-y-auto
-                            "
-                        >
-
-                            <LeftCol
-                                tabs={leftTabs}
-                                openTab={openTab}
-                                setTabs={setLeftTabs}
-                                setActiveTab={setActiveLeftTab}
-                                hoverTarget={hoverTarget}
-                            />
-
-                        </div>
-
-                    </ResizablePanel>
-
-                    <ResizableHandle />
-
-                    <ResizablePanel
-                        defaultSize={80}
-                    >
-
-                        <div
-                            className="
-                                h-full
-                                flex
-                                flex-col
-                                min-h-0
-                            "
+                        <ResizablePanel
+                            defaultSize={20}
                         >
 
                             <div
                                 className="
-                                    p-2
-                                    border-b
+                                    h-full
+                                    overflow-y-auto
                                 "
                             >
 
-                                <AppHeader
-                                    splitView={splitView}
-                                    setSplitView={setSplitView}
+                                <LeftCol
+                                    tabs={leftTabs}
+                                    openTab={openTab}
+                                    setTabs={setLeftTabs}
+                                    setActiveTab={setActiveLeftTab}
+                                    hoverTarget={hoverTarget}
                                 />
 
                             </div>
 
+                        </ResizablePanel>
+
+                        <ResizableHandle />
+
+                        <ResizablePanel
+                            defaultSize={80}
+                        >
+
                             <div
                                 className="
-                                    flex-1
-                                    overflow-hidden
+                                    h-full
+                                    flex
+                                    flex-col
                                     min-h-0
                                 "
                             >
 
-                                {!splitView ? (
+                                <div
+                                    className="
+                                        p-2
+                                        border-b
+                                    "
+                                >
 
-                                    <Main
-                                        area="left"
-                                        activeDragType={activeDragType}
-                                        hoverTarget={hoverTarget}
-                                        tabs={leftTabs}
-                                        activeTab={activeLeftTab}
-                                        setActiveTab={setActiveLeftTab}
-                                        setTabs={setLeftTabs}
-                                        openTab={openTab}
-                                        blockRefreshKey={blockRefreshKey}
+                                    <AppHeader
+                                        splitView={splitView}
+                                        setSplitView={setSplitView}
                                     />
 
-                                ) : (
+                                </div>
 
-                                    <ResizablePanelGroup
-                                        direction="horizontal"
-                                        className="
-                                            h-full
-                                            min-h-0
-                                        "
-                                    >
+                                <div
+                                    className="
+                                        flex-1
+                                        overflow-hidden
+                                        min-h-0
+                                    "
+                                >
 
-                                        <ResizablePanel
-                                            defaultSize={50}
+                                    {!splitView ? (
+
+                                        <Main
+                                            area="left"
+                                            activeDragType={activeDragType}
+                                            hoverTarget={hoverTarget}
+                                            tabs={leftTabs}
+                                            activeTab={activeLeftTab}
+                                            setActiveTab={setActiveLeftTab}
+                                            setTabs={setLeftTabs}
+                                            openTab={openTab}
+                                            blockRefreshKey={blockRefreshKey}
+                                        />
+
+                                    ) : (
+
+                                        <ResizablePanelGroup
+                                            direction="horizontal"
+                                            className="
+                                                h-full
+                                                min-h-0
+                                            "
                                         >
 
-                                            <Main
-                                                area="left"
-                                                activeDragType={activeDragType}
-                                                hoverTarget={hoverTarget}
-                                                tabs={leftTabs}
-                                                activeTab={activeLeftTab}
-                                                setActiveTab={setActiveLeftTab}
-                                                setTabs={setLeftTabs}
-                                                openTab={openTab}
-                                                blockRefreshKey={blockRefreshKey}
-                                            />
+                                            <ResizablePanel
+                                                defaultSize={50}
+                                            >
 
-                                        </ResizablePanel>
+                                                <Main
+                                                    area="left"
+                                                    activeDragType={activeDragType}
+                                                    hoverTarget={hoverTarget}
+                                                    tabs={leftTabs}
+                                                    activeTab={activeLeftTab}
+                                                    setActiveTab={setActiveLeftTab}
+                                                    setTabs={setLeftTabs}
+                                                    openTab={openTab}
+                                                    blockRefreshKey={blockRefreshKey}
+                                                />
 
-                                        <ResizableHandle />
+                                            </ResizablePanel>
 
-                                        <ResizablePanel
-                                            defaultSize={50}
-                                        >
+                                            <ResizableHandle />
 
-                                            <Main
-                                                area="right"
-                                                activeDragType={activeDragType}
-                                                hoverTarget={hoverTarget}
-                                                tabs={rightTabs}
-                                                activeTab={activeRightTab}
-                                                setActiveTab={setActiveRightTab}
-                                                setTabs={setRightTabs}
-                                                openTab={openTab}
-                                                blockRefreshKey={blockRefreshKey}
-                                            />
+                                            <ResizablePanel
+                                                defaultSize={50}
+                                            >
 
-                                        </ResizablePanel>
+                                                <Main
+                                                    area="right"
+                                                    activeDragType={activeDragType}
+                                                    hoverTarget={hoverTarget}
+                                                    tabs={rightTabs}
+                                                    activeTab={activeRightTab}
+                                                    setActiveTab={setActiveRightTab}
+                                                    setTabs={setRightTabs}
+                                                    openTab={openTab}
+                                                    blockRefreshKey={blockRefreshKey}
+                                                />
 
-                                    </ResizablePanelGroup>
+                                            </ResizablePanel>
 
-                                )}
+                                        </ResizablePanelGroup>
+
+                                    )}
+
+                                </div>
 
                             </div>
 
+                        </ResizablePanel>
+
+                    </ResizablePanelGroup>
+
+                </div>
+
+                <DragOverlay>
+
+                    {activeBlock && (
+
+                        <div
+                            className="
+                                card
+                                w-[500px]
+                                pointer-events-none
+                            "
+                        >
+
+                            {activeBlock.questions?.[0]?.question}
+
                         </div>
 
-                    </ResizablePanel>
+                    )}
 
-                </ResizablePanelGroup>
+                </DragOverlay>
 
-            </div>
+            </DndContext>
 
-            <DragOverlay>
+            <MoveSectionDialog
+                move={moveSectionDialog}
+                open={!!moveSectionDialog}
+                onOpenChange={() =>
+                    setMoveSectionDialog(null)
+                }
+                onSubmit={async (shiftForward) => {
 
-                {activeBlock && (
+                    console.log("submit");
+                    console.log(moveSectionDialog);                    
 
-                    <div
-                        className="
-                            card
-                            w-[500px]
-                            pointer-events-none
-                        "
-                    >
+                    const response =
+                        await fetch(
+                            `${API_URL}/api/lessons/move-section`,
+                            {
+                                method: "POST",
+                                headers: {
+                                    ...authHeaders(),
+                                    "Content-Type":
+                                        "application/json"
+                                },
+                                body: JSON.stringify({
+                                    section_id:
+                                        moveSectionDialog.sectionId,
+                                    source_lesson_id:
+                                        moveSectionDialog.sourceLessonId,
+                                    target_lesson_id:
+                                        moveSectionDialog.targetLessonId,
+                                    shift_forward:
+                                        shiftForward
+                                })
+                            }
+                        );
 
-                        {activeBlock.questions?.[0]?.question}
+                    console.log(
+                    "status",
+                    response.status
+                    );
+                    console.log(
+                    "response received"
+                    );
 
-                    </div>
+                    setMoveSectionDialog(null);
 
-                )}
+                    if (response.status === 409) {
 
-            </DragOverlay>
+                        toast.error(
+                            "Sektionen finns redan i lektionen."
+                        );
 
-        </DndContext>
+                        return;
+
+                    }
+
+                    if (!response.ok) {
+
+                        toast.error(
+                            "Kunde inte flytta sektionen."
+                        );
+
+                        return;
+
+                    }
+
+                    setMoveSectionDialog(null);
+
+                    toast.success(
+                        shiftForward
+                            ? "Planeringen flyttades fram."
+                            : "Sektionen flyttades."
+                    );
+
+                    window.dispatchEvent(
+                        new Event(
+                            "lesson-section-added"
+                        )
+                    );
+
+                }}
+            />
+        </>
 
     );
 }

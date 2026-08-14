@@ -69,9 +69,38 @@ router.get("/", requireAuth,
     }
 );
 
+// PUT /api/lessons/:id
+router.put("/:id", requireAuth,
+    async (req, res) => {
+
+        const {
+            date,
+            start_time,
+            end_time
+        } = req.body;
+
+        await db.query(
+            `
+            UPDATE lessons
+            SET
+                starts_at = ?,
+                ends_at = ?
+            WHERE id = ?
+            `,
+            [
+                `${date} ${start_time}:00`,
+                `${date} ${end_time}:00`,
+                req.params.id
+            ]
+        );
+
+        res.sendStatus(204);
+
+    }
+);
+
 // POST /api/lessons/lessons-sections
-router.post("/lesson-sections",
-    requireAuth,
+router.post("/lesson-sections", requireAuth,
     async (req, res) => {
 
         const {
@@ -128,62 +157,295 @@ router.post("/lesson-sections",
 router.post("/move-section", requireAuth,
     async (req, res) => {
 
-        const {
-            section_id,
-            source_lesson_id,
-            target_lesson_id
-        } = req.body;
+        const connection =
+            await db.getConnection();
 
-        if (
-            source_lesson_id ===
-            target_lesson_id
-        ) {
+        try {
 
-            return res.sendStatus(204);
+            await connection.beginTransaction();
 
-        }
+            const {
+                section_id,
+                source_lesson_id,
+                target_lesson_id,
+                shift_forward
+            } = req.body;
 
-        const [existing] =
-            await db.query(
+            if (
+                source_lesson_id ===
+                target_lesson_id
+            ) {
+
+                await connection.commit();
+
+                return res.sendStatus(204);
+
+            }
+
+            const [existing] =
+                await connection.query(
+                    `
+                    SELECT id
+                    FROM lesson_sections
+                    WHERE lesson_id = ?
+                    AND section_id = ?
+                    `,
+                    [
+                        target_lesson_id,
+                        section_id
+                    ]
+                );
+
+            if (existing.length) {
+
+                await connection.rollback();
+
+                return res
+                    .status(409)
+                    .send(
+                        "Sektionen finns redan i lektionen."
+                    );
+
+            }
+
+            /*
+            Vanlig flytt
+            */
+            if (!shift_forward) {
+
+                await connection.query(
+                    `
+                    UPDATE lesson_sections
+                    SET lesson_id = ?
+                    WHERE lesson_id = ?
+                    AND section_id = ?
+                    `,
+                    [
+                        target_lesson_id,
+                        source_lesson_id,
+                        section_id
+                    ]
+                );
+
+                await connection.commit();
+
+                return res.sendStatus(204);
+
+            }
+
+            /*
+            Skjut fram planeringen
+            */
+            const [[targetLesson]] =
+                await connection.query(
+                    `
+                    SELECT
+                        id,
+                        group_id,
+                        starts_at
+                    FROM lessons
+                    WHERE id = ?
+                    `,
+                    [target_lesson_id]
+                );
+
+            const [futureLessons] =
+                await connection.query(
+                    `
+                    SELECT
+                        l.id,
+
+                        (
+                            SELECT COUNT(*)
+                            FROM lesson_sections ls
+                            WHERE ls.lesson_id = l.id
+                        ) AS section_count
+
+                    FROM lessons l
+
+                    WHERE l.group_id = ?
+                    AND l.deleted_at IS NULL
+                    AND l.starts_at >= ?
+
+                    ORDER BY l.starts_at
+                    `,
+                    [
+                        targetLesson.group_id,
+                        targetLesson.starts_at
+                    ]
+                );
+
+            const emptyLessonIndex =
+                futureLessons.findIndex(
+                    lesson =>
+                        lesson.section_count === 0
+                );
+
+            if (emptyLessonIndex === -1) {
+
+                await connection.rollback();
+
+                return res
+                    .status(400)
+                    .send(
+                        "Ingen tom lektion hittades."
+                    );
+
+            }
+
+            /*
+            Flytta sista sektionen framåt
+            lektion för lektion
+            */
+            for (
+                let i = emptyLessonIndex;
+                i > 0;
+                i--
+            ) {
+
+                const currentLessonId =
+                    futureLessons[i].id;
+
+                const previousLessonId =
+                    futureLessons[i - 1].id;
+
+                const [lastSectionRows] =
+                    await connection.query(
+                        `
+                        SELECT
+                            id
+                        FROM lesson_sections
+                        WHERE lesson_id = ?
+                        ORDER BY sort_order DESC
+                        LIMIT 1
+                        `,
+                        [previousLessonId]
+                    );
+
+                if (!lastSectionRows.length) {
+                    continue;
+                }
+
+                const lastSection =
+                    lastSectionRows[0];
+
+                await connection.query(
+                    `
+                    UPDATE lesson_sections
+                    SET sort_order =
+                        sort_order + 1
+                    WHERE lesson_id = ?
+                    `,
+                    [currentLessonId]
+                );
+
+                await connection.query(
+                    `
+                    UPDATE lesson_sections
+                    SET
+                        lesson_id = ?,
+                        sort_order = 1
+                    WHERE id = ?
+                    `,
+                    [
+                        currentLessonId,
+                        lastSection.id
+                    ]
+                );
+
+            }
+
+            const [[maxSort]] =
+                await connection.query(
+                    `
+                    SELECT
+                        COALESCE(
+                            MAX(sort_order),
+                            0
+                        ) AS max_sort
+                    FROM lesson_sections
+                    WHERE lesson_id = ?
+                    `,
+                    [target_lesson_id]
+                );
+
+            await connection.query(
                 `
-                SELECT id
-                FROM lesson_sections
+                UPDATE lesson_sections
+                SET
+                    lesson_id = ?,
+                    sort_order = ?
                 WHERE lesson_id = ?
                 AND section_id = ?
                 `,
                 [
                     target_lesson_id,
+                    maxSort.max_sort + 1,
+                    source_lesson_id,
                     section_id
                 ]
             );
 
-        if (existing.length) {
+            await connection.commit();
+
+            return res.sendStatus(204);
+
+        } catch (error) {
+
+            await connection.rollback();
+
+            console.error(error);
 
             return res
-                .status(409)
+                .status(500)
                 .send(
-                    "Sektionen finns redan i lektionen."
+                    "Ett fel uppstod."
                 );
+
+        } finally {
+
+            connection.release();
 
         }
 
+    }
+);
+
+// POST /api/lessons/:id/cancel
+router.put("/:id/cancel",requireAuth,
+    async (req, res) => {
+
         await db.query(
             `
-            UPDATE lesson_sections
-            SET lesson_id = ?
-            WHERE lesson_id = ?
-            AND section_id = ?
+            UPDATE lessons
+            SET cancelled_at = NOW()
+            WHERE id = ?
             `,
-            [
-                target_lesson_id,
-                source_lesson_id,
-                section_id
-            ]
+            [req.params.id]
         );
 
         res.sendStatus(204);
 
     }
 );
+
+// POST /api/lessons/:id/restore
+router.put("/:id/restore",requireAuth,
+    async (req, res) => {
+
+        await db.query(
+            `
+            UPDATE lessons
+            SET cancelled_at = NULL
+            WHERE id = ?
+            `,
+            [req.params.id]
+        );
+
+        res.sendStatus(204);
+
+    }
+);
+
 
 export default router

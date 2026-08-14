@@ -3,9 +3,21 @@ import DropZone from "@/components/ui/DropZone";
 import FormatDateTimeShort from "@/utils/FormatDateTimeShort";
 import LessonSection from "./LessonSection";
 
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+
+import { MoreVertical } from "lucide-react";
+
 export default function LessonCard({
     lesson,
-    showGroupName = false
+    showGroupName = false,
+    onEditLesson,
+    onCancelLesson,
+    onDeleteLesson
 }) {
 
     return (
@@ -15,6 +27,74 @@ export default function LessonCard({
                 <FormatDateTimeShort
                     value={lesson.starts_at}
                 />
+            }
+            actions={
+                <DropdownMenu>
+
+                    <DropdownMenuTrigger
+                        className="
+                            inline-flex
+                            h-8
+                            w-8
+                            items-center
+                            justify-center
+                            rounded-md
+                            hover:bg-accent
+                        "
+                    >
+
+                        <MoreVertical size={16} />
+
+                    </DropdownMenuTrigger>
+
+                    <DropdownMenuContent>
+
+                        <DropdownMenuItem
+                            onClick={() =>
+                                onEditLesson?.(lesson)
+                            }
+                        >
+                            Redigera lektion
+                        </DropdownMenuItem>
+
+                        {lesson.cancelled_at ? (
+
+                            <DropdownMenuItem
+                                onClick={() =>
+                                    onCancelLesson?.(
+                                        lesson
+                                    )
+                                }
+                            >
+                                Återaktivera lektion
+                            </DropdownMenuItem>
+
+                        ) : (
+
+                            <DropdownMenuItem
+                                onClick={() =>
+                                    onCancelLesson?.(
+                                        lesson
+                                    )
+                                }
+                            >
+                                Ställ in lektion
+                            </DropdownMenuItem>
+
+                        )}
+
+                        <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={() =>
+                                onDeleteLesson?.(lesson)
+                            }
+                        >
+                            Ta bort lektion
+                        </DropdownMenuItem>
+
+                    </DropdownMenuContent>
+
+                </DropdownMenu>
             }
         >
 
@@ -37,6 +117,7 @@ export default function LessonCard({
                         <FormatDateTimeShort
                             value={lesson.ends_at}
                         />
+
                     </div>
 
                     {showGroupName && (
@@ -54,6 +135,23 @@ export default function LessonCard({
                     )}
 
                 </div>
+
+                {lesson.cancelled_at && (
+
+                    <div
+                        className="
+                            rounded-md
+                            border
+                            border-destructive
+                            bg-destructive/10
+                            p-2
+                            text-sm
+                        "
+                    >
+                        Lektionen är inställd
+                    </div>
+
+                )}
 
                 <div className="space-y-2">
 

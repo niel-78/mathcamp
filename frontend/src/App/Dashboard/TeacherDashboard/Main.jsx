@@ -20,6 +20,7 @@ import ArchivedExamsTab from "./Main/ArchivedExamsTab";
 import ArchivedBlocksTab from "./Main/ArchivedBlocksTab";
 import ArchivedQuestionsTab from "./Main/ArchivedQuestionsTab";
 import GroupSchedulesTab from "./Main/GroupSchedulesTab";
+import PlanningQueueTab from "./Main/PlanningQueueTab";
 
 export default function Main({
     tabs,
@@ -265,7 +266,6 @@ export default function Main({
                         />
 
                     )}
-
                     {currentTab?.type === "group-exam-monitor" && (
 
                         <GroupExamMonitorTab
@@ -275,7 +275,6 @@ export default function Main({
                         />
 
                     )}
-
                     {currentTab?.type === "group-planning" && (
 
                         <GroupPlanningTab
@@ -283,7 +282,6 @@ export default function Main({
                         />
 
                     )}
-
                     {currentTab?.type === "group-schedules" && (
 
                             <GroupSchedulesTab
@@ -292,7 +290,18 @@ export default function Main({
 
                         )
                     }
+                    {currentTab?.type === "planning-queue" && (
 
+                        <PlanningQueueTab
+                            groupId={currentTab.groupId}
+                        />
+
+                    )}
+                    {currentTab?.type === "archived-questions" && (
+
+                        <ArchivedQuestionsTab />
+
+                    )}
                     {currentTab?.type === "archived-groups" && (
 
                         <ArchivedGroupsTab />
