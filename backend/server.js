@@ -12,6 +12,7 @@ import schoolSettingsRoutes from "./routes/schoolSettingsRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 
 import subjectRoutes from "./routes/subjectRoutes.js";
+import levelRoutes from "./routes/levelRoutes.js";
 
 import lessonRoutes from "./routes/lessonRoutes.js";
 import groupSchedulesRoutes from "./routes/groupSchedulesRoutes.js";
@@ -75,6 +76,7 @@ app.use("/api/school-settings",schoolSettingsRoutes);
 app.use("/api/users", userRoutes);
 
 app.use("/api/subjects", subjectRoutes)
+app.use("/api/levels", levelRoutes)
 
 app.use("/api/lessons", lessonRoutes);
 app.use("/api/group-schedules", groupSchedulesRoutes);

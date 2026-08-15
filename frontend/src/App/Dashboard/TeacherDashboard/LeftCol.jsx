@@ -20,6 +20,9 @@ import RenameAbilityDialog from "./LeftCol/RenameAbilityDialog";
 import DeleteAbilityDialog from "./LeftCol/DeleteAbilityDialog";
 import CreateAbilitiesFromExcelDialog from "./LeftCol/CreateAbilitiesFromExcelDialog";
 import CreateLessonSeriesDialog from "./LeftCol/CreateLessonSeriesDialog";
+import ImportCriteriaDialog from "./LeftCol/ImportCriteriaDialog";
+import ImportCentralContentDialog from "./LeftCol/ImportCentralContentDialog";
+
 
 export default function LeftCol( {openTab, hoverTarget} ) {
 
@@ -63,17 +66,10 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [expandedBookSections, setExpandedBookSections] = useState({});
     const [expandedBookAbilities, setExpandedBookAbilities] = useState({});
     const [expandedCompetencies, setExpandedCompetencies] = useState({});
-    const [expandedCompetency, setExpandedCompetency] = useState({});
-    const [
-        expandedAbilities,
-        setExpandedAbilities
-    ] = useState({});
-
-    const [
-        expandedGrades,
-        setExpandedGrades
-    ] = useState({});
-
+    const [expandedAbilities, setExpandedAbilities] = useState({});
+    const [expandedGrades,setExpandedGrades] = useState({});
+    const [importCriteriaDialog,setImportCriteriaDialog] = useState(null);
+    const [importCentralContentDialog, setImportCentralContentDialog] = useState(null);
 
     useEffect(() => {
         loadGroups();
@@ -136,7 +132,6 @@ export default function LeftCol( {openTab, hoverTarget} ) {
         const data = await response.json();
 
         setGroups(data);
-        console.log(data);
 
     };
 
@@ -601,6 +596,65 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                         )}
 
+                        {contextMenu?.type === "central-content-level" &&
+                        user?.role === "super" && (
+
+                            <Button
+                                variant="inline"
+                                className="
+                                    block
+                                    w-full
+                                    p-2
+                                    items-center
+                                    text-left
+                                    hover:bg-accent
+                                "
+                                onClick={() => {
+
+                                    setImportCentralContentDialog({
+                                        levelId: contextMenu.levelId,
+                                        levelName: contextMenu.levelName
+                                    });
+
+                                    setContextMenu(null);
+
+                                }}
+                            >
+                                Importera centralt innehåll via Excel
+                            </Button>
+
+                        )}
+
+                        {contextMenu?.type === "criteria-level" &&
+                        user?.role === "super" && (
+
+                            <>
+                                <Button
+                                    className="
+                                        block
+                                        w-full
+                                        p-2
+                                        items-center
+                                        text-left
+                                        hover:bg-accent
+                                    "
+                                    variant="inline"
+                                    onClick={() => {
+
+                                        setImportCriteriaDialog({
+                                            levelId: contextMenu.levelId,
+                                            levelName: contextMenu.levelName
+                                        });
+
+                                        setContextMenu(null);
+
+                                    }}
+                                >
+                                    Importera betygskriterier via Excel
+                                </Button>
+                            </>
+                        )}
+
                         {contextMenu?.type === "ability-subject" &&
                         user?.role === "super" && (
 
@@ -718,6 +772,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                             </>
 
                         )}
+
 
                     </div>
 
@@ -1039,8 +1094,6 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                                             <div key={level.id}>
 
-                                                {console.log(level)}
-
                                                 <div
                                                     className="tree-folder"
                                                     onClick={() =>
@@ -1058,190 +1111,233 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                                                     <div className="ml-4">
 
-                                                        {level.areas.map(area => (
+                                                        <div
+                                                            className="tree-folder"
+                                                            onClick={() =>
+                                                                setExpandedAreas(prev => ({
+                                                                    ...prev,
+                                                                    [`content-${level.id}`]:
+                                                                        !prev[`content-${level.id}`]
+                                                                }))
+                                                            }
+                                                            onContextMenu={(e) => {
+                                                                if (user?.role !== "super") {
+                                                                    return;
+                                                                }
+                                                                e.preventDefault();
+                                                                setContextMenu({
+                                                                    type: "central-content-level",
+                                                                    levelId: level.id,
+                                                                    levelName: level.name,
+                                                                    x: e.clientX,
+                                                                    y: e.clientY
+                                                                });
+                                                            }}
+                                                        >
+                                                            {
+                                                                expandedAreas[`content-${level.id}`]
+                                                                    ? "▼"
+                                                                    : "▶"
+                                                            }
+                                                            {" "}
+                                                            Centralt innehåll
+                                                        </div>
 
-                                                            <div
-                                                                key={area.id}
-                                                            >
+                                                        {
+                                                            expandedAreas[`content-${level.id}`] && (
+                                                                <div className="ml-4">
 
-                                                                <div
-                                                                    className="tree-folder"
-                                                                    onClick={() =>
-                                                                        toggleArea(area.id)
-                                                                    }
-                                                                >
-                                                                    {expandedAreas[area.id]
-                                                                        ? "▼"
-                                                                        : "▶"}
-                                                                    {" "}
-                                                                    {area.title}
+                                                                    {level.areas.map(area => (
+
+                                                                        <div key={area.id}>
+
+                                                                            <div
+                                                                                className="tree-folder"
+                                                                                onClick={() =>
+                                                                                    toggleArea(area.id)
+                                                                                }
+                                                                            >
+                                                                                {
+                                                                                    expandedAreas[area.id]
+                                                                                        ? "▼"
+                                                                                        : "▶"
+                                                                                }
+                                                                                {" "}
+                                                                                {area.title}
+                                                                            </div>
+
+                                                                            {expandedAreas[area.id] && (
+                                                                                <div className="ml-4">
+
+                                                                                    {area.centralContent.map(
+                                                                                        item => (
+                                                                                            <CentralContentTreeItem
+                                                                                                key={item.id}
+                                                                                                item={item}
+                                                                                                level={level}
+                                                                                                openTab={openTab}
+                                                                                                hoverTarget={hoverTarget}
+                                                                                            />
+                                                                                        )
+                                                                                    )}
+
+                                                                                </div>
+                                                                            )}
+
+                                                                        </div>
+
+                                                                    ))}
+
                                                                 </div>
+                                                            )
+                                                        }
 
-                                                                {expandedAreas[area.id] && (
 
-                                                                    <div className="ml-4">
+                                                        <div
+                                                            className="tree-folder"
+                                                            onClick={() =>
+                                                                setExpandedCompetencies(prev => ({
+                                                                    ...prev,
+                                                                    [level.id]: !prev[level.id]
+                                                                }))
+                                                            }
+                                                            onContextMenu={(e) => {
 
-                                                                        {area.centralContent.map(item => (
+                                                                if (user?.role !== "super") {
+                                                                    return;
+                                                                }
 
-                                                                            <CentralContentTreeItem
-                                                                                key={item.id}
-                                                                                item={item}
-                                                                                level={level}
-                                                                                openTab={openTab}
-                                                                                hoverTarget={hoverTarget}
-                                                                            />
+                                                                e.preventDefault();
 
-                                                                        ))}
+                                                                setContextMenu({
+                                                                    type: "criteria-level",
+                                                                    levelId: level.id,
+                                                                    levelName: level.name,
+                                                                    x: e.clientX,
+                                                                    y: e.clientY
+                                                                });
+
+                                                            }}
+                                                        >
+                                                            {expandedCompetencies[level.id]
+                                                                ? "▼"
+                                                                : "▶"}
+
+                                                            {" "}
+
+                                                            Betygskriterier
+                                                        </div>
+
+
+                                                        {expandedCompetencies[level.id] && (
+                                                            <div className="ml-4">
+
+                                                                {(level.competencies || []).map(
+                                                                    competency => (
+
+                                                                    <div key={competency.id}>
+
+                                                                        <div
+                                                                            className="tree-folder"
+                                                                            onClick={() =>
+                                                                                setExpandedAbilities(prev => ({
+                                                                                    ...prev,
+                                                                                    [`${level.id}-${competency.id}`]:
+                                                                                        !prev[
+                                                                                            `${level.id}-${competency.id}`
+                                                                                        ]
+                                                                                }))
+                                                                            }
+                                                                        >
+                                                                            {
+                                                                                expandedAbilities[
+                                                                                    `${level.id}-${competency.id}`
+                                                                                ]
+                                                                                    ? "▼"
+                                                                                    : "▶"
+                                                                            }
+
+                                                                            {" "}
+
+                                                                            {competency.name}
+                                                                        </div>
+
+                                                                        {
+                                                                            expandedAbilities[
+                                                                                `${level.id}-${competency.id}`
+                                                                            ] && (
+
+                                                                                <div className="ml-4">
+
+                                                                                    {competency.descriptors.map(
+                                                                                        descriptor => (
+
+                                                                                        <div key={descriptor.id}>
+
+                                                                                            <div
+                                                                                                className="tree-folder"
+                                                                                                onClick={() =>
+                                                                                                    setExpandedGrades(
+                                                                                                        prev => ({
+                                                                                                            ...prev,
+                                                                                                            [
+                                                                                                                `${level.id}-${competency.id}-${descriptor.grade}`
+                                                                                                            ]:
+                                                                                                                !prev[
+                                                                                                                    `${level.id}-${competency.id}-${descriptor.grade}`
+                                                                                                                ]
+                                                                                                        })
+                                                                                                    )
+                                                                                                }
+                                                                                            >
+                                                                                                {
+                                                                                                    expandedGrades[
+                                                                                                        `${level.id}-${competency.id}-${descriptor.grade}`
+                                                                                                    ]
+                                                                                                        ? "▼"
+                                                                                                        : "▶"
+                                                                                                }
+
+                                                                                                {" "}
+
+                                                                                                Betyg {descriptor.grade}
+                                                                                            </div>
+
+                                                                                            {
+                                                                                                expandedGrades[
+                                                                                                    `${level.id}-${competency.id}-${descriptor.grade}`
+                                                                                                ] && (
+
+                                                                                                    <div
+                                                                                                        className="
+                                                                                                            ml-4
+                                                                                                            tree-file
+                                                                                                            whitespace-normal
+                                                                                                        "
+                                                                                                    >
+                                                                                                        {
+                                                                                                            descriptor.description
+                                                                                                        }
+                                                                                                    </div>
+
+                                                                                                )
+                                                                                            }
+
+                                                                                        </div>
+
+                                                                                    ))}
+                                                                                </div>
+
+                                                                            )
+                                                                        }
 
                                                                     </div>
 
-                                                                )}
+                                                                ))}
 
                                                             </div>
+                                                        )}
 
-                                                        ))}
-
-
-                                                    <div
-                                                        className="tree-folder"
-                                                        onClick={() =>
-                                                            setExpandedCompetencies(prev => ({
-                                                                ...prev,
-                                                                [level.id]: !prev[level.id]
-                                                            }))
-                                                        }
-                                                    >
-                                                        {expandedCompetencies[level.id]
-                                                            ? "▼"
-                                                            : "▶"}
-
-                                                        {" "}
-                                                        Betygskriterier
-                                                    </div>
-
-{expandedCompetencies[level.id] && (
-
-    <div className="ml-4">
-
-        {Object.entries(
-            level.gradingAbilities || {}
-        ).map(([abilityName, grades]) => (
-
-            <div key={abilityName}>
-
-                <div
-                    className="tree-folder"
-                    onClick={() =>
-                        setExpandedAbilities(prev => ({
-                            ...prev,
-                            [`${level.id}-${abilityName}`]:
-                                !prev[
-                                    `${level.id}-${abilityName}`
-                                ]
-                        }))
-                    }
-                >
-                    {
-                        expandedAbilities[
-                            `${level.id}-${abilityName}`
-                        ]
-                            ? "▼"
-                            : "▶"
-                    }
-
-                    {" "}
-
-                    {abilityName}
-                </div>
-
-                {
-                    expandedAbilities[
-                        `${level.id}-${abilityName}`
-                    ] && (
-
-                        <div className="ml-4">
-
-                            {["E", "C", "A"].map(
-                                grade => (
-
-                                    <div key={grade}>
-
-                                        <div
-                                            className="tree-folder"
-                                            onClick={() =>
-                                                setExpandedGrades(prev => ({
-                                                    ...prev,
-                                                    [
-                                                        `${level.id}-${abilityName}-${grade}`
-                                                    ]:
-                                                        !prev[
-                                                            `${level.id}-${abilityName}-${grade}`
-                                                        ]
-                                                }))
-                                            }
-                                        >
-                                            {
-                                                expandedGrades[
-                                                    `${level.id}-${abilityName}-${grade}`
-                                                ]
-                                                    ? "▼"
-                                                    : "▶"
-                                            }
-
-                                            {" "}
-
-                                            {grade}
-                                        </div>
-
-                                        {
-                                            expandedGrades[
-                                                `${level.id}-${abilityName}-${grade}`
-                                            ] && (
-
-                                                <div className="ml-4">
-
-                                                    {(grades[grade] || []).map(
-                                                        competency => (
-
-                                                            <div
-                                                                key={
-                                                                    competency.descriptorId
-                                                                }
-                                                                className="
-                                                                    tree-file
-                                                                    cursor-pointer
-                                                                "
-                                                            >
-                                                                {
-                                                                    competency.name
-                                                                }
-                                                            </div>
-
-                                                        )
-                                                    )}
-
-                                                </div>
-
-                                            )
-                                        }
-
-                                    </div>
-
-                                )
-                            )}
-
-                        </div>
-
-                    )
-                }
-
-            </div>
-
-        ))}
-
-    </div>
-
-)}
 
                                                     </div>
 
@@ -1762,7 +1858,22 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                     setCreateLessonSeriesDialog(null)
                 }
             />
-
+            <ImportCriteriaDialog
+                open={!!importCriteriaDialog}
+                level={importCriteriaDialog}
+                onOpenChange={() =>
+                    setImportCriteriaDialog(null)
+                }
+                onImported={loadSubjects}
+            />
+            <ImportCentralContentDialog
+                open={!!importCentralContentDialog}
+                level={importCentralContentDialog}
+                onOpenChange={() =>
+                    setImportCentralContentDialog(null)
+                }
+                onImported={loadSubjects}
+            />
         </>
     )
 }                

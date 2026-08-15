@@ -3,15 +3,12 @@ USE mydb;
 SET FOREIGN_KEY_CHECKS = 0;
 
 DROP TABLE IF EXISTS competency_descriptors;
-DROP TABLE IF EXISTS level_competencies;
 DROP TABLE IF EXISTS presentations;
 DROP TABLE IF EXISTS group_planning_sections;
 DROP TABLE IF EXISTS group_schedules;
 DROP TABLE IF EXISTS group_schedule_exceptions;
 DROP TABLE IF EXISTS lessons;
 DROP TABLE IF EXISTS lesson_sections;
-DROP TABLE IF EXISTS grading_abilities;
-DROP TABLE IF EXISTS grading_ability_levels;
 DROP TABLE IF EXISTS abilities;
 DROP TABLE IF EXISTS block_abilities;
 DROP TABLE IF EXISTS competencies;
@@ -830,80 +827,33 @@ VALUES (
 CREATE TABLE competencies (
     id INT AUTO_INCREMENT PRIMARY KEY,
     subject_id INT NOT NULL,
+    sort_order INT,
     name VARCHAR(100) NOT NULL,
 
     FOREIGN KEY (subject_id)
         REFERENCES subjects(id)
-);
-
--- Bedömningsförmågor (summativt)
-CREATE TABLE grading_abilities (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-
-    subject_id INT NOT NULL,
-
-    name VARCHAR(100) NOT NULL,
-
-    FOREIGN KEY (subject_id)
-        REFERENCES subjects(id)
-);
-
--- Kunskapskrav / nivåer
-CREATE TABLE grading_ability_levels (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-
-    grading_ability_id INT NOT NULL,
-
-    level ENUM(
-        'E',
-        'C',
-        'A'
-    ) NOT NULL,
-
-    FOREIGN KEY (grading_ability_id)
-        REFERENCES grading_abilities(id)
-        ON DELETE CASCADE
 );
 
 CREATE TABLE competency_descriptors (
-
     id INT AUTO_INCREMENT PRIMARY KEY,
 
-    level_id INT NOT NULL DEFAULT 1,
-
+    level_id INT NOT NULL,
     competency_id INT NOT NULL,
 
-    grading_ability_id INT NOT NULL,
-
-    grade ENUM(
-        'E',
-        'C',
-        'A'
-    ) NOT NULL,
+    grade ENUM('E', 'C', 'A') NOT NULL,
 
     description LONGTEXT NOT NULL,
 
     FOREIGN KEY (level_id)
-        REFERENCES levels(id),
+        REFERENCES levels(id)
+        ON DELETE CASCADE,
 
     FOREIGN KEY (competency_id)
-        REFERENCES competencies(id),
+        REFERENCES competencies(id)
+        ON DELETE CASCADE,
 
-    FOREIGN KEY (grading_ability_id)
-        REFERENCES grading_abilities(id)
+    UNIQUE (level_id, competency_id, grade)
 );
-
-INSERT INTO grading_abilities (
-    subject_id,
-    name
-)
-VALUES
-    (1, 'Begrepp'),
-    (1, 'Procedurer'),
-    (1, 'Problemlösning'),
-    (1, 'Modellering'),
-    (1, 'Resonemang'),
-    (1, 'Kommunikation');
 
 INSERT INTO competencies (
     subject_id,
@@ -917,212 +867,6 @@ VALUES
     (1, 'Föra resonemang'),
     (1, 'Kommunicera matematik');
 
-CREATE TABLE level_competencies (
-
-    level_id INT NOT NULL,
-
-    competency_id INT NOT NULL,
-
-    PRIMARY KEY (
-        level_id,
-        competency_id
-    ),
-
-    FOREIGN KEY (level_id)
-        REFERENCES levels(id)
-        ON DELETE CASCADE,
-
-    FOREIGN KEY (competency_id)
-        REFERENCES competencies(id)
-        ON DELETE CASCADE
-);
-
-INSERT INTO level_competencies (
-    level_id,
-    competency_id
-)
-VALUES
-    (1,1),
-    (1,2),
-    (1,3),
-    (1,4),
-    (1,5),
-    (1,6);
-
-INSERT INTO competency_descriptors (
-    competency_id,
-    grading_ability_id,
-    grade,
-    description
-)
-VALUES
-
-(
-    1,
-    1,
-    'E',
-    'Eleven beskriver grundläggande begrepp och samband mellan begrepp samt använder dem med tillfredsställande säkerhet.'
-),
-
-(
-    1,
-    1,
-    'C',
-    'Eleven beskriver ett omfattande antal begrepp och samband mellan begrepp samt använder dem med god säkerhet.'
-),
-
-(
-    1,
-    1,
-    'A',
-    'Eleven beskriver ett omfattande antal begrepp och samband mellan begrepp samt använder dem med mycket god säkerhet.'
-);
-
-INSERT INTO competency_descriptors (
-    competency_id,
-    grading_ability_id,
-    grade,
-    description
-)
-VALUES
-
-(
-    2,
-    2,
-    'E',
-    'Eleven hanterar grundläggande procedurer och löser uppgifter av standardkaraktär med tillfredsställande säkerhet.'
-),
-
-(
-    2,
-    2,
-    'C',
-    'Eleven hanterar ett omfattande antal procedurer och löser uppgifter av standardkaraktär med god säkerhet.'
-),
-
-(
-    2,
-    2,
-    'A',
-    'Eleven hanterar ett omfattande antal procedurer och löser uppgifter av standardkaraktär med mycket god säkerhet.'
-);
-
-INSERT INTO competency_descriptors (
-    competency_id,
-    grading_ability_id,
-    grade,
-    description
-)
-VALUES
-
-(
-    3,
-    3,
-    'E',
-    'Eleven löser enkla problem inom kursens olika områden. Eleven bedömer resultatens rimlighet.'
-),
-
-(
-    3,
-    3,
-    'C',
-    'Eleven löser relativt komplexa problem inom kursens olika områden. Eleven bedömer resultatens rimlighet.'
-),
-
-(
-    3,
-    3,
-    'A',
-    'Eleven löser komplexa problem inom kursens olika områden. Eleven bedömer resultatens rimlighet.'
-);
-
-INSERT INTO competency_descriptors (
-    competency_id,
-    grading_ability_id,
-    grade,
-    description
-)
-VALUES
-
-(
-    4,
-    4,
-    'E',
-    'Eleven tillämpar och formulerar matematiska modeller i enkla uppgifter.'
-),
-
-(
-    4,
-    4,
-    'C',
-    'Eleven tillämpar och formulerar matematiska modeller i relativt komplexa uppgifter.'
-),
-
-(
-    4,
-    4,
-    'A',
-    'Eleven tillämpar och formulerar matematiska modeller i komplexa uppgifter.'
-);
-
-INSERT INTO competency_descriptors (
-    competency_id,
-    grading_ability_id,
-    grade,
-    description
-)
-VALUES
-
-(
-    5,
-    5,
-    'E',
-    'Eleven för delvis underbyggda matematiska resonemang och följer enkla matematiska resonemang.'
-),
-
-(
-    5,
-    5,
-    'C',
-    'Eleven för relativt väl underbyggda matematiska resonemang och följer relativt avancerade matematiska resonemang.'
-),
-
-(
-    5,
-    5,
-    'A',
-    'Eleven för väl underbyggda matematiska resonemang och följer avancerade matematiska resonemang.'
-);
-
-INSERT INTO competency_descriptors (
-    competency_id,
-    grading_ability_id,
-    grade,
-    description
-)
-VALUES
-
-(
-    6,
-    6,
-    'E',
-    'Eleven uttrycker sig med matematiska symboler och andra representationer på ett i huvudsak fungerande sätt.'
-),
-
-(
-    6,
-    6,
-    'C',
-    'Eleven uttrycker sig med matematiska symboler och andra representationer på ett till stor del tydligt och korrekt sätt.'
-),
-
-(
-    6,
-    6,
-    'A',
-    'Eleven uttrycker sig med matematiska symboler och andra representationer på ett tydligt och korrekt sätt.'
-);
-
 
 -- Poängmodell
 CREATE TABLE block_points (
@@ -1130,22 +874,23 @@ CREATE TABLE block_points (
 
     block_id INT NOT NULL,
 
-    central_content_id INT NOT NULL,
+    central_content_id INT NULL,
 
-    grading_ability_level_id INT NOT NULL,
+    competency_descriptor_id INT NULL,
 
     points INT NOT NULL DEFAULT 1,
 
     comment TEXT NULL,
 
     FOREIGN KEY (block_id)
-        REFERENCES blocks(id),
+        REFERENCES blocks(id)
+        ON DELETE CASCADE,
 
     FOREIGN KEY (central_content_id)
         REFERENCES central_content(id),
 
-    FOREIGN KEY (grading_ability_level_id)
-        REFERENCES grading_ability_levels(id)
+    FOREIGN KEY (competency_descriptor_id)
+        REFERENCES competency_descriptors(id)
 );
 
 -- CREATE TABLE block_points (
@@ -1567,59 +1312,59 @@ VALUES (
     'Matematik 7–9'
 );
 
-INSERT INTO content_areas (
-    level_id,
-    title,
-    sort_order
-)
-VALUES
-(3, 'Taluppfattning och tals användning', 1),
-(3, 'Algebra', 2),
-(3, 'Geometri', 3),
-(3, 'Sannolikhet och statistik', 4),
-(3, 'Samband och förändring', 5),
-(3, 'Problemlösning', 6);
+-- INSERT INTO content_areas (
+--     level_id,
+--     title,
+--     sort_order
+-- )
+-- VALUES
+-- (3, 'Taluppfattning och tals användning', 1),
+-- (3, 'Algebra', 2),
+-- (3, 'Geometri', 3),
+-- (3, 'Sannolikhet och statistik', 4),
+-- (3, 'Samband och förändring', 5),
+-- (3, 'Problemlösning', 6);
 
-INSERT INTO central_content (area_id, content, sort_order)
-VALUES
-(10,'Reella tal och deras egenskaper samt talens användning i matematiska situationer.',1),
-(10,'Talsystemets utveckling från naturliga tal till reella tal.',2),
-(10,'Tal i potensform. Grundpotensform för att uttrycka små och stora tal samt användning av prefix.',3),
-(10,'Matematiska lagar och regler samt deras användning vid beräkningar med tal i bråk-, decimal- och potensform.',4),
-(10,'Metoder för beräkningar med tal i bråk- och decimalform vid överslagsräkning, huvudräkning och skriftlig beräkning. Användning av digitala verktyg vid beräkningar.',5),
-(10,'Rimlighetsbedömning vid uppskattningar och beräkningar.',6);
-INSERT INTO central_content (area_id, content, sort_order)
-VALUES
-(11,'Matematiska likheter samt hur likhetstecknet används för att teckna ekvationer och funktioner.',1),
-(11,'Variablers användning i algebraiska uttryck, formler, ekvationer och funktioner.',2),
-(11,'Metoder för att lösa linjära ekvationer och enkla andragradsekvationer.',3),
-(11,'Mönster i talföljder och geometriska mönster samt hur de konstrueras, beskrivs och uttrycks generellt.',4),
-(11,'Programmering i visuell och textbaserad programmeringsmiljö. Hur algoritmer skapas, testas och förbättras vid programmering.',5);
-INSERT INTO central_content (area_id, content, sort_order)
-VALUES
-(12,'Geometriska objekt samt deras egenskaper och inbördes relationer. Konstruktion av geometriska objekt, såväl med som utan digitala verktyg.',1),
-(12,'Metoder för beräkning av area, omkrets och volym hos geometriska objekt samt enhetsbyten i samband med detta.',2),
-(12,'Geometriska satser och formler samt argumentation för deras giltighet.',3),
-(12,'Skala vid förminskning och förstoring av två- och tredimensionella objekt.',4),
-(12,'Likformighet och kongruens.',5);
-INSERT INTO central_content (area_id, content, sort_order)
-VALUES
-(13,'Sannolikhet och metoder för att beräkna sannolikhet i olika situationer. Bedömningar av risker och chanser utifrån datorsimuleringar och statistiskt material.',1),
-(13,'Kombinatoriska principer och hur de kan användas i olika situationer.',2),
-(13,'Tabeller, diagram och grafer samt hur de tolkas och används för att beskriva resultat av egna och andras undersökningar, såväl med som utan digitala verktyg.',3),
-(13,'Lägesmått och spridningsmått samt hur de används för bedömning av resultat vid statistiska undersökningar.',4);
-INSERT INTO central_content (area_id, content, sort_order)
-VALUES
-(14,'Proportionalitet och hur det används för att uttrycka skala, likformighet och förändring.',1),
-(14,'Härledda enheter, till exempel km/h och kr/kg.',2),
-(14,'Procent och förändringsfaktor för att uttrycka förändring samt beräkningar med procent i vardagliga situationer och inom olika ämnesområden.',3),
-(14,'Räta linjens ekvation och förändringstakt. Användning av räta linjens ekvation för att beskriva samband.',4),
-(14,'Funktioner och hur de används för att beskriva samband och förändring samt undersöka förändringstakt. Hur funktioner uttrycks i form av grafer, tabeller och funktionsuttryck.',5);
-INSERT INTO central_content (area_id, content, sort_order)
-VALUES
-(15,'Strategier för att lösa matematiska problem i olika situationer och inom olika ämnesområden samt värdering av valda strategier och metoder.',1),
-(15,'Formulering av matematiska frågeställningar utifrån olika situationer och ämnesområden.',2),
-(15,'Enkla matematiska modeller och hur de kan användas i olika situationer.',3);
+-- INSERT INTO central_content (area_id, content, sort_order)
+-- VALUES
+-- (10,'Reella tal och deras egenskaper samt talens användning i matematiska situationer.',1),
+-- (10,'Talsystemets utveckling från naturliga tal till reella tal.',2),
+-- (10,'Tal i potensform. Grundpotensform för att uttrycka små och stora tal samt användning av prefix.',3),
+-- (10,'Matematiska lagar och regler samt deras användning vid beräkningar med tal i bråk-, decimal- och potensform.',4),
+-- (10,'Metoder för beräkningar med tal i bråk- och decimalform vid överslagsräkning, huvudräkning och skriftlig beräkning. Användning av digitala verktyg vid beräkningar.',5),
+-- (10,'Rimlighetsbedömning vid uppskattningar och beräkningar.',6);
+-- INSERT INTO central_content (area_id, content, sort_order)
+-- VALUES
+-- (11,'Matematiska likheter samt hur likhetstecknet används för att teckna ekvationer och funktioner.',1),
+-- (11,'Variablers användning i algebraiska uttryck, formler, ekvationer och funktioner.',2),
+-- (11,'Metoder för att lösa linjära ekvationer och enkla andragradsekvationer.',3),
+-- (11,'Mönster i talföljder och geometriska mönster samt hur de konstrueras, beskrivs och uttrycks generellt.',4),
+-- (11,'Programmering i visuell och textbaserad programmeringsmiljö. Hur algoritmer skapas, testas och förbättras vid programmering.',5);
+-- INSERT INTO central_content (area_id, content, sort_order)
+-- VALUES
+-- (12,'Geometriska objekt samt deras egenskaper och inbördes relationer. Konstruktion av geometriska objekt, såväl med som utan digitala verktyg.',1),
+-- (12,'Metoder för beräkning av area, omkrets och volym hos geometriska objekt samt enhetsbyten i samband med detta.',2),
+-- (12,'Geometriska satser och formler samt argumentation för deras giltighet.',3),
+-- (12,'Skala vid förminskning och förstoring av två- och tredimensionella objekt.',4),
+-- (12,'Likformighet och kongruens.',5);
+-- INSERT INTO central_content (area_id, content, sort_order)
+-- VALUES
+-- (13,'Sannolikhet och metoder för att beräkna sannolikhet i olika situationer. Bedömningar av risker och chanser utifrån datorsimuleringar och statistiskt material.',1),
+-- (13,'Kombinatoriska principer och hur de kan användas i olika situationer.',2),
+-- (13,'Tabeller, diagram och grafer samt hur de tolkas och används för att beskriva resultat av egna och andras undersökningar, såväl med som utan digitala verktyg.',3),
+-- (13,'Lägesmått och spridningsmått samt hur de används för bedömning av resultat vid statistiska undersökningar.',4);
+-- INSERT INTO central_content (area_id, content, sort_order)
+-- VALUES
+-- (14,'Proportionalitet och hur det används för att uttrycka skala, likformighet och förändring.',1),
+-- (14,'Härledda enheter, till exempel km/h och kr/kg.',2),
+-- (14,'Procent och förändringsfaktor för att uttrycka förändring samt beräkningar med procent i vardagliga situationer och inom olika ämnesområden.',3),
+-- (14,'Räta linjens ekvation och förändringstakt. Användning av räta linjens ekvation för att beskriva samband.',4),
+-- (14,'Funktioner och hur de används för att beskriva samband och förändring samt undersöka förändringstakt. Hur funktioner uttrycks i form av grafer, tabeller och funktionsuttryck.',5);
+-- INSERT INTO central_content (area_id, content, sort_order)
+-- VALUES
+-- (15,'Strategier för att lösa matematiska problem i olika situationer och inom olika ämnesområden samt värdering av valda strategier och metoder.',1),
+-- (15,'Formulering av matematiska frågeställningar utifrån olika situationer och ämnesområden.',2),
+-- (15,'Enkla matematiska modeller och hur de kan användas i olika situationer.',3);
 
 
 INSERT INTO books (title)
@@ -2087,80 +1832,6 @@ VALUES
 INSERT INTO level_books (level_id, book_id) VALUES (2,1);
 
 
-INSERT INTO grading_abilities (
-    subject_id,
-    name
-)
-VALUES
-(1, 'Begrepp'),
-(1, 'Procedurer'),
-(1, 'Problemlösning'),
-(1, 'Modellering'),
-(1, 'Resonemang'),
-(1, 'Kommunikation');
-
-INSERT INTO grading_ability_levels (
-    grading_ability_id,
-    level
-)
-VALUES
-(1, 'E'),
-(1, 'C'),
-(1, 'A'),
-
-(2, 'E'),
-(2, 'C'),
-(2, 'A'),
-
-(3, 'E'),
-(3, 'C'),
-(3, 'A'),
-
-(4, 'E'),
-(4, 'C'),
-(4, 'A'),
-
-(5, 'E'),
-(5, 'C'),
-(5, 'A'),
-
-(6, 'E'),
-(6, 'C'),
-(6, 'A');
-
-
-INSERT INTO block_points (
-    block_id,
-    central_content_id,
-    grading_ability_level_id,
-    points
-)
-VALUES
-
--- Block 1 (Begrepp)
-(1, 1, 1, 1),
-(1, 1, 2, 2),
-
--- Block 2 (Problemlösning)
-(2, 1, 7, 1),
-(2, 1, 8, 2),
-
--- Block 3 (Procedurer)
-(3, 2, 4, 1),
-(3, 2, 5, 2),
-
--- Block 4 (Resonemang)
-(4, 2, 13, 1),
-(4, 2, 14, 2),
-
--- Block 5 (Modellering)
-(5, 3, 10, 1),
-(5, 3, 11, 2),
-
--- Block 6 (Kommunikation)
-(6, 4, 16, 1),
-(6, 4, 17, 2);
-
 
 --Gruppens återkommande lektionstider
 CREATE TABLE group_schedules (
@@ -2451,3 +2122,226 @@ Bra jobbat!
 ',
 125
 );
+
+
+-- =========================================================
+-- KOMPETENSER / BEDÖMNINGSFÖRMÅGOR
+-- Matematik
+-- =========================================================
+
+INSERT INTO competencies (
+    subject_id,
+    sort_order,
+    name
+)
+VALUES
+    (1, 1, 'Begrepp och samband'),
+    (1, 2, 'Procedurer'),
+    (1, 3, 'Problemlösning'),
+    (1, 4, 'Matematiska modeller'),
+    (1, 5, 'Matematiska resonemang'),
+    (1, 6, 'Kommunikation');
+
+
+-- =========================================================
+-- BETYGSKRITERIER
+-- Matematik nivå 1a
+-- level_id = 1
+--
+-- Förutsätter att ovanstående competencies får
+-- id 1–6.
+-- =========================================================
+
+
+-- ---------------------------------------------------------
+-- 1. Begrepp och samband
+-- ---------------------------------------------------------
+
+INSERT INTO competency_descriptors (
+    level_id,
+    competency_id,
+    grade,
+    description
+)
+VALUES
+(
+    1,
+    1,
+    'E',
+    'Eleven beskriver grundläggande begrepp och samband mellan begrepp samt använder dem med tillfredsställande säkerhet.'
+),
+(
+    1,
+    1,
+    'C',
+    'Eleven beskriver ett omfattande antal begrepp och samband mellan begrepp samt använder dem med god säkerhet.'
+),
+(
+    1,
+    1,
+    'A',
+    'Eleven beskriver ett omfattande antal begrepp och samband mellan begrepp samt använder dem med mycket god säkerhet.'
+);
+
+
+-- ---------------------------------------------------------
+-- 2. Procedurer
+-- ---------------------------------------------------------
+
+INSERT INTO competency_descriptors (
+    level_id,
+    competency_id,
+    grade,
+    description
+)
+VALUES
+(
+    1,
+    2,
+    'E',
+    'Eleven hanterar grundläggande procedurer och löser uppgifter av standardkaraktär med tillfredsställande säkerhet, både utan och med digitala verktyg.'
+),
+(
+    1,
+    2,
+    'C',
+    'Eleven hanterar ett omfattande antal procedurer och löser uppgifter av standardkaraktär med god säkerhet, både utan och med digitala verktyg.'
+),
+(
+    1,
+    2,
+    'A',
+    'Eleven hanterar ett omfattande antal procedurer och löser uppgifter av standardkaraktär med mycket god säkerhet, både utan och med digitala verktyg.'
+);
+
+
+-- ---------------------------------------------------------
+-- 3. Problemlösning
+-- ---------------------------------------------------------
+
+INSERT INTO competency_descriptors (
+    level_id,
+    competency_id,
+    grade,
+    description
+)
+VALUES
+(
+    1,
+    3,
+    'E',
+    'Eleven löser enkla problem inom kursens olika områden. Eleven bedömer resultatens rimlighet.'
+),
+(
+    1,
+    3,
+    'C',
+    'Eleven löser relativt komplexa problem inom kursens olika områden. Eleven bedömer resultatens rimlighet.'
+),
+(
+    1,
+    3,
+    'A',
+    'Eleven löser komplexa problem inom kursens olika områden. Eleven bedömer resultatens rimlighet.'
+);
+
+
+-- ---------------------------------------------------------
+-- 4. Matematiska modeller
+-- ---------------------------------------------------------
+
+INSERT INTO competency_descriptors (
+    level_id,
+    competency_id,
+    grade,
+    description
+)
+VALUES
+(
+    1,
+    4,
+    'E',
+    'Eleven tillämpar och formulerar matematiska modeller i enkla uppgifter.'
+),
+(
+    1,
+    4,
+    'C',
+    'Eleven tillämpar och formulerar matematiska modeller i relativt komplexa uppgifter.'
+),
+(
+    1,
+    4,
+    'A',
+    'Eleven tillämpar och formulerar matematiska modeller i komplexa uppgifter.'
+);
+
+
+-- ---------------------------------------------------------
+-- 5. Matematiska resonemang
+-- ---------------------------------------------------------
+
+INSERT INTO competency_descriptors (
+    level_id,
+    competency_id,
+    grade,
+    description
+)
+VALUES
+(
+    1,
+    5,
+    'E',
+    'Eleven för delvis underbyggda matematiska resonemang och följer enkla matematiska resonemang.'
+),
+(
+    1,
+    5,
+    'C',
+    'Eleven för relativt väl underbyggda matematiska resonemang och följer relativt avancerade matematiska resonemang.'
+),
+(
+    1,
+    5,
+    'A',
+    'Eleven för väl underbyggda matematiska resonemang och följer avancerade matematiska resonemang.'
+);
+
+
+
+-- INSERT INTO block_points (
+--     block_id,
+--     central_content_id,
+--     competency_descriptor_id,
+--     points
+-- )
+-- VALUES
+
+-- -- Block 1 (Begrepp)
+-- (1, 1, 1, 1),
+-- (1, 1, 2, 2),
+
+
+-- -- Block 2 (Problemlösning)
+-- (2, 1, 7, 1),
+-- (2, 1, 8, 2),
+
+
+-- -- Block 3 (Procedurer)
+-- (3, 2, 4, 1),
+-- (3, 2, 5, 2),
+
+
+-- -- Block 4 (Resonemang)
+-- (4, 2, 13, 1),
+-- (4, 2, 14, 2),
+
+
+-- -- Block 5 (Modellering)
+-- (5, 3, 10, 1),
+-- (5, 3, 11, 2),
+
+
+-- -- Block 6 (Kommunikation)
+-- (6, 4, 16, 1),
+-- (6, 4, 17, 2);
