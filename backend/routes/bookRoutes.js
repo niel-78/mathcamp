@@ -132,7 +132,7 @@ router.put("/:id", async (req, res) => {
 // GET /api/books/:id/sections
 router.get("/:id/sections", async (req, res) => {
     try {
-
+        console.log(req.params.id);
         const [sections] = await db.query(
             `
             SELECT

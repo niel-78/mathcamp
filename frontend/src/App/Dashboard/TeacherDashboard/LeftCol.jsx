@@ -125,6 +125,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
         setGroups(data);
         console.log(data);
+
     };
 
     const loadStudents = async (groupId) => {
@@ -167,7 +168,6 @@ export default function LeftCol( {openTab, hoverTarget} ) {
         const data = await response.json();
 
         setBooks(data);
-        console.log(data)
 
     };
 
@@ -240,7 +240,22 @@ export default function LeftCol( {openTab, hoverTarget} ) {
         }));
     };
 
-    const toggleBookAbilities = (groupId) => {
+    const toggleBookAbilities = async (
+        groupId,
+        bookId
+    ) => {
+
+        const group = groups.find(
+            g => g.id === groupId
+        );
+
+        if (!group?.abilities) {
+            await loadGroupAbilities(
+                groupId,
+                bookId
+            );
+        }
+
         setExpandedBookAbilities(prev => ({
             ...prev,
             [groupId]: !prev[groupId],
@@ -811,10 +826,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                 <div
                                                     className="tree-file cursor-pointer"
                                                     onClick={() =>
-                                                        setExpandedBookSections(prev => ({
-                                                            ...prev,
-                                                            [group.id]: !prev[group.id]
-                                                        }))
+                                                        toggleBookSections(group.id)
                                                     }
                                                 >
                                                     {expandedBookSections[group.id] ? "▼" : "▶"} Sektioner
@@ -822,25 +834,42 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                                                 {expandedBookSections[group.id] && (
                                                     <div className="ml-4">
-                                                        {/* sektioner */}
+
+                                                        {(group.sections || []).map(section => (
+
+                                                            <div
+                                                                key={section.id}
+                                                                className="tree-file cursor-pointer"
+                                                            >
+                                                                {section.title}
+                                                            </div>
+
+                                                        ))}
+
                                                     </div>
                                                 )}
 
                                                 <div
                                                     className="tree-file cursor-pointer"
-                                                    onClick={() =>
-                                                        setExpandedBookAbilities(prev => ({
-                                                            ...prev,
-                                                            [group.id]: !prev[group.id]
-                                                        }))
-                                                    }
+                                                    onClick={() => toggleBookAbilities(group.id,group.book_id)}
                                                 >
                                                     {expandedBookAbilities[group.id] ? "▼" : "▶"} Förmågor
                                                 </div>
 
                                                 {expandedBookAbilities[group.id] && (
                                                     <div className="ml-4">
-                                                        {/* förmågor */}
+
+                                                        {(group.abilities || []).map(ability => (
+
+                                                            <div
+                                                                key={ability.id}
+                                                                className="tree-file cursor-pointer"
+                                                            >
+                                                                {ability.name}
+                                                            </div>
+
+                                                        ))}
+
                                                     </div>
                                                 )}
                                             </>

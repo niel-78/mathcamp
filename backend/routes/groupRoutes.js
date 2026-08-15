@@ -65,21 +65,180 @@ router.get("/", async (req, res) => {
 
     }
 
+    const bookIds = [
+        ...new Set(
+            groups
+                .filter(group => group.book_id)
+                .map(group => group.book_id)
+        )
+    ];
+
+    if (bookIds.length > 0) {
+
+        const [sections] = await db.query(
+            `
+            SELECT
+                s.id,
+                s.subchapter_id,
+                s.title,
+                s.content,
+                s.page_number,
+                s.sort_order,
+
+                sc.title AS subchapter_title,
+                c.title AS chapter_title,
+                c.book_id
+
+            FROM sections s
+
+            INNER JOIN subchapters sc
+                ON sc.id = s.subchapter_id
+
+            INNER JOIN chapters c
+                ON c.id = sc.chapter_id
+
+            WHERE c.book_id IN (?)
+
+            ORDER BY
+                c.sort_order,
+                sc.sort_order,
+                s.sort_order
+            `,
+            [bookIds]
+        );
+
+        const sectionsByBook = {};
+
+        sections.forEach(section => {
+
+            if (!sectionsByBook[section.book_id]) {
+                sectionsByBook[section.book_id] = [];
+            }
+
+            sectionsByBook[section.book_id].push(section);
+
+        });
+
+        groups.forEach(group => {
+
+            group.sections =
+                sectionsByBook[group.book_id] || [];
+
+        });
+
+        const levelIds = [
+            ...new Set(
+                groups
+                    .filter(group => group.level_id)
+                    .map(group => group.level_id)
+            )
+        ];
+
+        const [abilities] = await db.query(
+            `
+            SELECT
+                a.*,
+                l.id AS level_id
+
+            FROM abilities a
+
+            INNER JOIN levels l
+                ON l.subject_id = a.subject_id
+
+            WHERE l.id IN (?)
+
+            ORDER BY a.name
+            `,
+            [levelIds]
+        );
+
+        const abilitiesByLevel = {};
+
+        abilities.forEach(ability => {
+
+            if (!abilitiesByLevel[ability.level_id]) {
+                abilitiesByLevel[ability.level_id] = [];
+            }
+
+            abilitiesByLevel[ability.level_id].push(ability);
+
+        });
+
+        groups.forEach(group => {
+
+            group.sections =
+                sectionsByBook[group.book_id] || [];
+
+            group.abilities =
+                abilitiesByLevel[group.level_id] || [];
+
+        });
+
+    }
+
     res.json(groups);
 
 });
 
+// // POST /api/groups
+// router.post("/", async (req, res) => {
+
+//     const { name } = req.body;
+
+//     const [result] = await db.query(
+//         `
+//         INSERT INTO groups (name)
+//         VALUES (?)
+//         `,
+//         [name]
+//     );
+
+//     await db.query(
+//         `
+//         INSERT INTO group_permissions (
+//             group_id,
+//             teacher_id,
+//             role
+//         )
+//         VALUES (?, ?, 'owner')
+//         `,
+//         [
+//             result.insertId,
+//             req.user.id
+//         ]
+//     );
+
+//     res.status(201).json({
+//         id: result.insertId,
+//         name,
+//         role: "owner"
+//     });
+
+// });
+
 // POST /api/groups
 router.post("/", async (req, res) => {
 
-    const { name } = req.body;
+    const {
+        name,
+        level_id,
+        book_id
+    } = req.body;
 
     const [result] = await db.query(
         `
-        INSERT INTO groups (name)
-        VALUES (?)
+        INSERT INTO groups (
+            name,
+            level_id,
+            book_id
+        )
+        VALUES (?, ?, ?)
         `,
-        [name]
+        [
+            name,
+            level_id,
+            book_id
+        ]
     );
 
     await db.query(
@@ -100,11 +259,12 @@ router.post("/", async (req, res) => {
     res.status(201).json({
         id: result.insertId,
         name,
+        level_id,
+        book_id,
         role: "owner"
     });
 
 });
-
 
 // GET /api/groups/:id
 router.get("/:id", async (req, res) => {

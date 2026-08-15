@@ -336,7 +336,7 @@ CREATE TABLE groups (
     name VARCHAR(100) NOT NULL,
     description TEXT,
 
-    course_id INT NULL,
+    level_id INT NULL,
     book_id INT NULL,
 
     pages_per_lesson INT NULL DEFAULT 4,
@@ -375,9 +375,9 @@ CREATE TABLE group_permissions (
         ON DELETE CASCADE
 );
 
-INSERT INTO groups (id, name, archived_at,book_id)
+INSERT INTO groups (id, name, archived_at,book_id,level_id)
 VALUES
-(1, 'Niklas grupp',NULL,2),(2, 'Jolines grupp',CURRENT_TIMESTAMP,2);
+(1, 'Niklas grupp',NULL,2,2),(2, 'Jolines grupp',CURRENT_TIMESTAMP,2,1);
 
 INSERT INTO group_permissions (
     group_id,
