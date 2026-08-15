@@ -62,6 +62,18 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [createLessonSeriesDialog, setCreateLessonSeriesDialog] = useState(null);
     const [expandedBookSections, setExpandedBookSections] = useState({});
     const [expandedBookAbilities, setExpandedBookAbilities] = useState({});
+    const [expandedCompetencies, setExpandedCompetencies] = useState({});
+    const [expandedCompetency, setExpandedCompetency] = useState({});
+    const [
+        expandedAbilities,
+        setExpandedAbilities
+    ] = useState({});
+
+    const [
+        expandedGrades,
+        setExpandedGrades
+    ] = useState({});
+
 
     useEffect(() => {
         loadGroups();
@@ -861,12 +873,28 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                                                         {(group.abilities || []).map(ability => (
 
-                                                            <div
-                                                                key={ability.id}
-                                                                className="tree-file cursor-pointer"
-                                                            >
-                                                                {ability.name}
-                                                            </div>
+                                                        <div
+                                                            className="tree-folder"
+                                                            onClick={() =>
+                                                                setExpandedAbilities(prev => ({
+                                                                    ...prev,
+                                                                    [`${level.id}-${abilityName}`]:
+                                                                        !prev[`${level.id}-${abilityName}`]
+                                                                }))
+                                                            }
+                                                        >
+                                                            {
+                                                                expandedAbilities[
+                                                                    `${level.id}-${abilityName}`
+                                                                ]
+                                                                    ? "▼"
+                                                                    : "▶"
+                                                            }
+
+                                                            {" "}
+
+                                                            {abilityName}
+                                                        </div>
 
                                                         ))}
 
@@ -1011,6 +1039,8 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                                             <div key={level.id}>
 
+                                                {console.log(level)}
+
                                                 <div
                                                     className="tree-folder"
                                                     onClick={() =>
@@ -1070,6 +1100,148 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                             </div>
 
                                                         ))}
+
+
+                                                    <div
+                                                        className="tree-folder"
+                                                        onClick={() =>
+                                                            setExpandedCompetencies(prev => ({
+                                                                ...prev,
+                                                                [level.id]: !prev[level.id]
+                                                            }))
+                                                        }
+                                                    >
+                                                        {expandedCompetencies[level.id]
+                                                            ? "▼"
+                                                            : "▶"}
+
+                                                        {" "}
+                                                        Betygskriterier
+                                                    </div>
+
+{expandedCompetencies[level.id] && (
+
+    <div className="ml-4">
+
+        {Object.entries(
+            level.gradingAbilities || {}
+        ).map(([abilityName, grades]) => (
+
+            <div key={abilityName}>
+
+                <div
+                    className="tree-folder"
+                    onClick={() =>
+                        setExpandedAbilities(prev => ({
+                            ...prev,
+                            [`${level.id}-${abilityName}`]:
+                                !prev[
+                                    `${level.id}-${abilityName}`
+                                ]
+                        }))
+                    }
+                >
+                    {
+                        expandedAbilities[
+                            `${level.id}-${abilityName}`
+                        ]
+                            ? "▼"
+                            : "▶"
+                    }
+
+                    {" "}
+
+                    {abilityName}
+                </div>
+
+                {
+                    expandedAbilities[
+                        `${level.id}-${abilityName}`
+                    ] && (
+
+                        <div className="ml-4">
+
+                            {["E", "C", "A"].map(
+                                grade => (
+
+                                    <div key={grade}>
+
+                                        <div
+                                            className="tree-folder"
+                                            onClick={() =>
+                                                setExpandedGrades(prev => ({
+                                                    ...prev,
+                                                    [
+                                                        `${level.id}-${abilityName}-${grade}`
+                                                    ]:
+                                                        !prev[
+                                                            `${level.id}-${abilityName}-${grade}`
+                                                        ]
+                                                }))
+                                            }
+                                        >
+                                            {
+                                                expandedGrades[
+                                                    `${level.id}-${abilityName}-${grade}`
+                                                ]
+                                                    ? "▼"
+                                                    : "▶"
+                                            }
+
+                                            {" "}
+
+                                            {grade}
+                                        </div>
+
+                                        {
+                                            expandedGrades[
+                                                `${level.id}-${abilityName}-${grade}`
+                                            ] && (
+
+                                                <div className="ml-4">
+
+                                                    {(grades[grade] || []).map(
+                                                        competency => (
+
+                                                            <div
+                                                                key={
+                                                                    competency.descriptorId
+                                                                }
+                                                                className="
+                                                                    tree-file
+                                                                    cursor-pointer
+                                                                "
+                                                            >
+                                                                {
+                                                                    competency.name
+                                                                }
+                                                            </div>
+
+                                                        )
+                                                    )}
+
+                                                </div>
+
+                                            )
+                                        }
+
+                                    </div>
+
+                                )
+                            )}
+
+                        </div>
+
+                    )
+                }
+
+            </div>
+
+        ))}
+
+    </div>
+
+)}
 
                                                     </div>
 

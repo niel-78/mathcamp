@@ -2,6 +2,8 @@ USE mydb;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS competency_descriptors;
+DROP TABLE IF EXISTS level_competencies;
 DROP TABLE IF EXISTS presentations;
 DROP TABLE IF EXISTS group_planning_sections;
 DROP TABLE IF EXISTS group_schedules;
@@ -811,6 +813,18 @@ CREATE TABLE block_abilities (
         REFERENCES abilities(id)
 );
 
+--Niva 1a
+INSERT INTO levels (
+    subject_id,
+    code,
+    name
+)
+VALUES (
+    '1',
+    'MATE1A00X',
+    'Matematik nivå 1a'
+);
+
 
 --Kunskapskrav (summativ bedömning)
 CREATE TABLE competencies (
@@ -851,6 +865,264 @@ CREATE TABLE grading_ability_levels (
         ON DELETE CASCADE
 );
 
+CREATE TABLE competency_descriptors (
+
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    level_id INT NOT NULL DEFAULT 1,
+
+    competency_id INT NOT NULL,
+
+    grading_ability_id INT NOT NULL,
+
+    grade ENUM(
+        'E',
+        'C',
+        'A'
+    ) NOT NULL,
+
+    description LONGTEXT NOT NULL,
+
+    FOREIGN KEY (level_id)
+        REFERENCES levels(id),
+
+    FOREIGN KEY (competency_id)
+        REFERENCES competencies(id),
+
+    FOREIGN KEY (grading_ability_id)
+        REFERENCES grading_abilities(id)
+);
+
+INSERT INTO grading_abilities (
+    subject_id,
+    name
+)
+VALUES
+    (1, 'Begrepp'),
+    (1, 'Procedurer'),
+    (1, 'Problemlösning'),
+    (1, 'Modellering'),
+    (1, 'Resonemang'),
+    (1, 'Kommunikation');
+
+INSERT INTO competencies (
+    subject_id,
+    name
+)
+VALUES
+    (1, 'Beskriva och använda begrepp'),
+    (1, 'Hantera procedurer'),
+    (1, 'Lösa problem'),
+    (1, 'Använda modeller'),
+    (1, 'Föra resonemang'),
+    (1, 'Kommunicera matematik');
+
+CREATE TABLE level_competencies (
+
+    level_id INT NOT NULL,
+
+    competency_id INT NOT NULL,
+
+    PRIMARY KEY (
+        level_id,
+        competency_id
+    ),
+
+    FOREIGN KEY (level_id)
+        REFERENCES levels(id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (competency_id)
+        REFERENCES competencies(id)
+        ON DELETE CASCADE
+);
+
+INSERT INTO level_competencies (
+    level_id,
+    competency_id
+)
+VALUES
+    (1,1),
+    (1,2),
+    (1,3),
+    (1,4),
+    (1,5),
+    (1,6);
+
+INSERT INTO competency_descriptors (
+    competency_id,
+    grading_ability_id,
+    grade,
+    description
+)
+VALUES
+
+(
+    1,
+    1,
+    'E',
+    'Eleven beskriver grundläggande begrepp och samband mellan begrepp samt använder dem med tillfredsställande säkerhet.'
+),
+
+(
+    1,
+    1,
+    'C',
+    'Eleven beskriver ett omfattande antal begrepp och samband mellan begrepp samt använder dem med god säkerhet.'
+),
+
+(
+    1,
+    1,
+    'A',
+    'Eleven beskriver ett omfattande antal begrepp och samband mellan begrepp samt använder dem med mycket god säkerhet.'
+);
+
+INSERT INTO competency_descriptors (
+    competency_id,
+    grading_ability_id,
+    grade,
+    description
+)
+VALUES
+
+(
+    2,
+    2,
+    'E',
+    'Eleven hanterar grundläggande procedurer och löser uppgifter av standardkaraktär med tillfredsställande säkerhet.'
+),
+
+(
+    2,
+    2,
+    'C',
+    'Eleven hanterar ett omfattande antal procedurer och löser uppgifter av standardkaraktär med god säkerhet.'
+),
+
+(
+    2,
+    2,
+    'A',
+    'Eleven hanterar ett omfattande antal procedurer och löser uppgifter av standardkaraktär med mycket god säkerhet.'
+);
+
+INSERT INTO competency_descriptors (
+    competency_id,
+    grading_ability_id,
+    grade,
+    description
+)
+VALUES
+
+(
+    3,
+    3,
+    'E',
+    'Eleven löser enkla problem inom kursens olika områden. Eleven bedömer resultatens rimlighet.'
+),
+
+(
+    3,
+    3,
+    'C',
+    'Eleven löser relativt komplexa problem inom kursens olika områden. Eleven bedömer resultatens rimlighet.'
+),
+
+(
+    3,
+    3,
+    'A',
+    'Eleven löser komplexa problem inom kursens olika områden. Eleven bedömer resultatens rimlighet.'
+);
+
+INSERT INTO competency_descriptors (
+    competency_id,
+    grading_ability_id,
+    grade,
+    description
+)
+VALUES
+
+(
+    4,
+    4,
+    'E',
+    'Eleven tillämpar och formulerar matematiska modeller i enkla uppgifter.'
+),
+
+(
+    4,
+    4,
+    'C',
+    'Eleven tillämpar och formulerar matematiska modeller i relativt komplexa uppgifter.'
+),
+
+(
+    4,
+    4,
+    'A',
+    'Eleven tillämpar och formulerar matematiska modeller i komplexa uppgifter.'
+);
+
+INSERT INTO competency_descriptors (
+    competency_id,
+    grading_ability_id,
+    grade,
+    description
+)
+VALUES
+
+(
+    5,
+    5,
+    'E',
+    'Eleven för delvis underbyggda matematiska resonemang och följer enkla matematiska resonemang.'
+),
+
+(
+    5,
+    5,
+    'C',
+    'Eleven för relativt väl underbyggda matematiska resonemang och följer relativt avancerade matematiska resonemang.'
+),
+
+(
+    5,
+    5,
+    'A',
+    'Eleven för väl underbyggda matematiska resonemang och följer avancerade matematiska resonemang.'
+);
+
+INSERT INTO competency_descriptors (
+    competency_id,
+    grading_ability_id,
+    grade,
+    description
+)
+VALUES
+
+(
+    6,
+    6,
+    'E',
+    'Eleven uttrycker sig med matematiska symboler och andra representationer på ett i huvudsak fungerande sätt.'
+),
+
+(
+    6,
+    6,
+    'C',
+    'Eleven uttrycker sig med matematiska symboler och andra representationer på ett till stor del tydligt och korrekt sätt.'
+),
+
+(
+    6,
+    6,
+    'A',
+    'Eleven uttrycker sig med matematiska symboler och andra representationer på ett tydligt och korrekt sätt.'
+);
+
 
 -- Poängmodell
 CREATE TABLE block_points (
@@ -875,6 +1147,30 @@ CREATE TABLE block_points (
     FOREIGN KEY (grading_ability_level_id)
         REFERENCES grading_ability_levels(id)
 );
+
+-- CREATE TABLE block_points (
+
+--     id INT AUTO_INCREMENT PRIMARY KEY,
+
+--     block_id INT NOT NULL,
+
+--     central_content_id INT NOT NULL,
+
+--     competency_descriptor_id INT NOT NULL,
+
+--     points INT NOT NULL DEFAULT 1,
+
+--     comment TEXT,
+
+--     FOREIGN KEY (block_id)
+--         REFERENCES blocks(id),
+
+--     FOREIGN KEY (central_content_id)
+--         REFERENCES central_content(id),
+
+--     FOREIGN KEY (competency_descriptor_id)
+--         REFERENCES competency_descriptors(id)
+-- );
 
 
 
@@ -1118,16 +1414,6 @@ VALUES
 (3, 3),
 (4, 4);
 
-INSERT INTO competencies (
-    id,
-    subject_id,
-    name
-)
-VALUES
-(1, 1, 'Begrepp'),
-(2, 1, 'Procedur'),
-(3, 1, 'Problemlösning'),
-(4, 1, 'Resonemang');
 
 
 
@@ -1138,18 +1424,6 @@ VALUES
 
 
 
-
---Niva 1a
-INSERT INTO levels (
-    subject_id,
-    code,
-    name
-)
-VALUES (
-    '1',
-    'MATE1A00X',
-    'Matematik nivå 1a'
-);
 INSERT INTO content_areas (
     level_id,
     title,
