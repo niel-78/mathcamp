@@ -2,6 +2,8 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/inter";
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -156,6 +158,84 @@ body {
 
         shrink-0;
 }
+
+.presentation-shell {
+    @apply
+        max-w-5xl
+        mx-auto
+        p-8;
+}
+
+.presentation-shell-fullscreen {
+    @apply
+        w-screen
+        h-screen
+        p-16
+        bg-background;
+}
+
+.presentation-slide {
+    @apply
+        bg-card
+        text-card-foreground
+        border
+        border-border
+        rounded-xl
+        shadow-sm
+        p-10
+        max-w-none;
+}
+
+.presentation-slide-fullscreen {
+    @apply
+        h-full
+        p-20
+        max-w-none
+        bg-background;
+}
+
+.presentation-counter {
+    @apply
+        mt-4
+        text-center
+        text-sm
+        text-muted-foreground;
+}
+
+.presentation-counter-fullscreen {
+    @apply
+        fixed
+        bottom-4
+        right-6
+        text-base
+        text-muted-foreground;
+}
+
+.presentation-slide-fullscreen .katex-display {
+    font-size: 1.8em;
+}
+
+.presentation-slide-fullscreen h1 {
+    @apply text-5xl mb-10;
+}
+
+.presentation-slide-fullscreen h2 {
+    @apply text-4xl;
+}
+
+.presentation-slide-fullscreen p,
+.presentation-slide-fullscreen li {
+    @apply text-2xl leading-relaxed;
+}
+
+.presentation-markdown {
+    @apply max-w-none;
+}
+
+.presentation-markdown-fullscreen {
+    @apply max-w-none text-2xl;
+}
+
 
 @theme inline {
 

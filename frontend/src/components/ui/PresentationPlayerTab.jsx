@@ -12,6 +12,8 @@ import remarkMath
 import rehypeKatex
     from "rehype-katex";
 
+import { useRef } from "react";
+
 import "katex/dist/katex.min.css";
 
 import BaseTabLayout
@@ -43,11 +45,34 @@ export default function PresentationPlayerTab({
         setSlideIndex
     ] = useState(0);
 
+    const presentationRef = useRef(null);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
     useEffect(() => {
 
         loadPresentation();
 
     }, [presentationId]);
+
+
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            setIsFullscreen(
+                document.fullscreenElement === presentationRef.current
+            );
+        };
+
+        document.addEventListener(
+            "fullscreenchange",
+            handleFullscreenChange
+        );
+
+        return () =>
+            document.removeEventListener(
+                "fullscreenchange",
+                handleFullscreenChange
+            );
+    }, []);
 
     useEffect(() => {
 
@@ -146,10 +171,7 @@ export default function PresentationPlayerTab({
     }
 
     function fullscreen() {
-
-        document.documentElement
-            .requestFullscreen();
-
+        presentationRef.current?.requestFullscreen();
     }
 
     if (
@@ -215,57 +237,49 @@ export default function PresentationPlayerTab({
         >
 
             <div
-                className="
-                    mx-auto
-                    max-w-5xl
-                    p-8
-                "
+                ref={presentationRef}
+                className={
+                    isFullscreen
+                        ? "presentation-shell-fullscreen"
+                        : "presentation-shell"
+                }
             >
 
                 <div
-                    className="
-                        min-h-[70vh]
-                        rounded-lg
-                        border
-                        bg-background
-                        p-10
-                        prose
-                        prose-lg
-                        max-w-none
-                    "
+                    className={
+                        isFullscreen
+                            ? "presentation-slide-fullscreen"
+                            : "presentation-slide"
+                    }
                 >
 
-                    <ReactMarkdown
-                        remarkPlugins={[
-                            remarkMath
-                        ]}
-                        rehypePlugins={[
-                            rehypeKatex
-                        ]}
-                    >
-                        {
-                            slides[
-                                slideIndex
-                            ] || ""
+                    <div
+                        className={
+                            isFullscreen
+                                ? "prose prose-2xl max-w-none dark:prose-invert"
+                                : "prose prose-lg max-w-none dark:prose-invert"
                         }
-                    </ReactMarkdown>
+                    >
 
+                        <ReactMarkdown
+                            remarkPlugins={[remarkMath]}
+                            rehypePlugins={[rehypeKatex]}
+                        >
+                            {slides[slideIndex] || ""}
+                        </ReactMarkdown>
+
+                    </div>
+                    
                 </div>
 
                 <div
-                    className="
-                        mt-4
-                        text-center
-                        text-sm
-                        text-muted-foreground
-                    "
+                    className={
+                        isFullscreen
+                            ? "presentation-counter-fullscreen"
+                            : "presentation-counter"
+                    }
                 >
-
-                    Slide {" "}
-                    {slideIndex + 1}
-                    {" / "}
-                    {slides.length}
-
+                    Slide {slideIndex + 1} / {slides.length}
                 </div>
 
             </div>

@@ -60,7 +60,8 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [deleteAbilityDialog, setDeleteAbilityDialog] = useState(null);
     const [archiveOpen, setArchiveOpen] = useState(false);
     const [createLessonSeriesDialog, setCreateLessonSeriesDialog] = useState(null);
-    
+    const [expandedBookSections, setExpandedBookSections] = useState({});
+    const [expandedBookAbilities, setExpandedBookAbilities] = useState({});
 
     useEffect(() => {
         loadGroups();
@@ -123,6 +124,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
         const data = await response.json();
 
         setGroups(data);
+        console.log(data);
     };
 
     const loadStudents = async (groupId) => {
@@ -165,6 +167,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
         const data = await response.json();
 
         setBooks(data);
+        console.log(data)
 
     };
 
@@ -227,6 +230,20 @@ export default function LeftCol( {openTab, hoverTarget} ) {
         setExpandedAreas(prev => ({
             ...prev,
             [areaId]: !prev[areaId],
+        }));
+    };
+
+    const toggleBookSections = (groupId) => {
+        setExpandedBookSections(prev => ({
+            ...prev,
+            [groupId]: !prev[groupId],
+        }));
+    };
+
+    const toggleBookAbilities = (groupId) => {
+        setExpandedBookAbilities(prev => ({
+            ...prev,
+            [groupId]: !prev[groupId],
         }));
     };
 
@@ -788,6 +805,46 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                         >
                                             Planering
                                         </div>
+
+                                        {group.book_id && (
+                                            <>
+                                                <div
+                                                    className="tree-file cursor-pointer"
+                                                    onClick={() =>
+                                                        setExpandedBookSections(prev => ({
+                                                            ...prev,
+                                                            [group.id]: !prev[group.id]
+                                                        }))
+                                                    }
+                                                >
+                                                    {expandedBookSections[group.id] ? "▼" : "▶"} Sektioner
+                                                </div>
+
+                                                {expandedBookSections[group.id] && (
+                                                    <div className="ml-4">
+                                                        {/* sektioner */}
+                                                    </div>
+                                                )}
+
+                                                <div
+                                                    className="tree-file cursor-pointer"
+                                                    onClick={() =>
+                                                        setExpandedBookAbilities(prev => ({
+                                                            ...prev,
+                                                            [group.id]: !prev[group.id]
+                                                        }))
+                                                    }
+                                                >
+                                                    {expandedBookAbilities[group.id] ? "▼" : "▶"} Förmågor
+                                                </div>
+
+                                                {expandedBookAbilities[group.id] && (
+                                                    <div className="ml-4">
+                                                        {/* förmågor */}
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
 
                                         <div
                                             className="tree-file cursor-pointer"
