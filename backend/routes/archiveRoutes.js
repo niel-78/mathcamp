@@ -75,19 +75,19 @@ router.delete("/groups/:id", requireAuth,
     }
 );
 
-// GET /api/archive/exams
-router.get("/exams", requireAuth,
+// GET /api/archive/assessments
+router.get("/assessments", requireAuth,
     async (req, res) => {
 
-        const [exams] =
+        const [assessments] =
             await db.query(
                 `
                 SELECT
                     e.*
-                FROM exams e
+                FROM assessments e
 
-                JOIN exam_permissions ep
-                    ON ep.exam_id = e.id
+                JOIN assessment_permissions ep
+                    ON ep.assessment_id = e.id
 
                 WHERE ep.teacher_id = ?
                 AND ep.role = 'owner'
@@ -99,18 +99,18 @@ router.get("/exams", requireAuth,
                 [req.user.id]
             );
 
-        res.json(exams);
+        res.json(assessments);
 
     }
 );
 
-// POST /api/archive/exams/:id/restore
-router.post("/exams/:id/restore", requireAuth,
+// POST /api/archive/assessments/:id/restore
+router.post("/assessments/:id/restore", requireAuth,
     async (req, res) => {
 
         await db.query(
             `
-            UPDATE exams
+            UPDATE assessments
             SET archived_at = NULL
             WHERE id = ?
             `,
@@ -122,13 +122,13 @@ router.post("/exams/:id/restore", requireAuth,
     }
 );
 
-// DELETE /api/archive/exams/:id
-router.delete("/exams/:id", requireAuth,
+// DELETE /api/archive/assessments/:id
+router.delete("/assessments/:id", requireAuth,
     async (req, res) => {
 
         await db.query(
             `
-            UPDATE exams
+            UPDATE assessments
             SET deleted_at = NOW()
             WHERE id = ?
             `,

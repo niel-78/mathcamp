@@ -570,16 +570,16 @@ router.post("/", async (req, res) => {
                 SELECT
                     COALESCE(MAX(sort_order), 0) + 1
                     AS nextOrder
-                FROM exam_blocks
-                WHERE exam_id = ?
+                FROM assessment_blocks
+                WHERE assessment_id = ?
                 `,
                 [examId]
             );
 
             await db.query(
                 `
-                INSERT INTO exam_blocks (
-                    exam_id,
+                INSERT INTO assessment_blocks (
+                    assessment_id,
                     block_id,
                     sort_order
                 )

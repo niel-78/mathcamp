@@ -20,7 +20,7 @@ GET /group-exam-lobby/:id/status
 POST /group-exam-lobby/find
 */
 
-// GET /api/group-exams/:id/status
+// GET /api/group-assessments/:id/status
 router.get("/:id/status", async (req, res) => {
 
         const [rows] =
@@ -29,7 +29,7 @@ router.get("/:id/status", async (req, res) => {
                 SELECT
                     exam_status,
                     waiting_room_open
-                FROM group_exams
+                FROM group_assessments
                 WHERE id = ?
                 `,
                 [req.params.id]
@@ -50,7 +50,7 @@ router.get("/:id/status", async (req, res) => {
             await db.query(
                 `
                 SELECT admitted_at
-                FROM exam_waiting_room
+                FROM assessment_waiting_room
                 WHERE
                     group_exam_id = ?
                     AND user_id = ?
@@ -67,7 +67,7 @@ router.get("/:id/status", async (req, res) => {
                 SELECT
                     id,
                     status
-                FROM exam_attempts
+                FROM assessment_attempts
                 WHERE
                     group_exam_id = ?
                     AND user_id = ?
@@ -101,7 +101,7 @@ router.get("/:id/status", async (req, res) => {
     }
 );
 
-// POST /api/group-exams/join
+// POST /api/group-assessments/join
 router.post("/join", async (req, res) => {
 
     const { group_exam_key } = req.body;
@@ -114,7 +114,7 @@ router.post("/join", async (req, res) => {
                 group_id,
                 exam_status,
                 waiting_room_open
-            FROM group_exams
+            FROM group_assessments
             WHERE group_exam_key = ?
             `,
             [group_exam_key]
@@ -134,7 +134,7 @@ router.post("/join", async (req, res) => {
             SELECT
                 id,
                 status
-            FROM exam_attempts
+            FROM assessment_attempts
             WHERE
                 group_exam_id = ?
                 AND user_id = ?
@@ -201,7 +201,7 @@ router.post("/join", async (req, res) => {
 
     await db.query(
         `
-        INSERT IGNORE INTO exam_waiting_room (
+        INSERT IGNORE INTO assessment_waiting_room (
             group_exam_id,
             user_id
         )
@@ -241,7 +241,7 @@ router.post("/find", async (req, res) => {
             SELECT
                 ge.id,
                 ge.group_id,
-                ge.exam_id,
+                ge.assessment_id,
                 ge.waiting_room_open,
                 ge.exam_status,
                 ge.available_from,
@@ -250,10 +250,10 @@ router.post("/find", async (req, res) => {
                 e.title AS exam_title,
                 g.name AS group_name
 
-            FROM group_exams ge
+            FROM group_assessments ge
 
-            INNER JOIN exams e
-                ON e.id = ge.exam_id
+            INNER JOIN assessments e
+                ON e.id = ge.assessment_id
 
             INNER JOIN groups g
                 ON g.id = ge.group_id
@@ -311,7 +311,7 @@ router.post("/find", async (req, res) => {
 
         res.json({
             group_exam_id: groupExam.id,
-            exam_id: groupExam.exam_id,
+            assessment_id: groupExam.assessment_id,
             exam_title: groupExam.exam_title,
             group_name: groupExam.group_name,
             exam_status: groupExam.exam_status,

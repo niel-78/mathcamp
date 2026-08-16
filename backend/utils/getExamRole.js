@@ -9,9 +9,9 @@ export default async function getExamRole(
         await db.query(
             `
             SELECT role
-            FROM exam_permissions
-            WHERE exam_id = ?
-                AND teacher_id = ?
+            FROM assessment_permissions
+            WHERE assessment_id = ?
+              AND user_id = ?
             `,
             [
                 examId,

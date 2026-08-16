@@ -24,7 +24,7 @@ router.post("/", async (req, res) => {
 
     await db.query(
         `
-        INSERT INTO exam_events (
+        INSERT INTO assessment_events (
             attempt_id,
             event_type,
             event_data
@@ -44,8 +44,8 @@ router.post("/", async (req, res) => {
         await db.query(
             `
             SELECT
-                exam_config
-            FROM exam_attempts
+                config
+            FROM assessment_attempts
             WHERE id = ?
             `,
             [attempt_id]
@@ -55,7 +55,7 @@ router.post("/", async (req, res) => {
 
         const config =
             JSON.parse(
-                attempt.exam_config || "{}"
+                attempt.config || "{}"
             );
 
         const eventLockMap = {
@@ -93,7 +93,7 @@ router.post("/", async (req, res) => {
 
             await db.query(
                 `
-                UPDATE exam_attempts
+                UPDATE assessment_attempts
                 SET status = 'locked'
                 WHERE id = ?
                 `,
@@ -102,7 +102,7 @@ router.post("/", async (req, res) => {
 
             await db.query(
                 `
-                INSERT INTO exam_events (
+                INSERT INTO assessment_events (
                     attempt_id,
                     event_type,
                     event_data
@@ -137,7 +137,7 @@ router.get("/attempt/:attemptId/lock-reason",
             await db.query(
                 `
                 SELECT event_data
-                FROM exam_events
+                FROM assessment_events
                 WHERE
                     attempt_id = ?
                     AND event_type = 'attempt_locked'

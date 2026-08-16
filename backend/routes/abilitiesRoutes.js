@@ -22,6 +22,7 @@ router.get("/", async (req, res) => {
         `
         SELECT *
         FROM abilities
+        WHERE delete_at IS NULL
         ORDER BY name
         `
     );
@@ -77,8 +78,6 @@ router.post("/", async (req, res) => {
             ]
         );
 
-    console.log(result);
-
     res.status(201).json({
         id: result.insertId,
         name,
@@ -94,7 +93,7 @@ router.put("/:id", async (req, res) => {
 
     await db.query(
         `
-        UPDATE ability_series
+        UPDATE abilities
         SET
             name = ?,
             updated_by = ?
@@ -115,8 +114,8 @@ router.delete("/:id", async (req, res) => {
 
     await db.query(
         `
-        DELETE
-        FROM abilities
+        UPDATE abilities
+        SET deleted_at = NOW()
         WHERE id = ?
         `,
         [req.params.id]

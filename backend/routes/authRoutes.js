@@ -14,6 +14,7 @@ POST   /api/auth/refresh
 */
 
 //POST /api/auth/login
+// POST /api/auth/login
 router.post("/login", async (req, res) => {
 
     try {
@@ -50,11 +51,10 @@ router.post("/login", async (req, res) => {
 
         const user = rows[0];
 
-        const valid =
-            await bcrypt.compare(
-                password,
-                user.password_hash
-            );
+        const valid = await bcrypt.compare(
+            password,
+            user.password_hash
+        );
 
         if (!valid) {
 
@@ -64,20 +64,7 @@ router.post("/login", async (req, res) => {
 
         }
 
-        const token =
-            crypto.randomUUID();
-
-        await db.query(
-            `
-            UPDATE users
-            SET session_token = ?
-            WHERE id = ?
-            `,
-            [
-                token,
-                user.id
-            ]
-        );
+        const token = crypto.randomUUID();
 
         await db.query(
             `
@@ -93,21 +80,19 @@ router.post("/login", async (req, res) => {
             ]
         );
 
-        const [[school]] =
-            await db.query(
-                `
-                SELECT
-                    s.id,
-                    s.name,
-                    st.is_admin
-                FROM school_teachers st
-                INNER JOIN schools s
-                    ON s.id = st.school_id
-                WHERE st.teacher_id = ?
-                `,
-                [user.id]
-            );
-
+        const [[school]] = await db.query(
+            `
+            SELECT
+                s.id,
+                s.name,
+                st.is_admin
+            FROM school_teachers st
+            INNER JOIN schools s
+                ON s.id = st.school_id
+            WHERE st.teacher_id = ?
+            `,
+            [user.id]
+        );
 
         res.json({
 
@@ -149,7 +134,9 @@ router.post("/login", async (req, res) => {
 });
 
 //POST /api/auth/logout
-router.post("/logout", requireAuth,
+router.post(
+    "/logout",
+    requireAuth,
     async (req, res) => {
 
         const token =
@@ -163,16 +150,6 @@ router.post("/logout", requireAuth,
             WHERE session_token = ?
             `,
             [token]
-        );
-
-        await db.query(
-            `
-            UPDATE users
-            SET
-                session_token = NULL
-            WHERE id = ?
-            `,
-            [req.user.id]
         );
 
         res.json({

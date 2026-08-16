@@ -67,6 +67,7 @@ router.get("/", requireAuth, async (req, res) => {
                 SELECT *
                 FROM abilities
                 WHERE series_id = ?
+                AND deleted_at IS NULL
                 ORDER BY name
                 `,
                 [item.id]

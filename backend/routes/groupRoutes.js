@@ -27,7 +27,7 @@ GET    /api/groups/:id/students
 POST   /api/groups/:id/students
 DELETE /api/groups/:id/students/:studentId
 
-GET    /api/groups/:id/group-exams
+GET    /api/groups/:id/group-assessments
 
 PUT    /api/groups/:id/archive
 */
@@ -740,12 +740,6 @@ router.put("/:id/planning-sections", requireAuth,
 
         }
 
-        console.log(
-            "SAVE PLANNING",
-            req.params.id,
-            req.body
-        );
-
             const [rows] =
             await db.query(
                 `
@@ -756,10 +750,6 @@ router.put("/:id/planning-sections", requireAuth,
                 [req.params.id]
             );
 
-        console.log(
-            "AFTER SAVE",
-            rows[0]
-        );
 
         res.sendStatus(204);
 
@@ -895,17 +885,6 @@ router.post("/:groupId/fill-planning",
                 [groupId]
             );
 
-        console.log(
-            lessons
-                .slice(0, 20)
-                .map((lesson, index) => ({
-                    index,
-                    id: lesson.id,
-                    starts_at: lesson.starts_at,
-                    has_pinned: lesson.has_pinned
-                }))
-        );
-
         const [sections] =
             await db.query(
                 `
@@ -930,16 +909,6 @@ router.post("/:groupId/fill-planning",
                 section => section.id
             );
 
-        console.log(
-            "Första id i kön:",
-            queueSectionIds.slice(0, 20)
-        );
-
-        console.log(
-            "groupId",
-            groupId
-        );
-
         const [gps] =
             await db.query(
                 `
@@ -949,12 +918,6 @@ router.post("/:groupId/fill-planning",
                 `,
                 [groupId]
             );
-
-        console.log(
-            "gps rows",
-            gps.length
-        );
-
 
         const [pinnedSections] =
             await db.query(
@@ -1316,28 +1279,6 @@ router.post("/:groupId/fill-planning",
                 const block of blocks
             ) {
 
-                console.log(
-                    "BLOCK",
-                    {
-                        sections:
-                            block.sections.map(
-                                s => s.id
-                            ),
-
-                        lessons:
-                            block.lessons.map(
-                                l => l.id
-                            ),
-
-                        pinnedSection:
-                            block.pinnedSection,
-
-                        pinnedLesson:
-                            block.pinnedLesson
-                    }
-                );
-
-
                 // Fyll blocket
                 const assignments =
                     fillBlock(
@@ -1351,14 +1292,6 @@ router.post("/:groupId/fill-planning",
                     const assignment
                     of assignments
                 ) {
-
-                    console.log(
-                        "PLACERAR",
-                        assignment.section_id,
-                        "I LEKTION",
-                        assignment.lesson_id
-                    );
-
 
                     await db.query(
                         `
@@ -1390,7 +1323,9 @@ router.post("/:groupId/fill-planning",
 
             return res
                 .status(400)
-                .send(error.message);
+                .json({
+                    error: error.message
+                });
         }
 
 

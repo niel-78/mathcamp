@@ -14,9 +14,9 @@ export async function buildExamSession(
             SELECT
                 ge.*,
                 e.title AS exam_title
-            FROM group_exams ge
-            INNER JOIN exams e
-                ON e.id = ge.exam_id
+            FROM group_assessments ge
+            INNER JOIN assessments e
+                ON e.id = ge.assessment_id
             WHERE ge.id = ?
             `,
             [groupExamId]
@@ -46,16 +46,16 @@ export async function buildExamSession(
                 eb.sort_order
             FROM blocks b
 
-            INNER JOIN exam_blocks eb
+            INNER JOIN assessment_blocks eb
                 ON eb.block_id = b.id
 
-            WHERE eb.exam_id = ?
+            WHERE eb.assessment_id = ?
                 AND b.deleted_at IS NULL
 
             ORDER BY
                 eb.sort_order
             `,
-            [groupExam.exam_id]
+            [groupExam.assessment_id]
         );
 
 
@@ -175,14 +175,14 @@ export async function buildExamSession(
         group_exam_id:
             groupExam.id,
 
-        exam_id:
-            groupExam.exam_id,
+        assessment_id:
+            groupExam.assessment_id,
 
         exam_title:
             groupExam.exam_title,
 
-        exam_config:
-            groupExam.exam_config,
+        config:
+            groupExam.config,
 
         shuffle_order_questions:
             !!groupExam.shuffle_order_questions,

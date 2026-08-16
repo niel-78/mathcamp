@@ -147,9 +147,9 @@ router.get("/:id/students/:userId/events", async (req, res) => {
                 `
                 SELECT
                     ee.*
-                FROM exam_events ee
+                FROM assessment_events ee
 
-                INNER JOIN exam_attempts ea
+                INNER JOIN assessment_attempts ea
                     ON ea.id = ee.attempt_id
 
                 WHERE

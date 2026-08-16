@@ -8,7 +8,7 @@ const router = express.Router();
 GET    /api/results
 
 GET    /api/results/students/:studentId
-GET    /api/results/group-exams/:groupExamId
+GET    /api/results/group-assessments/:groupExamId
 GET    /api/results/exam-attempts/:attemptId
 */
 
@@ -33,7 +33,7 @@ router.get("/result", requireAuth, async (req, res) => {
         for (const q of questions) {
 
             const [answerRows] = await db.query(
-                `SELECT * FROM answers WHERE attempt_id = ? AND question_id = ?`,
+                `SELECT * FROM assessment_answers WHERE attempt_id = ? AND question_id = ?`,
                 [attemptId, q.id]
             );
 
@@ -157,7 +157,7 @@ router.get("/latest-attempt", requireAuth, async (req, res) => {
 
         const [rows] = await db.query(`
             SELECT *
-            FROM exam_attempts
+            FROM assessment_attempts
             WHERE user_id = ?
             ORDER BY created_at DESC
             LIMIT 1

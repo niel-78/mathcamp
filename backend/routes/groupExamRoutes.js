@@ -15,23 +15,23 @@ router.use(requireAuth);
 router.use(requireRole("teacher","super"));
 
 /* 
-GET    /api/group-exams
-POST   /api/group-exams
+GET    /api/group-assessments
+POST   /api/group-assessments
 
-GET    /api/group-exams/:id
-PUT    /api/group-exams/:id
-DELETE /api/group-exams/:id
+GET    /api/group-assessments/:id
+PUT    /api/group-assessments/:id
+DELETE /api/group-assessments/:id
 
-GET    /api/group-exams/:id/blocks
+GET    /api/group-assessments/:id/blocks
 
-GET    /api/group-exams/:id/attempts
+GET    /api/group-assessments/:id/attempts
 
-POST   /api/group-exams/:id/open
-POST   /api/group-exams/:id/close
+POST   /api/group-assessments/:id/open
+POST   /api/group-assessments/:id/close
 
 */
 
-// GET /api/group-exams
+// GET /api/group-assessments
 router.get("/", async (req, res) => {
 
     const [rows] = await db.query(
@@ -41,18 +41,18 @@ router.get("/", async (req, res) => {
             e.title AS exam_title,
             g.name AS group_name,
             ep.role
-        FROM group_exams ge
+        FROM group_assessments ge
 
-        JOIN exams e
-            ON e.id = ge.exam_id
+        JOIN assessments e
+            ON e.id = ge.assessment_id
 
         JOIN groups g
             ON g.id = ge.group_id
 
-        JOIN exam_permissions ep
-            ON ep.exam_id = ge.exam_id
+        JOIN assessment_permissions ep
+            ON ep.assessment_id = ge.assessment_id
 
-        WHERE ep.teacher_id = ?
+        WHERE ep.user_id = ?
 
         ORDER BY ge.created_at DESC
         `,
@@ -63,16 +63,16 @@ router.get("/", async (req, res) => {
 
 });
 
-// GET /api/group-exams/:id/students/:userId/events
+// GET /api/group-assessments/:id/students/:userId/events
 router.get( "/:id/students/:userId/events", async (req, res) => {
 
         const [rows] = await db.query(
             `
             SELECT
                 ee.*
-            FROM exam_events ee
+            FROM assessment_events ee
 
-            INNER JOIN exam_attempts ea
+            INNER JOIN assessment_attempts ea
                 ON ea.id = ee.attempt_id
 
             WHERE
@@ -94,24 +94,24 @@ router.get( "/:id/students/:userId/events", async (req, res) => {
 );
 
 
-// POST /api/group-exams
+// POST /api/group-assessments
 router.post("/", async (req, res) => {
 
     try {
 
         const {
             group_id,
-            exam_id
+            assessment_id
         } = req.body;
 
         const [[exam]] =
         await db.query(
             `
-            SELECT exam_config
-            FROM exams
+            SELECT config
+            FROM assessments
             WHERE id = ?
             `,
-            [exam_id]
+            [assessment_id]
         );
 
         if (!exam) {
@@ -136,7 +136,7 @@ router.post("/", async (req, res) => {
                         await db.query(
                             `
                             SELECT id
-                            FROM group_exams
+                            FROM group_assessments
                             WHERE group_exam_key = ?
                             `,
                             [key]
@@ -156,19 +156,19 @@ router.post("/", async (req, res) => {
         const [result] =
             await db.query(
                 `
-                INSERT INTO group_exams (
+                INSERT INTO group_assessments (
                     group_id,
-                    exam_id,
+                    assessment_id,
                     group_exam_key,
-                    exam_config
+                    config
                 )
                 VALUES (?, ?, ?, ?)
                 `,
                 [
                     group_id,
-                    exam_id,
+                    assessment_id,
                     groupExamKey,
-                    exam.exam_config
+                    exam.config
                 ]
             );
 
@@ -201,7 +201,7 @@ router.post("/", async (req, res) => {
 });
 
 
-// GET /api/group-exams/:id
+// GET /api/group-assessments/:id
 router.get("/:id", async (req, res) => {
 
     const [[groupExam]] = await db.query(
@@ -211,16 +211,16 @@ router.get("/:id", async (req, res) => {
             e.title AS exam_title,
             g.name AS group_name,
             ep.role
-        FROM group_exams ge
+        FROM group_assessments ge
 
-        JOIN exams e
-            ON e.id = ge.exam_id
+        JOIN assessments e
+            ON e.id = ge.assessment_id
 
         JOIN groups g
             ON g.id = ge.group_id
 
-        JOIN exam_permissions ep
-            ON ep.exam_id = ge.exam_id
+        JOIN assessment_permissions ep
+            ON ep.assessment_id = ge.assessment_id
 
         WHERE ge.id = ?
             AND ep.teacher_id = ?
@@ -240,11 +240,11 @@ router.get("/:id", async (req, res) => {
 });
 
 
-// PUT /api/group-exams/:id
+// PUT /api/group-assessments/:id
 router.put("/:id", async (req, res) => {
 
     const {
-        exam_config,
+        config,
 
         waiting_room_open,
         max_attempts,
@@ -255,9 +255,9 @@ router.put("/:id", async (req, res) => {
 
     await db.query(
         `
-        UPDATE group_exams
+        UPDATE group_assessments
         SET
-            exam_config = ?,
+            config = ?,
 
             waiting_room_open = ?,
             max_attempts = ?,
@@ -269,7 +269,7 @@ router.put("/:id", async (req, res) => {
         `,
         [
             JSON.stringify(
-                exam_config || {}
+                config || {}
             ),
 
             waiting_room_open,
@@ -291,12 +291,12 @@ router.put("/:id", async (req, res) => {
 });
 
 
-// DELETE /api/group-exams/:id
+// DELETE /api/group-assessments/:id
 router.delete("/:id", async (req, res) => {
 
     await db.query(
         `
-        DELETE FROM group_exams
+        DELETE FROM group_assessments
         WHERE id = ?
         `,
         [req.params.id]
@@ -305,7 +305,7 @@ router.delete("/:id", async (req, res) => {
     res.sendStatus(204);
 });
 
-// GET /api/group-exams/:id/preview
+// GET /api/group-assessments/:id/preview
 router.get("/:id/preview", async (req, res) => {
 
         const connection =
@@ -339,15 +339,15 @@ router.get("/:id/preview", async (req, res) => {
     }
 );
 
-//GET /api/group-exams/:id/blocks
+//GET /api/group-assessments/:id/blocks
 router.get("/:id/blocks", async (req, res) => {
 
         const [blocks] = await db.query(
             `
             SELECT b.*
-            FROM group_exams ge
-            JOIN exam_blocks eb
-                ON eb.exam_id = ge.exam_id
+            FROM group_assessments ge
+            JOIN assessment_blocks eb
+                ON eb.assessment_id = ge.assessment_id
             JOIN blocks b
                 ON b.id = eb.block_id
             WHERE ge.id = ?
@@ -365,7 +365,7 @@ router.get("/:id/blocks", async (req, res) => {
     }
 );
 
-// GET /api/group-exams/:id/waiting-room
+// GET /api/group-assessments/:id/waiting-room
 router.get("/:id/waiting-room", async (req, res) => {
 
         const [rows] =
@@ -377,7 +377,7 @@ router.get("/:id/waiting-room", async (req, res) => {
                     u.last_name,
                     wr.joined_at
 
-                FROM exam_waiting_room wr
+                FROM assessment_waiting_room wr
 
                 INNER JOIN users u
                     ON u.id = wr.user_id
@@ -394,7 +394,7 @@ router.get("/:id/waiting-room", async (req, res) => {
     }
 );
 
-// GET /api/group-exams/:id/monitor
+// GET /api/group-assessments/:id/monitor
 router.get("/:id/monitor", async (req, res) => {
 
     try {
@@ -422,14 +422,14 @@ router.get("/:id/monitor", async (req, res) => {
             INNER JOIN users u
                 ON u.id = gs.user_id
 
-            INNER JOIN group_exams ge
+            INNER JOIN group_assessments ge
                 ON ge.group_id = gs.group_id
 
-            LEFT JOIN exam_attempts ea
+            LEFT JOIN assessment_attempts ea
                 ON ea.group_exam_id = ge.id
                 AND ea.user_id = gs.user_id
 
-            LEFT JOIN exam_waiting_room wr
+            LEFT JOIN assessment_waiting_room wr
                 ON wr.group_exam_id = ge.id
                 AND wr.user_id = gs.user_id
 
@@ -469,14 +469,14 @@ router.get("/:id/monitor", async (req, res) => {
 });
 
 
-// POST /api/group-exams/:id/open-waiting-room
+// POST /api/group-assessments/:id/open-waiting-room
 router.post("/:id/open-waiting-room", async (req, res) => {
 
     try {
 
         await db.query(
             `
-            UPDATE group_exams
+            UPDATE group_assessments
             SET waiting_room_open = 1
             WHERE id = ?
             `,
@@ -500,14 +500,14 @@ router.post("/:id/open-waiting-room", async (req, res) => {
 
 });
 
-// POST /api/group-exams/:id/close-waiting-room
+// POST /api/group-assessments/:id/close-waiting-room
 router.post("/:id/close-waiting-room", async (req, res) => {
 
     try {
 
         await db.query(
             `
-            UPDATE group_exams
+            UPDATE group_assessments
             SET waiting_room_open = 0
             WHERE id = ?
             `,
@@ -531,7 +531,7 @@ router.post("/:id/close-waiting-room", async (req, res) => {
 
 });
 
-// POST /api/group-exams/:id/events
+// POST /api/group-assessments/:id/events
 router.get("/:id/events", async (req, res) => {
 
     const [rows] = await db.query(
@@ -544,9 +544,9 @@ router.get("/:id/events", async (req, res) => {
             u.first_name,
             u.last_name
 
-        FROM exam_events ee
+        FROM assessment_events ee
 
-        INNER JOIN exam_attempts ea
+        INNER JOIN assessment_attempts ea
             ON ea.id = ee.attempt_id
 
         INNER JOIN users u
@@ -565,14 +565,14 @@ router.get("/:id/events", async (req, res) => {
 
 });
 
-// POST /api/group-exams/:id/open
+// POST /api/group-assessments/:id/open
 router.post("/:id/open", async (req, res) => {
 
     try {
 
         await db.query(
             `
-            UPDATE group_exams
+            UPDATE group_assessments
             SET exam_status = 'open'
             WHERE id = ?
             `,
@@ -596,14 +596,14 @@ router.post("/:id/open", async (req, res) => {
 
 });
 
-// POST /api/group-exams/:id/close
+// POST /api/group-assessments/:id/close
 router.post("/:id/close", async (req, res) => {
 
     try {
 
         await db.query(
             `
-            UPDATE group_exams
+            UPDATE group_assessments
             SET exam_status = 'closed'
             WHERE id = ?
             `,
@@ -627,7 +627,7 @@ router.post("/:id/close", async (req, res) => {
 
 });
 
-// POST /api/group-exams/:id/admit-student
+// POST /api/group-assessments/:id/admit-student
 router.post("/:id/admit-student",
     async (req, res) => {
 
@@ -637,7 +637,7 @@ router.post("/:id/admit-student",
 
         await db.query(
             `
-            UPDATE exam_waiting_room
+            UPDATE assessment_waiting_room
             SET admitted_at = NOW()
             WHERE
                 group_exam_id = ?
@@ -656,12 +656,12 @@ router.post("/:id/admit-student",
     }
 );
 
-// POST /api/group-exams/:id/admit-all
+// POST /api/group-assessments/:id/admit-all
 router.post("/:id/admit-all", async (req, res) => {
 
     await db.query(
         `
-        UPDATE group_exams
+        UPDATE group_assessments
         SET exam_status = 'open'
         WHERE id = ?
         `,
@@ -674,7 +674,7 @@ router.post("/:id/admit-all", async (req, res) => {
 
 });
 
-// POST /api/group-exams/:id/terminate-all
+// POST /api/group-assessments/:id/terminate-all
 router.post("/:id/terminate-all",
     async (req, res) => {
 
@@ -685,7 +685,7 @@ router.post("/:id/terminate-all",
             await db.query(
                 `
                 SELECT id
-                FROM exam_attempts
+                FROM assessment_attempts
                 WHERE
                     group_exam_id = ?
                     AND status = 'in_progress'
@@ -695,7 +695,7 @@ router.post("/:id/terminate-all",
 
         await db.query(
             `
-            UPDATE exam_attempts
+            UPDATE assessment_attempts
             SET
                 status = 'submitted',
                 submitted_at = NOW()
@@ -710,7 +710,7 @@ router.post("/:id/terminate-all",
 
             await db.query(
                 `
-                INSERT INTO exam_events (
+                INSERT INTO assessment_events (
                     attempt_id,
                     event_type
                 )
@@ -732,9 +732,9 @@ router.post("/:id/terminate-all",
 );
 
 
-//GET /api/group-exams/:id/attempts
+//GET /api/group-assessments/:id/attempts
 
-//POST /api/group-exams/:id/open
-//POST /api/group-exams/:id/close
+//POST /api/group-assessments/:id/open
+//POST /api/group-assessments/:id/close
 
 export default router

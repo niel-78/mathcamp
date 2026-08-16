@@ -44,11 +44,11 @@ router.get("/:id", async (req, res) => {
                 ea.id,
                 ea.user_id,
                 ea.group_exam_id,
-                ea.exam_config,
+                ea.config,
                 ea.started_at,
                 ea.submitted_at,
                 ea.status
-            FROM exam_attempts ea
+            FROM assessment_attempts ea
             WHERE ea.id = ?
             `,
             [id]
@@ -131,7 +131,7 @@ router.get("/:id", async (req, res) => {
                 status: attempt.status,
                 started_at: attempt.started_at,
                 submitted_at: attempt.submitted_at,
-                exam_config: attempt.exam_config
+                config: attempt.config
             },
             questions: questionsWithOptions
         });
@@ -173,9 +173,9 @@ router.put("/:id", async (req, res) => {
             `
             SELECT
                 ea.*,
-                ge.exam_id
-            FROM exam_attempts ea
-            INNER JOIN group_exams ge
+                ge.assessment_id
+            FROM assessment_attempts ea
+            INNER JOIN group_assessments ge
                 ON ge.id = ea.group_exam_id
             WHERE ea.id = ?
                 AND ea.user_id = ?
@@ -236,9 +236,9 @@ router.put("/:id", async (req, res) => {
          */
         await connection.query(
             `
-            INSERT INTO answers (
+            INSERT INTO assessment_answers (
                 user_id,
-                exam_id,
+                assessment_id,
                 question_id,
                 text_answer,
                 attempt_id
@@ -249,7 +249,7 @@ router.put("/:id", async (req, res) => {
             `,
             [
                 req.user.id,
-                attempt.exam_id,
+                attempt.assessment_id,
                 question_id,
                 text_answer || null,
                 id
@@ -262,7 +262,7 @@ router.put("/:id", async (req, res) => {
         const [answerRows] = await connection.query(
             `
             SELECT id
-            FROM answers
+            FROM assessment_answers
             WHERE attempt_id = ?
                 AND question_id = ?
             `,
@@ -359,13 +359,13 @@ router.post("/start", async (req, res) => {
             `
             SELECT
                 id,
-                exam_id,
+                assessment_id,
                 group_id,
                 exam_status,
                 available_from,
                 available_until,
-                exam_config
-            FROM group_exams
+                config
+            FROM group_assessments
             WHERE id = ?
             `,
             [group_exam_id]
@@ -417,7 +417,7 @@ router.post("/start", async (req, res) => {
             await connection.query(
                 `
                 SELECT admitted_at
-                FROM exam_waiting_room
+                FROM assessment_waiting_room
                 WHERE
                     group_exam_id = ?
                     AND user_id = ?
@@ -489,7 +489,7 @@ router.post("/start", async (req, res) => {
                     id,
                     status,
                     started_ip
-                FROM exam_attempts
+                FROM assessment_attempts
                 WHERE group_exam_id = ?
                     AND user_id = ?
                 LIMIT 1
@@ -514,7 +514,7 @@ router.post("/start", async (req, res) => {
                 await connection.query(
                     `
                     DELETE
-                    FROM exam_waiting_room
+                    FROM assessment_waiting_room
                     WHERE
                         group_exam_id = ?
                         AND user_id = ?
@@ -539,7 +539,7 @@ router.post("/start", async (req, res) => {
                 await connection.query(
                     `
                     DELETE
-                    FROM exam_waiting_room
+                    FROM assessment_waiting_room
                     WHERE
                         group_exam_id = ?
                         AND user_id = ?
@@ -552,7 +552,7 @@ router.post("/start", async (req, res) => {
 
                 await connection.query(
                     `
-                    INSERT INTO exam_events (
+                    INSERT INTO assessment_events (
                         attempt_id,
                         event_type
                     )
@@ -603,11 +603,11 @@ router.post("/start", async (req, res) => {
 
         await connection.query(
             `
-                INSERT INTO exam_attempts (
+                INSERT INTO assessment_attempts (
                     id,
                     user_id,
                     group_exam_id,
-                    exam_config,
+                    config,
                     started_at,
                     started_ip,
                     started_user_agent,
@@ -621,7 +621,7 @@ router.post("/start", async (req, res) => {
                 attemptId,
                 req.user.id,
                 groupExam.id,
-                groupExam.exam_config,
+                groupExam.config,
                 startedIp,
                 startedUserAgent
             ]
@@ -630,7 +630,7 @@ router.post("/start", async (req, res) => {
         
         await connection.query(
             `
-            INSERT INTO exam_events (
+            INSERT INTO assessment_events (
                 attempt_id,
                 event_type
             )
@@ -651,7 +651,7 @@ router.post("/start", async (req, res) => {
         await connection.query(
             `
             DELETE
-            FROM exam_waiting_room
+            FROM assessment_waiting_room
             WHERE
                 group_exam_id = ?
                 AND user_id = ?
@@ -718,7 +718,7 @@ router.post("/start", async (req, res) => {
 
         res.json({
             attempt_id: attemptId,
-            exam_config: groupExam.exam_config
+            config: groupExam.config
         });
 
         } catch (error) {
@@ -760,7 +760,7 @@ router.post("/:id/submit", async (req, res) => {
                     user_id,
                     group_exam_id,
                     status
-                FROM exam_attempts
+                FROM assessment_attempts
                 WHERE id = ?
                 `,
                 [id]
@@ -797,7 +797,7 @@ router.post("/:id/submit", async (req, res) => {
 
         await connection.query(
             `
-            UPDATE exam_attempts
+            UPDATE assessment_attempts
             SET
                 status = 'submitted',
                 submitted_at = NOW()
@@ -809,7 +809,7 @@ router.post("/:id/submit", async (req, res) => {
         await connection.query(
             `
             DELETE
-            FROM exam_waiting_room
+            FROM assessment_waiting_room
             WHERE group_exam_id = ?
                 AND user_id = ?
             `,
@@ -853,7 +853,7 @@ router.post("/:id/terminate",
 
         await db.query(
             `
-            UPDATE exam_attempts
+            UPDATE assessment_attempts
             SET
                 status = 'submitted',
                 submitted_at = NOW()
@@ -868,7 +868,7 @@ router.post("/:id/terminate",
                 id,
                 status,
                 submitted_at
-            FROM exam_attempts
+            FROM assessment_attempts
             WHERE id = ?
             `,
             [attemptId]
@@ -880,7 +880,7 @@ router.post("/:id/terminate",
 
         await db.query(
             `
-            INSERT INTO exam_events (
+            INSERT INTO assessment_events (
                 attempt_id,
                 event_type
             )
@@ -902,7 +902,7 @@ router.post("/:id/resume", async (req, res) => {
         await db.query(
             `
             SELECT *
-            FROM exam_attempts
+            FROM assessment_attempts
             WHERE id = ?
             `,
             [req.params.id]
@@ -929,7 +929,7 @@ router.post("/:id/resume", async (req, res) => {
 
     await db.query(
         `
-        UPDATE exam_attempts
+        UPDATE assessment_attempts
         SET status = 'in_progress'
         WHERE id = ?
         `,
@@ -938,7 +938,7 @@ router.post("/:id/resume", async (req, res) => {
 
     await db.query(
         `
-        INSERT INTO exam_events (
+        INSERT INTO assessment_events (
             attempt_id,
             event_type
         )
@@ -972,7 +972,7 @@ router.get("/:id/results", async (req, res) => {
                 SELECT
                     id,
                     user_id
-                FROM exam_attempts
+                FROM assessment_attempts
                 WHERE id = ?
                 `,
                 [id]
@@ -1002,7 +1002,7 @@ router.get("/:id/results", async (req, res) => {
                     q.answer_config,
                     a.id AS answer_id,
                     a.text_answer
-                FROM answers a
+                FROM assessment_answers a
                 INNER JOIN questions q
                     ON q.id = a.question_id
                 INNER JOIN attempt_questions aq
