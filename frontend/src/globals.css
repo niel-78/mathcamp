@@ -159,6 +159,21 @@ body {
         shrink-0;
 }
 
+.context-menu {
+    @apply
+        flex
+        flex-col;
+}
+
+.context-menu-button {
+    @apply
+        w-full
+        justify-start
+        p-2
+        text-left
+        hover:bg-accent;
+}
+
 .presentation-shell {
     @apply
         max-w-5xl

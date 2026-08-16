@@ -14,35 +14,44 @@ export default function CreateAbilityDialog({
     open,
     onOpenChange,
     onCreated,
-    subjectId
+    series
 }) {
 
     const [name, setName] = useState("");
 
     const createAbility = async () => {
 
-        const res = await fetch(
-            `${API_URL}/api/abilities`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    ...authHeaders()
-                },
-                body: JSON.stringify({
-                    name,
-                    subjectId
-                })
-            }
-        );
+        try {
 
-        if (res.ok) {
+            console.log("createAbility");
 
-            setName("");
+            const payload = {
+                name,
+                seriesId: series.id
+            };
 
-            onOpenChange(false);
+            console.log("payload", payload);
 
-            onCreated?.();
+            console.log("before fetch");
+
+            const res = await fetch(
+                `${API_URL}/api/abilities`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        ...authHeaders()
+                    },
+                    body: JSON.stringify(payload)
+                }
+            );
+
+            console.log("after fetch");
+            console.log("status", res.status);
+
+        } catch (error) {
+
+            console.error("FETCH ERROR", error);
 
         }
 
@@ -64,6 +73,10 @@ export default function CreateAbilityDialog({
                     </DialogTitle>
 
                 </DialogHeader>
+
+                <div className="text-sm text-muted-foreground">
+                    {series?.name}
+                </div>
 
                 <input
                     value={name}
@@ -94,9 +107,7 @@ export default function CreateAbilityDialog({
 
                 <Button
                     onClick={createAbility}
-                    className="
-                        mt-4
-                    "
+                    className="mt-4"
                 >
                     Skapa förmåga
                 </Button>

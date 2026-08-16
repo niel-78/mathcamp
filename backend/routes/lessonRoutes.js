@@ -10,7 +10,7 @@ import { buildExamSession } from "../utils/buildExamSession.js";
 const router = express.Router();
 
 router.use(requireAuth);
-router.use(requireRole("student", "teacher"));
+router.use(requireRole("student", "teacher", "super"));
 
 // GET /api/lessons?groupIds=1,2,3
 router.get("/", requireAuth,

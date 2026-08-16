@@ -22,7 +22,12 @@ import CreateAbilitiesFromExcelDialog from "./LeftCol/CreateAbilitiesFromExcelDi
 import CreateLessonSeriesDialog from "./LeftCol/CreateLessonSeriesDialog";
 import ImportCriteriaDialog from "./LeftCol/ImportCriteriaDialog";
 import ImportCentralContentDialog from "./LeftCol/ImportCentralContentDialog";
-
+import CreateLevelDialog from "./LeftCol/CreateLevelDialog";
+import ImportBookStructureDialog from "./LeftCol/ImportBookStructureDialog";
+import CreateBookDialog from "./LeftCol/CreateBookDialog";
+import CreateAbilitySeriesDialog from "./LeftCol/CreateAbilitySeriesDialog";
+import RenameAbilitySeriesDialog from "./LeftCol/RenameAbilitySeriesDialog";
+import ContextMenu from "./LeftCol/ContextMenu";
 
 export default function LeftCol( {openTab, hoverTarget} ) {
 
@@ -55,7 +60,8 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [expandedBooks, setExpandedBooks] = useState({});
     const [expandedChapters, setExpandedChapters] = useState({});
     const [expandedSubchapters, setExpandedSubchapters] = useState({});
-    const [abilities, setAbilities] = useState([]);
+    const [abilitySeries, setAbilitySeries] = useState([]);
+    const [expandedAbilitySeries, setExpandedAbilitySeries] = useState({});
     const [importStudentsDialog,setImportStudentsDialog] = useState(null);
     const [createAbilityDialog, setCreateAbilityDialog] = useState(null);
     const [importAbilitiesDialog, setImportAbilitiesDialog] = useState(null);
@@ -66,16 +72,20 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [expandedBookSections, setExpandedBookSections] = useState({});
     const [expandedBookAbilities, setExpandedBookAbilities] = useState({});
     const [expandedCompetencies, setExpandedCompetencies] = useState({});
-    const [expandedAbilities, setExpandedAbilities] = useState({});
     const [expandedGrades,setExpandedGrades] = useState({});
     const [importCriteriaDialog,setImportCriteriaDialog] = useState(null);
     const [importCentralContentDialog, setImportCentralContentDialog] = useState(null);
+    const [createLevelDialog, setCreateLevelDialog] = useState(null);
+    const [importBookStructureDialog, setImportBookStructureDialog] = useState(null);
+    const [createBookDialog, setCreateBookDialog] = useState(null);
+    const [createAbilitySeriesDialog, setCreateAbilitySeriesDialog] = useState(false);
+    const [renameAbilitySeriesDialog, setRenameAbilitySeriesDialog] = useState(null);
 
     useEffect(() => {
         loadGroups();
         loadSubjects();
         loadBooks();
-        loadAbilities();
+        loadAbilitySeries();
     }, []);
 
     useEffect(() => {
@@ -178,20 +188,24 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
     };
 
-    const loadAbilities = async () => {
+    const loadAbilitySeries =
+        async () => {
 
-        const response = await fetch(
-            `${API_URL}/api/abilities`,
-            {
-                headers: authHeaders()
-            }
-        );
+            const response =
+                await fetch(
+                    `${API_URL}/api/ability-series`,
+                    {
+                        headers: authHeaders()
+                    }
+                );
 
-        const data = await response.json();
+            const data =
+                await response.json();
 
-        setAbilities(data);
+            setAbilitySeries(data);
+            console.log(data);
 
-    };
+        };
 
     const toggle = (name) => {
         setShow(prev => ({
@@ -277,510 +291,26 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     return (
         <>
             <UserProfile />
-            {
-                contextMenu && (
 
-                    <div
-                        className="
-                            fixed
-                            bg-popover
-                            text-popover-foreground
-                            border
-                            border-border
-                            rounded-lg
-                            shadow-lg
-                            z-50
-                            min-w-40
-                        "
 
-                        style={{
-                            left: contextMenu.x,
-                            top: contextMenu.y
-                        }}
-                    >
+            <ContextMenu
+                contextMenu={contextMenu}
+                setContextMenu={setContextMenu}
+                user={user}
+                setCreateAbilityDialog={setCreateAbilityDialog}
+                setImportAbilitiesDialog={setImportAbilitiesDialog}
+                setRenameAbilitySeriesDialog={setRenameAbilitySeriesDialog}
+                setRenameDialog={setRenameDialog}
+                setArchiveDialog={setArchiveDialog}
+                setPasswordDialog={setPasswordDialog}
+                setRenameStudentDialog={setRenameStudentDialog}
+                setArchiveStudentDialog={setArchiveStudentDialog}
 
-                        {contextMenu.type === "groups" && (
+                setCreateStudentDialog={setCreateStudentDialog}
+                setImportStudentsDialog={setImportStudentsDialog}
+            />
 
-                            <Button
-                                className="
-                                    block
-                                    w-full
-                                    p-2
-                                    items-center
-                                    text-left
-                                    hover:bg-accent
-                                "
-                                variant="inline"
-                                onClick={() => {
 
-                                    setShowCreateGroupDialog(true);
-                                    setContextMenu(null);
-
-                                }}
-                            >
-                                Ny grupp
-                            </Button>
-
-                        )}
-
-                        {contextMenu.type === "group" && (
-
-                            <>
-                                <div className="px-3 py-2 text-sm text-muted-foreground border-b">
-                                    {contextMenu.groupName}
-                                </div>
-
-                                <Button
-                                    className="
-                                        block
-                                        w-full
-                                        p-2
-                                        items-center
-                                        text-left
-                                        hover:bg-accent
-                                    "
-                                    variant="inline"
-                                    onClick={() => {
-
-                                        setRenameDialog({
-                                            id: contextMenu.groupId,
-                                            name: contextMenu.groupName
-                                        });
-
-                                        setContextMenu(null);
-
-                                    }}
-                                >
-                                    Byt namn
-                                </Button>
-
-                                <Button
-                                    className="
-                                        block
-                                        w-full
-                                        p-2
-                                        items-center
-                                        text-left
-                                        hover:bg-accent
-                                    "
-                                    variant="inline"
-                                    onClick={() => {
-
-                                        setArchiveDialog({
-                                            id: contextMenu.groupId,
-                                            name: contextMenu.groupName
-                                        });
-
-                                        setContextMenu(null);
-
-                                    }}
-                                >
-                                    Arkivera
-                                </Button>
-                            </>
-
-                        )}
-
-                        {contextMenu?.type === "planning" && (
-
-                            <>
-
-                                <Button
-                                    className="
-                                        block
-                                        w-full
-                                        p-2
-                                        items-center
-                                        text-left
-                                        hover:bg-accent
-                                    "
-                                    variant="inline"
-                                    onClick={() => {
-
-                                        setCreateLessonSeriesDialog({
-                                            groupId: contextMenu.groupId,
-                                            groupName: contextMenu.groupName
-                                        });
-
-                                        setContextMenu(null);
-
-                                    }}
-                                >
-                                    Skapa lektioner
-                                </Button>
-                                <Button
-                                    variant="inline"
-                                    className="
-                                        block
-                                        w-full
-                                        p-2
-                                        items-center
-                                        text-left
-                                        hover:bg-accent
-                                    "
-                                    onClick={() => {
-
-                                        openTab({
-                                            id: `group-schedules-${contextMenu.groupId}`,
-                                            type: "group-schedules",
-                                            title: `${contextMenu.groupName} - Scheman`,
-                                            groupId: contextMenu.groupId
-                                        });
-
-                                        setContextMenu(null);
-
-                                    }}
-                                >
-                                    Hantera schema
-                                </Button>
-                                <Button
-                                    variant="inline"
-                                    className="
-                                        block
-                                        w-full
-                                        p-2
-                                        items-center
-                                        text-left
-                                        hover:bg-accent
-                                    "
-                                    onClick={() => {
-
-                                        openTab({
-                                            id: `planning-queue-${contextMenu.groupId}`,
-                                            type: "planning-queue",
-                                            title: `${contextMenu.groupName} - Planeringskö`,
-                                            groupId: contextMenu.groupId
-                                        });
-
-                                        setContextMenu(null);
-
-                                    }}
-                                >
-                                    Planeringskö
-                                </Button>
-
-                            </>
-
-                        )}
-
-                        {contextMenu?.type === "students" && (
-
-                            <>
-                                <Button
-                                    className="
-                                        block
-                                        w-full
-                                        p-2
-                                        items-center
-                                        text-left
-                                        hover:bg-accent
-                                    "
-                                    variant="inline"
-                                    onClick={() => {
-
-                                        setCreateStudentDialog({
-                                            groupId: contextMenu.groupId,
-                                            groupName: contextMenu.groupName
-                                        });
-
-                                        setContextMenu(null);
-
-                                    }}
-                                >
-                                    Lägg till elev
-                                </Button>
-
-                                <Button
-                                    variant="inline"
-                                    onClick={() => {
-
-                                        setImportStudentsDialog({
-                                            groupId: contextMenu.groupId,
-                                            groupName: contextMenu.groupName
-                                        });
-
-                                        setContextMenu(null);
-
-                                    }}
-                                >
-                                    Importera elever
-                                </Button>
-                                                            </>
-
-                        )}
-
-                        {contextMenu?.type === "student" && (
-
-                            <>
-                                <div className="px-3 py-2 text-sm text-muted-foreground border-b">
-                                    {contextMenu.firstName} {contextMenu.lastName}
-                                </div>
-                                <div className="px-3 py-2 text-sm text-muted-foreground border-b">
-                                    {contextMenu.userName}
-                                </div>
-
-                                <Button
-                                    className="
-                                        block
-                                        w-full
-                                        p-2
-                                        items-center
-                                        text-left
-                                        hover:bg-accent
-                                    "
-                                    variant="inline"
-                                    onClick={() => {
-                                        setPasswordDialog({
-                                            id: contextMenu.userId,
-                                            name: `${contextMenu.firstName} ${contextMenu.lastName}`
-                                        });
-
-                                        setContextMenu(null);
-
-                                    }}
-                                >
-                                    Nytt lösenord
-                                </Button>
-
-                                <Button
-                                    className="
-                                        block
-                                        w-full
-                                        p-2
-                                        items-center
-                                        text-left
-                                        hover:bg-accent
-                                    "
-                                    variant="inline"
-                                    onClick={() => {
-
-                                        setRenameStudentDialog({
-                                            id: contextMenu.userId,
-                                            groupId: contextMenu.groupId,
-                                            firstName: contextMenu.firstName,
-                                            lastName: contextMenu.lastName
-                                        });
-
-                                        setContextMenu(null);
-
-                                    }}
-                                >
-                                    Byt namn
-                                </Button>
-
-                                <Button
-                                    className="
-                                        block
-                                        w-full
-                                        p-2
-                                        items-center
-                                        text-left
-                                        hover:bg-accent
-                                    "
-                                    variant="inline"
-                                    onClick={() => {
-
-                                        setArchiveStudentDialog({
-                                            userId: contextMenu.userId,
-                                            groupId: contextMenu.groupId,
-                                            name: `${contextMenu.firstName} ${contextMenu.lastName}`
-                                        });
-
-                                        setContextMenu(null);
-
-                                    }}
-                                >
-                                    Ta bort från grupp
-                                </Button>
-                            </>
-
-                        )}
-
-                        {contextMenu?.type === "central-content-level" &&
-                        user?.role === "super" && (
-
-                            <Button
-                                variant="inline"
-                                className="
-                                    block
-                                    w-full
-                                    p-2
-                                    items-center
-                                    text-left
-                                    hover:bg-accent
-                                "
-                                onClick={() => {
-
-                                    setImportCentralContentDialog({
-                                        levelId: contextMenu.levelId,
-                                        levelName: contextMenu.levelName
-                                    });
-
-                                    setContextMenu(null);
-
-                                }}
-                            >
-                                Importera centralt innehåll via Excel
-                            </Button>
-
-                        )}
-
-                        {contextMenu?.type === "criteria-level" &&
-                        user?.role === "super" && (
-
-                            <>
-                                <Button
-                                    className="
-                                        block
-                                        w-full
-                                        p-2
-                                        items-center
-                                        text-left
-                                        hover:bg-accent
-                                    "
-                                    variant="inline"
-                                    onClick={() => {
-
-                                        setImportCriteriaDialog({
-                                            levelId: contextMenu.levelId,
-                                            levelName: contextMenu.levelName
-                                        });
-
-                                        setContextMenu(null);
-
-                                    }}
-                                >
-                                    Importera betygskriterier via Excel
-                                </Button>
-                            </>
-                        )}
-
-                        {contextMenu?.type === "ability-subject" &&
-                        user?.role === "super" && (
-
-                            <>
-
-                                <Button
-                                    className="
-                                        block
-                                        w-full
-                                        p-2
-                                        items-center
-                                        text-left
-                                        hover:bg-accent
-                                    "
-                                    variant="inline"
-                                    onClick={() => {
-
-                                        setCreateAbilityDialog({
-                                            subjectId:
-                                                contextMenu.subjectId,
-                                            subjectName:
-                                                contextMenu.subjectName
-                                        });
-
-                                        setContextMenu(null);
-
-                                    }}
-                                >
-                                    Lägg till förmåga
-                                </Button>
-
-                                <Button
-                                    className="
-                                        block
-                                        w-full
-                                        p-2
-                                        items-center
-                                        text-left
-                                        hover:bg-accent
-                                    "
-                                    variant="inline"
-                                    onClick={() => {
-
-                                        setImportAbilitiesDialog({
-                                            subjectId:
-                                                contextMenu.subjectId,
-                                            subjectName:
-                                                contextMenu.subjectName
-                                        });
-
-                                        setContextMenu(null);
-
-                                    }}
-                                >
-                                    Lägg till förmågor via Excel
-                                </Button>
-
-                            </>
-
-                        )}
-
-                        {contextMenu?.type === "ability" &&
-                        user?.role === "super" && (
-
-                            <>
-
-                                <Button
-                                    className="
-                                        block
-                                        w-full
-                                        p-2
-                                        items-center
-                                        text-left
-                                        hover:bg-accent
-                                    "
-                                    variant="inline"
-                                    onClick={() => {
-
-                                        setRenameAbilityDialog({
-                                            id: contextMenu.abilityId,
-                                            name: contextMenu.name
-                                        });
-
-                                        setContextMenu(null);
-
-                                    }}
-                                >
-                                    Byt namn
-                                </Button>
-
-                                <Button
-                                    className="
-                                        block
-                                        w-full
-                                        p-2
-                                        items-center
-                                        text-left
-                                        hover:bg-accent
-                                    "
-                                    variant="inline"
-                                    onClick={() => {
-
-                                        setDeleteAbilityDialog({
-                                            id: contextMenu.abilityId,
-                                            name: contextMenu.name
-                                        });
-
-                                        setContextMenu(null);
-
-                                    }}
-                                >
-                                    Radera
-                                </Button>
-
-                            </>
-
-                        )}
-
-
-                    </div>
-
-                )
-            }
-            
-            
-            
             <div
                 className="
                     border-r
@@ -1078,6 +608,23 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                     onClick={() =>
                                         toggleSubject(subject.id)
                                     }
+                                    onContextMenu={(e) => {
+
+                                        if (user?.role !== "super") {
+                                            return;
+                                        }
+
+                                        e.preventDefault();
+
+                                        setContextMenu({
+                                            type: "subject",
+                                            subjectId: subject.id,
+                                            subjectName: subject.name,
+                                            x: e.clientX,
+                                            y: e.clientY
+                                        });
+
+                                    }}
                                 >
                                     {expandedSubjects[subject.id]
                                         ? "▼"
@@ -1359,10 +906,26 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                 )}
 
-                <Button className="tree-folder"
-                        size="lg"
-                        variant="ghost"
-                        onClick={() => toggle("books")}
+                <Button
+                    className="tree-folder"
+                    variant="ghost"
+                    size="lg"
+                    onClick={() => toggle("books")}
+                    onContextMenu={(e) => {
+
+                        if (user?.role !== "super") {
+                            return;
+                        }
+
+                        e.preventDefault();
+
+                        setContextMenu({
+                            type: "books",
+                            x: e.clientX,
+                            y: e.clientY
+                        });
+
+                    }}
                 >
                     {show.books ? "▼" : "▶"} Böcker
                 </Button>
@@ -1384,6 +947,23 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                 !prev[book.id]
                                         }))
                                     }
+                                    onContextMenu={(e) => {
+
+                                        if (user?.role !== "super") {
+                                            return;
+                                        }
+
+                                        e.preventDefault();
+
+                                        setContextMenu({
+                                            type: "book",
+                                            bookId: book.id,
+                                            bookTitle: book.title,
+                                            x: e.clientX,
+                                            y: e.clientY
+                                        });
+
+                                    }}
                                 >
                                     {expandedBooks[book.id]
                                         ? "▼"
@@ -1392,6 +972,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                     {" "}
 
                                     {book.title}
+
                                 </div>
 
                                 {expandedBooks[book.id] && (
@@ -1529,7 +1110,18 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                     onClick={() =>
                         toggle("abilities")
                     }
-                >
+                    onContextMenu={(e) => {
+
+                        e.preventDefault();
+
+                        setContextMenu({
+                            type: "abilities",
+                            x: e.clientX,
+                            y: e.clientY
+                        });
+
+                    }}
+                                    >
                     {show.abilities ? "▼" : "▶"} Förmågor
                 </Button>
 
@@ -1537,104 +1129,110 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                     <div className="ml-4">
 
-                        {[...subjects]
-                            .sort((a, b) =>
-                                a.name.localeCompare(b.name, "sv")
-                            )
-                            .map(subject => {
+                        {abilitySeries.map(series => (
 
-                                const subjectAbilities = abilities
-                                    .filter(
-                                        ability =>
-                                            ability.subject_id ===
-                                            subject.id
-                                    )
-                                    .sort((a, b) =>
-                                        a.name.localeCompare(
-                                            b.name,
-                                            "sv"
+                            <div key={series.id}>
+
+                                <div
+                                    className="tree-folder"
+                                    onClick={() =>
+                                        setExpandedAbilitySeries(
+                                            prev => ({
+                                                ...prev,
+                                                [series.id]:
+                                                    !prev[series.id]
+                                            })
                                         )
-                                    );
+                                    }
+                                    onContextMenu={(e) => {
 
-                                if (
-                                    subjectAbilities.length === 0
-                                ) {
-                                    return null;
-                                }
+                                        const canEdit =
+                                            user?.role === "super" ||
+                                            series.permission === "owner" ||
+                                            series.permission === "editor";
 
-                                return (
-                                    <div key={subject.id}>
+                                        const canManage =
+                                            user?.role === "super" ||
+                                            series.permission === "owner";
 
-                                        <div
-                                            className="tree-folder"
-
-                                            onClick={() =>
-                                                setExpandedAbilitySubjects(
-                                                    prev => ({
-                                                        ...prev,
-                                                        [subject.id]:
-                                                            !prev[
-                                                                subject.id
-                                                            ]
-                                                    })
-                                                )
-                                            }
-
-                                            onContextMenu={(e) => {
-
-                                                e.preventDefault();
-
-                                                setContextMenu({
-                                                    type: "ability-subject",
-                                                    x: e.clientX,
-                                                    y: e.clientY,
-                                                    subjectId: subject.id,
-                                                    subjectName: subject.name
-                                                });
-
-                                            }}
-                                        >
-
-                                            {
-                                                expandedAbilitySubjects[
-                                                    subject.id
-                                                ]
-                                                    ? "▼"
-                                                    : "▶"
-                                            }
-
-                                            {" "}
-
-                                            {subject.name}
-                                        </div>
-
-                                        {
-                                            expandedAbilitySubjects[
-                                                subject.id
-                                            ] && (
-                                                <div className="ml-4">
-
-                                                    {subjectAbilities.map(
-                                                        ability => (
-
-                                                        <AbilityTreeItem
-                                                            key={ability.id}
-                                                            ability={ability}
-                                                            openTab={openTab}
-                                                            hoverTarget={hoverTarget}
-                                                            setContextMenu={setContextMenu}
-                                                        />
-
-                                                        )
-                                                    )}
-
-                                                </div>
-                                            )
+                                        if (!canEdit && !canManage) {
+                                            return;
                                         }
 
-                                    </div>
-                                );
-                            })}
+                                        e.preventDefault();
+
+                                        setContextMenu({
+                                            type: "ability-series",
+                                            seriesId: series.id,
+                                            seriesName: series.name,
+                                            permission: series.permission,
+                                            visibility: series.visibility,
+                                            x: e.clientX,
+                                            y: e.clientY
+                                        });
+
+                                    }}
+                                >
+
+
+                                    {
+                                        expandedAbilitySeries[
+                                            series.id
+                                        ]
+                                            ? "▼"
+                                            : "▶"
+                                    }
+
+                                    {" "}
+
+                                    {series.name}
+
+                                    {" "}
+
+                                    <span className="text-muted-foreground text-xs">
+                                        ({series.subject_name})
+                                    </span>
+
+                                    <span className="text-muted-foreground text-xs ml-2">
+                                        (
+                                        {series.visibility === "global" && "Global"}
+                                        {series.visibility === "private" && "Privat"}
+                                        {series.visibility === "school" && "Skola"}
+                                        )
+                                    </span>
+
+                                </div>
+
+                                {
+                                    expandedAbilitySeries[
+                                        series.id
+                                    ] && (
+
+                                        <div className="ml-4">
+
+                                            {(series.abilities || [])
+                                                .map(ability => (
+
+                                                <AbilityTreeItem
+                                                    key={ability.id}
+                                                    ability={ability}
+                                                    openTab={openTab}
+                                                    hoverTarget={hoverTarget}
+                                                    setContextMenu={
+                                                        setContextMenu
+                                                    }
+                                                />
+
+                                            ))}
+
+                                        </div>
+
+                                    )
+                                }
+
+                            </div>
+
+                        ))}
 
                     </div>
 
@@ -1814,33 +1412,29 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
             <CreateAbilityDialog
                 open={!!createAbilityDialog}
+                series={createAbilityDialog}
                 onOpenChange={() =>
                     setCreateAbilityDialog(null)
                 }
-                subjectId={
-                    createAbilityDialog?.subjectId
-                }
-                onCreated={loadAbilities}
+                onCreated={loadAbilitySeries}
             />
-
             <CreateAbilitiesFromExcelDialog
                 open={!!importAbilitiesDialog}
                 onOpenChange={() =>
                     setImportAbilitiesDialog(null)
                 }
-                subjectId={
-                    importAbilitiesDialog?.subjectId
+                seriesId={
+                    importAbilitiesDialog?.seriesId
                 }
-                onCreated={loadAbilities}
+                onCreated={loadAbilitySeries}
             />
-
             <RenameAbilityDialog
                 open={!!renameAbilityDialog}
                 onOpenChange={() =>
                     setRenameAbilityDialog(null)
                 }
                 ability={renameAbilityDialog}
-                onRenamed={loadAbilities}
+                onRenamed={loadAbilitySeries}
             />
 
             <DeleteAbilityDialog
@@ -1849,7 +1443,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                     setDeleteAbilityDialog(null)
                 }
                 ability={deleteAbilityDialog}
-                onDeleted={loadAbilities}
+                onDeleted={loadAbilitySeries}
             />
             <CreateLessonSeriesDialog
                 open={!!createLessonSeriesDialog}
@@ -1874,6 +1468,44 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                 }
                 onImported={loadSubjects}
             />
+            <CreateLevelDialog
+                open={!!createLevelDialog}
+                subject={createLevelDialog}
+                onOpenChange={() =>
+                    setCreateLevelDialog(null)
+                }
+                onCreated={loadSubjects}
+            />
+            <ImportBookStructureDialog
+                open={!!importBookStructureDialog}
+                book={importBookStructureDialog}
+                onOpenChange={() =>
+                    setImportBookStructureDialog(null)
+                }
+                onImported={loadBooks}
+            />
+            <CreateBookDialog
+                open={createBookDialog}
+                onOpenChange={setCreateBookDialog}
+                subjects={subjects}
+                onCreated={loadBooks}
+            />
+            <CreateAbilitySeriesDialog
+                open={createAbilitySeriesDialog}
+                onOpenChange={
+                    setCreateAbilitySeriesDialog
+                }
+                subjects={subjects}
+                onCreated={loadAbilitySeries}
+            />
+            <RenameAbilitySeriesDialog
+                open={!!renameAbilitySeriesDialog}
+                series={renameAbilitySeriesDialog}
+                onOpenChange={() =>
+                    setRenameAbilitySeriesDialog(null)
+                }
+                onRenamed={loadAbilitySeries}
+            />
         </>
     )
-}                
+}

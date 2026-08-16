@@ -20,9 +20,9 @@ export default function ImportCriteriaDialog({
     onImported
 }) {
 
+    const [replaceExisting, setReplaceExisting] = useState(false);
     const [file, setFile] = useState(null);
-    const [loading, setLoading] =
-        useState(false);
+    const [loading, setLoading] = useState(false);
 
     const handleImport = async () => {
 
@@ -37,6 +37,11 @@ export default function ImportCriteriaDialog({
             formData.append(
                 "file",
                 file
+            );
+
+            formData.append(
+                "replaceExisting",
+                replaceExisting
             );
 
             const response = await fetch(
@@ -103,6 +108,34 @@ export default function ImportCriteriaDialog({
                 </DialogHeader>
 
                 <div className="space-y-4">
+
+                    <div className="space-y-2">
+
+                        <label className="flex gap-2">
+                            <input
+                                type="radio"
+                                name="import-mode"
+                                checked={!replaceExisting}
+                                onChange={() =>
+                                    setReplaceExisting(false)
+                                }
+                            />
+                            Lägg till
+                        </label>
+
+                        <label className="flex gap-2">
+                            <input
+                                type="radio"
+                                name="import-mode"
+                                checked={replaceExisting}
+                                onChange={() =>
+                                    setReplaceExisting(true)
+                                }
+                            />
+                            Ersätt befintligt innehåll
+                        </label>
+
+                    </div>
 
                     <div>
                         Kurs:

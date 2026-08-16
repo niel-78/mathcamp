@@ -1006,45 +1006,48 @@ router.get("/:id/point-metadata",
             await db.query(
                 `
                 SELECT
-                    cc.id,
-                    cc.content
-
-                FROM central_content cc
-
-                ORDER BY cc.content
+                    id,
+                    content
+                FROM central_content
+                ORDER BY content
                 `
             );
 
-        const [gradingAbilityLevels] =
+        const [competencyDescriptors] =
             await db.query(
                 `
                 SELECT
-                    gal.id,
+                    cd.id,
 
-                    gal.level,
+                    cd.grade,
 
-                    ga.name
+                    c.id AS competency_id,
+                    c.name AS competency_name,
 
-                FROM grading_ability_levels gal
+                    l.id AS level_id,
+                    l.name AS level_name
 
-                JOIN grading_abilities ga
-                    ON ga.id =
-                        gal.grading_ability_id
+                FROM competency_descriptors cd
+
+                JOIN competencies c
+                    ON c.id = cd.competency_id
+
+                JOIN levels l
+                    ON l.id = cd.level_id
 
                 ORDER BY
-                    ga.name,
-                    gal.level
+                    c.name,
+                    cd.grade
                 `
             );
 
         res.json({
             centralContent,
-            gradingAbilityLevels
+            competencyDescriptors
         });
 
     }
 );
-
 
 // POST   /api/blocks/:id/copy
 router.post("/:id/copy",
@@ -1718,23 +1721,27 @@ router.get("/:id/points",
 
                 cc.content AS central_content,
 
-                ga.name AS grading_ability,
+                c.id AS competency_id,
+                c.name AS competency_name,
 
-                gal.level
+                cd.grade,
+
+                l.id AS level_id,
+                l.name AS level_name
 
             FROM block_points bp
 
-            JOIN central_content cc
-                ON cc.id =
-                    bp.central_content_id
+            LEFT JOIN central_content cc
+                ON cc.id = bp.central_content_id
 
-            JOIN grading_ability_levels gal
-                ON gal.id =
-                    bp.grading_ability_level_id
+            LEFT JOIN competency_descriptors cd
+                ON cd.id = bp.competency_descriptor_id
 
-            JOIN grading_abilities ga
-                ON ga.id =
-                    gal.grading_ability_id
+            LEFT JOIN competencies c
+                ON c.id = cd.competency_id
+
+            LEFT JOIN levels l
+                ON l.id = cd.level_id
 
             WHERE bp.block_id = ?
             `,

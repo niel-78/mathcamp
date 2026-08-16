@@ -39,9 +39,9 @@ export default function BlockPoints({
                     </div>
 
                     <div className="text-sm text-muted-foreground">
-                        {point.grading_ability_name}
+                        {point.competency_name}
                         {" "}
-                        ({point.level})
+                        ({point.grade})
                     </div>
 
                     <div className="text-xs text-muted-foreground">

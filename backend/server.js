@@ -17,7 +17,9 @@ import levelRoutes from "./routes/levelRoutes.js";
 import lessonRoutes from "./routes/lessonRoutes.js";
 import groupSchedulesRoutes from "./routes/groupSchedulesRoutes.js";
 
+import abilitySeriesRoutes from "./routes/abilitySeriesRoutes.js";
 import abilitiesRoutes from "./routes/abilitiesRoutes.js";
+
 import blockPointRoutes from "./routes/blockPointRoutes.js";
 
 import blockRoutes from "./routes/blockRoutes.js";
@@ -81,9 +83,10 @@ app.use("/api/levels", levelRoutes)
 app.use("/api/lessons", lessonRoutes);
 app.use("/api/group-schedules", groupSchedulesRoutes);
 
+app.use("/api/ability-series", abilitySeriesRoutes);
 app.use("/api/abilities", abilitiesRoutes);
-app.use("/api/block-points", blockPointRoutes);
 
+app.use("/api/block-points", blockPointRoutes);
 
 app.use("/api/blocks", blockRoutes);
 app.use("/api/questions", questionRoutes);

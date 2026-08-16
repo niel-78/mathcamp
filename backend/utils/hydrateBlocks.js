@@ -74,22 +74,27 @@ export default async function hydrateBlocks(blocks) {
 
                 cc.content AS central_content,
 
-                gal.level,
+                cd.grade,
 
-                ga.id AS grading_ability_id,
+                c.id AS competency_id,
+                c.name AS competency_name,
 
-                ga.name AS grading_ability_name
+                l.id AS level_id,
+                l.name AS level_name
 
             FROM block_points bp
 
-            JOIN central_content cc
+            LEFT JOIN central_content cc
                 ON cc.id = bp.central_content_id
 
-            JOIN grading_ability_levels gal
-                ON gal.id = bp.grading_ability_level_id
+            LEFT JOIN competency_descriptors cd
+                ON cd.id = bp.competency_descriptor_id
 
-            JOIN grading_abilities ga
-                ON ga.id = gal.grading_ability_id
+            LEFT JOIN competencies c
+                ON c.id = cd.competency_id
+
+            LEFT JOIN levels l
+                ON l.id = cd.level_id
 
             WHERE bp.block_id = ?
             `,
@@ -115,14 +120,22 @@ export default async function hydrateBlocks(blocks) {
             `
             SELECT
                 a.*,
+
+                aps.name AS series_name,
+
+                s.id AS subject_id,
                 s.name AS subject_name
+
             FROM block_abilities ba
 
             JOIN abilities a
                 ON a.id = ba.ability_id
 
+            LEFT JOIN ability_series aps
+                ON aps.id = a.series_id
+
             LEFT JOIN subjects s
-                ON s.id = a.subject_id
+                ON s.id = aps.subject_id
 
             WHERE ba.block_id = ?
 

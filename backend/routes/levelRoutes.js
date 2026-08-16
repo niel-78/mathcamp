@@ -11,6 +11,42 @@ const upload = multer({
     storage: multer.memoryStorage()
 });
 
+// POST /api/levels/
+router.post("/",
+    requireAuth,
+    requireRole("super"),
+    async (req, res) => {
+
+        const {
+            subjectId,
+            code,
+            name
+        } = req.body;
+
+        const [result] =
+            await db.query(
+                `
+                INSERT INTO levels (
+                    subject_id,
+                    code,
+                    name
+                )
+                VALUES (?, ?, ?)
+                `,
+                [
+                    subjectId,
+                    code,
+                    name
+                ]
+            );
+
+        res.json({
+            id: result.insertId
+        });
+
+    }
+);
+
 // POST /api/levels/:id/import-criteria
 router.post("/:id/import-criteria",
     requireAuth,
@@ -30,9 +66,24 @@ router.post("/:id/import-criteria",
 
             }
 
+            const replaceExisting =
+                req.body.replaceExisting === "true";
+
             const workbook = XLSX.read(
                 req.file.buffer
             );
+
+            if (replaceExisting) {
+
+                await db.query(
+                    `
+                    DELETE FROM competency_descriptors
+                    WHERE level_id = ?
+                    `,
+                    [levelId]
+                );
+
+            }
 
             const sheet =
                 workbook.Sheets[
@@ -165,6 +216,32 @@ router.post("/:id/import-central-content",
                 return res.status(400).json({
                     error: "Ingen fil uppladdad"
                 });
+
+            }
+
+            const replaceExisting =
+                req.body.replaceExisting === "true";
+
+            if (replaceExisting) {
+
+                await db.query(
+                    `
+                    DELETE cc
+                    FROM central_content cc
+                    INNER JOIN content_areas ca
+                        ON ca.id = cc.area_id
+                    WHERE ca.level_id = ?
+                    `,
+                    [levelId]
+                );
+
+                await db.query(
+                    `
+                    DELETE FROM content_areas
+                    WHERE level_id = ?
+                    `,
+                    [levelId]
+                );
 
             }
 

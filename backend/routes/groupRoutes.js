@@ -138,16 +138,22 @@ router.get("/", async (req, res) => {
             `
             SELECT
                 a.*,
+                s.name AS series_name,
                 l.id AS level_id
 
             FROM abilities a
 
+            INNER JOIN ability_series s
+                ON s.id = a.series_id
+
             INNER JOIN levels l
-                ON l.subject_id = a.subject_id
+                ON l.subject_id = s.subject_id
 
             WHERE l.id IN (?)
 
-            ORDER BY a.name
+            ORDER BY
+                s.name,
+                a.name
             `,
             [levelIds]
         );
@@ -179,42 +185,6 @@ router.get("/", async (req, res) => {
     res.json(groups);
 
 });
-
-// // POST /api/groups
-// router.post("/", async (req, res) => {
-
-//     const { name } = req.body;
-
-//     const [result] = await db.query(
-//         `
-//         INSERT INTO groups (name)
-//         VALUES (?)
-//         `,
-//         [name]
-//     );
-
-//     await db.query(
-//         `
-//         INSERT INTO group_permissions (
-//             group_id,
-//             teacher_id,
-//             role
-//         )
-//         VALUES (?, ?, 'owner')
-//         `,
-//         [
-//             result.insertId,
-//             req.user.id
-//         ]
-//     );
-
-//     res.status(201).json({
-//         id: result.insertId,
-//         name,
-//         role: "owner"
-//     });
-
-// });
 
 // POST /api/groups
 router.post("/", async (req, res) => {
@@ -677,7 +647,7 @@ router.put("/:id/archive", async (req, res) => {
         await db.query(
             `
             UPDATE groups
-            SET archived = TRUE
+            SET archived_at = NOW()
             WHERE id = ?
             `,
             [req.params.id]

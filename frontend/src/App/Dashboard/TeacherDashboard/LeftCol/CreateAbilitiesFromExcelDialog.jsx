@@ -14,7 +14,7 @@ import {
 export default function CreateAbilitiesFromExcelDialog({
     open,
     onOpenChange,
-    subjectId,
+    seriesId,
     onCreated
 }) {
 
@@ -24,41 +24,78 @@ export default function CreateAbilitiesFromExcelDialog({
     const [loading, setLoading] =
         useState(false);
 
+    const [replaceExisting, setReplaceExisting] = useState(false);
+
     const importAbilities = async () => {
 
-        setLoading(true);
+        if (!file || !seriesId) {
+            return;
+        }
 
-        const formData =
-            new FormData();
+        try {
 
-        formData.append(
-            "file",
-            file
-        );
+            setLoading(true);
 
-        formData.append(
-            "subjectId",
-            subjectId
-        );
+            const formData =
+                new FormData();
 
-        const response = await fetch(
-            `${API_URL}/api/abilities/import`,
-            {
-                method: "POST",
-                headers: authHeaders(),
-                body: formData
+            formData.append(
+                "file",
+                file
+            );
+
+            formData.append(
+                "seriesId",
+                seriesId
+            );
+
+            formData.append(
+                "replaceExisting",
+                replaceExisting
+            );
+
+            console.log(
+                "Importing abilities",
+                {
+                    seriesId
+                }
+            );
+
+            const response =
+                await fetch(
+                    `${API_URL}/api/abilities/import`,
+                    {
+                        method: "POST",
+                        headers: authHeaders(),
+                        body: formData
+                    }
+                );
+
+            if (!response.ok) {
+
+                console.error(
+                    await response.text()
+                );
+
+                return;
+
             }
-        );
-
-        if (response.ok) {
 
             onCreated?.();
 
             onOpenChange(false);
 
-        }
+            setFile(null);
 
-        setLoading(false);
+        } catch (error) {
+
+            console.error(error);
+
+        } finally {
+
+            setLoading(false);
+
+        }
 
     };
 
@@ -79,6 +116,25 @@ export default function CreateAbilitiesFromExcelDialog({
 
                 </DialogHeader>
 
+                <div className="flex items-center gap-2">
+
+                    <input
+                        id="replace-existing"
+                        type="checkbox"
+                        checked={replaceExisting}
+                        onChange={e =>
+                            setReplaceExisting(
+                                e.target.checked
+                            )
+                        }
+                    />
+
+                    <label htmlFor="replace-existing">
+                        Ersätt befintliga förmågor
+                    </label>
+
+                </div>
+
                 <input
                     type="file"
                     accept=".xlsx,.xls"
@@ -92,7 +148,9 @@ export default function CreateAbilitiesFromExcelDialog({
                 <Button
                     onClick={importAbilities}
                     disabled={
-                        !file || loading
+                        !file ||
+                        !seriesId ||
+                        loading
                     }
                 >
                     {

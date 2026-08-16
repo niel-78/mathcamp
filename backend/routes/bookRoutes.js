@@ -1,7 +1,13 @@
 import express from "express";
 import db from "../db.js";
+import multer from "multer";
+import XLSX from "xlsx";
+import requireAuth from "../middleware/requireAuth.js";
+import requireRole from "../middleware/requireRole.js";
 
 const router = express.Router();
+
+const upload = multer({storage: multer.memoryStorage()});
 
 /*
 GET    /api/books
@@ -89,6 +95,80 @@ router.get("/", async (req, res) => {
     res.json(books);
 
 });
+
+// POST /api/books
+router.post("/",
+    requireAuth,
+    requireRole("super"),
+    async (req, res) => {
+
+        try {
+
+            const {
+                title,
+                description,
+                levelId
+            } = req.body;
+
+            if (
+                !title?.trim() ||
+                !levelId
+            ) {
+
+                return res.status(400).json({
+                    error:
+                        "Titel och kurs krävs"
+                });
+
+            }
+
+            const [bookResult] =
+                await db.query(
+                    `
+                    INSERT INTO books (
+                        title,
+                        description
+                    )
+                    VALUES (?, ?)
+                    `,
+                    [
+                        title.trim(),
+                        description?.trim() || ""
+                    ]
+                );
+
+            await db.query(
+                `
+                INSERT INTO level_books (
+                    level_id,
+                    book_id
+                )
+                VALUES (?, ?)
+                `,
+                [
+                    levelId,
+                    bookResult.insertId
+                ]
+            );
+
+            res.json({
+                id: bookResult.insertId,
+                message:
+                    "Boken skapades"
+            });
+
+        } catch (error) {
+
+            console.error(error);
+
+            res.status(500).json({
+                error: error.message
+            });
+
+        }
+
+    }
+);
 
 // PUT /api/books/:id
 router.put("/:id", async (req, res) => {
@@ -235,6 +315,264 @@ router.get("/sections/:sectionId", async (req, res) => {
 
     }
 });
+
+// POST /api/books/:id/import-sections
+router.post("/:id/import-sections",
+    requireAuth,
+    requireRole("super"),
+    upload.single("file"),
+    async (req, res) => {
+
+        try {
+
+            const bookId =
+                req.params.id;
+
+            const replaceExisting =
+                req.body.replaceExisting === "true";
+
+            if (!req.file) {
+
+                return res.status(400).json({
+                    error: "Ingen fil uppladdad"
+                });
+
+            }
+
+            if (replaceExisting) {
+
+                await db.query(`
+                    DELETE s
+                    FROM sections s
+                    INNER JOIN subchapters sc
+                        ON sc.id = s.subchapter_id
+                    INNER JOIN chapters c
+                        ON c.id = sc.chapter_id
+                    WHERE c.book_id = ?
+                `, [bookId]);
+
+                await db.query(`
+                    DELETE sc
+                    FROM subchapters sc
+                    INNER JOIN chapters c
+                        ON c.id = sc.chapter_id
+                    WHERE c.book_id = ?
+                `, [bookId]);
+
+                await db.query(`
+                    DELETE FROM chapters
+                    WHERE book_id = ?
+                `, [bookId]);
+
+            }
+
+            const workbook = XLSX.read(
+                req.file.buffer
+            );
+
+            const sheet =
+                workbook.Sheets[
+                    workbook.SheetNames[0]
+                ];
+
+            const rows =
+                XLSX.utils.sheet_to_json(sheet);
+
+            let imported = 0;
+            let skipped = 0;
+
+            for (const row of rows) {
+
+                const chapterNumber =
+                    String(
+                        row.KapitelNr ?? ""
+                    ).trim();
+
+                const chapterTitle =
+                    row.KapitelTitel?.trim();
+
+                const subchapterNumber =
+                    String(
+                        row.DelkapitelNr ?? ""
+                    ).trim();
+
+                const subchapterTitle =
+                    row.DelkapitelTitel?.trim();
+
+                const sectionTitle =
+                    row.SektionTitel?.trim();
+
+                const pageNumber =
+                    Number(row.Sida);
+
+                if (
+                    !chapterNumber ||
+                    !chapterTitle ||
+                    !subchapterNumber ||
+                    !subchapterTitle ||
+                    !sectionTitle ||
+                    Number.isNaN(pageNumber)
+                ) {
+
+                    skipped++;
+                    continue;
+
+                }
+
+                let chapterId;
+
+                const [[existingChapter]] =
+                    await db.query(
+                        `
+                        SELECT id
+                        FROM chapters
+                        WHERE book_id = ?
+                        AND chapter_number = ?
+                        `,
+                        [
+                            bookId,
+                            chapterNumber
+                        ]
+                    );
+
+                if (existingChapter) {
+
+                    chapterId =
+                        existingChapter.id;
+
+                } else {
+
+                    const [chapterResult] =
+                        await db.query(
+                            `
+                            INSERT INTO chapters (
+                                book_id,
+                                chapter_number,
+                                title,
+                                sort_order
+                            )
+                            VALUES (?, ?, ?, ?)
+                            `,
+                            [
+                                bookId,
+                                chapterNumber,
+                                chapterTitle,
+                                chapterNumber
+                            ]
+                        );
+
+                    chapterId =
+                        chapterResult.insertId;
+
+                }
+
+                let subchapterId;
+
+                const [[existingSubchapter]] =
+                    await db.query(
+                        `
+                        SELECT id
+                        FROM subchapters
+                        WHERE chapter_id = ?
+                        AND subchapter_number = ?
+                        `,
+                        [
+                            chapterId,
+                            subchapterNumber
+                        ]
+                    );
+
+                if (existingSubchapter) {
+
+                    subchapterId =
+                        existingSubchapter.id;
+
+                } else {
+
+                    const [subchapterResult] =
+                        await db.query(
+                            `
+                            INSERT INTO subchapters (
+                                chapter_id,
+                                subchapter_number,
+                                title,
+                                sort_order
+                            )
+                            VALUES (?, ?, ?, ?)
+                            `,
+                            [
+                                chapterId,
+                                subchapterNumber,
+                                subchapterTitle,
+                                subchapterNumber
+                            ]
+                        );
+
+                    subchapterId =
+                        subchapterResult.insertId;
+
+                }
+
+                const [[existingSection]] =
+                    await db.query(
+                        `
+                        SELECT id
+                        FROM sections
+                        WHERE subchapter_id = ?
+                        AND title = ?
+                        `,
+                        [
+                            subchapterId,
+                            sectionTitle
+                        ]
+                    );
+
+                if (existingSection) {
+
+                    skipped++;
+                    continue;
+
+                }
+
+                await db.query(
+                    `
+                    INSERT INTO sections (
+                        subchapter_id,
+                        title,
+                        page_number,
+                        sort_order
+                    )
+                    VALUES (?, ?, ?, ?)
+                    `,
+                    [
+                        subchapterId,
+                        sectionTitle,
+                        pageNumber,
+                        pageNumber
+                    ]
+                );
+
+                imported++;
+
+            }
+
+            res.json({
+                importedCount: imported,
+                skippedCount: skipped
+            });
+
+        } catch (error) {
+
+            console.error(error);
+
+            res.status(500).json({
+                error: error.message
+            });
+
+        }
+
+    }
+);
 
 
 

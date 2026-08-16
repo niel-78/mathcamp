@@ -33,9 +33,9 @@ export default function CreateGroupDialog({
     const [subjects, setSubjects] = useState([]);
     const [books, setBooks] = useState([]);
 
-    const [subjectId, setSubjectId] = useState(null);
-    const [levelId, setLevelId] = useState(null);
-    const [bookId, setBookId] = useState(null);
+    const [subjectId, setSubjectId] = useState("");
+    const [levelId, setLevelId] = useState("");
+    const [bookId, setBookId] = useState("");
 
     useEffect(() => {
         loadSubjects();
@@ -154,11 +154,7 @@ export default function CreateGroupDialog({
                         </Label>
 
                         <Select
-                            value={
-                                subjectId
-                                    ? String(subjectId)
-                                    : undefined
-                            }
+                            value={subjectId}
                             onValueChange={(value) => {
 
                                 setSubjectId(
@@ -199,11 +195,7 @@ export default function CreateGroupDialog({
                         </Label>
 
                         <Select
-                            value={
-                                levelId
-                                    ? String(levelId)
-                                    : undefined
-                            }
+                            value={levelId}
                             disabled={!subjectId}
                             onValueChange={(value) =>
                                 setLevelId(
@@ -243,11 +235,7 @@ export default function CreateGroupDialog({
                         </Label>
 
                         <Select
-                            value={
-                                bookId
-                                    ? String(bookId)
-                                    : undefined
-                            }
+                            value={bookId}
                             onValueChange={(value) =>
                                 setBookId(
                                     Number(value)

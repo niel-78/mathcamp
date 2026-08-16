@@ -9,6 +9,8 @@ DROP TABLE IF EXISTS group_schedules;
 DROP TABLE IF EXISTS group_schedule_exceptions;
 DROP TABLE IF EXISTS lessons;
 DROP TABLE IF EXISTS lesson_sections;
+DROP TABLE IF EXISTS ability_series_permissions;
+DROP TABLE IF EXISTS ability_series;
 DROP TABLE IF EXISTS abilities;
 DROP TABLE IF EXISTS block_abilities;
 DROP TABLE IF EXISTS competencies;
@@ -771,28 +773,117 @@ CREATE TABLE central_content (
         REFERENCES content_areas(id)
 );
 
+--Serier med förmågor (formativ bedömning)
+CREATE TABLE ability_series (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    subject_id INT NOT NULL,
+
+    name VARCHAR(255) NOT NULL,
+
+    visibility ENUM(
+        'private',
+        'school',
+        'global'
+    ) NOT NULL DEFAULT 'private',
+
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by INT NOT NULL,
+
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+    updated_by INT NOT NULL,
+
+    FOREIGN KEY (subject_id)
+        REFERENCES subjects(id),
+
+    FOREIGN KEY (created_by)
+        REFERENCES users(id),
+
+    FOREIGN KEY (updated_by)
+        REFERENCES users(id)
+);
+
 --Förmågor (formativ bedömning)
 CREATE TABLE abilities (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    subject_id INT NOT NULL,
+
+    series_id INT NOT NULL,
+
     name VARCHAR(255) NOT NULL,
 
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by INT NOT NULL,
 
-    FOREIGN KEY (subject_id)
-        REFERENCES subjects(id)
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+    updated_by INT NOT NULL,
+
+    FOREIGN KEY (series_id)
+        REFERENCES ability_series(id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (created_by)
+        REFERENCES users(id),
+
+    FOREIGN KEY (updated_by)
+        REFERENCES users(id)
+);
+
+CREATE TABLE ability_series_permissions (
+    series_id INT NOT NULL,
+
+    teacher_id INT NOT NULL,
+
+    role ENUM(
+        'owner',
+        'editor',
+        'reader'
+    ) NOT NULL,
+
+    PRIMARY KEY (
+        series_id,
+        teacher_id
+    ),
+
+    FOREIGN KEY (series_id)
+        REFERENCES ability_series(id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (teacher_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE
+);
+
+INSERT INTO ability_series (
+    id,
+    subject_id,
+    name,
+    visibility,
+    created_by,
+    updated_by
+)
+VALUES (
+    1,
+    1,
+    'Matematik - Generella förmågor',
+    'global',
+    1,
+    1
 );
 
 INSERT INTO abilities (
     id,
-    subject_id,
-    name
+    series_id,
+    name,
+    created_by,
+    updated_by
 )
 VALUES
-(1, 1, 'Begreppet procent'),
-(2, 1, 'Begreppet förändringsfaktor'),
-(3, 1, 'Lösa linjära ekvationer'),
-(4, 1, 'Lösa ekvationssystem');
+(1, 1, 'Begreppet procent', 1, 1),
+(2, 1, 'Begreppet förändringsfaktor', 1, 1),
+(3, 1, 'Lösa linjära ekvationer', 1, 1),
+(4, 1, 'Lösa ekvationssystem', 1, 1);
 
 CREATE TABLE block_abilities (
     block_id INT NOT NULL,
@@ -921,7 +1012,8 @@ CREATE TABLE block_points (
 
 CREATE TABLE books (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(255) NOT NULL
+    title VARCHAR(255) NOT NULL,
+    description TEXT
 );
 
 CREATE TABLE chapters (

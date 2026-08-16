@@ -13,10 +13,10 @@ import {
 
 import { Button } from "@/components/ui/button";
 
-export default function ImportCriteriaDialog({
+export default function ImportBookStructureDialog({
     open,
     onOpenChange,
-    level,
+    book,
     onImported
 }) {
 
@@ -34,7 +34,10 @@ export default function ImportCriteriaDialog({
 
             const formData = new FormData();
 
-            formData.append("file", file);
+            formData.append(
+                "file",
+                file
+            );
 
             formData.append(
                 "replaceExisting",
@@ -42,7 +45,7 @@ export default function ImportCriteriaDialog({
             );
 
             const response = await fetch(
-                `${API_URL}/api/levels/${level.levelId}/import-criteria`,
+                `${API_URL}/api/books/${book.id}/import-sections`,
                 {
                     method: "POST",
                     headers: authHeaders(),
@@ -52,6 +55,8 @@ export default function ImportCriteriaDialog({
 
             const data = await response.json();
 
+            console.log(data);
+
             if (!response.ok) {
                 throw new Error(
                     data.error ||
@@ -60,7 +65,7 @@ export default function ImportCriteriaDialog({
             }
 
             toast.success(
-                `Importerade ${data.importedCount} betygskriterier`
+                `Importerade ${data.importedCount} rader`
             );
 
             if (data.skippedCount > 0) {
@@ -97,38 +102,47 @@ export default function ImportCriteriaDialog({
                 <DialogHeader>
 
                     <DialogTitle>
-                        Importera betygskriterier
+                        Importera bokavsnitt
                     </DialogTitle>
 
                 </DialogHeader>
 
                 <div className="space-y-4">
 
-                    <div>
-                        Kurs:
-                        {" "}
-                        <strong>
-                            {level?.levelName}
-                        </strong>
-                    </div>
+                    <div className="space-y-2">
 
-                    <div className="flex items-center gap-2">
-
-                        <input
-                            id="replace-existing"
-                            type="checkbox"
-                            checked={replaceExisting}
-                            onChange={e =>
-                                setReplaceExisting(
-                                    e.target.checked
-                                )
-                            }
-                        />
-
-                        <label htmlFor="replace-existing">
-                            Ersätt befintliga betygskriterier
+                        <label className="flex gap-2">
+                            <input
+                                type="radio"
+                                name="import-mode"
+                                checked={!replaceExisting}
+                                onChange={() =>
+                                    setReplaceExisting(false)
+                                }
+                            />
+                            Lägg till
                         </label>
 
+                        <label className="flex gap-2">
+                            <input
+                                type="radio"
+                                name="import-mode"
+                                checked={replaceExisting}
+                                onChange={() =>
+                                    setReplaceExisting(true)
+                                }
+                            />
+                            Ersätt befintlig bokstruktur innan import
+                        </label>
+
+                    </div>
+
+                    <div>
+                        Bok:
+                        {" "}
+                        <strong>
+                            {book?.name}
+                        </strong>
                     </div>
 
                     <input

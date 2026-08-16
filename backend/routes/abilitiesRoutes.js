@@ -2,8 +2,13 @@ import express from "express";
 import db from "../db.js";
 import multer from "multer";
 import XLSX from "xlsx";
+import requireAuth from "../middleware/requireAuth.js";
+import requireRole from "../middleware/requireRole.js";
 
 const router = express.Router();
+
+router.use(requireAuth);
+router.use(requireRole("teacher","super"));
 
 const upload = multer({
     storage: multer.memoryStorage()
@@ -49,33 +54,35 @@ router.get("/:id", async (req, res) => {
 
 });
 
-//POST /api/abilities/
+// POST /api/abilities/
 router.post("/", async (req, res) => {
 
     const {
         name,
-        subjectId
+        seriesId
     } = req.body;
 
     const [result] =
         await db.query(
             `
             INSERT INTO abilities (
-                name,
-                subject_id
+                series_id,
+                name
             )
             VALUES (?, ?)
             `,
             [
-                name,
-                subjectId
+                seriesId,
+                name
             ]
         );
+
+    console.log(result);
 
     res.status(201).json({
         id: result.insertId,
         name,
-        subject_id: subjectId
+        series_id: seriesId
     });
 
 });
@@ -87,12 +94,15 @@ router.put("/:id", async (req, res) => {
 
     await db.query(
         `
-        UPDATE abilities
-        SET name = ?
-        WHERE id = ?
+        UPDATE ability_series
+        SET
+            name = ?,
+            updated_by = ?
+            WHERE id = ?
         `,
         [
             name,
+            req.user.id,
             req.params.id
         ]
     );
@@ -100,7 +110,6 @@ router.put("/:id", async (req, res) => {
     res.sendStatus(204);
 
 });
-
 //DELETE /api/abilities/:id
 router.delete("/:id", async (req, res) => {
 
@@ -139,6 +148,21 @@ router.post("/import",
                     sheet
                 );
 
+            const replaceExisting =
+                req.body.replaceExisting === "true";
+
+            if (replaceExisting) {
+
+                await db.query(
+                    `
+                    DELETE FROM abilities
+                    WHERE series_id = ?
+                    `,
+                    [req.body.seriesId]
+                );
+
+            }
+
             let createdCount = 0;
 
             for (const row of rows) {
@@ -155,13 +179,13 @@ router.post("/import",
                 await db.query(
                     `
                     INSERT INTO abilities (
-                        subject_id,
+                        series_id,
                         name
                     )
                     VALUES (?, ?)
                     `,
                     [
-                        req.body.subjectId,
+                        req.body.seriesId,
                         name
                     ]
                 );
