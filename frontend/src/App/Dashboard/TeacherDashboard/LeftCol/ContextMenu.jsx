@@ -12,13 +12,15 @@ import AbilitySeriesMenu from "./menus/AbilitySeriesMenu";
 import AbilityMenu from "./menus/AbilityMenu";
 import CriteriaLevelMenu from "./menus/CriteriaLevelMenu";
 import CentralContentLevelMenu from "./menus/CentralContentLevelMenu";
+import ClassroomMenu from "./menus/ClassRoomMenu";
+import ClassroomLayoutMenu from "./menus/ClassRoomLayoutMenu";
 
 export default function ContextMenu(props) {
 
     const {
         contextMenu,
         user,
-        setContextMenu
+        setContextMenu,
     } = props;
 
     if (!contextMenu) {
@@ -26,7 +28,7 @@ export default function ContextMenu(props) {
     }
 
     const renderMenu = () => {
-
+        console.log(contextMenu.type)
         switch (contextMenu.type) {
 
             case "groups":
@@ -316,6 +318,85 @@ export default function ContextMenu(props) {
                             setContextMenu(null);
                         }}
                     />
+                );
+
+            case "classroom":
+                return (
+                    <ClassroomMenu
+                        onCreateLayout={() => {
+
+                            props.setSelectedClassroomId(
+                                contextMenu.classroomId
+                            );
+
+                            props.setCreateLayoutDialogOpen(
+                                true
+                            );
+
+                            setContextMenu(null);
+
+                        }}
+
+                        onRename={() => {
+
+                            props.setRenameClassroomDialog({
+                                id: contextMenu.classroomId,
+                                name: contextMenu.classroomName
+                            });
+
+                            setContextMenu(null);
+
+                        }}
+                        onDelete={() => {
+
+                            props.setDeleteClassroomDialog({
+                                id: contextMenu.classroomId,
+                                name: contextMenu.classroomName
+                            });
+
+                            setContextMenu(null);
+
+                        }}
+                    />
+                );
+            case "classroom-layout":
+                return (
+                    <ClassroomLayoutMenu
+                        onRename={() => {
+
+                            props.setRenameLayoutDialog({
+                                id: contextMenu.layoutId,
+                                name: contextMenu.layoutName,
+                                classroomId: contextMenu.classroomId
+                            });
+
+                            setContextMenu(null);
+
+                        }}
+
+                        onDelete={() => {
+
+                            props.setDeleteLayoutDialog({
+                                id: contextMenu.layoutId,
+                                name: contextMenu.layoutName,
+                                classroomId: contextMenu.classroomId
+                            });
+
+                            setContextMenu(null);
+
+                        }}
+
+                        onDuplicate={() => {
+
+                            props.setDuplicateLayoutDialog({
+                                id: contextMenu.layoutId,
+                                name: contextMenu.layoutName
+                            });
+
+                            setContextMenu(null);
+
+                        }}
+                                            />
                 );
 
             default:

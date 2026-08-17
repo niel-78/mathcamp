@@ -28,6 +28,12 @@ import CreateBookDialog from "./LeftCol/CreateBookDialog";
 import CreateAbilitySeriesDialog from "./LeftCol/CreateAbilitySeriesDialog";
 import RenameAbilitySeriesDialog from "./LeftCol/RenameAbilitySeriesDialog";
 import ContextMenu from "./LeftCol/ContextMenu";
+import CreateClassroomLayoutDialog from "./Main/CreateClassroomLayoutDialog";
+import RenameClassroomDialog from "./Main/RenameClassroomDialog";
+import DeleteClassroomDialog from "./Main/DeleteClassroomDialog";
+import RenameLayoutDialog from "./Main/RenameLayoutDialog";
+import DeleteLayoutDialog from "./Main/DeleteLayoutDialog";
+import DuplicateLayoutDialog from "./Main/DuplicateLayoutDialog";
 
 export default function LeftCol( {openTab, hoverTarget} ) {
 
@@ -81,6 +87,19 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [createAbilitySeriesDialog, setCreateAbilitySeriesDialog] = useState(false);
     const [renameAbilitySeriesDialog, setRenameAbilitySeriesDialog] = useState(null);
     const [expandedAbilities, setExpandedAbilities] = useState({});
+    const [expandedClassrooms, setExpandedClassrooms] = useState({});
+    const [classrooms, setClassrooms] = useState([]);
+    const [expandedClassroomRoot, setExpandedClassroomRoot] = useState(false);
+    const [selectedLayout, setSelectedLayout] = useState(null);
+    const [seats, setSeats] = useState([]);
+    const [createLayoutDialogOpen, setCreateLayoutDialogOpen] = useState(false);
+    const [selectedClassroomId, setSelectedClassroomId] = useState(null);
+    const [renameClassroomDialog, setRenameClassroomDialog] = useState(null);
+    const [deleteClassroomDialog, setDeleteClassroomDialog] = useState(null);
+    const [renameLayoutDialog, setRenameLayoutDialog] = useState(null);
+    const [deleteLayoutDialog, setDeleteLayoutDialog] = useState(null);
+    const [duplicateLayoutDialog, setDuplicateLayoutDialog] = useState(null);
+
 
     useEffect(() => {
         loadGroups();
@@ -207,6 +226,41 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
         };
 
+    const loadClassrooms = async () => {
+
+        const response = await fetch(
+            `${API_URL}/api/classrooms`,
+            {
+                headers: authHeaders()
+            }
+        );
+
+        if (!response.ok) {
+            return;
+        }
+
+        const data =
+            await response.json();
+
+        setClassrooms(data);
+
+    };
+
+    const selectLayout = async (
+        layout
+    ) => {
+
+        setSelectedLayout(layout);
+
+        const res =
+            await api.get(
+                `/classroom-layouts/${layout.id}/seats`
+            );
+
+        setSeats(res.data);
+
+    };
+
     const toggle = (name) => {
         setShow(prev => ({
             ...prev,
@@ -283,10 +337,60 @@ export default function LeftCol( {openTab, hoverTarget} ) {
         }));
     };
 
-    const [
-        expandedAbilitySubjects,
-        setExpandedAbilitySubjects
-    ] = useState({});
+    const toggleClassrooms = async () => {
+
+        const expanded =
+            expandedClassroomRoot;
+
+        setExpandedClassroomRoot(
+            !expanded
+        );
+
+        if (!expanded) {
+
+            await loadClassrooms();
+
+        }
+
+    };
+
+    const toggleClassroom = async (
+        classroomId
+    ) => {
+
+        const expanded =
+            expandedClassrooms[classroomId];
+
+        setExpandedClassrooms(prev => ({
+            ...prev,
+            [classroomId]: !prev[classroomId]
+        }));
+
+        if (!expanded) {
+
+            const response = await fetch(
+                `${API_URL}/api/classrooms/${classroomId}/layouts`,
+                {
+                    headers: authHeaders()
+                }
+            );
+
+            const layouts = await response.json();
+
+            setClassrooms(prev =>
+                prev.map(classroom =>
+                    classroom.id === classroomId
+                        ? {
+                            ...classroom,
+                            layouts
+                        }
+                        : classroom
+                )
+            );
+
+        }
+
+    };
 
     return (
         <>
@@ -307,6 +411,13 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                 setArchiveStudentDialog={setArchiveStudentDialog}
                 setCreateStudentDialog={setCreateStudentDialog}
                 setImportStudentsDialog={setImportStudentsDialog}
+                setSelectedClassroomId={setSelectedClassroomId}
+                setCreateLayoutDialogOpen={setCreateLayoutDialogOpen}
+                setRenameClassroomDialog={setRenameClassroomDialog}
+                setDeleteClassroomDialog={setDeleteClassroomDialog}
+                setRenameLayoutDialog={setRenameLayoutDialog}
+                setDuplicateLayoutDialog={setDuplicateLayoutDialog}
+                setDeleteLayoutDialog={setDeleteLayoutDialog}
                 openTab={openTab}
                     onCreateLessons={(
                     groupId,
@@ -1260,6 +1371,135 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                 )}
 
+                <Button
+                    className="tree-folder"
+                    variant="ghost"
+                    size="lg"
+                    onClick={toggleClassrooms}
+                    onContextMenu={(e) => {
+
+                        e.preventDefault();
+
+                        // setContextMenu({
+                        //     type: "classrooms",
+                        //     x: e.clientX,
+                        //     y: e.clientY
+                        // });
+
+                    }}
+                >
+                    {expandedClassroomRoot ? "▼" : "▶"} Klassrum
+                </Button>
+
+
+                {expandedClassroomRoot && (
+
+                    <div className="ml-4">
+
+                        {classrooms.map(classroom => (
+
+                            <div key={classroom.id}>
+
+                                <div
+                                    className="tree-folder"
+                                    onClick={() =>
+                                        toggleClassroom(
+                                            classroom.id
+                                        )
+                                    }
+                                    onContextMenu={(e) => {
+
+                                        e.preventDefault();
+
+                                        setContextMenu({
+                                            type: "classroom",
+                                            classroomId:
+                                                classroom.id,
+                                            classroomName:
+                                                classroom.name,
+                                            x: e.clientX,
+                                            y: e.clientY
+                                        });
+
+                                    }}
+                                >
+                                    {expandedClassrooms[
+                                        classroom.id
+                                    ]
+                                        ? "▼"
+                                        : "▶"}
+
+                                    {" "}
+
+                                    {classroom.name}
+
+                                </div>
+
+                                {expandedClassrooms[
+                                    classroom.id
+                                ] && (
+
+                                    <div className="ml-4">
+
+                                        {(classroom.layouts || [])
+                                            .map(layout => (
+
+                                                <div
+                                                    key={layout.id}
+                                                    className="
+                                                        tree-file
+                                                        cursor-pointer
+                                                    "
+                                                    onClick={() =>
+                                                        openTab({
+                                                            id:
+                                                                `classroom-layout-${layout.id}`,
+                                                            type:
+                                                                "classroom-layout",
+                                                            title:
+                                                                layout.name,
+                                                            layoutId:
+                                                                layout.id
+                                                        })
+                                                    }
+                                                    onContextMenu={(
+                                                        e
+                                                    ) => {
+
+                                                        e.preventDefault();
+
+                                                        setContextMenu({
+                                                            type:
+                                                                "classroom-layout",
+                                                            layoutId:
+                                                                layout.id,
+                                                            layoutName:
+                                                                layout.name,
+                                                            x:
+                                                                e.clientX,
+                                                            y:
+                                                                e.clientY
+                                                        });
+
+                                                    }}
+                                                >
+                                                    {layout.name}
+                                                </div>
+
+                                            ))}
+
+                                    </div>
+
+                                )}
+
+                            </div>
+
+                        ))}
+
+                    </div>
+
+                )}
+
                 <div className="mt-6 border-t pt-2">
 
                     <div
@@ -1528,6 +1768,59 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                 }
                 onRenamed={loadAbilitySeries}
             />
+            <CreateClassroomLayoutDialog
+                open={createLayoutDialogOpen}
+                onOpenChange={
+                    setCreateLayoutDialogOpen
+                }
+                classroomId={
+                    selectedClassroomId
+                }
+                onCreated={async () => {
+                    await loadClassrooms();
+                }}
+            />
+            <RenameClassroomDialog
+                open={!!renameClassroomDialog}
+                classroom={renameClassroomDialog}
+                onOpenChange={() =>
+                    setRenameClassroomDialog(null)
+                }
+                onRenamed={loadClassrooms}
+            />
+            <DeleteClassroomDialog
+                open={!!deleteClassroomDialog}
+                classroom={deleteClassroomDialog}
+                onOpenChange={() =>
+                    setDeleteClassroomDialog(null)
+                }
+                onDeleted={loadClassrooms}
+            />
+            <RenameLayoutDialog
+                open={!!renameLayoutDialog}
+                layout={renameLayoutDialog}
+                onOpenChange={() =>
+                    setRenameLayoutDialog(null)
+                }
+                onRenamed={loadClassrooms}
+            />
+            <DeleteLayoutDialog
+                open={!!deleteLayoutDialog}
+                layout={deleteLayoutDialog}
+                onOpenChange={() =>
+                    setDeleteLayoutDialog(null)
+                }
+                onDeleted={loadClassrooms}
+            />
+            <DuplicateLayoutDialog
+                open={!!duplicateLayoutDialog}
+                layout={duplicateLayoutDialog}
+                onOpenChange={() =>
+                    setDuplicateLayoutDialog(null)
+                }
+                onDuplicated={loadClassrooms}
+            />
         </>
+
     )
 }

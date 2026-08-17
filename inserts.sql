@@ -1491,3 +1491,66 @@ VALUES
         )
     )
 );
+
+INSERT INTO classrooms (
+    school_id,
+    name,
+    description
+)
+VALUES
+(
+    1,
+    'Musiksal A',
+    'Stor sal med plats för ensembler och prov'
+),
+(
+    1,
+    'Studio B',
+    'Mindre rum för individuellt arbete och handledning'
+);
+
+/* Layouts för Musiksal A */
+
+INSERT INTO classroom_layouts (
+    classroom_id,
+    name,
+    is_default
+)
+VALUES
+(
+    1,
+    'Standard',
+    TRUE
+),
+(
+    1,
+    'Provmöblering',
+    FALSE
+);
+
+INSERT INTO classroom_seats (
+    layout_id,
+    seat_label,
+    x_position,
+    y_position
+)
+VALUES
+(1, 'A1', 50, 50),
+(1, 'A2', 170, 50),
+(1, 'A3', 290, 50),
+(1, 'A4', 410, 50),
+
+(1, 'B1', 50, 150),
+(1, 'B2', 170, 150),
+(1, 'B3', 290, 150),
+(1, 'B4', 410, 150),
+
+(1, 'C1', 50, 250),
+(1, 'C2', 170, 250),
+(1, 'C3', 290, 250),
+(1, 'C4', 410, 250),
+
+(1, 'D1', 50, 350),
+(1, 'D2', 170, 350),
+(1, 'D3', 290, 350),
+(1, 'D4', 410, 350);

@@ -15,6 +15,21 @@ DROP TABLE IF EXISTS assessment_type_settings;
 DROP TABLE IF EXISTS assessment_type_settings;
 
 /* =====================================================
+   CLASSROOMS
+   ===================================================== */
+
+DROP TABLE IF EXISTS assessment_seat_assignments;
+DROP TABLE IF EXISTS lesson_seat_assignments;
+
+DROP TABLE IF EXISTS group_seat_assignment_history;
+DROP TABLE IF EXISTS group_seat_assignments;
+
+DROP TABLE IF EXISTS classroom_seats;
+DROP TABLE IF EXISTS classroom_layouts;
+DROP TABLE IF EXISTS classrooms;
+
+
+/* =====================================================
    CONTACTS
    ===================================================== */
 
@@ -50,7 +65,7 @@ DROP TABLE IF EXISTS answer_options;
 DROP TABLE IF EXISTS assessment_answers;
 DROP TABLE IF EXISTS assessment_events;
 DROP TABLE IF EXISTS assessment_attempts;
-DROP TABLE IF EXISTS assessment_waitin*_room;
+DROP TABLE IF EXISTS assessment_waiting_room;
 DROP TABLE IF EXISTS group_assessments;
 DROP TABLE IF EXISTS assessment_blocks;
 DROP TABLE IF EXISTS assessment_permissions;

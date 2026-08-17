@@ -192,6 +192,34 @@ export default function TeacherDashboard() {
         over
     }) => {
 
+
+        /*
+        Flytta platser i klassrum
+        */
+
+        if (
+            active.data.current?.type === "seat"
+        ) {
+
+            const deltaX =
+                active.rect.current.translated.left -
+                active.rect.current.initial.left;
+
+            const deltaY =
+                active.rect.current.translated.top -
+                active.rect.current.initial.top;
+
+            const newX =
+                active.data.current.x +
+                deltaX;
+
+            const newY =
+                active.data.current.y +
+                deltaY;
+
+            return;
+        }
+
         if (!over) {
             return;
         }

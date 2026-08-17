@@ -24,6 +24,8 @@ import PlanningQueueTab from "./Main/PlanningQueueTab"
 import PresentationsTab from "./Main/PresentationsTab";
 import PresentationEditorTab from "@/components/ui/PresentationEditorTab";
 import PresentationPlayerTab from "@/components/ui/PresentationPlayerTab";
+import ClassroomLayoutTab from "./LeftCol/ClassroomLayoutTab";
+// import ClassroomLayoutView from "./Main/ClassroomLayoutView";
 
 export default function Main({
     tabs,
@@ -357,6 +359,18 @@ export default function Main({
                         />
 
                     )}
+                    {currentTab?.type === "classroom-layout" && (
+
+                        <ClassroomLayoutTab
+                            layoutId={currentTab.layoutId}
+                        />
+
+                    )}
+                    {/* {currentTab?.type === "classroom-layout" && (
+                        <ClassroomLayoutTab
+                            layoutId={currentTab.layoutId}
+                        />
+                    )} */}
 
 
                 </div>
