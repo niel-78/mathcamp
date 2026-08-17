@@ -24,7 +24,7 @@ import PlanningQueueTab from "./Main/PlanningQueueTab"
 import PresentationsTab from "./Main/PresentationsTab";
 import PresentationEditorTab from "@/components/ui/PresentationEditorTab";
 import PresentationPlayerTab from "@/components/ui/PresentationPlayerTab";
-import ClassroomLayoutTab from "./LeftCol/ClassroomLayoutTab";
+import ClassroomLayoutTab from "./Main/ClassroomLayoutTab";
 // import ClassroomLayoutView from "./Main/ClassroomLayoutView";
 
 export default function Main({

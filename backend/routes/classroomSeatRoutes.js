@@ -37,9 +37,6 @@ router.put("/:id",
     async (req, res) => {
 
         const {
-            seat_label,
-            seat_row,
-            seat_column,
             x_position,
             y_position
         } = req.body;
@@ -48,24 +45,20 @@ router.put("/:id",
             `
             UPDATE classroom_seats
             SET
-                seat_label = ?,
-                seat_row = ?,
-                seat_column = ?,
                 x_position = ?,
                 y_position = ?
             WHERE id = ?
             `,
             [
-                seat_label,
-                seat_row,
-                seat_column,
                 x_position,
                 y_position,
                 req.params.id
             ]
         );
 
-        res.sendStatus(204);
+        res.json({
+            success: true
+        });
 
     }
 );

@@ -99,6 +99,43 @@ export default function ClassroomLayoutTab({
 
     };
 
+    const saveSeatPosition =
+        async (
+            seatId,
+            x,
+            y
+        ) => {
+
+            await fetch(
+                `${API_URL}/api/classroom-seats/${seatId}`,
+                {
+                    method: "PUT",
+                    headers: {
+                        ...authHeaders(),
+                        "Content-Type":
+                            "application/json"
+                    },
+                    body: JSON.stringify({
+                        x_position: x,
+                        y_position: y
+                    })
+                }
+            );
+
+            setSeats(prev =>
+                prev.map(seat =>
+                    seat.id === seatId
+                        ? {
+                            ...seat,
+                            x_position: x,
+                            y_position: y
+                        }
+                        : seat
+                )
+            );
+
+        };
+
     return (
 
         <BaseTabLayout
@@ -144,6 +181,9 @@ export default function ClassroomLayoutTab({
                     <Seat
                         key={seat.id}
                         seat={seat}
+                        onMove={
+                            saveSeatPosition
+                        }
                     />
 
                 ))}
