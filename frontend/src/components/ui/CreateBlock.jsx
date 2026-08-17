@@ -10,7 +10,7 @@ import MathContent from "@/components/ui/MathContent";
 export default function CreateBlock({
     centralContentIds = [],
     sectionIds = [],
-    examId,
+    assessmentId,
     onCreated
 }) {
 
@@ -39,7 +39,7 @@ export default function CreateBlock({
                         question,
                         centralContentIds,
                         sectionIds,
-                        examId
+                        assessmentId
                     })
                 }
             );

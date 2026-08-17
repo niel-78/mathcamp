@@ -153,7 +153,7 @@ router.get("/:id/students/:userId/events", async (req, res) => {
                     ON ea.id = ee.attempt_id
 
                 WHERE
-                    ea.group_exam_id = ?
+                    ea.group_assessment_id = ?
                     AND ea.user_id = ?
 
                 ORDER BY

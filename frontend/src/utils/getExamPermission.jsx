@@ -1,7 +1,7 @@
 import db from "../db.js";
 
 async function getExamPermission(
-    examId,
+    assessmentId,
     teacherId
 ) {
 
@@ -9,12 +9,12 @@ async function getExamPermission(
         await db.query(
             `
             SELECT role
-            FROM exam_permissions
-            WHERE exam_id = ?
+            FROM assessment_permissions
+            WHERE assessment_id = ?
                 AND teacher_id = ?
             `,
             [
-                examId,
+                assessmentId,
                 teacherId
             ]
         );

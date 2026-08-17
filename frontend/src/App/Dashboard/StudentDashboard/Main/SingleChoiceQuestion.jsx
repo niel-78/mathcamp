@@ -15,7 +15,7 @@ export default function SingleChoiceQuestion({
 
             <MathContent value={question.question} />
 
-            <div className="answers">
+            <div className="assessment_answers">
 
                 {question.options?.map(opt => (
 

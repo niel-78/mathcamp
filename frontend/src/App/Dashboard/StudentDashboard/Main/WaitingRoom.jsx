@@ -1,6 +1,6 @@
 export default function WaitingRoomPage({
     groupExamId,
-    examTitle
+    assessmentTitle
 }) {
 
     useEffect(() => {
@@ -18,7 +18,7 @@ export default function WaitingRoomPage({
     async function checkStatus() {
 
         const response = await fetch(
-            `${API_URL}/api/group-exam-lobby/${groupExamId}/status`,
+            `${API_URL}/api/group-assessment-lobby/${groupExamId}/status`,
             {
                 headers: authHeaders()
             }
@@ -27,11 +27,11 @@ export default function WaitingRoomPage({
         const data =
             await response.json();
 
-        if (data.exam_status === "open") {
+        if (data.assessment_status === "open") {
 
             const startResponse =
                 await fetch(
-                    `${API_URL}/api/exam-attempts/start`,
+                    `${API_URL}/api/assessment-attempts/start`,
                     {
                         method: "POST",
                         headers: {
@@ -40,7 +40,7 @@ export default function WaitingRoomPage({
                                 "application/json"
                         },
                         body: JSON.stringify({
-                            group_exam_id:
+                            group_assessment_id:
                                 groupExamId
                         })
                     }
@@ -66,7 +66,7 @@ export default function WaitingRoomPage({
                 <CardContent className="p-8 text-center">
 
                     <h1 className="text-2xl font-bold">
-                        {examTitle}
+                        {assessmentTitle}
                     </h1>
 
                     <p className="mt-4">

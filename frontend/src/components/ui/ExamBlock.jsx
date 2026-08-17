@@ -7,11 +7,11 @@ export default function ExamBlock({
 }) {
 
     const enabled =
-        activeDragType === "exam-block";
+        activeDragType === "assessment-block";
 
     const { setNodeRef } =
         useDroppable({
-            id: `exam-block-${block.id}`,
+            id: `assessment-block-${block.id}`,
             disabled: !enabled
         });
 

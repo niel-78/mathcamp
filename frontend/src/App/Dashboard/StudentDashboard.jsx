@@ -15,9 +15,9 @@ import { toast } from "sonner";
 import { logEvent } from "@/utils/logEvent";
 
 const StudentDashboard = () => {
-    const [examKey, setExamKey] = useState("");
+    const [assessmentKey, setExamKey] = useState("");
     const [attemptId, setAttemptId] = useState(null);
-    const [examConfig, setExamConfig] = useState(null);
+    const [assessmentConfig, setExamConfig] = useState(null);
     const [view, setView] = useState("start");
     const [errorMessage, setErrorMessage] = useState(null);
     const [errorOpen, setErrorOpen] = useState(false);
@@ -27,7 +27,7 @@ const StudentDashboard = () => {
     const findExam = async () => {
 
         const res = await fetch(
-            `${API_URL}/api/group-exam-lobby/find`,
+            `${API_URL}/api/group-assessment-lobby/find`,
             {
                 method: "POST",
                 headers: {
@@ -35,7 +35,7 @@ const StudentDashboard = () => {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    group_exam_key: examKey
+                    group_assessment_key: assessmentKey
                 })
             }
         );
@@ -51,7 +51,7 @@ const StudentDashboard = () => {
         }
 
         const joinRes = await fetch(
-            `${API_URL}/api/group-exam-lobby/join`,
+            `${API_URL}/api/group-assessment-lobby/join`,
             {
                 method: "POST",
                 headers: {
@@ -59,7 +59,7 @@ const StudentDashboard = () => {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    group_exam_key: examKey
+                    group_assessment_key: assessmentKey
                 })
             }
         );
@@ -82,7 +82,7 @@ const StudentDashboard = () => {
     const startExamAttempt = async () => {
 
         const res = await fetch(
-            `${API_URL}/api/exam-attempts/start`,
+            `${API_URL}/api/assessment-attempts/start`,
             {
                 method: "POST",
                 headers: {
@@ -90,8 +90,8 @@ const StudentDashboard = () => {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    group_exam_id:
-                        groupExam.group_exam_id
+                    group_assessment_id:
+                        groupExam.group_assessment_id
                 })
             }
         );
@@ -139,7 +139,7 @@ const StudentDashboard = () => {
         }
 
         setAttemptId(data.attempt_id);
-        setExamConfig(data.exam_config);
+        setExamConfig(data.config);
 
         if (data.status === "locked") {
 
@@ -166,7 +166,7 @@ const StudentDashboard = () => {
 
         }
 
-        setView("exam");
+        setView("assessment");
     };
 
 
@@ -190,13 +190,13 @@ const StudentDashboard = () => {
     }
 
 
-    if (view === "exam") {
+    if (view === "assessment") {
 
         return (
 
             <ExamPage
                 attemptId={attemptId}
-                examConfig={examConfig}
+                assessmentConfig={assessmentConfig}
                 onExit={() => setView("result")}
                 onLocked={() => setView("locked")}
             />
@@ -212,7 +212,7 @@ const StudentDashboard = () => {
         <LockedExamPage
             attemptId={attemptId}
             onUnlocked={() =>
-                setView("exam")
+                setView("assessment")
             }
         />
 
@@ -248,14 +248,14 @@ const StudentDashboard = () => {
                         Starta prov
                     </h2>
 
-                    <Label className="mt-2 text-muted-foreground" htmlFor="examKey">
+                    <Label className="mt-2 text-muted-foreground" htmlFor="assessmentKey">
                         Ange provnyckel för att starta provet.
                     </Label>
                     
                     <Input
                         placeholder=""
-                        value={examKey}
-                        id="examKey"
+                        value={assessmentKey}
+                        id="assessmentKey"
                         onChange={(e) => setExamKey(e.target.value)}
                     />
                     

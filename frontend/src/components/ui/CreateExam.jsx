@@ -78,7 +78,7 @@ export default function CreateExam({
         });
 
         const response = await fetch(
-            `${API_URL}/api/exams`,
+            `${API_URL}/api/assessments`,
             {
                 method: "POST",
                 headers: {
@@ -105,13 +105,13 @@ export default function CreateExam({
             return;
         }
 
-        const exam = await response.json();
+        const assessment = await response.json();
 
         toast.success(
             "Prov skapat"
         );
 
-        onCreated?.(exam);
+        onCreated?.(assessment);
 
     };
 

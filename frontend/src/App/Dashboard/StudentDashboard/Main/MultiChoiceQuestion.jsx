@@ -15,7 +15,7 @@ export default function MultiChoiceQuestion({
 
             <MathContent value={question.question} />
 
-            <div className="answers">
+            <div className="assessment_answers">
 
                 {question.options?.map(opt => (
 

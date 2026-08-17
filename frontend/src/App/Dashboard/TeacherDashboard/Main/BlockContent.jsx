@@ -36,8 +36,6 @@ export default function BlockContent({
 
         const data = await response.json();
         setCurrentBlock(data);
-        console.log(data);
-
     };
 
     const createQuestion = async () => {

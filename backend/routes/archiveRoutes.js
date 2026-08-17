@@ -3,7 +3,7 @@ import db from "../db.js";
 import hydrateBlocks from "../utils/hydrateBlocks.js";
 import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
-import getExamRole from "../utils/getExamRole.js";
+import getExamRole from "../utils/getAssessmentRole.js";
 
 const router = express.Router();
 
@@ -89,7 +89,7 @@ router.get("/assessments", requireAuth,
                 JOIN assessment_permissions ep
                     ON ep.assessment_id = e.id
 
-                WHERE ep.teacher_id = ?
+                WHERE ep.user_id = ?
                 AND ep.role = 'owner'
                 AND e.archived_at IS NOT NULL
                 AND e.deleted_at IS NULL
@@ -168,7 +168,7 @@ router.get("/students", requireAuth,
                 JOIN group_permissions gp
                     ON gp.group_id = g.id
 
-                WHERE gp.teacher_id = ?
+                WHERE gp.user_id = ?
                 AND gp.role = 'owner'
                 AND gs.deleted_at IS NOT NULL
 

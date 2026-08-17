@@ -58,6 +58,17 @@ export default function CreateLessonSeriesDialog({
             return;
         }
 
+        window.dispatchEvent(
+            new CustomEvent(
+                "group-schedule-created",
+                {
+                    detail: {
+                        groupId: group.groupId
+                    }
+                }
+            )
+        );
+
         onOpenChange(false);
 
     };

@@ -4,7 +4,7 @@ import MathContent from "@/components/ui/MathContent";
 import { API_URL } from "@/config";
 import Question from "./Block/Question";
 
-export default function Block({ block, exam, onChanged, editMode }) {
+export default function Block({ block, assessment, onChanged, editMode }) {
     const [newQuestion, setNewQuestion] = useState("");
 
     const deleteBlock = async (block) => {
@@ -18,7 +18,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
         }
 
         await fetch(
-            `${API_URL}/api/exams/${exam.id}/blocks/${block.id}`,
+            `${API_URL}/api/assessments/${assessment.id}/blocks/${block.id}`,
             {
                 method: "DELETE",
                 headers: authHeaders()
@@ -40,7 +40,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
         }
 
         await fetch(
-            `${API_URL}/api/exams/blocks/${block.id}`,
+            `${API_URL}/api/assessments/blocks/${block.id}`,
             {
                 method: "PUT",
                 headers: {
@@ -64,7 +64,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
         }
 
         const response = await fetch(
-            `${API_URL}/api/exams/blocks/${block.id}/questions`,
+            `${API_URL}/api/assessments/blocks/${block.id}/questions`,
             {
                 method: "POST",
                 headers: {
@@ -90,7 +90,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
 
     const moveUp = async (block) => {
 
-        const previousBlock = exam.blocks
+        const previousBlock = assessment.blocks
             .filter(b => b.sort_order < block.sort_order)
             .sort((a, b) => b.sort_order - a.sort_order)[0];
 
@@ -99,7 +99,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
         }
 
         await fetch(
-            `${API_URL}/api/exams/${exam.id}/blocks/${block.id}/order`,
+            `${API_URL}/api/assessments/${assessment.id}/blocks/${block.id}/order`,
             {
                 method: "PUT",
                 headers: {
@@ -114,7 +114,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
         );
 
         await fetch(
-            `${API_URL}/api/exams/${exam.id}/blocks/${previousBlock.id}/order`,
+            `${API_URL}/api/assessments/${assessment.id}/blocks/${previousBlock.id}/order`,
             {
                 method: "PUT",
                 headers: {
@@ -133,7 +133,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
 
     const moveDown = async (block) => {
 
-        const nextBlock = exam.blocks
+        const nextBlock = assessment.blocks
             .filter(b => b.sort_order > block.sort_order)
             .sort((a, b) => a.sort_order - b.sort_order)[0];
 
@@ -142,7 +142,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
         }
 
         await fetch(
-            `${API_URL}/api/exams/${exam.id}/blocks/${block.id}/order`,
+            `${API_URL}/api/assessments/${assessment.id}/blocks/${block.id}/order`,
             {
                 method: "PUT",
                 headers: {
@@ -157,7 +157,7 @@ export default function Block({ block, exam, onChanged, editMode }) {
         );
 
         await fetch(
-            `${API_URL}/api/exams/${exam.id}/blocks/${nextBlock.id}/order`,
+            `${API_URL}/api/assessments/${assessment.id}/blocks/${nextBlock.id}/order`,
             {
                 method: "PUT",
                 headers: {
@@ -174,11 +174,11 @@ export default function Block({ block, exam, onChanged, editMode }) {
         onChanged();
     };
 
-    const canMoveUp = exam.blocks.some(
+    const canMoveUp = assessment.blocks.some(
         b => b.sort_order < block.sort_order
     );
 
-    const canMoveDown = exam.blocks.some(
+    const canMoveDown = assessment.blocks.some(
         b => b.sort_order > block.sort_order
     );
 

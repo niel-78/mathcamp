@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function ArchiveExamDialog({
-    exam,
+    assessment,
     open,
     onOpenChange,
     onArchived
@@ -23,7 +23,7 @@ export default function ArchiveExamDialog({
     const archiveExam = async () => {
 
         const response = await fetch(
-            `${API_URL}/api/exams/${exam.id}/archive`,
+            `${API_URL}/api/assessments/${assessment.id}/archive`,
             {
                 method: "POST",
                 headers: authHeaders()
@@ -45,7 +45,7 @@ export default function ArchiveExamDialog({
         );
 
         window.dispatchEvent(
-            new Event("exams-changed")
+            new Event("assessments-changed")
         );
 
         onOpenChange(false);
@@ -77,7 +77,7 @@ export default function ArchiveExamDialog({
                         {" "}
 
                         <strong>
-                            {exam?.title}
+                            {assessment?.title}
                         </strong>
 
                         ?

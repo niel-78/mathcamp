@@ -27,8 +27,8 @@ import questionRoutes from "./routes/questionRoutes.js";
 import questionLevelRoutes from "./routes/questionLevelRoutes.js";
 
 import assessmentRoutes from "./routes/assessmentRoutes.js";
-import groupExamRoutes from "./routes/groupExamRoutes.js";
-import examAttemptRoutes from "./routes/examAttemptRoutes.js";
+import groupAssessmentRoutes from "./routes/groupAssessmentRoutes.js";
+import assessmentAttemptRoutes from "./routes/assessmentAttemptRoutes.js";
 
 import groupRoutes from "./routes/groupRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
@@ -39,7 +39,7 @@ import sectionRoutes from "./routes/sectionRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import resultRoutes from "./routes/resultRoutes.js";
 
-import groupExamLobbyRoutes from "./routes/groupExamLobbyRoutes.js";
+import groupAssessmentLobbyRoutes from "./routes/groupAssessmentLobbyRoutes.js";
 
 import presentationRoutes from "./routes/presentationRoutes.js";
 
@@ -93,8 +93,8 @@ app.use("/api/questions", questionRoutes);
 app.use("/api/question-levels", questionLevelRoutes);
 
 app.use("/api/assessments", assessmentRoutes);
-app.use("/api/group-assessments", groupExamRoutes);
-app.use("/api/exam-attempts", examAttemptRoutes);
+app.use("/api/group-assessments", groupAssessmentRoutes);
+app.use("/api/assessment-attempts", assessmentAttemptRoutes);
 
 app.use("/api/groups", groupRoutes);
 app.use("/api/students", studentRoutes);
@@ -102,7 +102,7 @@ app.use("/api/students", studentRoutes);
 app.use("/api/books", bookRoutes);
 app.use("/api/sections", sectionRoutes);
 
-app.use("/api/group-exam-lobby", groupExamLobbyRoutes);
+app.use("/api/group-assessment-lobby", groupAssessmentLobbyRoutes);
 
 app.use("/api/presentations", presentationRoutes);
 

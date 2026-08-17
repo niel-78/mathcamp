@@ -1,124 +1,10 @@
 USE mydb;
 
-SET FOREIGN_KEY_CHECKS = 0;
-
-DROP TABLE IF EXISTS competency_descriptors;
-DROP TABLE IF EXISTS presentations;
-DROP TABLE IF EXISTS group_planning_sections;
-DROP TABLE IF EXISTS group_schedules;
-DROP TABLE IF EXISTS group_schedule_exceptions;
-DROP TABLE IF EXISTS lessons;
-DROP TABLE IF EXISTS lesson_sections;
-DROP TABLE IF EXISTS ability_series_permissions;
-DROP TABLE IF EXISTS ability_series;
-DROP TABLE IF EXISTS abilities;
-DROP TABLE IF EXISTS block_abilities;
-DROP TABLE IF EXISTS competencies;
-DROP TABLE IF EXISTS block_points;
-DROP TABLE IF EXISTS schools;
-DROP TABLE IF EXISTS school_settings;
-DROP TABLE IF EXISTS school_teachers;
-DROP TABLE IF EXISTS level_books;
-DROP TABLE IF EXISTS question_levels;
-DROP TABLE IF EXISTS block_sections;
-DROP TABLE IF EXISTS sections;
-DROP TABLE IF EXISTS subchapters;
-DROP TABLE IF EXISTS chapters;
-DROP TABLE IF EXISTS books;
-DROP TABLE IF EXISTS central_content;
-DROP TABLE IF EXISTS content_areas;
-DROP TABLE IF EXISTS levels;
-DROP TABLE IF EXISTS subjects;
-DROP TABLE IF EXISTS question_media;
-DROP TABLE IF EXISTS group_students;
-DROP TABLE IF EXISTS groups;
-DROP TABLE IF EXISTS group_permissions;
-DROP TABLE IF EXISTS group_exams;
-DROP TABLE IF EXISTS answer_options;
-DROP TABLE IF EXISTS answers;
-DROP TABLE IF EXISTS options;
-DROP TABLE IF EXISTS exam_blocks;
-DROP TABLE IF EXISTS exam_attempts;
-DROP TABLE IF EXISTS attempt_questions;
-DROP TABLE IF EXISTS attempt_options;
-DROP TABLE IF EXISTS questions;
-DROP TABLE IF EXISTS exams;
-DROP TABLE IF EXISTS blocks;
-DROP TABLE IF EXISTS users;
-DROP TABLE IF EXISTS app_settings;
-DROP TABLE IF EXISTS user_settings;
-DROP TABLE IF EXISTS exam_waiting_room;
-DROP TABLE IF EXISTS exam_events;
-DROP TABLE IF EXISTS user_sessions;
-DROP TABLE IF EXISTS exam_permissions;
-
-SET FOREIGN_KEY_CHECKS = 1;
-
--- ======================
--- TABLES
--- ======================
-
-CREATE TABLE schools (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
 INSERT INTO schools (
     id,
     name
 )
 VALUES (1,'School of Rock'),(2,'Chicagoskolan');
-
-CREATE TABLE school_settings (
-    school_id INT PRIMARY KEY,
-    enable_exam_templates BOOLEAN NOT NULL DEFAULT TRUE,
-    enable_block_copying BOOLEAN DEFAULT TRUE,
-    default_shared_blocks BOOLEAN DEFAULT TRUE,
-    default_shared_exams BOOLEAN DEFAULT TRUE,
-    enable_global_blocks BOOLEAN NOT NULL DEFAULT TRUE,
-    settings JSON NULL,
-    FOREIGN KEY (school_id)
-        REFERENCES schools(id)
-        ON DELETE CASCADE
-);
-
-INSERT INTO school_settings (school_id,enable_exam_templates,enable_block_copying,default_shared_blocks,default_shared_exams)VALUES (1,TRUE,TRUE,TRUE,TRUE);
-
-
-CREATE TABLE users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-
-    username VARCHAR(100) UNIQUE NOT NULL,
-
-    -- lösenord (aldrig plaintext!)
-    password_hash VARCHAR(255) NOT NULL,
-
-    role ENUM('student', 'teacher', 'super') NOT NULL DEFAULT 'student',
-
-    -- valfri visning
-    first_name VARCHAR(255),
-    last_name VARCHAR(255),
-
-    deleted_at DATETIME NULL,
-
-    -- för koppling till prov
-    user_key VARCHAR(100) UNIQUE,
-
-    -- session (aktiv login)
-    session_token VARCHAR(255),
-
-    -- login / exam status
-    last_login DATETIME,
-    exam_started_at DATETIME,
-
-    -- säkerhetsfält
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-
-
-) ENGINE=InnoDB 
-CHARACTER SET utf8mb4 
-COLLATE utf8mb4_unicode_ci;
 
 INSERT INTO users (id, username, password_hash, first_name, last_name, role)
 VALUES
@@ -132,101 +18,6 @@ VALUES
 (8, 'vil', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Vilhelm', 'Arvidsson' , 'student'),
 (9, 'super', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas', 'Elofsson' , 'super');
 
-CREATE TABLE user_sessions (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-
-    user_id INT NOT NULL,
-
-    session_token VARCHAR(255) NOT NULL,
-
-    logged_in_at DATETIME NOT NULL
-        DEFAULT CURRENT_TIMESTAMP,
-
-    logged_out_at DATETIME NULL,
-
-    FOREIGN KEY (user_id)
-        REFERENCES users(id)
-        ON DELETE CASCADE,
-
-    INDEX(user_id),
-    INDEX(session_token)
-) ENGINE=InnoDB
-CHARACTER SET utf8mb4
-COLLATE utf8mb4_unicode_ci;
-
-
-/*Typuppgifter*/
-CREATE TABLE blocks (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-
-    school_id INT NOT NULL,
-
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by INT NOT NULL,
-
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-        ON UPDATE CURRENT_TIMESTAMP,
-    updated_by INT NOT NULL,
-
-    archived_at DATETIME NULL,
-
-    deleted_at DATETIME NULL,
-
-    visibility ENUM(
-        'private',
-        'school',
-        'global'
-    )
-    NOT NULL DEFAULT 'school',
-
-    CONSTRAINT fk_blocks_school
-        FOREIGN KEY (school_id)
-        REFERENCES schools(id),
-
-    CONSTRAINT fk_blocks_created_by
-        FOREIGN KEY (created_by)
-        REFERENCES users(id),
-
-    CONSTRAINT fk_blocks_updated_by
-        FOREIGN KEY (updated_by)
-        REFERENCES users(id)
-
-) ENGINE=InnoDB;
-
-/*Svårighetsgrader*/
-CREATE TABLE question_levels (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(50) NOT NULL,
-    description TEXT,
-    sort_order INT NOT NULL
-);
-
-/*Uppgifter*/
-CREATE TABLE questions (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    question TEXT,
-    block_id INT,
-    question_type ENUM(
-        'text',
-        'single_choice',
-        'multiple_choice'
-    ),
-    level_id INT NULL,
-    
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by INT NOT NULL,
-
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-        ON UPDATE CURRENT_TIMESTAMP,
-    updated_by INT NOT NULL,
-
-    archived_at DATETIME NULL,
-    deleted_at DATETIME NULL,
-    
-    answer_config JSON DEFAULT JSON_OBJECT('mode', 'numeric'),
-    FOREIGN KEY (block_id) REFERENCES blocks(id),
-    FOREIGN KEY (level_id) REFERENCES question_levels(id)
-) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 INSERT INTO question_levels
 (
@@ -256,125 +47,55 @@ VALUES
     4
 );
 
-/*Bilder till uppgifter*/
-CREATE TABLE question_media (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    question_id INT NOT NULL,
-    media_type ENUM('image','video') NOT NULL,
-    media_url VARCHAR(500) NOT NULL,
-    sort_order INT DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
+INSERT INTO books (
+    id,
+    title,
+    description
+)
+VALUES
+(
+    1,
+    'Matematik 1',
+    'Testbok Matematik 1'
+),
+(
+    2,
+    'Matematik 2',
+    'Testbok Matematik 2'
 );
 
-/*Facit och alternativ på flervalsfrågor*/
-CREATE TABLE options (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    question_id INT,
-    text TEXT,
-    is_correct BOOLEAN DEFAULT 0,
-
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by INT NOT NULL,
-
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-        ON UPDATE CURRENT_TIMESTAMP,
-    updated_by INT NOT NULL,
-
-    deleted_at DATETIME NULL,
-
-    FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
-) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-/*Prov*/
-CREATE TABLE exams (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(255),
-
-    subject_id INT NOT NULL,
-    level_id INT NOT NULL,
-    book_id INT NULL,
-
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by INT NOT NULL,
-
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-        ON UPDATE CURRENT_TIMESTAMP,
-    updated_by INT NOT NULL,
-
-    archived_at DATETIME NULL,
-
-    deleted_at DATETIME NULL,
-
-    exam_config JSON DEFAULT JSON_OBJECT('allowCalculator', false, 'allowFormulaSheet', true, 'defaultTimeLimitMinutes', 60000, 'lock_tab_hidden', true, 'lock_window_blur', true, 'lock_context_menu', true, 'lock_page_unload', false)
-) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-CREATE TABLE exam_permissions (
-    exam_id INT NOT NULL,
-    teacher_id INT NOT NULL,
-    role ENUM(
-        'owner',
-        'editor',
-        'reader'
-    ) NOT NULL,
-
-    PRIMARY KEY (
-        exam_id,
-        teacher_id
-    ),
-
-    FOREIGN KEY (exam_id)
-        REFERENCES exams(id),
-
-    FOREIGN KEY (teacher_id)
-        REFERENCES users(id)
+INSERT INTO subjects (
+    id,
+    code,
+    name
+)
+VALUES (
+    1,
+    'MAT',
+    'Matematik'
 );
 
 
-CREATE TABLE groups (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-
-    name VARCHAR(100) NOT NULL,
-    description TEXT,
-
-    level_id INT NULL,
-    book_id INT NULL,
-
-    pages_per_lesson INT NULL DEFAULT 4,
-
-    archived_at DATETIME NULL,
-    deleted_at DATETIME NULL,
-
-    created_at DATETIME NOT NULL
-        DEFAULT CURRENT_TIMESTAMP
+INSERT INTO levels (
+    id,
+    subject_id,
+    code,
+    name
+)
+VALUES
+(
+    1,
+    1,
+    'GY25-MA1',
+    'Matematik 1'
+),
+(
+    2,
+    1,
+    'GY25-MA2',
+    'Matematik 2'
 );
 
-/*Personal som är kopplad till grupp*/
-CREATE TABLE group_permissions (
-    group_id INT NOT NULL,
-    teacher_id INT NOT NULL,
-
-    role ENUM(
-        'owner',
-        'editor',
-        'reader'
-    ) NOT NULL,
-
-    assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-    PRIMARY KEY (
-        group_id,
-        teacher_id
-    ),
-
-    FOREIGN KEY (group_id)
-        REFERENCES groups(id)
-        ON DELETE CASCADE,
-
-    FOREIGN KEY (teacher_id)
-        REFERENCES users(id)
-        ON DELETE CASCADE
-);
 
 INSERT INTO groups (id, name, archived_at,book_id,level_id)
 VALUES
@@ -397,463 +118,12 @@ VALUES
     'owner'
 );
 
-/*Provtillfällen*/
-/*
-CREATE TABLE group_exams (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-
-    group_id INT NOT NULL,
-    exam_id INT NOT NULL,
-
-    group_exam_key VARCHAR(50) UNIQUE,
-    exam_config JSON DEFAULT JSON_OBJECT('allowCalculator', false, 'allowFormulaSheet', true, 'defaultTimeLimitMinutes', 60000, 'lock_tab_hidden', true, 'lock_window_blur', true, 'lock_context_menu', true, 'lock_page_unload',false),
-
-    waiting_room_open BOOLEAN NOT NULL DEFAULT TRUE,
-
-    time_limit_minutes INT DEFAULT NULL,
-
-    shuffle_order_questions BOOLEAN NOT NULL DEFAULT FALSE,
-    shuffle_order_options BOOLEAN NOT NULL DEFAULT TRUE,
-
-    use_different_questions_in_block BOOLEAN NOT NULL DEFAULT TRUE,
-
-    allow_go_to_previous_question BOOLEAN NOT NULL DEFAULT TRUE,
-    never_repeat_question BOOLEAN NOT NULL DEFAULT TRUE,
-
-    show_calculator BOOLEAN NOT NULL DEFAULT FALSE,
-    show_formula_sheet BOOLEAN NOT NULL DEFAULT FALSE,
-
-    max_attempts INT NOT NULL DEFAULT 1,
-
-    show_result_immediately BOOLEAN DEFAULT TRUE,
-
-    exam_status ENUM(
-        'waiting',
-        'open',
-        'closed'
-    ) NOT NULL DEFAULT 'waiting',
-    available_from DATETIME DEFAULT NULL,
-    available_until DATETIME DEFAULT NULL,
-
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT fk_group_exams_group
-        FOREIGN KEY (group_id)
-        REFERENCES groups(id)
-        ON DELETE CASCADE,
-
-    CONSTRAINT fk_group_exams_exam
-        FOREIGN KEY (exam_id)
-        REFERENCES exams(id)
-        ON DELETE CASCADE,
-
-    UNIQUE KEY unique_group_exam (group_id, exam_id)
-);
-*/
-
-CREATE TABLE group_exams (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-
-    group_id INT NOT NULL,
-    exam_id INT NOT NULL,
-
-    group_exam_key VARCHAR(50) UNIQUE,
-    exam_config JSON DEFAULT JSON_OBJECT(
-
-        'exam',
-        JSON_OBJECT(
-            'defaultTimeLimitMinutes', 15
-        ),
-
-        'presentation',
-        JSON_OBJECT(
-            'allowCalculator', false,
-            'allowFormulaSheet', true
-        ),
-
-        'monitoring',
-        JSON_OBJECT(
-            'lock_page_refresh', true,
-            'lock_tab_hidden', true,
-            'lock_window_blur', true,
-            'lock_context_menu', true,
-            'lock_page_unload', false
-        ),
-
-        'navigation',
-        JSON_OBJECT(
-            'allowGoToPreviousQuestion', true
-        ),
-
-        'question_selection',
-        JSON_OBJECT()
-
-    ),
-
-    waiting_room_open BOOLEAN NOT NULL DEFAULT TRUE,
-
-    time_limit_minutes INT DEFAULT NULL,
-
-    shuffle_order_questions BOOLEAN NOT NULL DEFAULT FALSE,
-    shuffle_order_options BOOLEAN NOT NULL DEFAULT TRUE,
-
-    use_different_questions_in_block BOOLEAN NOT NULL DEFAULT TRUE,
-
-    allow_go_to_previous_question BOOLEAN NOT NULL DEFAULT TRUE,
-    never_repeat_question BOOLEAN NOT NULL DEFAULT TRUE,
-
-    show_calculator BOOLEAN NOT NULL DEFAULT FALSE,
-    show_formula_sheet BOOLEAN NOT NULL DEFAULT FALSE,
-
-    max_attempts INT NOT NULL DEFAULT 1,
-
-    show_result_immediately BOOLEAN DEFAULT TRUE,
-
-    exam_status ENUM(
-        'waiting',
-        'open',
-        'closed'
-    ) NOT NULL DEFAULT 'waiting',
-    available_from DATETIME DEFAULT NULL,
-    available_until DATETIME DEFAULT NULL,
-
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT fk_group_exams_group
-        FOREIGN KEY (group_id)
-        REFERENCES groups(id)
-        ON DELETE CASCADE,
-
-    CONSTRAINT fk_group_exams_exam
-        FOREIGN KEY (exam_id)
-        REFERENCES exams(id)
-        ON DELETE CASCADE,
-
-    UNIQUE KEY unique_group_exam (group_id, exam_id)
-);
-
-CREATE TABLE exam_waiting_room (
-
-    group_exam_id INT NOT NULL,
-    user_id INT NOT NULL,
-
-    joined_at TIMESTAMP
-        DEFAULT CURRENT_TIMESTAMP,
-
-    admitted_at DATETIME NULL,
-
-    PRIMARY KEY (
-        group_exam_id,
-        user_id
-    ),
-
-    CONSTRAINT fk_waiting_room_exam
-        FOREIGN KEY (
-            group_exam_id
-        )
-        REFERENCES group_exams(id)
-        ON DELETE CASCADE,
-
-    CONSTRAINT fk_waiting_room_user
-        FOREIGN KEY (
-            user_id
-        )
-        REFERENCES users(id)
-        ON DELETE CASCADE
-
-);
-
-/*Elever i grupper*/
-CREATE TABLE group_students (
-    user_id INT NOT NULL,
-    group_id INT NOT NULL,
-
-    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    deleted_at DATETIME NULL,
-
-    PRIMARY KEY (user_id, group_id),
-
-    CONSTRAINT fk_group_students_user
-        FOREIGN KEY (user_id)
-        REFERENCES users(id)
-        ON DELETE CASCADE,
-
-    CONSTRAINT fk_group_students_group
-        FOREIGN KEY (group_id)
-        REFERENCES groups(id)
-        ON DELETE CASCADE
-);
-
 INSERT INTO group_students (user_id, group_id)
 VALUES (7, 1),(8, 1),(4, 2),(5, 2),(6, 2);
 
 INSERT INTO group_students (user_id, group_id, deleted_at)
 VALUES (1, 1, CURRENT_TIMESTAMP);
 
-/*Typyppgifter i prov*/
-CREATE TABLE exam_blocks (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-
-    exam_id INT NOT NULL,
-    block_id INT NOT NULL,
-
-    sort_order INT NOT NULL,
-
-    created_at TIMESTAMP
-        DEFAULT CURRENT_TIMESTAMP,
-
-    UNIQUE (exam_id, block_id),
-
-    FOREIGN KEY (exam_id)
-        REFERENCES exams(id),
-
-    FOREIGN KEY (block_id)
-        REFERENCES blocks(id)
-);
-
-/*Provtillfälle för elev*/
-CREATE TABLE exam_attempts (
-    id VARCHAR(36) PRIMARY KEY,
-    user_id INT,
-    group_exam_id INT NOT NULL,
-    started_ip VARCHAR(45) NULL,
-    started_user_agent TEXT NULL,
-    exam_config JSON,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    started_at DATETIME NULL,
-    submitted_at DATETIME NULL,
-    status ENUM(
-        'not_started',
-        'in_progress',
-        'submitted',
-        'graded',
-        'locked'
-    ) DEFAULT 'not_started',
-    UNIQUE (group_exam_id, user_id),
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (group_exam_id) REFERENCES group_exams(id)
-) ENGINE=InnoDB
-CHARACTER SET utf8mb4
-COLLATE utf8mb4_unicode_ci;
-;
-
-CREATE TABLE exam_events (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-
-    attempt_id VARCHAR(36) NOT NULL,
-
-    event_type VARCHAR(50) NOT NULL,
-
-    event_data JSON NULL,
-
-    created_at DATETIME NOT NULL
-        DEFAULT CURRENT_TIMESTAMP,
-
-    INDEX (attempt_id),
-
-    CONSTRAINT fk_exam_events_attempt
-        FOREIGN KEY (attempt_id)
-        REFERENCES exam_attempts(id)
-        ON DELETE CASCADE
-
-) ENGINE=InnoDB
-CHARACTER SET utf8mb4
-COLLATE utf8mb4_unicode_ci;
-
-/*Elevsvar på uppgift*/
-CREATE TABLE answers (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT,
-    exam_id INT,
-    question_id INT,
-    text_answer TEXT NULL,
-    attempt_id VARCHAR(36),
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (exam_id) REFERENCES exams(id),
-    FOREIGN KEY (question_id) REFERENCES questions(id),
-    FOREIGN KEY (attempt_id) REFERENCES exam_attempts(id) ON DELETE CASCADE,
-    UNIQUE (attempt_id, question_id)
-) ENGINE=InnoDB
-CHARACTER SET utf8mb4
-COLLATE utf8mb4_unicode_ci;
-
-/**/
-CREATE TABLE answer_options (
-    answer_id INT,
-    option_id INT,
-
-    PRIMARY KEY (answer_id, option_id),
-
-    FOREIGN KEY (answer_id) REFERENCES answers(id) ON DELETE CASCADE,
-    FOREIGN KEY (option_id) REFERENCES options(id)
-) ENGINE=InnoDB;
-
-/*Provfrågor för elev*/
-CREATE TABLE attempt_questions (
-    attempt_id VARCHAR(36),
-    question_id INT,
-    sort_order INT,
-    PRIMARY KEY (attempt_id, question_id),
-    FOREIGN KEY (attempt_id) REFERENCES exam_attempts(id),
-    FOREIGN KEY (question_id) REFERENCES questions(id)
-) ENGINE=InnoDB
-CHARACTER SET utf8mb4
-COLLATE utf8mb4_unicode_ci;
-
-/*Alternativ på test*/
-CREATE TABLE attempt_options (
-    attempt_id VARCHAR(36) NOT NULL,
-    option_id INT NOT NULL,
-    sort_order INT NOT NULL,
-
-    PRIMARY KEY (
-        attempt_id,
-        option_id
-    ),
-
-    CONSTRAINT fk_attempt_options_attempt
-        FOREIGN KEY (attempt_id)
-        REFERENCES exam_attempts(id)
-        ON DELETE CASCADE,
-
-    CONSTRAINT fk_attempt_options_option
-        FOREIGN KEY (option_id)
-        REFERENCES options(id)
-        ON DELETE CASCADE
-) ENGINE=InnoDB
-CHARACTER SET utf8mb4
-COLLATE utf8mb4_unicode_ci;
-
-
-CREATE TABLE subjects (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    code VARCHAR(20) UNIQUE,
-    name VARCHAR(100)
-);
-
---Matematik 
-
-INSERT INTO subjects (
-    id,
-    code,
-    name
-)
-VALUES (
-    '1',
-    'MATE',
-    'Matematik'
-);
-
-
-CREATE TABLE levels (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    subject_id INT NOT NULL,
-    code VARCHAR(20) UNIQUE,
-    name VARCHAR(100),
-    FOREIGN KEY (subject_id)
-        REFERENCES subjects(id)
-);
-
-CREATE TABLE content_areas (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    level_id INT NOT NULL,
-    title VARCHAR(255),
-    sort_order INT,
-    FOREIGN KEY (level_id)
-        REFERENCES levels(id)
-);
-
-CREATE TABLE central_content (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    area_id INT NOT NULL,
-    content TEXT,
-    sort_order INT,
-    FOREIGN KEY (area_id)
-        REFERENCES content_areas(id)
-);
-
---Serier med förmågor (formativ bedömning)
-CREATE TABLE ability_series (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-
-    subject_id INT NOT NULL,
-
-    name VARCHAR(255) NOT NULL,
-
-    visibility ENUM(
-        'private',
-        'school',
-        'global'
-    ) NOT NULL DEFAULT 'private',
-
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by INT NOT NULL,
-
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-        ON UPDATE CURRENT_TIMESTAMP,
-    updated_by INT NOT NULL,
-
-    FOREIGN KEY (subject_id)
-        REFERENCES subjects(id),
-
-    FOREIGN KEY (created_by)
-        REFERENCES users(id),
-
-    FOREIGN KEY (updated_by)
-        REFERENCES users(id)
-);
-
---Förmågor (formativ bedömning)
-CREATE TABLE abilities (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-
-    series_id INT NOT NULL,
-
-    name VARCHAR(255) NOT NULL,
-
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by INT NOT NULL,
-
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-        ON UPDATE CURRENT_TIMESTAMP,
-    updated_by INT NOT NULL,
-
-    FOREIGN KEY (series_id)
-        REFERENCES ability_series(id)
-        ON DELETE CASCADE,
-
-    FOREIGN KEY (created_by)
-        REFERENCES users(id),
-
-    FOREIGN KEY (updated_by)
-        REFERENCES users(id)
-);
-
-CREATE TABLE ability_series_permissions (
-    series_id INT NOT NULL,
-
-    teacher_id INT NOT NULL,
-
-    role ENUM(
-        'owner',
-        'editor',
-        'reader'
-    ) NOT NULL,
-
-    PRIMARY KEY (
-        series_id,
-        teacher_id
-    ),
-
-    FOREIGN KEY (series_id)
-        REFERENCES ability_series(id)
-        ON DELETE CASCADE,
-
-    FOREIGN KEY (teacher_id)
-        REFERENCES users(id)
-        ON DELETE CASCADE
-);
 
 INSERT INTO ability_series (
     id,
@@ -885,21 +155,6 @@ VALUES
 (3, 1, 'Lösa linjära ekvationer', 1, 1),
 (4, 1, 'Lösa ekvationssystem', 1, 1);
 
-CREATE TABLE block_abilities (
-    block_id INT NOT NULL,
-    ability_id INT NOT NULL,
-
-    PRIMARY KEY (
-        block_id,
-        ability_id
-    ),
-
-    FOREIGN KEY (block_id)
-        REFERENCES blocks(id),
-
-    FOREIGN KEY (ability_id)
-        REFERENCES abilities(id)
-);
 
 --Niva 1a
 INSERT INTO levels (
@@ -914,37 +169,6 @@ VALUES (
 );
 
 
---Kunskapskrav (summativ bedömning)
-CREATE TABLE competencies (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    subject_id INT NOT NULL,
-    sort_order INT,
-    name VARCHAR(100) NOT NULL,
-
-    FOREIGN KEY (subject_id)
-        REFERENCES subjects(id)
-);
-
-CREATE TABLE competency_descriptors (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-
-    level_id INT NOT NULL,
-    competency_id INT NOT NULL,
-
-    grade ENUM('E', 'C', 'A') NOT NULL,
-
-    description LONGTEXT NOT NULL,
-
-    FOREIGN KEY (level_id)
-        REFERENCES levels(id)
-        ON DELETE CASCADE,
-
-    FOREIGN KEY (competency_id)
-        REFERENCES competencies(id)
-        ON DELETE CASCADE,
-
-    UNIQUE (level_id, competency_id, grade)
-);
 
 INSERT INTO competencies (
     subject_id,
@@ -958,141 +182,6 @@ VALUES
     (1, 'Föra resonemang'),
     (1, 'Kommunicera matematik');
 
-
--- Poängmodell
-CREATE TABLE block_points (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-
-    block_id INT NOT NULL,
-
-    central_content_id INT NULL,
-
-    competency_descriptor_id INT NULL,
-
-    points INT NOT NULL DEFAULT 1,
-
-    comment TEXT NULL,
-
-    FOREIGN KEY (block_id)
-        REFERENCES blocks(id)
-        ON DELETE CASCADE,
-
-    FOREIGN KEY (central_content_id)
-        REFERENCES central_content(id),
-
-    FOREIGN KEY (competency_descriptor_id)
-        REFERENCES competency_descriptors(id)
-);
-
--- CREATE TABLE block_points (
-
---     id INT AUTO_INCREMENT PRIMARY KEY,
-
---     block_id INT NOT NULL,
-
---     central_content_id INT NOT NULL,
-
---     competency_descriptor_id INT NOT NULL,
-
---     points INT NOT NULL DEFAULT 1,
-
---     comment TEXT,
-
---     FOREIGN KEY (block_id)
---         REFERENCES blocks(id),
-
---     FOREIGN KEY (central_content_id)
---         REFERENCES central_content(id),
-
---     FOREIGN KEY (competency_descriptor_id)
---         REFERENCES competency_descriptors(id)
--- );
-
-
-
-CREATE TABLE books (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
-    description TEXT
-);
-
-CREATE TABLE chapters (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    book_id INT NOT NULL,
-    chapter_number VARCHAR(20),
-    title VARCHAR(255) NOT NULL,
-    sort_order INT NOT NULL,
-
-    FOREIGN KEY (book_id)
-        REFERENCES books(id)
-);
-
-
-CREATE TABLE subchapters (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    chapter_id INT NOT NULL,
-    subchapter_number VARCHAR(20),
-    title VARCHAR(255) NOT NULL,
-    sort_order INT NOT NULL,
-
-    FOREIGN KEY (chapter_id)
-        REFERENCES chapters(id)
-);
-
-CREATE TABLE sections (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    subchapter_id INT NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    content LONGTEXT NULL,
-    page_number INT,
-    sort_order INT NOT NULL,
-
-    FOREIGN KEY (subchapter_id)
-        REFERENCES subchapters(id)
-);
-
-CREATE TABLE block_sections (
-    block_id INT NOT NULL,
-    section_id INT NOT NULL,
-
-    PRIMARY KEY (
-        block_id,
-        section_id
-    ),
-
-    FOREIGN KEY (block_id)
-        REFERENCES blocks(id),
-
-    FOREIGN KEY (section_id)
-        REFERENCES sections(id)
-);
-
-CREATE TABLE level_books (
-    level_id INT NOT NULL,
-    book_id INT NOT NULL,
-
-    PRIMARY KEY (
-        level_id,
-        book_id
-    ),
-
-    FOREIGN KEY (level_id)
-        REFERENCES levels(id)
-        ON DELETE CASCADE,
-
-    FOREIGN KEY (book_id)
-        REFERENCES books(id)
-        ON DELETE CASCADE
-);
-
-CREATE TABLE app_settings (
-
-    id INT PRIMARY KEY,
-
-    settings JSON NOT NULL
-
-);
-
 INSERT INTO app_settings (
     id,
     settings
@@ -1103,38 +192,8 @@ VALUES (
         'first_question_in_block_can_be_deleted', FALSE,
         'default_auto_logout_minutes', 15,
         'student_auto_logout_minutes', 30,
-        'exam_auto_logout_minutes', 10
+        'assessment_auto_logout_minutes', 10
     )
-);
-
-CREATE TABLE user_settings (
-
-    user_id INT PRIMARY KEY,
-
-    settings JSON NOT NULL,
-
-    CONSTRAINT fk_user_settings_user
-        FOREIGN KEY (user_id)
-        REFERENCES users(id)
-        ON DELETE CASCADE
-
-);
-
-CREATE TABLE school_teachers (
-
-    school_id INT NOT NULL,
-    teacher_id INT NOT NULL UNIQUE,
-
-    is_admin BOOLEAN NOT NULL DEFAULT FALSE,
-
-    FOREIGN KEY (school_id)
-        REFERENCES schools(id)
-        ON DELETE CASCADE,
-
-    FOREIGN KEY (teacher_id)
-        REFERENCES users(id)
-        ON DELETE CASCADE
-
 );
 
 INSERT INTO school_teachers (
@@ -1226,20 +285,38 @@ INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUE
 -- EXAM BLOCKS
 -- ======================
 
-INSERT INTO exams(`id`,`title`,subject_id,level_id,created_by,updated_by, archived_at) VALUES(1,'Test',1,2,2,2,CURRENT_TIMESTAMP);
+INSERT INTO assessments(`id`,`title`,subject_id,level_id,created_by,updated_by, archived_at) VALUES(1,'Test',1,2,2,2,CURRENT_TIMESTAMP);
 
-INSERT INTO exam_permissions (
-    exam_id,
-    teacher_id,
+INSERT INTO assessment_permissions (
+    assessment_id,
+    user_id,
     role
 )
-VALUES (1,1,'owner'),(1,2,'reader');
+VALUES
+(1,1,'owner'),
+(1,2,'reader');
 
-INSERT INTO exam_blocks (exam_id,block_id,sort_order) VALUES
-(1,1,6),(1,2,2),(1,3,3),(1,4,4),(1,5,5),(1,6,1);
+INSERT INTO assessment_blocks (
+    assessment_id,
+    block_id,
+    sort_order
+)
+VALUES
+(1,1,6),
+(1,2,2),
+(1,3,3),
+(1,4,4),
+(1,5,5),
+(1,6,1);
 
+INSERT INTO group_assessments(
+    assessment_id,
+    group_id,
+    access_key
+)
+VALUES
+(1,1,'A');
 
-INSERT INTO group_exams(`exam_id`,`group_id`,`group_exam_key`) VALUES(1,1,'A');
 
 INSERT INTO block_abilities (
     block_id,
@@ -1925,116 +1002,6 @@ INSERT INTO level_books (level_id, book_id) VALUES (2,1);
 
 
 
---Gruppens återkommande lektionstider
-CREATE TABLE group_schedules (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-
-    group_id INT NOT NULL,
-
-    weekday TINYINT NOT NULL,
-
-    start_time TIME NOT NULL,
-    end_time TIME NOT NULL,
-
-    valid_from DATE NOT NULL,
-    valid_to DATE NOT NULL,
-
-    FOREIGN KEY (group_id)
-        REFERENCES groups(id)
-        ON DELETE CASCADE
-);
-
--- Schemabrytande dagar
-CREATE TABLE group_schedule_exceptions (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-
-    group_id INT NOT NULL,
-
-    date DATE NOT NULL,
-
-    type ENUM(
-        'holiday',
-        'study_day',
-        'cancelled',
-        'other'
-    ) NOT NULL,
-
-    note VARCHAR(255),
-
-    FOREIGN KEY (group_id)
-        REFERENCES groups(id)
-        ON DELETE CASCADE
-);
-
--- Faktiska lektionstillfällen
-CREATE TABLE lessons (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-
-    group_id INT NOT NULL,
-
-    group_schedule_id INT NOT NULL,
-
-    starts_at DATETIME NOT NULL,
-    ends_at DATETIME NOT NULL,
-
-    cancelled_at DATETIME NULL,
-    deleted_at DATETIME NULL,
-
-    FOREIGN KEY (group_id)
-        REFERENCES groups(id)
-        ON DELETE CASCADE,
-
-    FOREIGN KEY (group_schedule_id)
-        REFERENCES group_schedules(id)
-        ON DELETE CASCADE
-);
-
--- Koppling mellan lektion och boksektion
-CREATE TABLE lesson_sections (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-
-    lesson_id INT NOT NULL,
-
-    section_id INT NOT NULL,
-
-    pinned TINYINT(1) NOT NULL DEFAULT 0,
-
-    sort_order INT NOT NULL DEFAULT 0,
-
-    FOREIGN KEY (lesson_id)
-        REFERENCES lessons(id)
-        ON DELETE CASCADE,
-
-    FOREIGN KEY (section_id)
-        REFERENCES sections(id)
-        ON DELETE CASCADE
-);
-
-
-CREATE TABLE group_planning_sections (
-
-    id INT AUTO_INCREMENT PRIMARY KEY,
-
-    group_id INT NOT NULL,
-
-    section_id INT NOT NULL,
-
-    sort_order INT NOT NULL,
-
-    created_at DATETIME NOT NULL
-        DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT fk_gps_group
-        FOREIGN KEY (group_id)
-        REFERENCES groups(id),
-
-    CONSTRAINT fk_gps_section
-        FOREIGN KEY (section_id)
-        REFERENCES sections(id)
-
-);
-
-
 -- INSERT INTO group_schedules (
 --     group_id,
 --     weekday,
@@ -2113,29 +1080,14 @@ VALUES
 -- -- Lektion 4
 -- (4, 6, 1);
 
-CREATE TABLE presentations (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-
-    title VARCHAR(255) NOT NULL,
-
-    content LONGTEXT NOT NULL,
-
-    section_id INT NULL,
-
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-        ON UPDATE CURRENT_TIMESTAMP,
-
-    FOREIGN KEY (section_id)
-        REFERENCES sections(id)
-        ON DELETE SET NULL
-);
 
 INSERT INTO presentations (
     title,
     content,
-    section_id
+    section_id,
+    school_id,
+    created_by,
+    updated_by
 )
 VALUES (
     'Potensregler',
@@ -2198,7 +1150,7 @@ $$
 
 # Quiz
 
-{{group_exam:42}}
+{{group_assessment:42}}
 
 När alla är klara går vi vidare.
 
@@ -2212,7 +1164,10 @@ När alla är klara går vi vidare.
 
 Bra jobbat!
 ',
-125
+125,
+1,
+1,
+1
 );
 
 
@@ -2437,3 +1392,102 @@ VALUES
 -- -- Block 6 (Kommunikation)
 -- (6, 4, 16, 1),
 -- (6, 4, 17, 2);
+
+
+
+
+INSERT INTO assessment_type_settings (
+    assessment_type,
+    config
+)
+VALUES
+
+(
+    'exam',
+    JSON_OBJECT(
+        'attempt', JSON_OBJECT(
+            'defaultTimeLimitMinutes', 120,
+            'maxAttempts', 1
+        ),
+
+        'presentation', JSON_OBJECT(
+            'allowCalculator', false,
+            'allowFormulaSheet', true
+        ),
+
+        'monitoring', JSON_OBJECT(
+            'lock_page_refresh', true,
+            'lock_tab_hidden', true,
+            'lock_window_blur', true,
+            'lock_context_menu', true,
+            'lock_page_unload', false
+        ),
+
+        'navigation', JSON_OBJECT(
+            'allowGoToPreviousQuestion', true
+        )
+    )
+),
+
+(
+    'worksheet',
+    JSON_OBJECT(
+        'attempt', JSON_OBJECT(
+            'defaultTimeLimitMinutes', NULL,
+            'maxAttempts', 999
+        ),
+
+        'presentation', JSON_OBJECT(
+            'allowCalculator', true,
+            'allowFormulaSheet', true
+        ),
+
+        'monitoring', JSON_OBJECT(),
+
+        'navigation', JSON_OBJECT(
+            'allowGoToPreviousQuestion', true
+        )
+    )
+),
+
+(
+    'exit_ticket',
+    JSON_OBJECT(
+        'attempt', JSON_OBJECT(
+            'defaultTimeLimitMinutes', 10,
+            'maxAttempts', 1
+        ),
+
+        'presentation', JSON_OBJECT(
+            'allowCalculator', false,
+            'allowFormulaSheet', false
+        ),
+
+        'monitoring', JSON_OBJECT(),
+
+        'navigation', JSON_OBJECT(
+            'allowGoToPreviousQuestion', false
+        )
+    )
+),
+
+(
+    'diagnostic',
+    JSON_OBJECT(
+        'attempt', JSON_OBJECT(
+            'defaultTimeLimitMinutes', 60,
+            'maxAttempts', 1
+        ),
+
+        'presentation', JSON_OBJECT(
+            'allowCalculator', true,
+            'allowFormulaSheet', true
+        ),
+
+        'monitoring', JSON_OBJECT(),
+
+        'navigation', JSON_OBJECT(
+            'allowGoToPreviousQuestion', true
+        )
+    )
+);

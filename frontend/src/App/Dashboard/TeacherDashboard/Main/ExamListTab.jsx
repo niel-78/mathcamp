@@ -18,14 +18,14 @@ export default function ExamListTab({
     openTab
 }) {
 
-    const [exams, setExams] =
+    const [assessments, setExams] =
         useState([]);
 
     const [creatingExam,
         setCreatingExam] =
         useState(false);
 
-    const [examToArchive,
+    const [assessmentToArchive,
         setExamToArchive] =
         useState(null);
 
@@ -39,7 +39,7 @@ export default function ExamListTab({
 
             const response =
                 await fetch(
-                    `${API_URL}/api/exams`,
+                    `${API_URL}/api/assessments`,
                     {
                         headers:
                             authHeaders()
@@ -70,10 +70,10 @@ export default function ExamListTab({
     }, []);
 
     const handleArchiveExam = (
-        exam
+        assessment
     ) => {
 
-        setExamToArchive(exam);
+        setExamToArchive(assessment);
 
         setArchiveOpen(true);
 
@@ -113,13 +113,13 @@ export default function ExamListTab({
                     "
                 >
 
-                    {exams.map(exam => (
+                    {assessments.map(assessment => (
 
                         <ExamCard
-                            key={exam.id}
-                            exam={exam}
+                            key={assessment.id}
+                            assessment={assessment}
                             selected={
-                                selectedExamId === exam.id
+                                selectedExamId === assessment.id
                             }
                             openTab={openTab}
                             onArchive={
@@ -133,7 +133,7 @@ export default function ExamListTab({
             </BaseTabLayout>
 
             <ArchiveExamDialog
-                exam={examToArchive}
+                assessment={assessmentToArchive}
                 open={archiveOpen}
                 onOpenChange={
                     setArchiveOpen
@@ -149,17 +149,17 @@ export default function ExamListTab({
             >
 
                 <CreateExam
-                    onCreated={(exam) => {
+                    onCreated={(assessment) => {
 
                         setCreatingExam(false);
 
                         loadExams();
 
                         openTab({
-                            id: `exam-${exam.id}`,
-                            title: exam.title,
-                            type: "exam",
-                            examId: exam.id
+                            id: `assessment-${assessment.id}`,
+                            title: assessment.title,
+                            type: "assessment",
+                            assessmentId: assessment.id
                         });
 
                     }}

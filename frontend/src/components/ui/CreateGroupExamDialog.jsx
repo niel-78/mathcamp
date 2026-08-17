@@ -23,13 +23,13 @@ export default function CreateGroupExamDialog({
     const [groups, setGroups] =
         useState([]);
 
-    const [exams, setExams] =
+    const [assessments, setExams] =
         useState([]);
 
     const [groupId, setGroupId] =
         useState("");
 
-    const [examId, setExamId] =
+    const [assessmentId, setExamId] =
         useState("");
 
     useEffect(() => {
@@ -44,7 +44,7 @@ export default function CreateGroupExamDialog({
 
         const [
             groupsResponse,
-            examsResponse
+            assessmentsResponse
         ] = await Promise.all([
             fetch(
                 `${API_URL}/api/groups`,
@@ -53,7 +53,7 @@ export default function CreateGroupExamDialog({
                 }
             ),
             fetch(
-                `${API_URL}/api/exams`,
+                `${API_URL}/api/assessments`,
                 {
                     headers: authHeaders()
                 }
@@ -68,10 +68,10 @@ export default function CreateGroupExamDialog({
 
         }
 
-        if (examsResponse.ok) {
+        if (assessmentsResponse.ok) {
 
             setExams(
-                await examsResponse.json()
+                await assessmentsResponse.json()
             );
 
         }
@@ -80,7 +80,7 @@ export default function CreateGroupExamDialog({
 
     const createGroupExam = async () => {
 
-        if (!groupId || !examId) {
+        if (!groupId || !assessmentId) {
 
             toast.error(
                 "Du måste välja grupp och prov"
@@ -91,7 +91,7 @@ export default function CreateGroupExamDialog({
         }
 
         const response = await fetch(
-            `${API_URL}/api/group-exams`,
+            `${API_URL}/api/group-assessments`,
             {
                 method: "POST",
                 headers: {
@@ -101,7 +101,7 @@ export default function CreateGroupExamDialog({
                 },
                 body: JSON.stringify({
                     group_id: Number(groupId),
-                    exam_id: Number(examId)
+                    assessment_id: Number(assessmentId)
                 })
             }
         );
@@ -218,7 +218,7 @@ export default function CreateGroupExamDialog({
                                 input-standard
                                 w-full
                             "
-                            value={examId}
+                            value={assessmentId}
                             onChange={(e) =>
                                 setExamId(
                                     e.target.value
@@ -230,13 +230,13 @@ export default function CreateGroupExamDialog({
                                 Välj prov
                             </option>
 
-                            {exams.map(exam => (
+                            {assessments.map(assessment => (
 
                                 <option
-                                    key={exam.id}
-                                    value={exam.id}
+                                    key={assessment.id}
+                                    value={assessment.id}
                                 >
-                                    {exam.title}
+                                    {assessment.title}
                                 </option>
 
                             ))}

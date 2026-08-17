@@ -15,9 +15,9 @@ router.use(requireAuth);
 router.use(requireRole("student", "teacher"));
 
 /* 
-POST /group-exam-lobby/:id/join
-GET /group-exam-lobby/:id/status
-POST /group-exam-lobby/find
+POST /group-assessment-lobby/:id/join
+GET /group-assessment-lobby/:id/status
+POST /group-assessment-lobby/find
 */
 
 // GET /api/group-assessments/:id/status
@@ -27,7 +27,7 @@ router.get("/:id/status", async (req, res) => {
             await db.query(
                 `
                 SELECT
-                    exam_status,
+                    assessment_status,
                     waiting_room_open
                 FROM group_assessments
                 WHERE id = ?
@@ -52,7 +52,7 @@ router.get("/:id/status", async (req, res) => {
                 SELECT admitted_at
                 FROM assessment_waiting_room
                 WHERE
-                    group_exam_id = ?
+                    group_assessment_id = ?
                     AND user_id = ?
                 `,
                 [
@@ -69,7 +69,7 @@ router.get("/:id/status", async (req, res) => {
                     status
                 FROM assessment_attempts
                 WHERE
-                    group_exam_id = ?
+                    group_assessment_id = ?
                     AND user_id = ?
                 LIMIT 1
                 `,
@@ -81,8 +81,8 @@ router.get("/:id/status", async (req, res) => {
 
             res.json({
 
-                exam_status:
-                    rows[0].exam_status,
+                assessment_status:
+                    rows[0].assessment_status,
 
                 waiting_room_open:
                     rows[0].waiting_room_open,
@@ -104,7 +104,7 @@ router.get("/:id/status", async (req, res) => {
 // POST /api/group-assessments/join
 router.post("/join", async (req, res) => {
 
-    const { group_exam_key } = req.body;
+    const { group_assessment_key } = req.body;
 
     const [[groupExam]] =
         await db.query(
@@ -112,12 +112,12 @@ router.post("/join", async (req, res) => {
             SELECT
                 id,
                 group_id,
-                exam_status,
+                assessment_status,
                 waiting_room_open
             FROM group_assessments
-            WHERE group_exam_key = ?
+            WHERE group_assessment_key = ?
             `,
-            [group_exam_key]
+            [group_assessment_key]
         );
 
     if (!groupExam) {
@@ -136,7 +136,7 @@ router.post("/join", async (req, res) => {
                 status
             FROM assessment_attempts
             WHERE
-                group_exam_id = ?
+                group_assessment_id = ?
                 AND user_id = ?
             ORDER BY started_at DESC
             LIMIT 1
@@ -162,8 +162,8 @@ router.post("/join", async (req, res) => {
 
         return res.json({
             success: true,
-            group_exam_id: groupExam.id,
-            exam_status: groupExam.exam_status
+            group_assessment_id: groupExam.id,
+            assessment_status: groupExam.assessment_status
         });
 
     }
@@ -202,7 +202,7 @@ router.post("/join", async (req, res) => {
     await db.query(
         `
         INSERT IGNORE INTO assessment_waiting_room (
-            group_exam_id,
+            group_assessment_id,
             user_id
         )
         VALUES (?, ?)
@@ -215,20 +215,20 @@ router.post("/join", async (req, res) => {
 
     res.json({
         success: true,
-        group_exam_id: groupExam.id,
-        exam_status: groupExam.exam_status
+        group_assessment_id: groupExam.id,
+        assessment_status: groupExam.assessment_status
     });
 
 });
 
-// POST /api/group-exam-lobby/find
+// POST /api/group-assessment-lobby/find
 router.post("/find", async (req, res) => {
 
     try {
 
-        const { group_exam_key } = req.body;
+        const { group_assessment_key } = req.body;
 
-        if (!group_exam_key) {
+        if (!group_assessment_key) {
 
             return res.status(400).json({
                 error: "Exam key saknas."
@@ -243,11 +243,11 @@ router.post("/find", async (req, res) => {
                 ge.group_id,
                 ge.assessment_id,
                 ge.waiting_room_open,
-                ge.exam_status,
+                ge.assessment_status,
                 ge.available_from,
                 ge.available_until,
 
-                e.title AS exam_title,
+                e.title AS assessment_title,
                 g.name AS group_name
 
             FROM group_assessments ge
@@ -258,15 +258,15 @@ router.post("/find", async (req, res) => {
             INNER JOIN groups g
                 ON g.id = ge.group_id
 
-            WHERE ge.group_exam_key = ?
+            WHERE ge.group_assessment_key = ?
             `,
-            [group_exam_key]
+            [group_assessment_key]
         );
 
         if (!groupExam) {
 
             return res.status(404).json({
-                error: "Ogiltig exam key."
+                error: "Ogiltig assessment key."
             });
 
         }
@@ -310,11 +310,11 @@ router.post("/find", async (req, res) => {
         }
 
         res.json({
-            group_exam_id: groupExam.id,
+            group_assessment_id: groupExam.id,
             assessment_id: groupExam.assessment_id,
-            exam_title: groupExam.exam_title,
+            assessment_title: groupExam.assessment_title,
             group_name: groupExam.group_name,
-            exam_status: groupExam.exam_status,
+            assessment_status: groupExam.assessment_status,
             waiting_room_open: groupExam.waiting_room_open,
             available_from: groupExam.available_from,
             available_until: groupExam.available_until

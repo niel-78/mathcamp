@@ -23,8 +23,6 @@ export default function CreateAbilityDialog({
 
         try {
 
-            console.log("createAbility");
-
             const payload = {
                 name,
                 seriesId: series.id

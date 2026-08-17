@@ -13,9 +13,9 @@ export default function StartPage({
             <Button
                 onClick={() =>
                     openTab({
-                        id: "exams",
+                        id: "assessments",
                         title: "Provbank",
-                        type: "exams"
+                        type: "assessments"
                     })
                 }
             >
@@ -37,9 +37,9 @@ export default function StartPage({
             <Button
                 onClick={() =>
                     openTab({
-                        id: "group-exams",
+                        id: "group-assessments",
                         title: "Provtillfällen",
-                        type: "group-exams"
+                        type: "group-assessments"
                     })
                 }
             >

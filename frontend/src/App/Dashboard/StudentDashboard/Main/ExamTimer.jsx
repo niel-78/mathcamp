@@ -56,7 +56,7 @@ export default function ExamTimer({
         secondsLeft % 60;
 
     return (
-        <div className="exam-timer">
+        <div className="assessment-timer">
 
             ⏱ Tid kvar:
 

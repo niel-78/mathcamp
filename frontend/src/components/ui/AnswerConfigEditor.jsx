@@ -8,7 +8,7 @@ import {
     QUESTION_TYPES,
     getGradingModeLabel,
     getQuestionTypeLabel
-} from "@/constants/examConstants";
+} from "@/constants/assessmentConstants";
 
 export default function AnswerConfigEditor({
     question,

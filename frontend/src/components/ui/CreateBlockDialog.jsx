@@ -11,7 +11,7 @@ import CreateBlock
 export default function CreateBlockDialog({
     open,
     onOpenChange,
-    examId,
+    assessmentId,
     centralContentIds = [],
     sectionIds = [],
     onCreated
@@ -37,7 +37,7 @@ export default function CreateBlockDialog({
                 </DialogHeader>
 
                 <CreateBlock
-                    examId={examId}
+                    assessmentId={assessmentId}
                     centralContentIds={centralContentIds}
                     sectionIds={sectionIds}
                     onCreated={(block) => {

@@ -1,461 +1,349 @@
-import { Button } from "@/components/ui/button";
-import AbilitySeriesMenu from "./menus/AbilitySeriesMenu";
-import GroupMenu from "./menus/GroupMenu";
-import StudentMenu from "./menus/StudentMenu";
-import StudentsMenu from "./menus/StudentsMenu";
-import AbilityMenu from "./menus/AbilityMenu";
 import GroupsMenu from "./menus/GroupsMenu";
+import GroupMenu from "./menus/GroupMenu";
+import StudentsMenu from "./menus/StudentsMenu";
+import StudentMenu from "./menus/StudentMenu";
+import PlanningMenu from "./menus/PlanningMenu";
+import SubjectMenu from "./menus/SubjectMenu";
+import LevelMenu from "./menus/LevelMenu";
 import BooksMenu from "./menus/BooksMenu";
 import BookMenu from "./menus/BookMenu";
-import SubjectMenu from "./menus/SubjectMenu";
-import CentralContentLevelMenu from "./menus/CentralContentLevelMenu";
+import AbilitiesMenu from "./menus/AbilitiesMenu";
+import AbilitySeriesMenu from "./menus/AbilitySeriesMenu";
+import AbilityMenu from "./menus/AbilityMenu";
 import CriteriaLevelMenu from "./menus/CriteriaLevelMenu";
-import LevelMenu from "./menus/LevelMenu";
+import CentralContentLevelMenu from "./menus/CentralContentLevelMenu";
 
+export default function ContextMenu(props) {
 
-export default function ContextMenu({
-    contextMenu,
-    setContextMenu,
-    user,
-    setCreateAbilityDialog,
-    setImportAbilitiesDialog,
-    setRenameAbilitySeriesDialog,
-    setRenameDialog,
-    setArchiveDialog,
-    setPasswordDialog,
-    setRenameStudentDialog,
-    setArchiveStudentDialog,
-    setCreateStudentDialog,
-    setImportStudentsDialog
-}) {
+    const {
+        contextMenu,
+        user,
+        setContextMenu
+    } = props;
+
+    if (!contextMenu) {
+        return null;
+    }
+
+    const renderMenu = () => {
+
+        switch (contextMenu.type) {
+
+            case "groups":
+                return (
+                    <GroupsMenu
+                        onCreateGroup={() => {
+                            props.onCreateGroup?.();
+                            setContextMenu(null);
+                        }}
+                    />
+                );
+
+            case "group":
+                return (
+                    <GroupMenu
+                        onRename={() => {
+                            props.onRenameGroup?.(
+                                contextMenu.groupId,
+                                contextMenu.groupName
+                            );
+
+                            setContextMenu(null);
+                        }}
+                        onArchive={() => {
+                            props.onArchiveGroup?.(
+                                contextMenu.groupId,
+                                contextMenu.groupName
+                            );
+
+                            setContextMenu(null);
+                        }}
+                    />
+                );
+
+            case "students":
+                return (
+                    <StudentsMenu
+                        onCreateStudent={() => {
+                            props.onCreateStudent?.(
+                                contextMenu.groupId,
+                                contextMenu.groupName
+                            );
+
+                            setContextMenu(null);
+                        }}
+                        onImportStudents={() => {
+                            props.onImportStudents?.(
+                                contextMenu.groupId,
+                                contextMenu.groupName
+                            );
+
+                            setContextMenu(null);
+                        }}
+                    />
+                );
+
+            case "student":
+                return (
+                    <StudentMenu
+                        contextMenu={contextMenu}
+                        onResetPassword={() => {
+                            props.onResetPassword?.(
+                                contextMenu.userId,
+                                `${contextMenu.firstName} ${contextMenu.lastName}`
+                            );
+
+                            setContextMenu(null);
+                        }}
+                        onRename={() => {
+                            props.onRenameStudent?.(
+                                contextMenu
+                            );
+
+                            setContextMenu(null);
+                        }}
+                        onArchive={() => {
+                            props.onArchiveStudent?.(
+                                contextMenu
+                            );
+
+                            setContextMenu(null);
+                        }}
+                    />
+                );
+
+            case "planning":
+                return (
+                    <PlanningMenu
+                        onCreateLessons={() => {
+                            props.onCreateLessons?.(
+                                contextMenu.groupId,
+                                contextMenu.groupName
+                            );
+
+                            setContextMenu(null);
+                        }}
+                        onManageSchedule={() => {
+                            props.onManageSchedule?.(
+                                contextMenu.groupId,
+                                contextMenu.groupName
+                            );
+
+                            setContextMenu(null);
+                        }}
+                        onOpenQueue={() => {
+                            props.onOpenQueue?.(
+                                contextMenu.groupId,
+                                contextMenu.groupName
+                            );
+
+                            setContextMenu(null);
+                        }}
+                    />
+                );
+
+            case "subject":
+
+                if (user?.role !== "super") {
+                    return null;
+                }
+
+                return (
+                    <SubjectMenu
+                        onCreateLevel={() => {
+                            props.onCreateLevel?.(
+                                contextMenu.subjectId,
+                                contextMenu.subjectName
+                            );
+
+                            setContextMenu(null);
+                        }}
+                    />
+                );
+
+            case "level":
+
+                if (user?.role !== "super") {
+                    return null;
+                }
+
+                return (
+                    <LevelMenu
+                        onCreateBook={() => {
+                            props.onCreateBook?.(
+                                contextMenu.levelId,
+                                contextMenu.levelName
+                            );
+
+                            setContextMenu(null);
+                        }}
+                    />
+                );
+
+            case "central-content-level":
+
+                if (user?.role !== "super") {
+                    return null;
+                }
+
+                return (
+                    <CentralContentLevelMenu
+                        onImportCentralContent={() => {
+                            props.onImportCentralContent?.(
+                                contextMenu.levelId,
+                                contextMenu.levelName
+                            );
+
+                            setContextMenu(null);
+                        }}
+                    />
+                );
+
+            case "criteria-level":
+
+                if (user?.role !== "super") {
+                    return null;
+                }
+
+                return (
+                    <CriteriaLevelMenu
+                        onImportCriteria={() => {
+                            props.onImportCriteria?.(
+                                contextMenu.levelId,
+                                contextMenu.levelName
+                            );
+
+                            setContextMenu(null);
+                        }}
+                    />
+                );
+
+            case "books":
+
+                if (user?.role !== "super") {
+                    return null;
+                }
+
+                return (
+                    <BooksMenu
+                        onCreateBook={() => {
+                            props.onCreateBookRoot?.();
+
+                            setContextMenu(null);
+                        }}
+                    />
+                );
+
+            case "book":
+
+                if (user?.role !== "super") {
+                    return null;
+                }
+
+                return (
+                    <BookMenu
+                        onImportStructure={() => {
+                            props.onImportBookStructure?.(
+                                contextMenu.bookId,
+                                contextMenu.bookTitle
+                            );
+
+                            setContextMenu(null);
+                        }}
+                    />
+                );
+
+            case "abilities":
+                return (
+                    <AbilitiesMenu
+                        onCreateSeries={() => {
+                            props.onCreateAbilitySeries?.();
+
+                            setContextMenu(null);
+                        }}
+                    />
+                );
+
+            case "ability-series":
+                return (
+                    <AbilitySeriesMenu
+                        contextMenu={contextMenu}
+                        user={user}
+                        setContextMenu={setContextMenu}
+                        onCreateAbility={() => {
+                            props.onCreateAbility?.(
+                                contextMenu.seriesId,
+                                contextMenu.seriesName
+                            );
+                        }}
+                        onImportAbilities={() => {
+                            props.onImportAbilities?.(
+                                contextMenu.seriesId,
+                                contextMenu.seriesName
+                            );
+                        }}
+                        onRenameSeries={() => {
+                            props.onRenameAbilitySeries?.(
+                                contextMenu.seriesId,
+                                contextMenu.seriesName
+                            );
+                        }}
+                    />
+                );
+
+            case "ability":
+
+                if (user?.role !== "super") {
+                    return null;
+                }
+
+                return (
+                    <AbilityMenu
+                        onRename={() => {
+                            props.onRenameAbility?.(
+                                contextMenu.abilityId,
+                                contextMenu.name
+                            );
+
+                            setContextMenu(null);
+                        }}
+                        onDelete={() => {
+                            props.onDeleteAbility?.(
+                                contextMenu.abilityId,
+                                contextMenu.name
+                            );
+
+                            setContextMenu(null);
+                        }}
+                    />
+                );
+
+            default:
+                return null;
+        }
+    };
 
     return (
-        <div>
 
-            {
-                contextMenu && (
-
-                    <div
-                        className="
-                            fixed
-                            bg-popover
-                            text-popover-foreground
-                            border
-                            border-border
-                            rounded-lg
-                            shadow-lg
-                            z-50
-                            min-w-40
-                        "
-
-                        style={{
-                            left: contextMenu.x,
-                            top: contextMenu.y
-                        }}
-                    >
-
-                        {contextMenu?.type === "groups" && (
-
-                            <GroupsMenu
-                                onCreateGroup={() => {
-
-                                    setShowCreateGroupDialog(true);
-
-                                    setContextMenu(null);
-
-                                }}
-                            />
-
-                        )}
-
-                        {contextMenu?.type === "group" && (
-
-                            <GroupMenu
-                                contextMenu={contextMenu}
-                                setContextMenu={setContextMenu}
-                                setRenameDialog={setRenameDialog}
-                                setArchiveDialog={setArchiveDialog}
-                            />
-
-                        )}
-
-                        {contextMenu?.type === "planning" && (
-
-                            <div className="context-menu">
-
-                                <Button
-                                    className="context-menu-button"
-                                    variant="inline"
-                                    onClick={() => {
-
-                                        setCreateLessonSeriesDialog({
-                                            groupId: contextMenu.groupId,
-                                            groupName: contextMenu.groupName
-                                        });
-
-                                        setContextMenu(null);
-
-                                    }}
-                                >
-                                    Skapa lektioner
-                                </Button>
-                                <Button
-                                    variant="inline"
-                                    className="context-menu-button"
-                                    onClick={() => {
-
-                                        openTab({
-                                            id: `group-schedules-${contextMenu.groupId}`,
-                                            type: "group-schedules",
-                                            title: `${contextMenu.groupName} - Scheman`,
-                                            groupId: contextMenu.groupId
-                                        });
-
-                                        setContextMenu(null);
-
-                                    }}
-                                >
-                                    Hantera schema
-                                </Button>
-                                <Button
-                                    variant="inline"
-                                    className="context-menu-button"
-                                    onClick={() => {
-
-                                        openTab({
-                                            id: `planning-queue-${contextMenu.groupId}`,
-                                            type: "planning-queue",
-                                            title: `${contextMenu.groupName} - Planeringskö`,
-                                            groupId: contextMenu.groupId
-                                        });
-
-                                        setContextMenu(null);
-
-                                    }}
-                                >
-                                    Planeringskö
-                                </Button>
-
-                            </div>
-
-                        )}
-
-                        {contextMenu?.type === "student" && (
-
-                            <StudentMenu
-                                contextMenu={contextMenu}
-
-                                onResetPassword={() => {
-
-                                    setPasswordDialog({
-                                        id: contextMenu.userId,
-                                        name: `${contextMenu.firstName} ${contextMenu.lastName}`
-                                    });
-
-                                    setContextMenu(null);
-
-                                }}
-
-                                onRename={() => {
-
-                                    setRenameStudentDialog({
-                                        id: contextMenu.userId,
-                                        groupId: contextMenu.groupId,
-                                        firstName: contextMenu.firstName,
-                                        lastName: contextMenu.lastName
-                                    });
-
-                                    setContextMenu(null);
-
-                                }}
-
-                                onArchive={() => {
-
-                                    setArchiveStudentDialog({
-                                        userId: contextMenu.userId,
-                                        groupId: contextMenu.groupId,
-                                        name: `${contextMenu.firstName} ${contextMenu.lastName}`
-                                    });
-
-                                    setContextMenu(null);
-
-                                }}
-                            />
-
-                        )}
-
-                        {contextMenu?.type === "students" && (
-
-                            <StudentsMenu
-
-                                onCreateStudent={() => {
-
-                                    setCreateStudentDialog({
-                                        groupId: contextMenu.groupId,
-                                        groupName: contextMenu.groupName
-                                    });
-
-                                    setContextMenu(null);
-
-                                }}
-
-                                onImportStudents={() => {
-
-                                    setImportStudentsDialog({
-                                        groupId: contextMenu.groupId,
-                                        groupName: contextMenu.groupName
-                                    });
-
-                                    setContextMenu(null);
-
-                                }}
-
-                            />
-
-                        )}
-
-                        {contextMenu?.type === "subject" &&
-                        user?.role === "super" && (
-
-                            <SubjectMenu
-                                onCreateLevel={() => {
-
-                                    setCreateLevelDialog({
-                                        subjectId: contextMenu.subjectId,
-                                        subjectName: contextMenu.subjectName
-                                    });
-
-                                    setContextMenu(null);
-
-                                }}
-                            />
-
-                        )}
-
-                        {contextMenu?.type === "central-content-level" &&
-                        user?.role === "super" && (
-
-                            <CentralContentLevelMenu
-                                onImportCentralContent={() => {
-
-                                    setImportCentralContentDialog({
-                                        levelId: contextMenu.levelId,
-                                        levelName: contextMenu.levelName
-                                    });
-
-                                    setContextMenu(null);
-
-                                }}
-                            />
-
-                        )}
-
-                        {contextMenu?.type === "criteria-level" &&
-                        user?.role === "super" && (
-
-                            <CriteriaLevelMenu
-                                onImportCriteria={() => {
-
-                                    setImportCriteriaDialog({
-                                        levelId: contextMenu.levelId,
-                                        levelName: contextMenu.levelName
-                                    });
-
-                                    setContextMenu(null);
-
-                                }}
-                            />
-
-                        )}
-
-                        {contextMenu?.type === "ability-subject" &&
-                        user?.role === "super" && (
-
-                            <div className="context-menu">
-
-                                <Button
-                                    className="context-menu-button"
-                                    variant="inline"
-                                    onClick={() => {
-
-                                        setCreateAbilityDialog({
-                                            id: contextMenu.seriesId,
-                                            name: contextMenu.seriesName
-                                        });
-
-                                        setContextMenu(null);
-
-                                    }}
-                                >
-                                    Lägg till förmåga
-                                </Button>
-
-                                <Button
-                                    className="context-menu-button"
-                                    variant="inline"
-                                    onClick={() => {
-
-                                        setImportAbilitiesDialog({
-                                            subjectId:
-                                                contextMenu.subjectId,
-                                            subjectName:
-                                                contextMenu.subjectName
-                                        });
-
-                                        setContextMenu(null);
-
-                                    }}
-                                >
-                                    Lägg till förmågor via Excel
-                                </Button>
-
-                                <Button
-                                    variant="inline"
-                                    className="context-menu-button"
-                                    onClick={() => {
-                                        setRenameAbilitySeriesDialog({
-                                            id: contextMenu.seriesId,
-                                            name: contextMenu.seriesName
-                                        });
-
-                                        setContextMenu(null);
-
-                                    }}
-                                >
-                                    Byt namn
-                                </Button>
-
-                            </div>
-
-                        )}
-
-                        {contextMenu?.type === "level" &&
-                        user?.role === "super" && (
-
-                            <LevelMenu
-                                onCreateBook={() => {
-
-                                    setCreateBookDialog({
-                                        levelId: contextMenu.levelId,
-                                        levelName: contextMenu.levelName
-                                    });
-
-                                    setContextMenu(null);
-
-                                }}
-                            />
-
-                        )}
-
-                        {contextMenu?.type === "books" &&
-                        user?.role === "super" && (
-
-                            <BooksMenu
-                                onCreateBook={() => {
-
-                                    setCreateBookDialog(true);
-
-                                    setContextMenu(null);
-
-                                }}
-                            />
-
-                        )}
-
-                        {contextMenu?.type === "book" &&
-                        user?.role === "super" && (
-
-                            <BookMenu
-                                onImportStructure={() => {
-
-                                    setImportBookStructureDialog({
-                                        id: contextMenu.bookId,
-                                        title: contextMenu.bookTitle
-                                    });
-
-                                    setContextMenu(null);
-
-                                }}
-                            />
-
-                        )}
-
-                        {contextMenu?.type === "abilities" && (
-
-                            <div className="context-menu">
-                                <Button
-                                    variant="inline"
-                                    className="context-menu-button"
-                                    onClick={() => {
-
-                                        setCreateAbilitySeriesDialog(true);
-
-                                        setContextMenu(null);
-
-                                    }}
-                                >
-                                    Ny serie
-                                </Button>
-                            </div>    
-
-                        )}
-
-                        {contextMenu?.type === "ability-series" && (
-
-                            <AbilitySeriesMenu
-                                contextMenu={contextMenu}
-                                user={user}
-                                setContextMenu={setContextMenu}
-                                setCreateAbilityDialog={
-                                    setCreateAbilityDialog
-                                }
-                                setImportAbilitiesDialog={
-                                    setImportAbilitiesDialog
-                                }
-                                setRenameAbilitySeriesDialog={
-                                    setRenameAbilitySeriesDialog
-                                }
-                            />
-
-                        )}
-
-                        {contextMenu?.type === "ability" &&
-                        user?.role === "super" && (
-
-                            <AbilityMenu
-
-                                onRename={() => {
-
-                                    setRenameAbilityDialog({
-                                        id: contextMenu.abilityId,
-                                        name: contextMenu.name
-                                    });
-
-                                    setContextMenu(null);
-
-                                }}
-
-                                onDelete={() => {
-
-                                    setDeleteAbilityDialog({
-                                        id: contextMenu.abilityId,
-                                        name: contextMenu.name
-                                    });
-
-                                    setContextMenu(null);
-
-                                }}
-
-                            />
-
-                        )}
-
-
-                    </div>
-
-                )
-            }
-
+        <div
+            className="
+                fixed
+                bg-popover
+                text-popover-foreground
+                border
+                border-border
+                rounded-lg
+                shadow-lg
+                z-50
+                min-w-40
+            "
+            style={{
+                left: contextMenu.x,
+                top: contextMenu.y
+            }}
+        >
+            {renderMenu()}
         </div>
+
     );
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import WeekView from "./WeekView";
 import CompactWeekView from "./CompactWeekView";
 import ListView from "./ListView";
@@ -24,6 +24,30 @@ export default function PlanningBoard({
 
     const selectedWeek =
         getWeekNumber(selectedDate);
+
+    useEffect(() => {
+
+        const handleScheduleCreated = () => {
+
+            onReload?.();
+
+        };
+
+        window.addEventListener(
+            "group-schedule-created",
+            handleScheduleCreated
+        );
+
+        return () => {
+
+            window.removeEventListener(
+                "group-schedule-created",
+                handleScheduleCreated
+            );
+
+        };
+
+    }, [onReload]);
 
     const previousWeek = () => {
 

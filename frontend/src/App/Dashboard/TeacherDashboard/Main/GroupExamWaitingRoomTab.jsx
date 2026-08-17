@@ -28,7 +28,7 @@ export default function GroupExamWaitingRoomTab({
 
         const waitingRoomResponse =
             await fetch(
-                `${API_URL}/api/group-exams/${groupExamId}/waiting-room`,
+                `${API_URL}/api/group-assessments/${groupExamId}/waiting-room`,
                 {
                     headers: authHeaders()
                 }
@@ -36,7 +36,7 @@ export default function GroupExamWaitingRoomTab({
 
         const groupExamResponse =
             await fetch(
-                `${API_URL}/api/group-exams/${groupExamId}`,
+                `${API_URL}/api/group-assessments/${groupExamId}`,
                 {
                     headers: authHeaders()
                 }
@@ -58,7 +58,7 @@ export default function GroupExamWaitingRoomTab({
     const admitAll = async () => {
 
         const response = await fetch(
-            `${API_URL}/api/group-exams/${groupExamId}/admit-all`,
+            `${API_URL}/api/group-assessments/${groupExamId}/admit-all`,
             {
                 method: "POST",
                 headers: authHeaders()
@@ -82,7 +82,7 @@ export default function GroupExamWaitingRoomTab({
     ) => {
 
         const response = await fetch(
-            `${API_URL}/api/group-exams/${groupExamId}/admit-student`,
+            `${API_URL}/api/group-assessments/${groupExamId}/admit-student`,
             {
                 method: "POST",
                 headers: {

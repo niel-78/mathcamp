@@ -8,9 +8,9 @@ import DeleteExamDialog from "@/components/ui/DeleteExamDialog";
 
 export default function ArchivedExamsTab() {
 
-    const [exams, setExams] = useState([]);
+    const [assessments, setExams] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [examToDelete, setExamToDelete] = useState(null);
+    const [assessmentToDelete, setExamToDelete] = useState(null);
 
     useEffect(() => {
 
@@ -24,7 +24,7 @@ export default function ArchivedExamsTab() {
 
             const response =
                 await fetch(
-                    `${API_URL}/api/archive/exams`,
+                    `${API_URL}/api/archive/assessments`,
                     {
                         headers:
                             authHeaders()
@@ -53,13 +53,13 @@ export default function ArchivedExamsTab() {
     };
 
     const restoreExam = async (
-        examId
+        assessmentId
     ) => {
 
         try {
 
             await fetch(
-                `${API_URL}/api/archive/exams/${examId}/restore`,
+                `${API_URL}/api/archive/assessments/${assessmentId}/restore`,
                 {
                     method: "POST",
                     headers:
@@ -68,7 +68,7 @@ export default function ArchivedExamsTab() {
             );
 
             window.dispatchEvent(
-                new Event("exams-changed")
+                new Event("assessments-changed")
             );
 
             await loadExams();
@@ -101,7 +101,7 @@ export default function ArchivedExamsTab() {
                     )}
 
                     {!loading &&
-                    exams.length === 0 && (
+                    assessments.length === 0 && (
 
                         <div
                             className="
@@ -116,10 +116,10 @@ export default function ArchivedExamsTab() {
 
                     <div className="space-y-4">
 
-                        {exams.map(exam => (
+                        {assessments.map(assessment => (
 
                             <div
-                                key={exam.id}
+                                key={assessment.id}
                                 className="
                                     border
                                     rounded-lg
@@ -138,7 +138,7 @@ export default function ArchivedExamsTab() {
                                             font-medium
                                         "
                                     >
-                                        {exam.title}
+                                        {assessment.title}
                                     </div>
 
                                 </div>
@@ -154,7 +154,7 @@ export default function ArchivedExamsTab() {
                                         variant="outline"
                                         onClick={() =>
                                             restoreExam(
-                                                exam.id
+                                                assessment.id
                                             )
                                         }
                                     >
@@ -164,7 +164,7 @@ export default function ArchivedExamsTab() {
                                     <Button
                                         variant="destructive"
                                         onClick={() =>
-                                            setExamToDelete(exam)
+                                            setExamToDelete(assessment)
                                         }
                                     >
                                         Radera
@@ -183,8 +183,8 @@ export default function ArchivedExamsTab() {
             </BaseTabLayout>
 
             <DeleteExamDialog
-                open={!!examToDelete}
-                exam={examToDelete}
+                open={!!assessmentToDelete}
+                assessment={assessmentToDelete}
                 onOpenChange={(open) => {
 
                     if (!open) {

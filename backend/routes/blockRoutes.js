@@ -517,7 +517,7 @@ router.post("/", async (req, res) => {
             question,
             points = [],
             sectionIds = [],
-            examId,
+            assessmentId,
             visibility = "school"
         } = req.body;
 
@@ -563,7 +563,7 @@ router.post("/", async (req, res) => {
 
         const blockId = blockResult.insertId;
 
-        if (examId) {
+        if (assessmentId) {
 
             const [rows] = await db.query(
                 `
@@ -573,7 +573,7 @@ router.post("/", async (req, res) => {
                 FROM assessment_blocks
                 WHERE assessment_id = ?
                 `,
-                [examId]
+                [assessmentId]
             );
 
             await db.query(
@@ -586,7 +586,7 @@ router.post("/", async (req, res) => {
                 VALUES (?, ?, ?)
                 `,
                 [
-                    examId,
+                    assessmentId,
                     blockId,
                     rows[0].nextOrder
                 ]

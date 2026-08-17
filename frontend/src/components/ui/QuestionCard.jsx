@@ -10,7 +10,7 @@ import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 import DetailLayout from "@/components/layouts/DetailLayout";
 import CardSection from "@/components/layouts/CardSection";
-import { GRADING_MODES, QUESTION_TYPES, getQuestionTypeLabel, getGradingModeLabel } from "@/constants/examConstants";
+import { GRADING_MODES, QUESTION_TYPES, getQuestionTypeLabel, getGradingModeLabel } from "@/constants/assessmentConstants";
 
 export default function QuestionCard({
     question,

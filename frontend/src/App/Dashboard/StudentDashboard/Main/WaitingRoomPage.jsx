@@ -9,7 +9,7 @@ export default function WaitingRoomPage({
 }) {
 
     const [status, setStatus] = useState(
-        groupExam.exam_status
+        groupExam.assessment_status
     );
 
     useEffect(() => {
@@ -19,7 +19,7 @@ export default function WaitingRoomPage({
 
                 const response =
                     await fetch(
-                        `${API_URL}/api/group-exam-lobby/${groupExam.group_exam_id}/status`,
+                        `${API_URL}/api/group-assessment-lobby/${groupExam.group_assessment_id}/status`,
                         {
                             headers:
                                 authHeaders()
@@ -34,7 +34,7 @@ export default function WaitingRoomPage({
                     await response.json();
 
                 setStatus(
-                    data.exam_status
+                    data.assessment_status
                 );
                 if (
                     data.attempt_status === "locked"
@@ -53,7 +53,7 @@ export default function WaitingRoomPage({
                 }
 
                 if (
-                    data.exam_status === "open" ||
+                    data.assessment_status === "open" ||
                     data.admitted
                 ) {
 
@@ -81,7 +81,7 @@ export default function WaitingRoomPage({
             <div className="max-w-md rounded-xl border bg-white p-6 text-center shadow">
 
                 <h1 className="text-2xl font-bold">
-                    {groupExam.exam_title}
+                    {groupExam.assessment_title}
                 </h1>
 
                 <p className="mt-4">

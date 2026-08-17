@@ -29,7 +29,7 @@ export default function GroupExamLibraryTab({
     const loadGroupExams = async () => {
 
         const response = await fetch(
-            `${API_URL}/api/group-exams`,
+            `${API_URL}/api/group-assessments`,
             {
                 headers: authHeaders()
             }

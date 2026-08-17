@@ -36,7 +36,7 @@ export default function GroupExamLibrary({
 
                             <h3 className="font-bold">
                                 {
-                                    groupExam.exam_title
+                                    groupExam.assessment_title
                                 }
                             </h3>
 
@@ -52,10 +52,10 @@ export default function GroupExamLibrary({
                                 className="mt-3"
                                 onClick={() =>
                                     openTab({
-                                        id: `group-exam-${groupExam.id}`,
+                                        id: `group-assessment-${groupExam.id}`,
                                         title:
-                                            `${groupExam.exam_title} (${groupExam.group_name})`,
-                                        type: "group-exam",
+                                            `${groupExam.assessment_title} (${groupExam.group_name})`,
+                                        type: "group-assessment",
                                         groupExamId:
                                             groupExam.id
                                     })

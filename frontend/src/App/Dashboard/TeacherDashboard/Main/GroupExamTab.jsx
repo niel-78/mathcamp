@@ -54,7 +54,7 @@ export default function GroupExamTab({
     const loadGroupExam = async () => {
 
         const response = await fetch(
-            `${API_URL}/api/group-exams/${groupExamId}`,
+            `${API_URL}/api/group-assessments/${groupExamId}`,
             {
                 headers: authHeaders()
             }
@@ -67,10 +67,10 @@ export default function GroupExamTab({
         const data =
             await response.json();
 
-        data.exam_config =
-            typeof data.exam_config === "string"
-                ? JSON.parse(data.exam_config)
-                : (data.exam_config || {});
+        data.config =
+            typeof data.config === "string"
+                ? JSON.parse(data.config)
+                : (data.config || {});
 
         setGroupExam(data);
         setSavedGroupExam(data);
@@ -80,7 +80,7 @@ export default function GroupExamTab({
     const loadBlocks = async () => {
 
         const response = await fetch(
-            `${API_URL}/api/group-exams/${groupExamId}/blocks`,
+            `${API_URL}/api/group-assessments/${groupExamId}/blocks`,
             {
                 headers: authHeaders()
             }
@@ -100,7 +100,7 @@ export default function GroupExamTab({
     const loadWaitingRoomCount = async () => {
 
         const response = await fetch(
-            `${API_URL}/api/group-exams/${groupExamId}/waiting-room`,
+            `${API_URL}/api/group-assessments/${groupExamId}/waiting-room`,
             {
                 headers: authHeaders()
             }
@@ -118,7 +118,7 @@ export default function GroupExamTab({
     const loadMonitorCount = async () => {
 
         const response = await fetch(
-            `${API_URL}/api/group-exams/${groupExamId}/monitor`,
+            `${API_URL}/api/group-assessments/${groupExamId}/monitor`,
             {
                 headers: authHeaders()
             }
@@ -146,7 +146,7 @@ export default function GroupExamTab({
     const openExam = async () => {
 
         await fetch(
-            `${API_URL}/api/group-exams/${groupExamId}/admit-all`,
+            `${API_URL}/api/group-assessments/${groupExamId}/admit-all`,
             {
                 method: "POST",
                 headers: authHeaders()
@@ -160,7 +160,7 @@ export default function GroupExamTab({
     const closeExam = async () => {
 
         await fetch(
-            `${API_URL}/api/group-exams/${groupExamId}/close`,
+            `${API_URL}/api/group-assessments/${groupExamId}/close`,
             {
                 method: "POST",
                 headers: authHeaders()
@@ -177,7 +177,7 @@ export default function GroupExamTab({
         try {
 
             const response = await fetch(
-                `${API_URL}/api/group-exams/${groupExamId}`,
+                `${API_URL}/api/group-assessments/${groupExamId}`,
                 {
                     method: "PUT",
                     headers: {
@@ -201,8 +201,8 @@ export default function GroupExamTab({
                         available_until:
                             groupExam.available_until || null,
 
-                        exam_config:
-                            groupExam.exam_config
+                        config:
+                            groupExam.config
 
                     })
                 }
@@ -247,10 +247,10 @@ export default function GroupExamTab({
     const updateConfig = (section, key, value) => {
         setGroupExam((prev) => ({
             ...prev,
-            exam_config: {
-                ...prev.exam_config,
+            config: {
+                ...prev.config,
                 [section]: {
-                    ...prev.exam_config?.[section],
+                    ...prev.config?.[section],
                     [key]: value,
                 },
             },
@@ -300,7 +300,7 @@ export default function GroupExamTab({
 
         <BaseTabLayout
 
-            title={groupExam.exam_title}
+            title={groupExam.assessment_title}
 
             actions={
 
@@ -342,7 +342,7 @@ export default function GroupExamTab({
                                     <strong>Nyckel:</strong>
                                     {" "}
                                     {
-                                        groupExam.group_exam_key
+                                        groupExam.group_assessment_key
                                     }
 
                                 </div>
@@ -351,9 +351,9 @@ export default function GroupExamTab({
                                     onClick={() =>
                                         openTab({
                                             id: `waiting-room-${groupExamId}`,
-                                            type: "group-exam-waiting-room",
+                                            type: "group-assessment-waiting-room",
                                             title:
-                                                `${groupExam.exam_title} · Väntrum`,
+                                                `${groupExam.assessment_title} · Väntrum`,
                                             groupExamId
                                         })
                                     }
@@ -365,9 +365,9 @@ export default function GroupExamTab({
                                     onClick={() =>
                                         openTab({
                                             id: `monitor-${groupExamId}`,
-                                            type: "group-exam-monitor",
+                                            type: "group-assessment-monitor",
                                             title:
-                                                `${groupExam.exam_title} · Övervakning`,
+                                                `${groupExam.assessment_title} · Övervakning`,
                                             groupExamId
                                         })
                                     }
@@ -378,13 +378,13 @@ export default function GroupExamTab({
 
                                     <strong>Status:</strong>{" "}
 
-                                    {savedGroupExam?.exam_status === "waiting" &&
+                                    {savedGroupExam?.assessment_status === "waiting" &&
                                         "Väntar"}
 
-                                    {savedGroupExam?.exam_status === "open" &&
+                                    {savedGroupExam?.assessment_status === "open" &&
                                         "Pågående"}
 
-                                    {savedGroupExam?.exam_status === "closed" &&
+                                    {savedGroupExam?.assessment_status === "closed" &&
                                         "Stängt"}
 
                                 </div>
@@ -411,7 +411,7 @@ export default function GroupExamTab({
                                     className="w-full"
                                     onClick={openExam}
                                     disabled={
-                                        groupExam.exam_status === "open"
+                                        groupExam.assessment_status === "open"
                                     }
                                 >
                                     Släpp in elever
@@ -422,7 +422,7 @@ export default function GroupExamTab({
                                     variant="outline"
                                     onClick={closeExam}
                                     disabled={
-                                        groupExam.exam_status === "closed"
+                                        groupExam.assessment_status === "closed"
                                     }
                                 >
                                     Stäng dörren för nya insläpp
@@ -458,11 +458,11 @@ export default function GroupExamTab({
                             <Input
                                 type="number"
                                 value={
-                                    groupExam.exam_config?.exam?.defaultTimeLimitMinutes ?? ""
+                                    groupExam.config?.assessment?.defaultTimeLimitMinutes ?? ""
                                 }
                                 onChange={(e) =>
                                     updateConfig(
-                                        "exam",
+                                        "assessment",
                                         "defaultTimeLimitMinutes",
                                         Number(e.target.value)
                                     )
@@ -560,7 +560,7 @@ export default function GroupExamTab({
 
                             <Switch
                                 checked={
-                                    !!groupExam.exam_config?.question_selection?.shuffleQuestions
+                                    !!groupExam.config?.question_selection?.shuffleQuestions
                                 }
                                 onCheckedChange={(checked) =>
                                     updateConfig(
@@ -577,7 +577,7 @@ export default function GroupExamTab({
 
                             <Switch
                                 checked={
-                                    !!groupExam.exam_config?.question_selection?.shuffleOptions
+                                    !!groupExam.config?.question_selection?.shuffleOptions
                                 }
                                 onCheckedChange={(checked) =>
                                     updateConfig(
@@ -594,7 +594,7 @@ export default function GroupExamTab({
 
                             <Switch
                                 checked={
-                                    !!groupExam.exam_config?.question_selection?.useDifferentQuestionsInBlock
+                                    !!groupExam.config?.question_selection?.useDifferentQuestionsInBlock
                                 }
                                 onCheckedChange={(checked) =>
                                     updateConfig(
@@ -611,7 +611,7 @@ export default function GroupExamTab({
 
                             <Switch
                                 checked={
-                                    !!groupExam.exam_config?.question_selection?.neverRepeatQuestion
+                                    !!groupExam.config?.question_selection?.neverRepeatQuestion
                                 }
                                 onCheckedChange={(checked) =>
                                     updateConfig(
@@ -628,7 +628,7 @@ export default function GroupExamTab({
 
                             <Switch
                                 checked={
-                                    !!groupExam.exam_config?.navigation?.allowGoToPreviousQuestion
+                                    !!groupExam.config?.navigation?.allowGoToPreviousQuestion
                                 }
                                 onCheckedChange={(checked) =>
                                     updateConfig(
@@ -655,7 +655,7 @@ export default function GroupExamTab({
 
                             <Switch
                                 checked={
-                                    !!groupExam.exam_config?.monitoring?.lock_page_refresh
+                                    !!groupExam.config?.monitoring?.lock_page_refresh
                                 }
                                 onCheckedChange={(checked) =>
                                     updateConfig(
@@ -672,7 +672,7 @@ export default function GroupExamTab({
 
                             <Switch
                                 checked={
-                                    !!groupExam.exam_config?.monitoring?.lock_tab_hidden
+                                    !!groupExam.config?.monitoring?.lock_tab_hidden
                                 }
                                 onCheckedChange={(checked) =>
                                     updateConfig(
@@ -689,7 +689,7 @@ export default function GroupExamTab({
 
                             <Switch
                                 checked={
-                                    !!groupExam.exam_config?.monitoring?.lock_window_blur
+                                    !!groupExam.config?.monitoring?.lock_window_blur
                                 }
                                 onCheckedChange={(checked) =>
                                     updateConfig(
@@ -706,7 +706,7 @@ export default function GroupExamTab({
 
                             <Switch
                                 checked={
-                                    !!groupExam.exam_config?.monitoring?.lock_context_menu
+                                    !!groupExam.config?.monitoring?.lock_context_menu
                                 }
                                 onCheckedChange={(checked) =>
                                     updateConfig(
@@ -723,7 +723,7 @@ export default function GroupExamTab({
 
                             <Switch
                                 checked={
-                                    !!groupExam.exam_config?.monitoring?.lock_page_unload
+                                    !!groupExam.config?.monitoring?.lock_page_unload
                                 }
                                 onCheckedChange={(checked) =>
                                     updateConfig(
@@ -750,7 +750,7 @@ export default function GroupExamTab({
 
                             <Switch
                                 checked={
-                                    groupExam.exam_config?.presentation?.allowCalculator
+                                    groupExam.config?.presentation?.allowCalculator
                                 }
                                 onCheckedChange={(checked) =>
                                     updateConfig(
@@ -767,7 +767,7 @@ export default function GroupExamTab({
 
                             <Switch
                                 checked={
-                                    groupExam.exam_config?.presentation?.allowFormulaSheet
+                                    groupExam.config?.presentation?.allowFormulaSheet
                                 }
                                 onCheckedChange={(checked) =>
                                     updateConfig(
@@ -784,7 +784,7 @@ export default function GroupExamTab({
 
                             <Switch
                             checked={
-                                !!groupExam.exam_config?.presentation?.showResultImmediately
+                                !!groupExam.config?.presentation?.showResultImmediately
                             }
                             onCheckedChange={(checked) =>
                                 updateConfig(

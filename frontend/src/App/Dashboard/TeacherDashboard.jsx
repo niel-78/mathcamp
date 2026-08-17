@@ -291,22 +291,22 @@ export default function TeacherDashboard() {
 
 
         /*
-        Importera block från blockTab till examTab
+        Importera block från blockTab till assessmentTab
         */
         if (
             active.data.current?.type === "block" &&
-            over?.id?.startsWith("exam-")
+            over?.id?.startsWith("assessment-")
         ) {
 
-            const examId = Number(
-                over.id.replace("exam-", "")
+            const assessmentId = Number(
+                over.id.replace("assessment-", "")
             );
 
             const blockId =
                 active.data.current.blockId;
 
             await fetch(
-                `${API_URL}/api/exams/${examId}/import-block`,
+                `${API_URL}/api/assessments/${assessmentId}/import-block`,
                 {
                     method: "POST",
                     headers: {
@@ -320,7 +320,7 @@ export default function TeacherDashboard() {
             );
 
             window.dispatchEvent(
-                new Event("exam-block-added")
+                new Event("assessment-block-added")
             );
 
             return;
@@ -540,11 +540,11 @@ export default function TeacherDashboard() {
 
 
         /*
-        Flytta block i examTab
+        Flytta block i assessmentTab
         */
         if (
-            active.data.current?.type === "exam-block" &&
-            over?.id?.startsWith("exam-block-")
+            active.data.current?.type === "assessment-block" &&
+            over?.id?.startsWith("assessment-block-")
         ) {
 
             const draggedId =
@@ -553,14 +553,14 @@ export default function TeacherDashboard() {
             const targetId =
                 Number(
                     over.id.replace(
-                        "exam-block-",
+                        "assessment-block-",
                         ""
                     )
                 );
 
                 window.dispatchEvent(
                     new CustomEvent(
-                        "exam-block-moved",
+                        "assessment-block-moved",
                         {
                             detail: {
                                 draggedId,
@@ -847,10 +847,7 @@ export default function TeacherDashboard() {
                 onOpenChange={() =>
                     setMoveSectionDialog(null)
                 }
-                onSubmit={async (shiftForward) => {
-
-                    console.log("submit");
-                    console.log(moveSectionDialog);                    
+                onSubmit={async (shiftForward) => {          
 
                     const response =
                         await fetch(

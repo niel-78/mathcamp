@@ -33,7 +33,7 @@ export default function ExamPage({
     const {
         attempt,
         questions,
-        answers,
+        assessment_answers,
         setAnswers,
         saveAnswer,
         loading,
@@ -132,7 +132,7 @@ export default function ExamPage({
         optionId
     ) => {
         const currentSelection =
-            answers[questionId] || [];
+            assessment_answers[questionId] || [];
 
         const updated =
             currentSelection.includes(optionId)
@@ -195,7 +195,7 @@ export default function ExamPage({
         );
 
         await fetch(
-            `${API_URL}/api/exam-attempts/${attemptId}/submit`,
+            `${API_URL}/api/assessment-attempts/${attemptId}/submit`,
             {
                 method: "POST",
                 headers: authHeaders()
@@ -227,7 +227,7 @@ export default function ExamPage({
 
                     <QuestionView
                         question={current}
-                        answer={answers[current.id]}
+                        answer={assessment_answers[current.id]}
                         onTextAnswer={handleTextAnswer}
                         onSingleChoice={handleSingleChoice}
                         onMultiChoice={handleMultiChoice}

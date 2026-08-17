@@ -3,7 +3,7 @@ import db from "../db.js";
 import hydrateBlocks from "../utils/hydrateBlocks.js";
 import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
-import getExamRole from "../utils/getExamRole.js";
+import getExamRole from "../utils/getAssessmentRole.js";
 
 const router = express.Router();
 
@@ -110,26 +110,26 @@ router.post("/", async (req, res) => {
 });
 
 
-//GET /api/assessments/:examId
-router.get("/:examId", async (req, res) => {
+//GET /api/assessments/:assessmentId
+router.get("/:assessmentId", async (req, res) => {
 
-    const [examRows] = await db.query(
+    const [assessmentRows] = await db.query(
         `
         SELECT *
         FROM assessments
         WHERE id = ?
         `,
-        [req.params.examId]
+        [req.params.assessmentId]
     );
 
-    if (!examRows.length) {
+    if (!assessmentRows.length) {
         return res.status(404).json({
             error: "Exam not found"
         });
     }
 
     const role = await getExamRole(
-        req.params.examId,
+        req.params.assessmentId,
         req.user.id
     );
 
@@ -142,7 +142,7 @@ router.get("/:examId", async (req, res) => {
         WHERE eb.assessment_id = ?
         ORDER BY eb.sort_order
         `,
-        [req.params.examId]
+        [req.params.assessmentId]
     );
 
     await hydrateBlocks(blocks);
@@ -153,18 +153,18 @@ router.get("/:examId", async (req, res) => {
         FROM group_assessments
         WHERE assessment_id = ?
         `,
-        [req.params.examId]
+        [req.params.assessmentId]
     );
 
     res.json({
-        ...examRows[0],
+        ...assessmentRows[0],
         role,
         blocks,
         groupExams
     });
 });
-//PUT /api/assessments/:examId
-router.put("/:examId", async (req, res) => {
+//PUT /api/assessments/:assessmentId
+router.put("/:assessmentId", async (req, res) => {
     const { title } = req.body;
     await db.query(
         `
@@ -172,13 +172,13 @@ router.put("/:examId", async (req, res) => {
         SET title = ?
         WHERE id = ?
         `,
-        [title, req.params.examId]
+        [title, req.params.assessmentId]
     );
 
     res.sendStatus(204);
 });
-// DELETE /api/assessments/:examId
-router.delete("/:examId", async (req, res) => {
+// DELETE /api/assessments/:assessmentId
+router.delete("/:assessmentId", async (req, res) => {
     try {
 
         await db.query(
@@ -191,7 +191,7 @@ router.delete("/:examId", async (req, res) => {
             `,
             [
                 req.user.id,
-                req.params.examId
+                req.params.assessmentId
             ]
         );
 
@@ -199,10 +199,10 @@ router.delete("/:examId", async (req, res) => {
             `
             DELETE FROM assessment_permissions
             WHERE assessment_id = ?
-                AND teacher_id = ?
+                AND user_id = ?
             `,
             [
-                req.params.examId,
+                req.params.assessmentId,
                 req.user.id
             ]
         );
@@ -225,7 +225,7 @@ router.delete("/:examId", async (req, res) => {
 router.post("/:id/archive",
     async (req, res) => {
 
-        const examId = req.params.id;
+        const assessmentId = req.params.id;
 
         const [permissions] =
             await db.query(
@@ -233,11 +233,11 @@ router.post("/:id/archive",
                 SELECT 1
                 FROM assessment_permissions
                 WHERE assessment_id = ?
-                AND teacher_id = ?
+                AND user_id = ?
                 AND role = 'owner'
                 `,
                 [
-                    examId,
+                    assessmentId,
                     req.user.id
                 ]
             );
@@ -254,7 +254,7 @@ router.post("/:id/archive",
             SET archived_at = NOW()
             WHERE id = ?
             `,
-            [examId]
+            [assessmentId]
         );
 
         res.sendStatus(204);
@@ -264,8 +264,8 @@ router.post("/:id/archive",
 
 
 
-// POST /api/teacher/:examId/library-blocks
-router.post("/:examId/library-blocks",
+// POST /api/teacher/:assessmentId/library-blocks
+router.post("/:assessmentId/library-blocks",
     async (req, res) => {
 
         const { block_id } = req.body;
@@ -278,7 +278,7 @@ router.post("/:examId/library-blocks",
             FROM assessment_blocks
             WHERE assessment_id = ?
             `,
-            [req.params.examId]
+            [req.params.assessmentId]
         );
 
         await db.query(
@@ -291,7 +291,7 @@ router.post("/:examId/library-blocks",
             VALUES (?, ?, ?)
             `,
             [
-                req.params.examId,
+                req.params.assessmentId,
                 block_id,
                 row.nextOrder
             ]
@@ -302,41 +302,41 @@ router.post("/:examId/library-blocks",
     }
 );
 
-//GET /api/assessments/:examId/copy
-router.post("/:examId/copy", async (req, res) => {
+//GET /api/assessments/:assessmentId/copy
+router.post("/:assessmentId/copy", async (req, res) => {
 
-    const [examRows] = await db.query(
+    const [assessmentRows] = await db.query(
         `
         SELECT *
         FROM assessments
         WHERE id = ?
         `,
-        [req.params.examId]
+        [req.params.assessmentId]
     );
 
-    if (!examRows.length) {
+    if (!assessmentRows.length) {
         return res.status(404).json({
             error: "Exam not found"
         });
     }
 
-    const exam = examRows[0];
+    const assessment = assessmentRows[0];
 
     const [newExam] = await db.query(
         `
         INSERT INTO assessments(title)
         VALUES(?)
         `,
-        [`${exam.title} (kopia)`]
+        [`${assessment.title} (kopia)`]
     );
 
     const newExamId = newExam.insertId;
 
         await db.query(
         `
-        INSERT INTO exam_teachers(
+        INSERT INTO assessment_teachers(
             assessment_id,
-            teacher_id,
+            user_id,
             is_owner
         )
         VALUES (?, ?, 1)
@@ -352,7 +352,7 @@ router.post("/:examId/copy", async (req, res) => {
             ON eb.block_id = b.id
         WHERE eb.assessment_id = ?
         `,
-        [req.params.examId]
+        [req.params.assessmentId]
     );
 
     for (const block of blocks) {
@@ -481,8 +481,8 @@ router.post("/:examId/copy", async (req, res) => {
     });
 });
 
-// GET /api/assessments/:examId/blocks
-router.get("/:examId/blocks", async (req, res) => {
+// GET /api/assessments/:assessmentId/blocks
+router.get("/:assessmentId/blocks", async (req, res) => {
 
     try {
 
@@ -496,7 +496,7 @@ router.get("/:examId/blocks", async (req, res) => {
             WHERE eb.assessment_id = ?
             ORDER BY eb.sort_order
             `,
-            [req.params.examId]
+            [req.params.assessmentId]
         );
 
         const blocks =
@@ -517,8 +517,8 @@ router.get("/:examId/blocks", async (req, res) => {
 });
 
 
-// POST /api//assessments/:examId/blocks
-router.post("/:examId/blocks", async (req, res) => {
+// POST /api//assessments/:assessmentId/blocks
+router.post("/:assessmentId/blocks", async (req, res) => {
 
     const { name } = req.body;
 
@@ -536,7 +536,7 @@ router.post("/:examId/blocks", async (req, res) => {
         FROM assessment_blocks
         WHERE assessment_id = ?
         `,
-        [req.params.examId]
+        [req.params.assessmentId]
     );
 
     const orderBy = rows[0].nextOrder;
@@ -551,7 +551,7 @@ router.post("/:examId/blocks", async (req, res) => {
         VALUES (?, ?, ?)
         `,
         [
-            req.params.examId,
+            req.params.assessmentId,
             blockResult.insertId,
             orderBy
         ]
@@ -562,13 +562,13 @@ router.post("/:examId/blocks", async (req, res) => {
     });
 });
 
-// DELETE /api//assessments/:examId/blocks
-router.delete("/:examId/blocks/:blockId",
+// DELETE /api//assessments/:assessmentId/blocks
+router.delete("/:assessmentId/blocks/:blockId",
     async (req, res) => {
 
         const role =
             await getExamRole(
-                req.params.examId,
+                req.params.assessmentId,
                 req.user.id
             );
 
@@ -589,7 +589,7 @@ router.delete("/:examId/blocks/:blockId",
             AND block_id = ?
             `,
             [
-                req.params.examId,
+                req.params.assessmentId,
                 req.params.blockId
             ]
         );
@@ -600,8 +600,8 @@ router.delete("/:examId/blocks/:blockId",
 );
 
 
-// POST /api/assessments/:examId/import-block
-router.post("/:examId/import-block",
+// POST /api/assessments/:assessmentId/import-block
+router.post("/:assessmentId/import-block",
     async (req, res) => {
 
         const { block_id } = req.body;
@@ -616,7 +616,7 @@ router.post("/:examId/import-block",
             FROM assessment_blocks
             WHERE assessment_id = ?
             `,
-            [req.params.examId]
+            [req.params.assessmentId]
         );
 
         const orderBy =
@@ -630,7 +630,7 @@ router.post("/:examId/import-block",
             AND block_id = ?
             `,
             [
-                req.params.examId,
+                req.params.assessmentId,
                 block_id
             ]
         );
@@ -654,7 +654,7 @@ router.post("/:examId/import-block",
             VALUES (?, ?, ?)
             `,
             [
-                req.params.examId,
+                req.params.assessmentId,
                 block_id,
                 orderBy
             ]
@@ -667,23 +667,23 @@ router.post("/:examId/import-block",
     }
 );
 
-//DELETE /api/assessments/:examId/blocks/:blockId
-router.delete("/:examId/blocks/:blockId", async (req, res) => {
+//DELETE /api/assessments/:assessmentId/blocks/:blockId
+router.delete("/:assessmentId/blocks/:blockId", async (req, res) => {
     await db.query(
         `
         DELETE FROM assessment_blocks
         WHERE assessment_id = ?
         AND block_id = ?
         `,
-        [req.params.examId, req.params.blockId]
+        [req.params.assessmentId, req.params.blockId]
     );
 
     res.sendStatus(204);
 });
 
 
-//PUT /api/assessments/:examId/blocks/:blockId/order
-router.put("/:examId/blocks/:blockId/order",
+//PUT /api/assessments/:assessmentId/blocks/:blockId/order
+router.put("/:assessmentId/blocks/:blockId/order",
     async (req, res) => {
 
         const { sort_order } = req.body;
@@ -697,7 +697,7 @@ router.put("/:examId/blocks/:blockId/order",
             `,
             [
                 sort_order,
-                req.params.examId,
+                req.params.assessmentId,
                 req.params.blockId
             ]
         );

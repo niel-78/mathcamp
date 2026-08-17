@@ -18,6 +18,7 @@ import ArchivedGroupsTab from "./Main/ArchivedGroupsTab";
 import ArchivedStudentsTab from "./Main/ArchivedStudentsTab";
 import ArchivedExamsTab from "./Main/ArchivedExamsTab";
 import ArchivedQuestionsTab from "./Main/ArchivedQuestionsTab";
+import ArchivedBlocksTab from "./Main/ArchivedBlocksTab";
 import GroupSchedulesTab from "./Main/GroupSchedulesTab";
 import PlanningQueueTab from "./Main/PlanningQueueTab"
 import PresentationsTab from "./Main/PresentationsTab";
@@ -118,7 +119,7 @@ export default function Main({
                         />
                     )}
 
-                    {currentTab?.type === "exams" && (
+                    {currentTab?.type === "assessments" && (
 
                         <ExamListTab
                             selectedExamId={selectedExamId}
@@ -130,11 +131,11 @@ export default function Main({
 
                     )}
 
-                    {currentTab?.type === "exam" && (
+                    {currentTab?.type === "assessment" && (
 
                         <ExamTab
-                            examId={currentTab.examId}
-                            examTitle={currentTab.title}
+                            assessmentId={currentTab.assessmentId}
+                            assessmentTitle={currentTab.title}
                             activeDragType={activeDragType}
                             openTab={(tab) =>
                                 openTab(tab, area)
@@ -233,7 +234,7 @@ export default function Main({
 
                     )}
 
-                    {currentTab?.type === "group-exams" && (
+                    {currentTab?.type === "group-assessments" && (
 
                         <GroupExamLibraryTab
                             openTab={(tab) =>
@@ -243,7 +244,7 @@ export default function Main({
 
                     )}
 
-                    {currentTab?.type === "group-exam" && (
+                    {currentTab?.type === "group-assessment" && (
 
                         <GroupExamTab
                             groupExamId={
@@ -256,7 +257,7 @@ export default function Main({
 
                     )}
 
-                    {currentTab?.type === "group-exam-waiting-room" && (
+                    {currentTab?.type === "group-assessment-waiting-room" && (
 
                         <GroupExamWaitingRoomTab
                             groupExamId={
@@ -268,7 +269,7 @@ export default function Main({
                         />
 
                     )}
-                    {currentTab?.type === "group-exam-monitor" && (
+                    {currentTab?.type === "group-assessment-monitor" && (
 
                         <GroupExamMonitorTab
                             groupExamId={
@@ -314,7 +315,7 @@ export default function Main({
                         <ArchivedStudentsTab />
 
                     )}
-                    {currentTab?.type === "archived-exams" && (
+                    {currentTab?.type === "archived-assessments" && (
 
                         <ArchivedExamsTab />
 
@@ -322,6 +323,11 @@ export default function Main({
                     {currentTab?.type === "archived-questions" && (
 
                         <ArchivedQuestionsTab />
+
+                    )}
+                    {currentTab?.type === "archived-blocks" && (
+
+                        <ArchivedBlocksTab />
 
                     )}
                     {currentTab?.type === "presentations" && (

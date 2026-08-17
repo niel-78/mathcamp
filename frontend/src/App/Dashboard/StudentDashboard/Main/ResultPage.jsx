@@ -22,7 +22,7 @@ export default function ResultPage({
             try {
 
                 const res = await fetch(
-                    `${API_URL}/api/exam-attempts/${attemptId}/results`,
+                    `${API_URL}/api/assessment-attempts/${attemptId}/results`,
                     {
                         headers: authHeaders()
                     }

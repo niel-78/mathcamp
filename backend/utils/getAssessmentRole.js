@@ -1,7 +1,7 @@
 import db from "../db.js";
 
 export default async function getExamRole(
-    examId,
+    assessmentId,
     teacherId
 ) {
 
@@ -14,7 +14,7 @@ export default async function getExamRole(
               AND user_id = ?
             `,
             [
-                examId,
+                assessmentId,
                 teacherId
             ]
         );

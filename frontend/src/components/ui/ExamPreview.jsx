@@ -29,7 +29,7 @@ export default function ExamPreview({
 
             const response =
                 await fetch(
-                    `${API_URL}/api/group-exams/${groupExamId}/preview`,
+                    `${API_URL}/api/group-assessments/${groupExamId}/preview`,
                     {
                         headers:
                             authHeaders()

@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 
 export default function ExamCard({
-    exam,
+    assessment,
     openTab,
     onArchive
 }) {
@@ -32,7 +32,7 @@ export default function ExamCard({
                         text-lg
                     "
                 >
-                    {exam.title}
+                    {assessment.title}
                 </h3>
 
                 <p
@@ -41,7 +41,7 @@ export default function ExamCard({
                         text-muted-foreground
                     "
                 >
-                    ID: {exam.id}
+                    ID: {assessment.id}
                 </p>
 
             </div>
@@ -58,20 +58,20 @@ export default function ExamCard({
                 <MetaItem
                     icon={GraduationCap}
                     label="Ämne"
-                    value={exam.subject_name}
+                    value={assessment.subject_name}
                 />
 
                 <MetaItem
                     icon={Layers}
                     label="Nivå"
-                    value={exam.level_name}
+                    value={assessment.level_name}
                 />
 
                 <MetaItem
                     icon={BookOpen}
                     label="Bok"
                     value={
-                        exam.book_title ||
+                        assessment.book_title ||
                         "Ingen bok"
                     }
                 />
@@ -91,7 +91,7 @@ export default function ExamCard({
                             text-muted-foreground
                         "
                     >
-                        {exam.block_count}
+                        {assessment.block_count}
                     </div>
 
                 </div>
@@ -116,7 +116,7 @@ export default function ExamCard({
 
                     {
                         new Date(
-                            exam.created_at
+                            assessment.created_at
                         ).toLocaleDateString(
                             "sv-SE"
                         )
@@ -130,7 +130,7 @@ export default function ExamCard({
 
                     {
                         new Date(
-                            exam.updated_at
+                            assessment.updated_at
                         ).toLocaleDateString(
                             "sv-SE"
                         )
@@ -149,12 +149,12 @@ export default function ExamCard({
                 "
             >
 
-                {exam.role === "owner" && (
+                {assessment.role === "owner" && (
 
                     <Button
                         variant="outline"
                         onClick={() =>
-                            onArchive?.(exam)
+                            onArchive?.(assessment)
                         }
                     >
                         Arkivera
@@ -165,10 +165,10 @@ export default function ExamCard({
                 <Button
                     onClick={() =>
                         openTab({
-                            id: `exam-${exam.id}`,
-                            title: exam.title,
-                            type: "exam",
-                            examId: exam.id
+                            id: `assessment-${assessment.id}`,
+                            title: assessment.title,
+                            type: "assessment",
+                            assessmentId: assessment.id
                         })
                     }
                 >

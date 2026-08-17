@@ -13,7 +13,7 @@ export async function buildExamSession(
             `
             SELECT
                 ge.*,
-                e.title AS exam_title
+                e.title AS assessment_title
             FROM group_assessments ge
             INNER JOIN assessments e
                 ON e.id = ge.assessment_id
@@ -172,14 +172,14 @@ export async function buildExamSession(
         simulation_id:
             crypto.randomUUID(),
 
-        group_exam_id:
+        group_assessment_id:
             groupExam.id,
 
         assessment_id:
             groupExam.assessment_id,
 
-        exam_title:
-            groupExam.exam_title,
+        assessment_title:
+            groupExam.assessment_title,
 
         config:
             groupExam.config,

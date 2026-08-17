@@ -35,7 +35,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [show, setShow] = useState({
         groups: false,
         subjects: false,
-        exams: false,
+        assessments: false,
         courses: false,
         books: false,
         abilities: false
@@ -80,6 +80,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [createBookDialog, setCreateBookDialog] = useState(null);
     const [createAbilitySeriesDialog, setCreateAbilitySeriesDialog] = useState(false);
     const [renameAbilitySeriesDialog, setRenameAbilitySeriesDialog] = useState(null);
+    const [expandedAbilities, setExpandedAbilities] = useState({});
 
     useEffect(() => {
         loadGroups();
@@ -203,7 +204,6 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                 await response.json();
 
             setAbilitySeries(data);
-            console.log(data);
 
         };
 
@@ -305,11 +305,41 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                 setPasswordDialog={setPasswordDialog}
                 setRenameStudentDialog={setRenameStudentDialog}
                 setArchiveStudentDialog={setArchiveStudentDialog}
-
                 setCreateStudentDialog={setCreateStudentDialog}
                 setImportStudentsDialog={setImportStudentsDialog}
-            />
+                openTab={openTab}
+                    onCreateLessons={(
+                    groupId,
+                    groupName
+                ) => {
 
+                    setCreateLessonSeriesDialog({
+                        groupId,
+                        groupName
+                    });
+
+                }}
+                onCreateAbilitySeries={() => {
+                    setCreateAbilitySeriesDialog(true);
+                }}
+                onRenameAbility={(id, name) => {
+
+                    setRenameAbilityDialog({
+                        id,
+                        name
+                    });
+
+                }}
+
+                onDeleteAbility={(id, name) => {
+
+                    setDeleteAbilityDialog({
+                        id,
+                        name
+                    });
+
+                }}
+            />
 
             <div
                 className="
@@ -458,30 +488,22 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                                                         {(group.abilities || []).map(ability => (
 
-                                                        <div
-                                                            className="tree-folder"
-                                                            onClick={() =>
-                                                                setExpandedAbilities(prev => ({
-                                                                    ...prev,
-                                                                    [`${level.id}-${abilityName}`]:
-                                                                        !prev[`${level.id}-${abilityName}`]
-                                                                }))
-                                                            }
-                                                        >
-                                                            {
-                                                                expandedAbilities[
-                                                                    `${level.id}-${abilityName}`
-                                                                ]
-                                                                    ? "▼"
-                                                                    : "▶"
-                                                            }
-
-                                                            {" "}
-
-                                                            {abilityName}
-                                                        </div>
+                                                            <div
+                                                                key={ability.id}
+                                                                className="tree-folder"
+                                                                onClick={() =>
+                                                                    setExpandedAbilities(prev => ({
+                                                                        ...prev,
+                                                                        [ability.id]: !prev[ability.id]
+                                                                    }))
+                                                                }
+                                                            >
+                                                                {expandedAbilities[ability.id] ? "▼" : "▶"}{" "}
+                                                                {ability.name}
+                                                            </div>
 
                                                         ))}
+
 
                                                     </div>
                                                 )}
@@ -579,9 +601,9 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                 <Button className="tree-folder"
                         variant="ghost"
                         size="lg"
-                        onClick={() => toggle("exams")}
+                        onClick={() => toggle("assessments")}
                 >
-                    {show.exams ? "▼" : "▶"} Prov
+                    {show.assessments ? "▼" : "▶"} Prov
                 </Button>
 
 
@@ -1291,8 +1313,8 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                 className="tree-file"
                                 onClick={() =>
                                     openTab({
-                                        id: "archived-exams",
-                                        type: "archived-exams",
+                                        id: "archived-assessments",
+                                        type: "archived-assessments",
                                         title: "Prov"
                                     })
                                 }

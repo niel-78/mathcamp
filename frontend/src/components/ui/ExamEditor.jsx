@@ -4,8 +4,8 @@ import { API_URL } from "@/config";
 import { Button } from "@/components/ui/button";
 import BlockContent from "@/App/Dashboard/TeacherDashboard/Main/BlockContent";
 
-function ExamEditor({examId, onClose}) {
-    const [exam, setExam] = useState(null);
+function ExamEditor({assessmentId, onClose}) {
+    const [assessment, setExam] = useState(null);
     const [loading, setLoading] = useState(true);
     const [newBlock, setNewBlock] = useState("");
     const [editMode, setEditMode] = useState(false);
@@ -18,16 +18,16 @@ function ExamEditor({examId, onClose}) {
 
 
     useEffect(() => {
-        if (exam) {
-            setTitle(exam.title);
+        if (assessment) {
+            setTitle(assessment.title);
         }
-    }, [exam]);
+    }, [assessment]);
 
 
     const loadExam = async () => {
         try {
             const res = await fetch(
-                `${API_URL}/api/exams/${examId}/full`,
+                `${API_URL}/api/assessments/${assessmentId}/full`,
                 {
                     headers: authHeaders()
                 }
@@ -47,7 +47,7 @@ function ExamEditor({examId, onClose}) {
     const saveExam = async (value) => {
 
         await fetch(
-            `${API_URL}/api/exams/${exam.id}`,
+            `${API_URL}/api/assessments/${assessment.id}`,
             {
                 method: "PUT",
                 headers: {
@@ -64,7 +64,7 @@ function ExamEditor({examId, onClose}) {
     };
 
 
-    if(!exam){
+    if(!assessment){
         return <p>Laddar...</p>;
     }
 
@@ -88,7 +88,7 @@ function ExamEditor({examId, onClose}) {
                         />
                     ) : (
                         <h2 className="text-2xl font-bold">
-                            {exam.title}
+                            {assessment.title}
                         </h2>
                     )}
                 </div>
@@ -117,12 +117,12 @@ function ExamEditor({examId, onClose}) {
 
             <div className="space-y-4">
 
-                {exam.blocks.map(block => (
+                {assessment.blocks.map(block => (
 
                     <BlockContent
                         key={block.id}
                         block={block}
-                        examId={exam.id}
+                        assessmentId={assessment.id}
                         editMode={editMode}
                         onChanged={loadExam}
                     />

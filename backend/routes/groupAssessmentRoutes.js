@@ -38,7 +38,7 @@ router.get("/", async (req, res) => {
         `
         SELECT
             ge.*,
-            e.title AS exam_title,
+            e.title AS assessment_title,
             g.name AS group_name,
             ep.role
         FROM group_assessments ge
@@ -76,7 +76,7 @@ router.get( "/:id/students/:userId/events", async (req, res) => {
                 ON ea.id = ee.attempt_id
 
             WHERE
-                ea.group_exam_id = ?
+                ea.group_assessment_id = ?
                 AND ea.user_id = ?
 
             ORDER BY
@@ -104,7 +104,7 @@ router.post("/", async (req, res) => {
             assessment_id
         } = req.body;
 
-        const [[exam]] =
+        const [[assessment]] =
         await db.query(
             `
             SELECT config
@@ -114,7 +114,7 @@ router.post("/", async (req, res) => {
             [assessment_id]
         );
 
-        if (!exam) {
+        if (!assessment) {
 
             return res.status(404).json({
                 error: "Provet hittades inte."
@@ -137,7 +137,7 @@ router.post("/", async (req, res) => {
                             `
                             SELECT id
                             FROM group_assessments
-                            WHERE group_exam_key = ?
+                            WHERE group_assessment_key = ?
                             `,
                             [key]
                         );
@@ -159,7 +159,7 @@ router.post("/", async (req, res) => {
                 INSERT INTO group_assessments (
                     group_id,
                     assessment_id,
-                    group_exam_key,
+                    group_assessment_key,
                     config
                 )
                 VALUES (?, ?, ?, ?)
@@ -168,7 +168,7 @@ router.post("/", async (req, res) => {
                     group_id,
                     assessment_id,
                     groupExamKey,
-                    exam.config
+                    assessment.config
                 ]
             );
 
@@ -208,7 +208,7 @@ router.get("/:id", async (req, res) => {
         `
         SELECT
             ge.*,
-            e.title AS exam_title,
+            e.title AS assessment_title,
             g.name AS group_name,
             ep.role
         FROM group_assessments ge
@@ -223,7 +223,7 @@ router.get("/:id", async (req, res) => {
             ON ep.assessment_id = ge.assessment_id
 
         WHERE ge.id = ?
-            AND ep.teacher_id = ?
+            AND ep.user_id = ?
         `,
         [
             req.params.id,
@@ -382,7 +382,7 @@ router.get("/:id/waiting-room", async (req, res) => {
                 INNER JOIN users u
                     ON u.id = wr.user_id
 
-                WHERE wr.group_exam_id = ?
+                WHERE wr.group_assessment_id = ?
 
                 ORDER BY wr.joined_at
                 `,
@@ -426,11 +426,11 @@ router.get("/:id/monitor", async (req, res) => {
                 ON ge.group_id = gs.group_id
 
             LEFT JOIN assessment_attempts ea
-                ON ea.group_exam_id = ge.id
+                ON ea.group_assessment_id = ge.id
                 AND ea.user_id = gs.user_id
 
             LEFT JOIN assessment_waiting_room wr
-                ON wr.group_exam_id = ge.id
+                ON wr.group_assessment_id = ge.id
                 AND wr.user_id = gs.user_id
 
             WHERE ge.id = ?
@@ -552,7 +552,7 @@ router.get("/:id/events", async (req, res) => {
         INNER JOIN users u
             ON u.id = ea.user_id
 
-        WHERE ea.group_exam_id = ?
+        WHERE ea.group_assessment_id = ?
 
         ORDER BY ee.created_at DESC
 
@@ -573,7 +573,7 @@ router.post("/:id/open", async (req, res) => {
         await db.query(
             `
             UPDATE group_assessments
-            SET exam_status = 'open'
+            SET assessment_status = 'open'
             WHERE id = ?
             `,
             [req.params.id]
@@ -604,7 +604,7 @@ router.post("/:id/close", async (req, res) => {
         await db.query(
             `
             UPDATE group_assessments
-            SET exam_status = 'closed'
+            SET assessment_status = 'closed'
             WHERE id = ?
             `,
             [req.params.id]
@@ -640,7 +640,7 @@ router.post("/:id/admit-student",
             UPDATE assessment_waiting_room
             SET admitted_at = NOW()
             WHERE
-                group_exam_id = ?
+                group_assessment_id = ?
                 AND user_id = ?
             `,
             [
@@ -662,7 +662,7 @@ router.post("/:id/admit-all", async (req, res) => {
     await db.query(
         `
         UPDATE group_assessments
-        SET exam_status = 'open'
+        SET assessment_status = 'open'
         WHERE id = ?
         `,
         [req.params.id]
@@ -687,7 +687,7 @@ router.post("/:id/terminate-all",
                 SELECT id
                 FROM assessment_attempts
                 WHERE
-                    group_exam_id = ?
+                    group_assessment_id = ?
                     AND status = 'in_progress'
                 `,
                 [groupExamId]
@@ -700,7 +700,7 @@ router.post("/:id/terminate-all",
                 status = 'submitted',
                 submitted_at = NOW()
             WHERE
-                group_exam_id = ?
+                group_assessment_id = ?
                 AND status = 'in_progress'
             `,
             [groupExamId]

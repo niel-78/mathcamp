@@ -12,22 +12,6 @@ const router = express.Router();
 router.use(requireAuth);
 router.use(requireRole("student", "teacher"));
 
-/*
-GET    /api/exam-attempts/:id
-
-
-POST   /api/exam-attempts
-
-PUT    /api/exam-attempts/:id
-
-POST   /api/exam-attempts/join
-POST   /api/exam-attempts/start
-POST   /api/exam-attempts/:id/submit
-
-GET    /api/exam-attempts/:id/results
-*/
-
-// GET /api/exam-attempts/:id
 router.get("/:id", async (req, res) => {
 
     const connection = await db.getConnection();
@@ -43,7 +27,7 @@ router.get("/:id", async (req, res) => {
             SELECT
                 ea.id,
                 ea.user_id,
-                ea.group_exam_id,
+                ea.group_assessment_id,
                 ea.config,
                 ea.started_at,
                 ea.submitted_at,
@@ -149,7 +133,7 @@ router.get("/:id", async (req, res) => {
     }
 });
 
-// PUT /api/exam-attempts/:id
+// PUT /api/assessment-attempts/:id
 router.put("/:id", async (req, res) => {
 
     const connection = await db.getConnection();
@@ -176,7 +160,7 @@ router.put("/:id", async (req, res) => {
                 ge.assessment_id
             FROM assessment_attempts ea
             INNER JOIN group_assessments ge
-                ON ge.id = ea.group_exam_id
+                ON ge.id = ea.group_assessment_id
             WHERE ea.id = ?
                 AND ea.user_id = ?
             `,
@@ -338,18 +322,18 @@ router.put("/:id", async (req, res) => {
 
 });
 
-// POST /api/exam-attempts/start
+// POST /api/assessment-attempts/start
 router.post("/start", async (req, res) => {
 
     const connection = await db.getConnection();
 
     try {
 
-        const { group_exam_id } = req.body;
+        const { group_assessment_id } = req.body;
 
-        if (!group_exam_id) {
+        if (!group_assessment_id) {
             return res.status(400).json({
-                error: "group_exam_id saknas."
+                error: "group_assessment_id saknas."
             });
         }
 
@@ -361,14 +345,14 @@ router.post("/start", async (req, res) => {
                 id,
                 assessment_id,
                 group_id,
-                exam_status,
+                assessment_status,
                 available_from,
                 available_until,
                 config
             FROM group_assessments
             WHERE id = ?
             `,
-            [group_exam_id]
+            [group_assessment_id]
         );
 
         if (!groupExamRows.length) {
@@ -419,7 +403,7 @@ router.post("/start", async (req, res) => {
                 SELECT admitted_at
                 FROM assessment_waiting_room
                 WHERE
-                    group_exam_id = ?
+                    group_assessment_id = ?
                     AND user_id = ?
                 `,
                 [
@@ -437,7 +421,7 @@ router.post("/start", async (req, res) => {
         const now = new Date();
 
         if (
-            groupExam.exam_status !== "open" &&
+            groupExam.assessment_status !== "open" &&
             !isAdmitted
         ) {
 
@@ -446,7 +430,7 @@ router.post("/start", async (req, res) => {
             return res.status(403).json({
 
                 error:
-                    groupExam.exam_status === "waiting"
+                    groupExam.assessment_status === "waiting"
                         ? "Provet har inte startat ännu."
                         : "Provet är stängt."
 
@@ -490,7 +474,7 @@ router.post("/start", async (req, res) => {
                     status,
                     started_ip
                 FROM assessment_attempts
-                WHERE group_exam_id = ?
+                WHERE group_assessment_id = ?
                     AND user_id = ?
                 LIMIT 1
                 `,
@@ -516,7 +500,7 @@ router.post("/start", async (req, res) => {
                     DELETE
                     FROM assessment_waiting_room
                     WHERE
-                        group_exam_id = ?
+                        group_assessment_id = ?
                         AND user_id = ?
                     `,
                     [
@@ -541,7 +525,7 @@ router.post("/start", async (req, res) => {
                     DELETE
                     FROM assessment_waiting_room
                     WHERE
-                        group_exam_id = ?
+                        group_assessment_id = ?
                         AND user_id = ?
                     `,
                     [
@@ -606,7 +590,7 @@ router.post("/start", async (req, res) => {
                 INSERT INTO assessment_attempts (
                     id,
                     user_id,
-                    group_exam_id,
+                    group_assessment_id,
                     config,
                     started_at,
                     started_ip,
@@ -653,7 +637,7 @@ router.post("/start", async (req, res) => {
             DELETE
             FROM assessment_waiting_room
             WHERE
-                group_exam_id = ?
+                group_assessment_id = ?
                 AND user_id = ?
             `,
             [
@@ -741,7 +725,7 @@ router.post("/start", async (req, res) => {
 });
 
 
-// POST /api/exam-attempts/:id/submit
+// POST /api/assessment-attempts/:id/submit
 router.post("/:id/submit", async (req, res) => {
 
     const connection = await db.getConnection();
@@ -758,7 +742,7 @@ router.post("/:id/submit", async (req, res) => {
                 SELECT
                     id,
                     user_id,
-                    group_exam_id,
+                    group_assessment_id,
                     status
                 FROM assessment_attempts
                 WHERE id = ?
@@ -810,11 +794,11 @@ router.post("/:id/submit", async (req, res) => {
             `
             DELETE
             FROM assessment_waiting_room
-            WHERE group_exam_id = ?
+            WHERE group_assessment_id = ?
                 AND user_id = ?
             `,
             [
-                attempt.group_exam_id,
+                attempt.group_assessment_id,
                 attempt.user_id
             ]
         );
@@ -844,7 +828,7 @@ router.post("/:id/submit", async (req, res) => {
 });
 
 
-// POST /api/exam-attempts/:id/terminate
+// POST /api/assessment-attempts/:id/terminate
 router.post("/:id/terminate",
     async (req, res) => {
 
@@ -895,7 +879,7 @@ router.post("/:id/terminate",
     }
 );
 
-// POST /api/exam-attempts/:id/resume
+// POST /api/assessment-attempts/:id/resume
 router.post("/:id/resume", async (req, res) => {
 
     const [[attempt]] =
@@ -957,7 +941,7 @@ router.post("/:id/resume", async (req, res) => {
 
 });
 
-// GET /api/exam-attempts/:id/results
+// GET /api/assessment-attempts/:id/results
 router.get("/:id/results", async (req, res) => {
 
     const connection = await db.getConnection();

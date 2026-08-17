@@ -104,12 +104,15 @@ export default function PlanningQueueTab({
 
         if (!response.ok) {
 
+            const data =
+                await response.json();
+
             toast.error(
+                data.error ||
                 "Kunde inte fylla planeringen"
             );
 
             return;
-
         }
 
         toast.success(
@@ -133,6 +136,26 @@ export default function PlanningQueueTab({
                         ...section,
                         selected: !!checked
                     })
+                )
+        );
+
+    };
+
+    const toggleSection = (
+        sectionId,
+        checked
+    ) => {
+
+        setSections(
+            prev =>
+                prev.map(
+                    section =>
+                        section.id === sectionId
+                            ? {
+                                ...section,
+                                selected: !!checked
+                            }
+                            : section
                 )
         );
 
@@ -267,18 +290,15 @@ export default function PlanningQueueTab({
                                     "
                                 >
 
-                                    <Checkbox
-                                        checked={
-                                            section.selected
-                                        }
-                                        onCheckedChange={
-                                            checked =>
-                                                toggleAll(
+                                        <Checkbox
+                                            checked={section.selected}
+                                            onCheckedChange={(checked) =>
+                                                toggleSection(
                                                     section.id,
                                                     checked
                                                 )
-                                        }
-                                    />
+                                            }
+                                        />
 
                                     <div>
 

@@ -21,7 +21,7 @@ export default function LockedExamPage({
             async () => {
 
                 const response = await fetch(
-                    `${API_URL}/api/exam-attempts/${attemptId}`,
+                    `${API_URL}/api/assessment-attempts/${attemptId}`,
                     {
                         headers: authHeaders()
                     }

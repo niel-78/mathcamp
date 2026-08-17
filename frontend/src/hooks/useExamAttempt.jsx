@@ -7,7 +7,7 @@ export function useExamAttempt(attemptId) {
 
     const [attempt, setAttempt] = useState(null);
     const [questions, setQuestions] = useState([]);
-    const [answers, setAnswers] = useState({});
+    const [assessment_answers, setAnswers] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -22,7 +22,7 @@ export function useExamAttempt(attemptId) {
             try {
 
                 const res = await fetch(
-                    `${API_URL}/api/exam-attempts/${attemptId}`,
+                    `${API_URL}/api/assessment-attempts/${attemptId}`,
                     {
                         headers: authHeaders()
                     }
@@ -95,7 +95,7 @@ export function useExamAttempt(attemptId) {
         try {
 
             const res = await fetch(
-                `${API_URL}/api/exam-attempts/${attemptId}`,
+                `${API_URL}/api/assessment-attempts/${attemptId}`,
                 {
                     method: "PUT",
                     headers: {
@@ -138,7 +138,7 @@ export function useExamAttempt(attemptId) {
     return {
         attempt,
         questions,
-        answers,
+        assessment_answers,
         setAnswers,
         saveAnswer,
         loading,

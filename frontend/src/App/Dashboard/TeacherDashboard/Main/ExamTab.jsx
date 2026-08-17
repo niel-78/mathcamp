@@ -11,15 +11,15 @@ import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 import DropZone from "@/components/ui/DropZone";
 
 export default function ExamTab({
-    examId,
+    assessmentId,
     openTab,
-    examTitle,
+    assessmentTitle,
     activeDragType
 }) {
 
     const [blocks, setBlocks] = useState([]);
 
-    const [examRole, setExamRole] = useState(null);
+    const [assessmentRole, setExamRole] = useState(null);
 
     const [
         createBlockOpen,
@@ -34,7 +34,7 @@ export default function ExamTab({
     const loadExam = async () => {
 
         const response = await fetch(
-            `${API_URL}/api/exams/${examId}`,
+            `${API_URL}/api/assessments/${assessmentId}`,
             {
                 headers: authHeaders()
             }
@@ -50,7 +50,7 @@ export default function ExamTab({
     const loadBlocks = async () => {
 
         const response = await fetch(
-            `${API_URL}/api/exams/${examId}/blocks`,
+            `${API_URL}/api/assessments/${assessmentId}/blocks`,
             {
                 headers: authHeaders()
             }
@@ -71,7 +71,7 @@ export default function ExamTab({
     const removeBlock = async (blockId) => {
 
         const response = await fetch(
-            `${API_URL}/api/exams/${examId}/blocks/${blockId}`,
+            `${API_URL}/api/assessments/${assessmentId}/blocks/${blockId}`,
             {
                 method: "DELETE",
                 headers: authHeaders()
@@ -86,14 +86,14 @@ export default function ExamTab({
 
     };
 
-    const canEditExam = examRole === "owner";
+    const canEditExam = assessmentRole === "owner";
 
     useEffect(() => {
 
         loadBlocks();
         loadExam();
 
-    }, [examId]);
+    }, [assessmentId]);
 
 
     useEffect(() => {
@@ -103,13 +103,13 @@ export default function ExamTab({
         };
 
         window.addEventListener(
-            "exam-block-added",
+            "assessment-block-added",
             handler
         );
 
         return () =>
             window.removeEventListener(
-                "exam-block-added",
+                "assessment-block-added",
                 handler
             );
 
@@ -164,7 +164,7 @@ export default function ExamTab({
                     (block, index) =>
 
                         fetch(
-                            `${API_URL}/api/exams/${examId}/blocks/${block.id}/order`,
+                            `${API_URL}/api/assessments/${assessmentId}/blocks/${block.id}/order`,
                             {
                                 method: "PUT",
                                 headers: {
@@ -186,17 +186,17 @@ export default function ExamTab({
         };
 
         window.addEventListener(
-            "exam-block-moved",
+            "assessment-block-moved",
             handler
         );
 
         return () =>
             window.removeEventListener(
-                "exam-block-moved",
+                "assessment-block-moved",
                 handler
             );
 
-    }, [blocks, examId]);
+    }, [blocks, assessmentId]);
 
 
     return (
@@ -205,7 +205,7 @@ export default function ExamTab({
 
             <BaseTabLayout
 
-                title={`Prov: ${examTitle}`}
+                title={`Prov: ${assessmentTitle}`}
 
                 actions={
 
@@ -226,7 +226,7 @@ export default function ExamTab({
             >
 
                 <DropZone
-                    id={`exam-${examId}`}
+                    id={`assessment-${assessmentId}`}
                     text="Dra block hit för att lägga till dem i provet"
                 />
 
@@ -247,7 +247,7 @@ export default function ExamTab({
                             >
 
                                 <BlockCard
-                                    dragPrefix="exam"
+                                    dragPrefix="assessment"
                                     block={block}
                                     orderNumber={index + 1}
                                     onDelete={removeBlock}
@@ -268,7 +268,7 @@ export default function ExamTab({
             <CreateBlockDialog
                 open={createBlockOpen}
                 onOpenChange={setCreateBlockOpen}
-                examId={examId}
+                assessmentId={assessmentId}
                 onCreated={loadBlocks}
             />
 

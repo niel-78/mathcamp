@@ -9,7 +9,7 @@ GET    /api/results
 
 GET    /api/results/students/:studentId
 GET    /api/results/group-assessments/:groupExamId
-GET    /api/results/exam-attempts/:attemptId
+GET    /api/results/assessment-attempts/:attemptId
 */
 
 router.get("/result", requireAuth, async (req, res) => {

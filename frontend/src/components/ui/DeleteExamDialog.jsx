@@ -14,14 +14,14 @@ import {
 export default function DeleteExamDialog({
     open,
     onOpenChange,
-    exam,
+    assessment,
     onDeleted
 }) {
 
     const deleteExam = async () => {
 
         const res = await fetch(
-            `${API_URL}/api/archive/exams/${exam.id}`,
+            `${API_URL}/api/archive/assessments/${assessment.id}`,
             {
                 method: "DELETE",
                 headers: authHeaders()
@@ -35,7 +35,7 @@ export default function DeleteExamDialog({
             onDeleted?.();
 
             window.dispatchEvent(
-                new Event("exams-changed")
+                new Event("assessments-changed")
             );
 
         }
@@ -65,7 +65,7 @@ export default function DeleteExamDialog({
 
                     <strong>
                         {" "}
-                        {exam?.title}
+                        {assessment?.title}
                         {" "}
                     </strong>
 

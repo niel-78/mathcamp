@@ -249,9 +249,9 @@ INSERT INTO options VALUES (NULL,@q,'$5b$',1);
 -- EXAM BLOCKS
 -- ======================
 
-INSERT INTO exams VALUES(1,'Förkunskapstest','ABC');
+INSERT INTO assessments VALUES(1,'Förkunskapstest','ABC');
 
-INSERT INTO exam_blocks VALUES
+INSERT INTO assessment_blocks VALUES
 (1,1),(1,2),(1,3),(1,4),(1,5),(1,6),
 (1,8),(1,9),(1,10),(1,11),(1,12),
 (1,13),(1,14),(1,15),(1,16),(1,17),(1,18);

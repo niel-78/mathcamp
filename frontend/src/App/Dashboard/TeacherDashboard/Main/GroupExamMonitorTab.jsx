@@ -104,7 +104,7 @@ export default function GroupExamMonitorTab({
         try {
 
             const response = await fetch(
-                `${API_URL}/api/group-exams/${groupExamId}/monitor`,
+                `${API_URL}/api/group-assessments/${groupExamId}/monitor`,
                 {
                     headers: authHeaders()
                 }
@@ -135,7 +135,7 @@ export default function GroupExamMonitorTab({
     const loadEvents = async (userId) => {
 
         const response = await fetch(
-            `${API_URL}/api/group-exams/${groupExamId}/students/${userId}/events`,
+            `${API_URL}/api/group-assessments/${groupExamId}/students/${userId}/events`,
             {
                 headers: authHeaders()
             }
@@ -184,7 +184,7 @@ export default function GroupExamMonitorTab({
         async (attemptId) => {
 
             await fetch(
-                `${API_URL}/api/exam-attempts/${attemptId}/terminate`,
+                `${API_URL}/api/assessment-attempts/${attemptId}/terminate`,
                 {
                     method: "POST",
                     headers: authHeaders()
@@ -207,7 +207,7 @@ export default function GroupExamMonitorTab({
         async (attemptId) => {
 
             await fetch(
-                `${API_URL}/api/exam-attempts/${attemptId}/resume`,
+                `${API_URL}/api/assessment-attempts/${attemptId}/resume`,
                 {
                     method: "POST",
                     headers: authHeaders()
@@ -229,7 +229,7 @@ export default function GroupExamMonitorTab({
     const terminateAll = async () => {
 
         await fetch(
-            `${API_URL}/api/group-exams/${groupExamId}/terminate-all`,
+            `${API_URL}/api/group-assessments/${groupExamId}/terminate-all`,
             {
                 method: "POST",
                 headers: authHeaders()

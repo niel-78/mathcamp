@@ -32,8 +32,8 @@ export default function BlockCard({
         id: `${dragPrefix}-block-${block.id}`,
         data: {
             type:
-                dragPrefix === "exam"
-                    ? "exam-block"
+                dragPrefix === "assessment"
+                    ? "assessment-block"
                     : "block",
 
             blockId: block.id,
