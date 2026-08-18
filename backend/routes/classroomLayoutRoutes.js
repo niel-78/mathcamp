@@ -6,6 +6,26 @@ const router = express.Router();
 
 router.use(requireAuth);
 
+router.get("/",
+    requireAuth,
+    async (req, res) => {
+
+        const [layouts] =
+            await db.query(`
+                SELECT
+                    cl.id,
+                    cl.name,
+                    c.name AS classroom_name
+                FROM classroom_layouts cl
+                INNER JOIN classrooms c
+                    ON c.id = cl.classroom_id
+                ORDER BY c.name, cl.name
+            `);
+
+        res.json(layouts);
+    }
+);
+
 // GET /api/classroom-layouts/:id
 router.get("/:id", async (req, res) => {
 

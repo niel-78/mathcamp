@@ -12,6 +12,7 @@ import AbilitySeriesMenu from "./menus/AbilitySeriesMenu";
 import AbilityMenu from "./menus/AbilityMenu";
 import CriteriaLevelMenu from "./menus/CriteriaLevelMenu";
 import CentralContentLevelMenu from "./menus/CentralContentLevelMenu";
+import ClassroomsMenu from "./menus/ClassroomsMenu";
 import ClassroomMenu from "./menus/ClassRoomMenu";
 import ClassroomLayoutMenu from "./menus/ClassRoomLayoutMenu";
 
@@ -44,16 +45,34 @@ export default function ContextMenu(props) {
             case "group":
                 return (
                     <GroupMenu
-                        onRename={() => {
-                            props.onRenameGroup?.(
+                        contextMenu={contextMenu}
+                        setContextMenu={setContextMenu}
+                        setRenameDialog={props.setRenameDialog}
+                        setArchiveDialog={props.setArchiveDialog}
+                    />
+                );
+                
+            case "planning":
+                return (
+                    <PlanningMenu
+                        onCreateLessons={() => {
+                            props.onCreateLessons?.(
                                 contextMenu.groupId,
                                 contextMenu.groupName
                             );
 
                             setContextMenu(null);
                         }}
-                        onArchive={() => {
-                            props.onArchiveGroup?.(
+                        onManageSchedule={() => {
+                            props.onManageSchedule?.(
+                                contextMenu.groupId,
+                                contextMenu.groupName
+                            );
+
+                            setContextMenu(null);
+                        }}
+                        onOpenQueue={() => {
+                            props.onOpenQueue?.(
                                 contextMenu.groupId,
                                 contextMenu.groupName
                             );
@@ -62,6 +81,7 @@ export default function ContextMenu(props) {
                         }}
                     />
                 );
+
 
             case "students":
                 return (
@@ -107,36 +127,6 @@ export default function ContextMenu(props) {
                         onArchive={() => {
                             props.onArchiveStudent?.(
                                 contextMenu
-                            );
-
-                            setContextMenu(null);
-                        }}
-                    />
-                );
-
-            case "planning":
-                return (
-                    <PlanningMenu
-                        onCreateLessons={() => {
-                            props.onCreateLessons?.(
-                                contextMenu.groupId,
-                                contextMenu.groupName
-                            );
-
-                            setContextMenu(null);
-                        }}
-                        onManageSchedule={() => {
-                            props.onManageSchedule?.(
-                                contextMenu.groupId,
-                                contextMenu.groupName
-                            );
-
-                            setContextMenu(null);
-                        }}
-                        onOpenQueue={() => {
-                            props.onOpenQueue?.(
-                                contextMenu.groupId,
-                                contextMenu.groupName
                             );
 
                             setContextMenu(null);
@@ -313,6 +303,24 @@ export default function ContextMenu(props) {
                             props.onDeleteAbility?.(
                                 contextMenu.abilityId,
                                 contextMenu.name
+                            );
+
+                            setContextMenu(null);
+                        }}
+                    />
+                );
+
+            case "classrooms":
+                return (
+                    <ClassroomsMenu
+                        onCreate={() => {
+
+                            props.setSelectedSchoolId(
+                                contextMenu.schoolId
+                            );
+
+                            props.setCreateClassroomDialogOpen(
+                                true
                             );
 
                             setContextMenu(null);

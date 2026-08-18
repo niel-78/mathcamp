@@ -41,34 +41,112 @@ router.get("/", async (req, res) => {
 });
 
 // POST /api/classrooms
-router.post("/", async (req, res) => {
+router.post("/",
+    requireAuth,
+    async (req, res) => {
 
-    const {
-        name,
-        description
-    } = req.body;
-
-    const [result] = await db.query(
-        `
-        INSERT INTO classrooms (
-            school_id,
+        const {
+            schoolId,
             name,
-            description
-        )
-        VALUES (?, ?, ?)
-        `,
-        [
-            req.user.school_id,
-            name,
-            description
-        ]
-    );
+            sourceLayoutId
+        } = req.body;
 
-    res.status(201).json({
-        id: result.insertId
-    });
+        if (req.user.role !== "super") {
 
-});
+            const [[membership]] =
+                await db.query(
+                    `
+                    SELECT is_admin
+                    FROM school_teachers
+                    WHERE teacher_id = ?
+                    AND school_id = ?
+                    `,
+                    [
+                        req.user.id,
+                        schoolId
+                    ]
+                );
+
+            if (!membership?.is_admin) {
+
+                return res.status(403).json({
+                    error: "Behörighet saknas"
+                });
+
+            }
+        }
+
+        const [result] =
+            await db.query(
+                `
+                INSERT INTO classrooms (
+                    school_id,
+                    name
+                )
+                VALUES (?, ?)
+                `,
+                [
+                    schoolId,
+                    name
+                ]
+            );
+
+        const classroomId =
+            result.insertId;
+
+        if (sourceLayoutId) {
+
+            const [[sourceLayout]] =
+                await db.query(
+                    `
+                    SELECT *
+                    FROM classroom_layouts
+                    WHERE id = ?
+                    `,
+                    [sourceLayoutId]
+                );
+
+            if (sourceLayout) {
+
+                await db.query(
+                    `
+                    INSERT INTO classroom_layouts (
+                        classroom_id,
+                        name,
+                        is_default
+                    )
+                    VALUES (?, ?, 1)
+                    `,
+                    [
+                        classroomId,
+                        sourceLayout.name
+                    ]
+                );
+
+            }
+
+        } else {
+
+            await db.query(
+                `
+                INSERT INTO classroom_layouts (
+                    classroom_id,
+                    name,
+                    is_default
+                )
+                VALUES (?, 'Standardlayout', 1)
+                `,
+                [classroomId]
+            );
+
+        }
+
+        res.json({
+            id: classroomId
+        });
+
+    }
+);
 
 // GET /api/classrooms/:id
 router.get("/:id", async (req, res) => {

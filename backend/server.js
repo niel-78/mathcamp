@@ -7,6 +7,7 @@ import appSettingsRoutes from "./routes/appSettingsRoutes.js";
 
 import archiveRoutes from "./routes/archiveRoutes.js";
 
+import schoolRoutes from "./routes/schoolRoutes.js";
 import schoolSettingsRoutes from "./routes/schoolSettingsRoutes.js";
 
 import userRoutes from "./routes/userRoutes.js";
@@ -77,6 +78,7 @@ app.use("/api/app-settings",appSettingsRoutes);
 
 app.use("/api/archive",archiveRoutes);
 
+app.use("/api/schools",schoolRoutes);
 app.use("/api/school-settings",schoolSettingsRoutes);
 
 app.use("/api/users", userRoutes);

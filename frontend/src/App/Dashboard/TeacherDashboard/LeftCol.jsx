@@ -34,7 +34,6 @@ import DeleteClassroomDialog from "./Main/DeleteClassroomDialog";
 import RenameLayoutDialog from "./Main/RenameLayoutDialog";
 import DeleteLayoutDialog from "./Main/DeleteLayoutDialog";
 import DuplicateLayoutDialog from "./Main/DuplicateLayoutDialog";
-import EditGroupScheduleDialog from "./Main/EditGroupScheduleDialog";
 
 export default function LeftCol( {openTab, hoverTarget} ) {
 
@@ -91,8 +90,6 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [expandedClassrooms, setExpandedClassrooms] = useState({});
     const [classrooms, setClassrooms] = useState([]);
     const [expandedClassroomRoot, setExpandedClassroomRoot] = useState(false);
-    const [selectedLayout, setSelectedLayout] = useState(null);
-    const [seats, setSeats] = useState([]);
     const [createLayoutDialogOpen, setCreateLayoutDialogOpen] = useState(false);
     const [selectedClassroomId, setSelectedClassroomId] = useState(null);
     const [renameClassroomDialog, setRenameClassroomDialog] = useState(null);
@@ -100,15 +97,15 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [renameLayoutDialog, setRenameLayoutDialog] = useState(null);
     const [deleteLayoutDialog, setDeleteLayoutDialog] = useState(null);
     const [duplicateLayoutDialog, setDuplicateLayoutDialog] = useState(null);
-    const [manageScheduleDialog, setManageScheduleDialog] = useState(null);
-    const [selectedSchoolId, setSelectedSchoolId] = useState(null);
-    const [createClassroomDialogOpen,setCreateClassroomDialogOpen] = useState(false);
+    const [groupClassrooms, setGroupClassrooms] = useState({});
 
     useEffect(() => {
         loadGroups();
         loadSubjects();
         loadBooks();
+        loadSchools();
         loadAbilitySeries();
+        loadClassrooms();
     }, []);
 
     useEffect(() => {
@@ -229,6 +226,26 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
         };
 
+    const loadSchools = async () => {
+
+        const response =
+            await fetch(
+                `${API_URL}/api/schools`,
+                {
+                    headers: authHeaders()
+                }
+            );
+
+        if (!response.ok) {
+            return;
+        }
+
+        setSchools(
+            await response.json()
+        );
+
+    };
+
     const loadClassrooms = async () => {
 
         const response = await fetch(
@@ -340,91 +357,110 @@ export default function LeftCol( {openTab, hoverTarget} ) {
         }));
     };
 
-    const toggleClassrooms = async () => {
+    const toggleSchool =
+        (schoolId) => {
 
-        const expanded =
-            expandedClassroomRoot;
-
-        setExpandedClassroomRoot(
-            !expanded
-        );
-
-        if (!expanded) {
-
-            await loadClassrooms();
-
-        }
-
-    };
-
-    const toggleClassroom = async (
-        classroomId
-    ) => {
-
-        const expanded =
-            expandedClassrooms[classroomId];
-
-        setExpandedClassrooms(prev => ({
-            ...prev,
-            [classroomId]: !prev[classroomId]
-        }));
-
-        if (!expanded) {
-
-            const response = await fetch(
-                `${API_URL}/api/classrooms/${classroomId}/layouts`,
-                {
-                    headers: authHeaders()
-                }
+            setExpandedSchools(
+                previous => ({
+                    ...previous,
+                    [schoolId]: !previous[schoolId]
+                })
             );
 
-            const layouts = await response.json();
+        };
 
-            setClassrooms(prev =>
-                prev.map(classroom =>
-                    classroom.id === classroomId
-                        ? {
-                            ...classroom,
-                            layouts
+    const toggleSchoolClassrooms =
+        (schoolId) => {
+
+            setExpandedSchoolClassrooms(
+                previous => ({
+                    ...previous,
+                    [schoolId]: !previous[schoolId]
+                })
+            );
+
+        };
+
+        const toggleClassroom = async (
+            classroomId
+        ) => {
+
+            const expanded =
+                expandedClassrooms[classroomId];
+
+            setExpandedClassrooms(prev => ({
+                ...prev,
+                [classroomId]: !prev[classroomId]
+            }));
+
+            if (!expanded) {
+
+                const response =
+                    await fetch(
+                        `${API_URL}/api/classrooms/${classroomId}/layouts`,
+                        {
+                            headers: authHeaders()
                         }
-                        : classroom
-                )
-            );
+                    );
 
-        }
+                if (!response.ok) {
+                    console.error(
+                        "Kunde inte hämta layouts",
+                        response.status
+                    );
+                    return;
+                }
 
-    };
+                const layouts =
+                    await response.json();
+
+                console.log(
+                    "LAYOUTS",
+                    classroomId,
+                    layouts
+                );
+
+                setClassrooms(prev =>
+                    prev.map(classroom =>
+                        classroom.id === classroomId
+                            ? {
+                                ...classroom,
+                                layouts
+                            }
+                            : classroom
+                    )
+                );
+            }
+        };
 
     return (
         <>
             <UserProfile />
 
-        <ContextMenu
-            contextMenu={contextMenu}
-            setContextMenu={setContextMenu}
-            user={user}
-            openTab={openTab}
 
-            onCreateGroup={() => {
-                setShowCreateGroupDialog(true);
-            }}
-
-            onRenameGroup={(groupId, groupName) => {
-                setRenameDialog({
-                    id: groupId,
-                    name: groupName
-                });
-            }}
-
-            onArchiveGroup={(groupId, groupName) => {
-                setArchiveDialog({
-                    id: groupId,
-                    name: groupName
-                });
-            }}
-
-            onCreateStudent={(groupId, groupName) => {
-                setCreateStudentDialog({
+            <ContextMenu
+                contextMenu={contextMenu}
+                setContextMenu={setContextMenu}
+                user={user}
+                setCreateAbilityDialog={setCreateAbilityDialog}
+                setImportAbilitiesDialog={setImportAbilitiesDialog}
+                setRenameAbilitySeriesDialog={setRenameAbilitySeriesDialog}
+                setRenameDialog={setRenameDialog}
+                setArchiveDialog={setArchiveDialog}
+                setPasswordDialog={setPasswordDialog}
+                setRenameStudentDialog={setRenameStudentDialog}
+                setArchiveStudentDialog={setArchiveStudentDialog}
+                setCreateStudentDialog={setCreateStudentDialog}
+                setImportStudentsDialog={setImportStudentsDialog}
+                setSelectedClassroomId={setSelectedClassroomId}
+                setCreateLayoutDialogOpen={setCreateLayoutDialogOpen}
+                setRenameClassroomDialog={setRenameClassroomDialog}
+                setDeleteClassroomDialog={setDeleteClassroomDialog}
+                setRenameLayoutDialog={setRenameLayoutDialog}
+                setDuplicateLayoutDialog={setDuplicateLayoutDialog}
+                setDeleteLayoutDialog={setDeleteLayoutDialog}
+                openTab={openTab}
+                    onCreateLessons={(
                     groupId,
                     groupName
                 });
@@ -1497,130 +1533,202 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                     className="tree-folder"
                     variant="ghost"
                     size="lg"
-                    onClick={toggleClassrooms}
-                    onContextMenu={(e) => {
-
-                        e.preventDefault();
-
-                        // setContextMenu({
-                        //     type: "classrooms",
-                        //     x: e.clientX,
-                        //     y: e.clientY
-                        // });
-
-                    }}
+                    onClick={() =>
+                        setShowSchools(prev => !prev)
+                    }
                 >
-                    {expandedClassroomRoot ? "▼" : "▶"} Klassrum
+                    {showSchools ? "▼" : "▶"} Skolor
                 </Button>
 
-
-                {expandedClassroomRoot && (
-
+                {showSchools && (
                     <div className="ml-4">
-
-                        {classrooms.map(classroom => (
-
-                            <div key={classroom.id}>
-
-                                <div
-                                    className="tree-folder"
+                        {schools.map(school => (
+                            <div key={school.id}>
+                                <Button
+                                    variant="ghost"
                                     onClick={() =>
-                                        toggleClassroom(
-                                            classroom.id
-                                        )
+                                        toggleSchool(school.id)
                                     }
-                                    onContextMenu={(e) => {
-
-                                        e.preventDefault();
-
-                                        setContextMenu({
-                                            type: "classroom",
-                                            classroomId:
-                                                classroom.id,
-                                            classroomName:
-                                                classroom.name,
-                                            x: e.clientX,
-                                            y: e.clientY
-                                        });
-
-                                    }}
                                 >
-                                    {expandedClassrooms[
-                                        classroom.id
-                                    ]
+                                    {expandedSchools[school.id]
                                         ? "▼"
-                                        : "▶"}
+                                        : "▶"}{" "}
+                                    {school.name}
+                                </Button>
 
-                                    {" "}
-
-                                    {classroom.name}
-
-                                </div>
-
-                                {expandedClassrooms[
-                                    classroom.id
-                                ] && (
-
+                                {expandedSchools[school.id] && (
                                     <div className="ml-4">
 
-                                        {(classroom.layouts || [])
-                                            .map(layout => (
+                                        <div
+                                            className="tree-folder"
+                                            onClick={() =>
+                                                toggleSchoolClassrooms(
+                                                    school.id
+                                                )
+                                            }
+                                            onContextMenu={(e) => {
 
-                                                <div
-                                                    key={layout.id}
-                                                    className="
-                                                        tree-file
-                                                        cursor-pointer
-                                                    "
-                                                    onClick={() =>
-                                                        openTab({
-                                                            id:
-                                                                `classroom-layout-${layout.id}`,
-                                                            type:
-                                                                "classroom-layout",
-                                                            title:
-                                                                layout.name,
-                                                            layoutId:
-                                                                layout.id
-                                                        })
-                                                    }
-                                                    onContextMenu={(
-                                                        e
-                                                    ) => {
+                                                if (
+                                                    !school.is_admin &&
+                                                    user?.role !== "super"
+                                                ) {
+                                                    return;
+                                                }
 
-                                                        e.preventDefault();
+                                                e.preventDefault();
 
-                                                        setContextMenu({
-                                                            type:
-                                                                "classroom-layout",
-                                                            layoutId:
-                                                                layout.id,
-                                                            layoutName:
-                                                                layout.name,
-                                                            x:
-                                                                e.clientX,
-                                                            y:
-                                                                e.clientY
-                                                        });
+                                                setContextMenu({
+                                                    type: "classrooms",
+                                                    schoolId: school.id,
+                                                    schoolName: school.name,
+                                                    x: e.clientX,
+                                                    y: e.clientY
+                                                });
+                                            }}
+                                                                            >
+                                            {expandedSchoolClassrooms[
+                                                school.id
+                                            ]
+                                                ? "▼"
+                                                : "▶"}
 
-                                                    }}
-                                                >
-                                                    {layout.name}
-                                                </div>
+                                            {" "}
 
-                                            ))}
+                                            Klassrum
+                                        </div>
+
+
+                                        {expandedSchoolClassrooms[
+                                            school.id
+                                        ] && (
+                                            <div className="ml-4">
+
+                                                {classrooms
+                                                    .filter(
+                                                        classroom =>
+                                                            classroom.school_id ===
+                                                            school.id
+                                                    )
+                                                    .map(classroom => (
+                                                        <div
+                                                            key={classroom.id}
+                                                        >
+
+                                                            <div
+                                                                className="tree-folder"
+                                                                onClick={() =>
+                                                                    toggleClassroom(
+                                                                        classroom.id
+                                                                    )
+                                                                }
+                                                                onContextMenu={(e) => {
+                                                                    e.preventDefault();
+
+                                                                    setContextMenu({
+                                                                        type:
+                                                                            "classroom",
+                                                                        classroomId:
+                                                                            classroom.id,
+                                                                        classroomName:
+                                                                            classroom.name,
+                                                                        x:
+                                                                            e.clientX,
+                                                                        y:
+                                                                            e.clientY
+                                                                    });
+                                                                }}
+                                                            >
+                                                                {expandedClassrooms[
+                                                                    classroom.id
+                                                                ]
+                                                                    ? "▼"
+                                                                    : "▶"}
+
+                                                                {" "}
+
+                                                                {
+                                                                    classroom.name
+                                                                }
+                                                            </div>
+
+
+                                                            {expandedClassrooms[
+                                                                classroom.id
+                                                            ] && (
+                                                                <div className="ml-4">
+
+                                                                    {(classroom.layouts ||
+                                                                        [])
+                                                                        .map(
+                                                                            layout => (
+                                                                                <div
+                                                                                    key={
+                                                                                        layout.id
+                                                                                    }
+                                                                                    className="tree-file cursor-pointer"
+                                                                                    onClick={() =>
+                                                                                        openTab(
+                                                                                            {
+                                                                                                id:
+                                                                                                    `classroom-layout-${layout.id}`,
+                                                                                                type:
+                                                                                                    "classroom-layout",
+                                                                                                title:
+                                                                                                    layout.name,
+                                                                                                layoutId:
+                                                                                                    layout.id
+                                                                                            }
+                                                                                        )
+                                                                                    }
+                                                                                    onContextMenu={(
+                                                                                        e
+                                                                                    ) => {
+                                                                                        e.preventDefault();
+
+                                                                                        setContextMenu({
+                                                                                            type:
+                                                                                                "classroom-layout",
+                                                                                            layoutId:
+                                                                                                layout.id,
+                                                                                            layoutName:
+                                                                                                layout.name,
+                                                                                            x:
+                                                                                                e.clientX,
+                                                                                            y:
+                                                                                                e.clientY
+                                                                                        });
+                                                                                    }}
+                                                                                >
+                                                                                    {
+                                                                                        layout.name
+                                                                                    }
+                                                                                </div>
+                                                                            )
+                                                                        )}
+
+                                                                </div>
+                                                            )}
+
+                                                        </div>
+                                                    ))}
+
+                                            </div>
+                                        )}
 
                                     </div>
-
                                 )}
 
                             </div>
-
                         ))}
-
                     </div>
-
                 )}
+                    
+
+
+
+
+
+
 
                 <div className="mt-6 border-t pt-2">
 
@@ -1941,16 +2049,6 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                     setDuplicateLayoutDialog(null)
                 }
                 onDuplicated={loadClassrooms}
-            />
-            <EditGroupScheduleDialog
-                open={!!manageScheduleDialog}
-                schedule={manageScheduleDialog}
-                onOpenChange={() =>
-                    setManageScheduleDialog(null)
-                }
-                onSaved={() => {
-                    setManageScheduleDialog(null);
-                }}
             />
         </>
 
