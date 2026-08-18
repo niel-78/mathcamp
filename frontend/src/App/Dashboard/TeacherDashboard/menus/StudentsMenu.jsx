@@ -1,28 +1,32 @@
 import { Button } from "@/components/ui/button";
 
-export default function GroupMenu({
-    onRename,
-    onArchive
+export default function StudentsMenu({
+    onCreateStudent,
+    onImportStudents
 }) {
+
     return (
+
         <div className="context-menu">
 
             <Button
                 className="context-menu-button"
                 variant="inline"
-                onClick={onRename}
+                onClick={onCreateStudent}
             >
-                Byt namn
+                Lägg till elev
             </Button>
 
             <Button
                 className="context-menu-button"
                 variant="inline"
-                onClick={onArchive}
+                onClick={onImportStudents}
             >
-                Arkivera
+                Importera elever
             </Button>
 
         </div>
+
     );
+
 }

@@ -52,11 +52,27 @@ export default function EditGroupScheduleDialog({
         }
 
         setStartTime(
-            schedule.start_time || ""
+            schedule.start_time
         );
 
         setEndTime(
-            schedule.end_time || ""
+            schedule.end_time
+        );
+
+    }, [schedule]);
+
+    useEffect(() => {
+
+        if (!schedule) {
+            return;
+        }
+
+        setStartTime(
+            schedule.start_time
+        );
+
+        setEndTime(
+            schedule.end_time
         );
 
         setScope("all");

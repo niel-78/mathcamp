@@ -68,13 +68,17 @@ router.post("/", async (req, res) => {
             `
             INSERT INTO abilities (
                 series_id,
-                name
+                name,
+                created_by,
+                updated_by
             )
-            VALUES (?, ?)
+            VALUES (?, ?, ?, ?)
             `,
             [
                 seriesId,
-                name
+                name,
+                req.user.id,
+                req.user.id
             ]
         );
 

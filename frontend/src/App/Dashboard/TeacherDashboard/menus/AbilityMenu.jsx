@@ -1,10 +1,12 @@
 import { Button } from "@/components/ui/button";
 
-export default function GroupMenu({
+export default function AbilityMenu({
     onRename,
-    onArchive
+    onDelete
 }) {
+
     return (
+
         <div className="context-menu">
 
             <Button
@@ -18,11 +20,13 @@ export default function GroupMenu({
             <Button
                 className="context-menu-button"
                 variant="inline"
-                onClick={onArchive}
+                onClick={onDelete}
             >
-                Arkivera
+                Radera
             </Button>
 
         </div>
+
     );
+
 }

@@ -3,9 +3,10 @@ import { Button } from "@/components/ui/button";
 export default function AbilitySeriesMenu({
     contextMenu,
     user,
-    onCreateAbility,
-    onImportAbilities,
-    onRenameSeries
+    setContextMenu,
+    setCreateAbilityDialog,
+    setImportAbilitiesDialog,
+    setRenameAbilitySeriesDialog
 }) {
 
     const canEdit =
@@ -24,11 +25,19 @@ export default function AbilitySeriesMenu({
             {canEdit && (
 
                 <>
-
                     <Button
                         variant="inline"
                         className="context-menu-button"
-                        onClick={onCreateAbility}
+                        onClick={() => {
+
+                            setCreateAbilityDialog({
+                                id: contextMenu.seriesId,
+                                name: contextMenu.seriesName
+                            });
+
+                            setContextMenu(null);
+
+                        }}
                     >
                         Lägg till förmåga
                     </Button>
@@ -36,11 +45,19 @@ export default function AbilitySeriesMenu({
                     <Button
                         variant="inline"
                         className="context-menu-button"
-                        onClick={onImportAbilities}
+                        onClick={() => {
+
+                            setImportAbilitiesDialog({
+                                seriesId: contextMenu.seriesId,
+                                seriesName: contextMenu.seriesName
+                            });
+
+                            setContextMenu(null);
+
+                        }}
                     >
                         Importera förmågor via Excel
                     </Button>
-
                 </>
 
             )}
@@ -48,11 +65,19 @@ export default function AbilitySeriesMenu({
             {canManage && (
 
                 <>
-
                     <Button
                         variant="inline"
                         className="context-menu-button"
-                        onClick={onRenameSeries}
+                        onClick={() => {
+
+                            setRenameAbilitySeriesDialog({
+                                id: contextMenu.seriesId,
+                                name: contextMenu.seriesName
+                            });
+
+                            setContextMenu(null);
+
+                        }}
                     >
                         Byt namn
                     </Button>
@@ -70,7 +95,6 @@ export default function AbilitySeriesMenu({
                     >
                         Ta bort serie
                     </Button>
-
                 </>
 
             )}

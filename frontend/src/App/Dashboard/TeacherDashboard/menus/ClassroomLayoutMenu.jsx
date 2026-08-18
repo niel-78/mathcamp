@@ -1,10 +1,13 @@
 import { Button } from "@/components/ui/button";
 
-export default function GroupMenu({
+export default function ClassroomLayoutMenu({
     onRename,
-    onArchive
+    onDelete,
+    onDuplicate
 }) {
+
     return (
+
         <div className="context-menu">
 
             <Button
@@ -18,11 +21,21 @@ export default function GroupMenu({
             <Button
                 className="context-menu-button"
                 variant="inline"
-                onClick={onArchive}
+                onClick={onDuplicate}
             >
-                Arkivera
+                Duplicera
+            </Button>
+
+            <Button
+                className="context-menu-button"
+                variant="inline"
+                onClick={onDelete}
+            >
+                Radera
             </Button>
 
         </div>
+
     );
+
 }

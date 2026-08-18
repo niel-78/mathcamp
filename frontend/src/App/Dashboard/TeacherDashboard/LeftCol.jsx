@@ -34,6 +34,7 @@ import DeleteClassroomDialog from "./Main/DeleteClassroomDialog";
 import RenameLayoutDialog from "./Main/RenameLayoutDialog";
 import DeleteLayoutDialog from "./Main/DeleteLayoutDialog";
 import DuplicateLayoutDialog from "./Main/DuplicateLayoutDialog";
+import EditGroupScheduleDialog from "./Main/EditGroupScheduleDialog";
 
 export default function LeftCol( {openTab, hoverTarget} ) {
 
@@ -99,7 +100,9 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [renameLayoutDialog, setRenameLayoutDialog] = useState(null);
     const [deleteLayoutDialog, setDeleteLayoutDialog] = useState(null);
     const [duplicateLayoutDialog, setDuplicateLayoutDialog] = useState(null);
-
+    const [manageScheduleDialog, setManageScheduleDialog] = useState(null);
+    const [selectedSchoolId, setSelectedSchoolId] = useState(null);
+    const [createClassroomDialogOpen,setCreateClassroomDialogOpen] = useState(false);
 
     useEffect(() => {
         loadGroups();
@@ -396,61 +399,180 @@ export default function LeftCol( {openTab, hoverTarget} ) {
         <>
             <UserProfile />
 
+        <ContextMenu
+            contextMenu={contextMenu}
+            setContextMenu={setContextMenu}
+            user={user}
+            openTab={openTab}
 
-            <ContextMenu
-                contextMenu={contextMenu}
-                setContextMenu={setContextMenu}
-                user={user}
-                setCreateAbilityDialog={setCreateAbilityDialog}
-                setImportAbilitiesDialog={setImportAbilitiesDialog}
-                setRenameAbilitySeriesDialog={setRenameAbilitySeriesDialog}
-                setRenameDialog={setRenameDialog}
-                setArchiveDialog={setArchiveDialog}
-                setPasswordDialog={setPasswordDialog}
-                setRenameStudentDialog={setRenameStudentDialog}
-                setArchiveStudentDialog={setArchiveStudentDialog}
-                setCreateStudentDialog={setCreateStudentDialog}
-                setImportStudentsDialog={setImportStudentsDialog}
-                setSelectedClassroomId={setSelectedClassroomId}
-                setCreateLayoutDialogOpen={setCreateLayoutDialogOpen}
-                setRenameClassroomDialog={setRenameClassroomDialog}
-                setDeleteClassroomDialog={setDeleteClassroomDialog}
-                setRenameLayoutDialog={setRenameLayoutDialog}
-                setDuplicateLayoutDialog={setDuplicateLayoutDialog}
-                setDeleteLayoutDialog={setDeleteLayoutDialog}
-                openTab={openTab}
-                    onCreateLessons={(
+            onCreateGroup={() => {
+                setShowCreateGroupDialog(true);
+            }}
+
+            onRenameGroup={(groupId, groupName) => {
+                setRenameDialog({
+                    id: groupId,
+                    name: groupName
+                });
+            }}
+
+            onArchiveGroup={(groupId, groupName) => {
+                setArchiveDialog({
+                    id: groupId,
+                    name: groupName
+                });
+            }}
+
+            onCreateStudent={(groupId, groupName) => {
+                setCreateStudentDialog({
                     groupId,
                     groupName
-                ) => {
+                });
+            }}
 
-                    setCreateLessonSeriesDialog({
-                        groupId,
-                        groupName
-                    });
+            onImportStudents={(groupId, groupName) => {
+                setImportStudentsDialog({
+                    groupId,
+                    groupName
+                });
+            }}
 
-                }}
-                onCreateAbilitySeries={() => {
-                    setCreateAbilitySeriesDialog(true);
-                }}
-                onRenameAbility={(id, name) => {
+            onResetPassword={(userId, name) => {
+                setPasswordDialog({
+                    userId,
+                    name
+                });
+            }}
 
-                    setRenameAbilityDialog({
-                        id,
-                        name
-                    });
+            onRenameStudent={(student) => {
+                setRenameStudentDialog(student);
+            }}
 
-                }}
+            onArchiveStudent={(student) => {
+                setArchiveStudentDialog(student);
+            }}
 
-                onDeleteAbility={(id, name) => {
+            onCreateLessons={(groupId, groupName) => {
+                setCreateLessonSeriesDialog({
+                    groupId,
+                    groupName
+                });
+            }}
 
-                    setDeleteAbilityDialog({
-                        id,
-                        name
-                    });
+            onManageSchedule={(groupId, groupName) => {
+                setManageScheduleDialog({
+                    groupId,
+                    groupName
+                });
+            }}
 
-                }}
-            />
+            onOpenQueue={(groupId, groupName) => {
+                openTab({
+                    id: `planning-queue-${groupId}`,
+                    type: "planning-queue",
+                    title: `${groupName} - Planeringskö`,
+                    groupId
+                });
+            }}
+
+            onCreateLevel={(subjectId, subjectName) => {
+                setCreateLevelDialog({
+                    subjectId,
+                    subjectName
+                });
+            }}
+
+            onCreateBook={(levelId, levelName) => {
+                setCreateBookDialog({
+                    levelId,
+                    levelName
+                });
+            }}
+
+            onImportCriteria={(levelId, levelName) => {
+                setImportCriteriaDialog({
+                    levelId,
+                    levelName
+                });
+            }}
+
+            onImportCentralContent={(levelId, levelName) => {
+                setImportCentralContentDialog({
+                    levelId,
+                    levelName
+                });
+            }}
+
+            onCreateBookRoot={() => {
+                setCreateBookDialog(true);
+            }}
+
+            onImportBookStructure={(bookId, bookTitle) => {
+                setImportBookStructureDialog({
+                    bookId,
+                    bookTitle
+                });
+            }}
+
+            onCreateAbilitySeries={() => {
+                setCreateAbilitySeriesDialog(true);
+            }}
+
+            onCreateAbility={(seriesId, seriesName) => {
+                setCreateAbilityDialog({
+                    id: seriesId,
+                    name: seriesName
+                });
+            }}
+
+            onImportAbilities={(seriesId, seriesName) => {
+                setImportAbilitiesDialog({
+                    seriesId,
+                    seriesName
+                });
+            }}
+
+            onRenameAbilitySeries={(seriesId, seriesName) => {
+                setRenameAbilitySeriesDialog({
+                    seriesId,
+                    seriesName
+                });
+            }}
+
+            onRenameAbility={(id, name) => {
+                setRenameAbilityDialog({
+                    id,
+                    name
+                });
+            }}
+
+            onDeleteAbility={(id, name) => {
+                setDeleteAbilityDialog({
+                    id,
+                    name
+                });
+            }}
+
+            setCreateAbilityDialog={setCreateAbilityDialog}
+            setImportAbilitiesDialog={setImportAbilitiesDialog}
+            setRenameAbilitySeriesDialog={setRenameAbilitySeriesDialog}
+            setRenameDialog={setRenameDialog}
+            setArchiveDialog={setArchiveDialog}
+            setPasswordDialog={setPasswordDialog}
+            setRenameStudentDialog={setRenameStudentDialog}
+            setArchiveStudentDialog={setArchiveStudentDialog}
+            setSelectedClassroomId={setSelectedClassroomId}
+            setCreateLayoutDialogOpen={setCreateLayoutDialogOpen}
+            setRenameClassroomDialog={setRenameClassroomDialog}
+            setDeleteClassroomDialog={setDeleteClassroomDialog}
+            setRenameLayoutDialog={setRenameLayoutDialog}
+            setDuplicateLayoutDialog={setDuplicateLayoutDialog}
+            setDeleteLayoutDialog={setDeleteLayoutDialog}
+            setSelectedSchoolId={setSelectedSchoolId}
+            setCreateClassroomDialogOpen={
+                setCreateClassroomDialogOpen
+            }
+        />
 
             <div
                 className="
@@ -1819,6 +1941,16 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                     setDuplicateLayoutDialog(null)
                 }
                 onDuplicated={loadClassrooms}
+            />
+            <EditGroupScheduleDialog
+                open={!!manageScheduleDialog}
+                schedule={manageScheduleDialog}
+                onOpenChange={() =>
+                    setManageScheduleDialog(null)
+                }
+                onSaved={() => {
+                    setManageScheduleDialog(null);
+                }}
             />
         </>
 
