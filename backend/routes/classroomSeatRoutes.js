@@ -33,10 +33,10 @@ router.get("/:id",
 );
 
 // PUT /api/classroom-seats/:id
-router.put("/:id",
-    async (req, res) => {
+router.put("/:id", async (req, res) => {
 
         const {
+            seat_label,
             x_position,
             y_position
         } = req.body;
@@ -45,11 +45,25 @@ router.put("/:id",
             `
             UPDATE classroom_seats
             SET
-                x_position = ?,
-                y_position = ?
+                seat_label =
+                    COALESCE(
+                        ?,
+                        seat_label
+                    ),
+                x_position =
+                    COALESCE(
+                        ?,
+                        x_position
+                    ),
+                y_position =
+                    COALESCE(
+                        ?,
+                        y_position
+                    )
             WHERE id = ?
             `,
             [
+                seat_label,
                 x_position,
                 y_position,
                 req.params.id

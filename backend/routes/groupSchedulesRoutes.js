@@ -20,10 +20,15 @@ router.get("/",requireAuth,
         const [rows] =
             await db.query(
                 `
-                SELECT *
-                FROM group_schedules
-                WHERE group_id = ?
-                ORDER BY weekday
+                SELECT
+                    gs.*,
+                    c.name AS classroom_name,
+                    cl.name AS classroom_layout_name
+                FROM group_schedules gs
+                LEFT JOIN classrooms c
+                    ON c.id = gs.classroom_id
+                LEFT JOIN classroom_layouts cl
+                    ON cl.id = gs.classroom_layout_id
                 `,
                 [
                     req.query.groupId
@@ -45,7 +50,9 @@ router.post("/", requireAuth,
             start_time,
             end_time,
             valid_from,
-            valid_to
+            valid_to,
+            classroom_id,
+            classroom_layout_id
         } = req.body;
 
         const [result] = await db.query(
@@ -56,9 +63,11 @@ router.post("/", requireAuth,
                 start_time,
                 end_time,
                 valid_from,
-                valid_to
+                valid_to,
+                classroom_id,
+                classroom_layout_id
             )
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             `,
             [
                 group_id,
@@ -66,7 +75,9 @@ router.post("/", requireAuth,
                 start_time,
                 end_time,
                 valid_from,
-                valid_to
+                valid_to,
+                classroom_id,
+                classroom_layout_id
             ]
         );
 
@@ -148,7 +159,9 @@ router.put("/:id", requireAuth,
             start_time,
             end_time,
             scope,
-            effective_from
+            effective_from,
+            classroom_id,
+            classroom_layout_id
         } = req.body;
 
         if (scope === "all") {
@@ -158,12 +171,16 @@ router.put("/:id", requireAuth,
                 UPDATE group_schedules
                 SET
                     start_time = ?,
-                    end_time = ?
+                    end_time = ?,
+                    classroom_id = ?,
+                    classroom_layout_id = ?
                 WHERE id = ?
                 `,
                 [
                     start_time,
                     end_time,
+                    classroom_id || null,
+                    classroom_layout_id || null,
                     req.params.id
                 ]
             );

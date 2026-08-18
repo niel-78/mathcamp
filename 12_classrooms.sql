@@ -165,6 +165,36 @@ ADD CONSTRAINT fk_group_assessments_classroom
     FOREIGN KEY (classroom_id)
     REFERENCES classrooms(id);
 
+ALTER TABLE group_assessments
+ADD COLUMN classroom_layout_id INT NULL,
+ADD CONSTRAINT fk_group_assessments_layout
+    FOREIGN KEY (classroom_layout_id)
+    REFERENCES classroom_layouts(id);
+
+/* =====================================================
+   GROUP SCHEDULE CLASSROOMS
+   Schemaposter kan kopplas till klassrum
+   och en specifik möblering
+   ===================================================== */
+
+ALTER TABLE group_schedules
+ADD COLUMN classroom_id INT NULL,
+ADD COLUMN classroom_layout_id INT NULL;
+
+/* =====================================================
+   FOREIGN KEYS
+   ===================================================== */
+
+ALTER TABLE group_schedules
+ADD CONSTRAINT fk_group_schedules_classroom
+    FOREIGN KEY (classroom_id)
+    REFERENCES classrooms(id);
+
+ALTER TABLE group_schedules
+ADD CONSTRAINT fk_group_schedules_layout
+    FOREIGN KEY (classroom_layout_id)
+    REFERENCES classroom_layouts(id);
+
 /* =====================================================
    LESSON SEATING SNAPSHOTS
    Historisk placering vid lektion
@@ -193,6 +223,7 @@ CREATE TABLE lesson_seat_assignments (
     FOREIGN KEY (classroom_seat_id)
         REFERENCES classroom_seats(id)
 );
+
 
 /* =====================================================
    ASSESSMENT SEATING SNAPSHOTS

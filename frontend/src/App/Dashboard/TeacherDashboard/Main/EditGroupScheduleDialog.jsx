@@ -32,6 +32,18 @@ export default function EditGroupScheduleDialog({
     
     const [effectiveFrom, setEffectiveFrom] = useState("");
 
+    const [classrooms, setClassrooms] =
+        useState([]);
+
+    const [layouts, setLayouts] =
+        useState([]);
+
+    const [classroomId, setClassroomId] =
+        useState("");
+
+    const [layoutId, setLayoutId] =
+        useState("");
+
 
     useEffect(() => {
 
@@ -67,6 +79,50 @@ export default function EditGroupScheduleDialog({
 
     }, [schedule]);
 
+    useEffect(() => {
+
+        const classroom =
+            classrooms.find(
+                c => c.id === Number(classroomId)
+            );
+
+        setLayouts(
+            classroom?.layouts ?? []
+        );
+
+    }, [
+        classroomId,
+        classrooms
+    ]);
+
+    useEffect(() => {
+
+        const loadClassrooms = async () => {
+
+            const response =
+                await fetch(
+                    `${API_URL}/api/classrooms`,
+                    {
+                        headers:
+                            authHeaders()
+                    }
+                );
+
+            if (!response.ok) {
+                return;
+            }
+
+            const data =
+                await response.json();
+
+            setClassrooms(data);
+
+        };
+
+        loadClassrooms();
+
+    }, []);
+
     const save = async () => {
 
         const response = await fetch(
@@ -81,8 +137,11 @@ export default function EditGroupScheduleDialog({
                     start_time: startTime,
                     end_time: endTime,
                     scope,
-                    effective_from: effectiveFrom
+                    effective_from: effectiveFrom,
+                    classroom_id: classroomId,
+                    classroom_layout_id: layoutId
                 })
+
             }
         );
 
@@ -120,6 +179,78 @@ export default function EditGroupScheduleDialog({
                         space-y-4
                     "
                 >
+
+                    <div className="space-y-2">
+
+                        <label>
+                            Klassrum
+                        </label>
+
+                        <select
+                            value={classroomId}
+                            onChange={(e) =>
+                                setClassroomId(
+                                    e.target.value
+                                )
+                            }
+                        >
+
+                            <option value="">
+                                Välj klassrum
+                            </option>
+
+                            {classrooms.map(
+                                classroom => (
+
+                                    <option
+                                        key={classroom.id}
+                                        value={classroom.id}
+                                    >
+                                        {classroom.name}
+                                    </option>
+
+                                )
+                            )}
+
+                        </select>
+
+                    </div>
+
+                    <div className="space-y-2">
+
+                        <label>
+                            Möblering
+                        </label>
+
+                        <select
+                            value={layoutId}
+                            onChange={(e) =>
+                                setLayoutId(
+                                    e.target.value
+                                )
+                            }
+                        >
+
+                            <option value="">
+                                Välj möblering
+                            </option>
+
+                            {layouts.map(
+                                layout => (
+
+                                    <option
+                                        key={layout.id}
+                                        value={layout.id}
+                                    >
+                                        {layout.name}
+                                    </option>
+
+                                )
+                            )}
+
+                        </select>
+
+                    </div>
 
                     <input
                         type="time"

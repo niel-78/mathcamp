@@ -7,17 +7,18 @@ import BaseTabLayout
     from "@/components/layouts/BaseTabLayout";
 import { Button } from "@/components/ui/button";
 import Seat from "@/components/classroom/Seat";
-
+import RenameSeatDialog from "@/components/classroom/RenameSeatDialog";
+import DeleteSeatDialog from "@/components/classroom/DeleteSeatDialog";
 
 export default function ClassroomLayoutTab({
     layoutId
 }) {
 
-    const [layout, setLayout] =
-        useState(null);
-
-    const [seats, setSeats] =
-        useState([]);
+    const [layout, setLayout] = useState(null);
+    const [seats, setSeats] = useState([]);
+    const [renameSeatDialog,setRenameSeatDialog] = useState(null);
+    const [deleteSeatDialog,setDeleteSeatDialog] = useState(null);
+    const [contextMenu,setContextMenu] = useState(null);
 
     useEffect(() => {
 
@@ -99,98 +100,119 @@ export default function ClassroomLayoutTab({
 
     };
 
-    const saveSeatPosition =
-        async (
-            seatId,
-            x,
-            y
-        ) => {
+    const saveSeatPosition = async (
+        seatId,
+        x,
+        y
+    ) => {
 
-            await fetch(
-                `${API_URL}/api/classroom-seats/${seatId}`,
-                {
-                    method: "PUT",
-                    headers: {
-                        ...authHeaders(),
-                        "Content-Type":
-                            "application/json"
-                    },
-                    body: JSON.stringify({
+        await fetch(
+            `${API_URL}/api/classroom-seats/${seatId}`,
+            {
+                method: "PUT",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type":
+                        "application/json"
+                },
+                body: JSON.stringify({
+                    x_position: x,
+                    y_position: y
+                })
+            }
+        );
+
+        setSeats(prev =>
+            prev.map(seat =>
+                seat.id === seatId
+                    ? {
+                        ...seat,
                         x_position: x,
                         y_position: y
-                    })
-                }
-            );
+                    }
+                    : seat
+            )
+        );
 
-            setSeats(prev =>
-                prev.map(seat =>
-                    seat.id === seatId
-                        ? {
-                            ...seat,
-                            x_position: x,
-                            y_position: y
-                        }
-                        : seat
-                )
-            );
-
-        };
+    };
 
     return (
-
-        <BaseTabLayout
-            title={
-                layout?.name ??
-                "Möblering"
-            }
-            actions={
-                <Button
-                    onClick={createSeat}
-                >
-                    Lägg till plats
-                </Button>
-            }
-        >
-
-                
-
-            <div
-                className="
-                    relative
-                    bg-slate-50
-                    border
-                    rounded-lg
-                    w-full
-                    h-[700px]
-                "
-            >
-                {seats.length === 0 && (
-
-                    <div
-                        className="
-                            text-muted-foreground
-                            p-4
-                        "
+        <>
+            <BaseTabLayout
+                title={
+                    layout?.name ??
+                    "Möblering"
+                }
+                actions={
+                    <Button
+                        onClick={createSeat}
                     >
-                        Inga platser skapade ännu.
-                    </div>
+                        Lägg till plats
+                    </Button>
+                }
+            >
 
-                )}
-                {seats.map(seat => (
+                    
 
-                    <Seat
-                        key={seat.id}
-                        seat={seat}
-                        onMove={
-                            saveSeatPosition
-                        }
-                    />
+                <div
+                    className="
+                        relative
+                        bg-slate-50
+                        border
+                        rounded-lg
+                        w-full
+                        h-[700px]
+                    "
+                >
+                    {seats.length === 0 && (
 
-                ))}
+                        <div
+                            className="
+                                text-muted-foreground
+                                p-4
+                            "
+                        >
+                            Inga platser skapade ännu.
+                        </div>
 
-            </div>
+                    )}
+                    {seats.map(seat => (
 
-        </BaseTabLayout>
+                        <Seat
+                            key={seat.id}
+                            seat={seat}
+                            onMove={saveSeatPosition}
+                            onRename={
+                                setRenameSeatDialog
+                            }
+                            onDelete={
+                                setDeleteSeatDialog
+                            }
+                        />
+
+                    ))}
+
+                </div>
+
+            </BaseTabLayout>
+            <RenameSeatDialog
+                open={!!renameSeatDialog}
+                seat={renameSeatDialog}
+                onOpenChange={() =>
+                    setRenameSeatDialog(null)
+                }
+                onRenamed={load}
+            />
+
+            <DeleteSeatDialog
+                open={!!deleteSeatDialog}
+                seat={deleteSeatDialog}
+                onOpenChange={() =>
+                    setDeleteSeatDialog(null)
+                }
+                onDeleted={load}
+            />
+        </>
 
     );
 

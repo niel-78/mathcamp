@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
@@ -25,13 +25,73 @@ export default function CreateLessonSeriesDialog({
         useState("08:00");
 
     const [endTime, setEndTime] =
-        useState("09:20");
+        useState("09:00");
 
     const [validFrom, setValidFrom] =
         useState("");
 
     const [validTo, setValidTo] =
         useState("");
+
+    const [classrooms, setClassrooms] =
+        useState([]);
+
+    const [layouts, setLayouts] =
+        useState([]);
+
+    const [classroomId, setClassroomId] =
+        useState("");
+
+    const [layoutId, setLayoutId] =
+        useState("");
+
+    useEffect(() => {
+
+        const loadClassrooms = async () => {
+
+            const response =
+                await fetch(
+                    `${API_URL}/api/classrooms`,
+                    {
+                        headers:
+                            authHeaders()
+                    }
+                );
+
+            if (!response.ok) {
+                return;
+            }
+
+            setClassrooms(
+                await response.json()
+            );
+
+        };
+
+        loadClassrooms();
+
+    }, []);
+
+    useEffect(() => {
+
+        const classroom =
+            classrooms.find(
+                c =>
+                    c.id ===
+                    Number(classroomId)
+            );
+
+        setLayouts(
+            classroom?.layouts ?? []
+        );
+
+        setLayoutId("");
+
+    }, [
+        classroomId,
+        classrooms
+    ]);
+
 
     const save = async () => {
 
@@ -49,7 +109,11 @@ export default function CreateLessonSeriesDialog({
                     start_time: startTime,
                     end_time: endTime,
                     valid_from: validFrom,
-                    valid_to: validTo
+                    valid_to: validTo,
+                    classroom_id:
+                        classroomId || null,
+                    classroom_layout_id:
+                        layoutId || null
                 })
             }
         );
@@ -197,6 +261,91 @@ export default function CreateLessonSeriesDialog({
                         />
 
                     </div>
+
+                    <div>
+
+                        <label>
+                            Klassrum
+                        </label>
+
+                        <select
+                            value={classroomId}
+                            onChange={(e) =>
+                                setClassroomId(
+                                    e.target.value
+                                )
+                            }
+                            className="
+                                w-full
+                                border
+                                rounded
+                                p-2
+                            "
+                        >
+
+                            <option value="">
+                                Välj klassrum
+                            </option>
+
+                            {classrooms.map(
+                                classroom => (
+
+                                    <option
+                                        key={classroom.id}
+                                        value={classroom.id}
+                                    >
+                                        {classroom.name}
+                                    </option>
+
+                                )
+                            )}
+
+                        </select>
+
+                    </div>
+
+                    <div>
+
+                        <label>
+                            Möblering
+                        </label>
+
+                        <select
+                            value={layoutId}
+                            onChange={(e) =>
+                                setLayoutId(
+                                    e.target.value
+                                )
+                            }
+                            className="
+                                w-full
+                                border
+                                rounded
+                                p-2
+                            "
+                        >
+
+                            <option value="">
+                                Välj möblering
+                            </option>
+
+                            {layouts.map(
+                                layout => (
+
+                                    <option
+                                        key={layout.id}
+                                        value={layout.id}
+                                    >
+                                        {layout.name}
+                                    </option>
+
+                                )
+                            )}
+
+                        </select>
+
+                    </div>
+
 
                     <Button
                         className="w-full"
