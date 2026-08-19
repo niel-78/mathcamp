@@ -84,7 +84,9 @@ CREATE TABLE group_seat_assignments (
 
     student_id INT NOT NULL,
 
-    classroom_seat_id INT NOT NULL,
+    classroom_seat_id INT,
+
+    pinned TINYINT(1) NOT NULL DEFAULT 0,
 
     created_at DATETIME NOT NULL
         DEFAULT CURRENT_TIMESTAMP,

@@ -25,7 +25,9 @@ import PresentationsTab from "./Main/PresentationsTab";
 import PresentationEditorTab from "@/components/ui/PresentationEditorTab";
 import PresentationPlayerTab from "@/components/ui/PresentationPlayerTab";
 import ClassroomLayoutTab from "./Main/ClassroomLayoutTab";
-// import ClassroomLayoutView from "./Main/ClassroomLayoutView";
+import GroupLayoutTab from "./Main/GroupLayoutTab";
+
+
 
 export default function Main({
     tabs,
@@ -289,9 +291,9 @@ export default function Main({
                     )}
                     {currentTab?.type === "group-schedules" && (
 
-                            <GroupSchedulesTab
-                                groupId={currentTab.groupId}
-                            />
+                        <GroupSchedulesTab
+                            groupId={currentTab.groupId}
+                        />
 
                         )
                     }
@@ -362,6 +364,14 @@ export default function Main({
                     {currentTab?.type === "classroom-layout" && (
 
                         <ClassroomLayoutTab
+                            layoutId={currentTab.layoutId}
+                        />
+
+                    )}
+                    {currentTab?.type === "group-layout" && (
+
+                        <GroupLayoutTab
+                            groupId={currentTab.groupId}
                             layoutId={currentTab.layoutId}
                         />
 

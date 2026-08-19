@@ -16,7 +16,6 @@ export default function ClassroomLayoutTab({
 
     const [layout, setLayout] = useState(null);
     const [seats, setSeats] = useState([]);
-    const [renameSeatDialog,setRenameSeatDialog] = useState(null);
     const [deleteSeatDialog,setDeleteSeatDialog] = useState(null);
     const [contextMenu,setContextMenu] = useState(null);
 
@@ -64,28 +63,17 @@ export default function ClassroomLayoutTab({
 
     const createSeat = async () => {
 
-        const label = prompt(
-            "Platsbeteckning"
-        );
-
-        if (!label) {
-            return;
-        }
-
         const response =
             await fetch(
                 `${API_URL}/api/classroom-layouts/${layoutId}/seats`,
                 {
                     method: "POST",
-
                     headers: {
                         ...authHeaders(),
                         "Content-Type":
                             "application/json"
                     },
-
                     body: JSON.stringify({
-                        seat_label: label,
                         x_position: 100,
                         y_position: 100
                     })
@@ -93,9 +81,7 @@ export default function ClassroomLayoutTab({
             );
 
         if (response.ok) {
-
             await load();
-
         }
 
     };
@@ -182,9 +168,6 @@ export default function ClassroomLayoutTab({
                             key={seat.id}
                             seat={seat}
                             onMove={saveSeatPosition}
-                            onRename={
-                                setRenameSeatDialog
-                            }
                             onDelete={
                                 setDeleteSeatDialog
                             }
@@ -195,15 +178,6 @@ export default function ClassroomLayoutTab({
                 </div>
 
             </BaseTabLayout>
-            <RenameSeatDialog
-                open={!!renameSeatDialog}
-                seat={renameSeatDialog}
-                onOpenChange={() =>
-                    setRenameSeatDialog(null)
-                }
-                onRenamed={load}
-            />
-
             <DeleteSeatDialog
                 open={!!deleteSeatDialog}
                 seat={deleteSeatDialog}

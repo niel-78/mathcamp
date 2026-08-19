@@ -91,7 +91,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [expandedAbilities, setExpandedAbilities] = useState({});
     const [expandedClassrooms, setExpandedClassrooms] = useState({});
     const [classrooms, setClassrooms] = useState([]);
-    const [expandedClassroomRoot, setExpandedClassroomRoot] = useState(false);
+    const [expandedGroupClassrooms,setExpandedGroupClassrooms] = useState({});
     const [createLayoutDialogOpen, setCreateLayoutDialogOpen] = useState(false);
     const [selectedClassroomId, setSelectedClassroomId] = useState(null);
     const [renameClassroomDialog, setRenameClassroomDialog] = useState(null);
@@ -103,19 +103,20 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [selectedSchoolId, setSelectedSchoolId] = useState(null);
     const [deleteAbilitySeriesDialog, setDeleteAbilitySeriesDialog] = useState(null);
     const [manageScheduleDialog, setManageScheduleDialog] = useState(null);
+    const [schools, setSchools] = useState([]);
+    const [expandedGroupClassroomItems,setExpandedGroupClassroomItems] = useState({});
 
-const [schools, setSchools] = useState([]);
 
-const [showSchools, setShowSchools] =
-    useState(false);
+    const [showSchools, setShowSchools] =
+        useState(false);
 
-const [expandedSchools, setExpandedSchools] =
-    useState({});
+    const [expandedSchools, setExpandedSchools] =
+        useState({});
 
-const [
-    expandedSchoolClassrooms,
-    setExpandedSchoolClassrooms
-] = useState({});
+    const [
+        expandedSchoolClassrooms,
+        setExpandedSchoolClassrooms
+    ] = useState({});
 
     useEffect(() => {
         loadGroups();
@@ -162,6 +163,33 @@ const [
             window.removeEventListener(
                 "group-restored",
                 reload
+            );
+
+        };
+
+    }, []);
+
+    useEffect(() => {
+
+        const handleGroupScheduleCreated =
+            async (event) => {
+
+                await loadGroupClassrooms(
+                    event.detail.groupId
+                );
+
+            };
+
+        window.addEventListener(
+            "group-schedule-created",
+            handleGroupScheduleCreated
+        );
+
+        return () => {
+
+            window.removeEventListener(
+                "group-schedule-created",
+                handleGroupScheduleCreated
             );
 
         };
@@ -284,6 +312,33 @@ const [
 
     };
 
+    const loadGroupClassrooms = async (
+        groupId
+    ) => {
+
+        const response =
+            await fetch(
+                `${API_URL}/api/groups/${groupId}/classrooms`,
+                {
+                    headers: authHeaders()
+                }
+            );
+
+        if (!response.ok) {
+            return;
+        }
+
+        const data =
+            await response.json();
+        console.log(data)
+
+        setGroupClassrooms(prev => ({
+            ...prev,
+            [groupId]: data
+        }));
+
+    };
+
     const selectLayout = async (
         layout
     ) => {
@@ -306,11 +361,21 @@ const [
         }));
     };
 
-    const toggleFolder = (groupId) => {
+    const toggleFolder = async (groupId) => {
+
+        if (!groupClassrooms[groupId]) {
+
+            await loadGroupClassrooms(
+                groupId
+            );
+
+        }
+
         setExpandedGroups(prev => ({
             ...prev,
             [groupId]: !prev[groupId],
         }));
+
     };
 
     const toggleStudents = async (groupId) => {
@@ -873,6 +938,104 @@ const [
                                                 </div>
 
                                             )}
+
+                                        <div
+                                            className="tree-file cursor-pointer"
+                                            onClick={() =>
+                                                setExpandedGroupClassrooms(prev => ({
+                                                    ...prev,
+                                                    [group.id]: !prev[group.id]
+                                                }))
+                                            }
+                                        >
+                                            {expandedGroupClassrooms[group.id]
+                                                ? "▼"
+                                                : "▶"}
+                                            {" "}
+                                            Klassrum
+                                        </div>
+
+                                        {expandedGroupClassrooms[group.id] && (
+
+                                            <div className="ml-4">
+
+                                                {(groupClassrooms[group.id] || []).map(
+                                                    classroom => (
+
+                                                        <div key={classroom.id}>
+
+                                                            <div
+                                                                className="tree-folder cursor-pointer"
+                                                                onClick={() =>
+                                                                    setExpandedGroupClassroomItems(prev => ({
+                                                                        ...prev,
+                                                                        [classroom.id]:
+                                                                            !prev[classroom.id]
+                                                                    }))
+                                                                }
+                                                            >
+                                                                {
+                                                                    expandedGroupClassroomItems[
+                                                                        classroom.id
+                                                                    ]
+                                                                        ? "▼"
+                                                                        : "▶"
+                                                                }
+
+                                                                {" "}
+
+                                                                {classroom.name}
+                                                            </div>
+
+                                                            {
+                                                                expandedGroupClassroomItems[
+                                                                classroom.id
+                                                            ] && (
+
+                                                                <div className="ml-4">
+
+                                                                    {(classroom.layouts || []).map(
+                                                                        layout => (
+
+                                                                            <div
+                                                                                key={layout.id}
+                                                                                className="
+                                                                                    tree-file
+                                                                                    cursor-pointer
+                                                                                "
+                                                                                onClick={() =>
+                                                                                    openTab({
+                                                                                        id:
+                                                                                            `group-layout-${group.id}-${layout.id}`,
+                                                                                        type:
+                                                                                            "group-layout",
+                                                                                        title:
+                                                                                            `${group.name} - ${layout.name}`,
+                                                                                        groupId:
+                                                                                            group.id,
+                                                                                        layoutId:
+                                                                                            layout.id
+                                                                                    })
+                                                                                }
+                                                                            >
+                                                                                {layout.name}
+                                                                            </div>
+
+                                                                        )
+                                                                    )}
+
+                                                                </div>
+                                                            
+                                                            )}
+
+                                                        </div>
+
+                                                    )
+                                                )}
+
+                                            </div>
+                                            
+                                        )}    
 
 
                                         <div className="tree-file">
@@ -1635,99 +1798,91 @@ const [
                                                             key={classroom.id}
                                                         >
 
-                                                            <div
-                                                                className="tree-folder"
-                                                                onClick={() =>
-                                                                    toggleClassroom(
-                                                                        classroom.id
-                                                                    )
-                                                                }
-                                                                onContextMenu={(e) => {
-                                                                    e.preventDefault();
+                                                        <div
+                                                            className="tree-folder"
+                                                            onClick={() =>
+                                                                setExpandedGroupClassrooms(prev => ({
+                                                                    ...prev,
+                                                                    [classroom.id]:
+                                                                        !prev[classroom.id]
+                                                                }))
+                                                            }
+                                                            onContextMenu={(e) => {
+                                                                e.preventDefault();
 
-                                                                    setContextMenu({
-                                                                        type:
-                                                                            "classroom",
-                                                                        classroomId:
-                                                                            classroom.id,
-                                                                        classroomName:
-                                                                            classroom.name,
-                                                                        x:
-                                                                            e.clientX,
-                                                                        y:
-                                                                            e.clientY
-                                                                    });
-                                                                }}
-                                                            >
-                                                                {expandedClassrooms[
+                                                                setContextMenu({
+                                                                    type: "classroom",
+                                                                    classroomId:
+                                                                        classroom.id,
+                                                                    classroomName:
+                                                                        classroom.name,
+                                                                    x: e.clientX,
+                                                                    y: e.clientY
+                                                                });
+                                                            }}
+                                                        >
+                                                            {
+                                                                expandedGroupClassrooms[
                                                                     classroom.id
                                                                 ]
                                                                     ? "▼"
-                                                                    : "▶"}
+                                                                    : "▶"
+                                                            }
 
-                                                                {" "}
+                                                            {" "}
 
-                                                                {
-                                                                    classroom.name
-                                                                }
-                                                            </div>
+                                                            {classroom.name}
+                                                        </div>
 
-
-                                                            {expandedClassrooms[
+                                                            {expandedGroupClassrooms[
                                                                 classroom.id
                                                             ] && (
+
                                                                 <div className="ml-4">
 
-                                                                    {(classroom.layouts ||
-                                                                        [])
-                                                                        .map(
-                                                                            layout => (
-                                                                                <div
-                                                                                    key={
-                                                                                        layout.id
-                                                                                    }
-                                                                                    className="tree-file cursor-pointer"
-                                                                                    onClick={() =>
-                                                                                        openTab(
-                                                                                            {
-                                                                                                id:
-                                                                                                    `classroom-layout-${layout.id}`,
-                                                                                                type:
-                                                                                                    "classroom-layout",
-                                                                                                title:
-                                                                                                    layout.name,
-                                                                                                layoutId:
-                                                                                                    layout.id
-                                                                                            }
-                                                                                        )
-                                                                                    }
-                                                                                    onContextMenu={(
-                                                                                        e
-                                                                                    ) => {
-                                                                                        e.preventDefault();
+                                                                    {(classroom.layouts || [])
+                                                                        .map(layout => (
 
-                                                                                        setContextMenu({
-                                                                                            type:
-                                                                                                "classroom-layout",
-                                                                                            layoutId:
-                                                                                                layout.id,
-                                                                                            layoutName:
-                                                                                                layout.name,
-                                                                                            x:
-                                                                                                e.clientX,
-                                                                                            y:
-                                                                                                e.clientY
-                                                                                        });
-                                                                                    }}
-                                                                                >
-                                                                                    {
-                                                                                        layout.name
-                                                                                    }
-                                                                                </div>
-                                                                            )
-                                                                        )}
+                                                                            <div
+                                                                                key={layout.id}
+                                                                                className="
+                                                                                    tree-file
+                                                                                    cursor-pointer
+                                                                                "
+                                                                                onClick={() =>
+                                                                                    openTab({
+                                                                                        id:
+                                                                                            `classroom-layout-${layout.id}`,
+                                                                                        type:
+                                                                                            "classroom-layout",
+                                                                                        title:
+                                                                                            layout.name,
+                                                                                        layoutId:
+                                                                                            layout.id
+                                                                                    })
+                                                                                }
+                                                                                onContextMenu={(e) => {
+                                                                                    e.preventDefault();
+
+                                                                                    setContextMenu({
+                                                                                        type:
+                                                                                            "classroom-layout",
+                                                                                        layoutId:
+                                                                                            layout.id,
+                                                                                        layoutName:
+                                                                                            layout.name,
+                                                                                        x: e.clientX,
+                                                                                        y: e.clientY
+                                                                                    });
+                                                                                }}
+                                                                            >
+                                                                                {layout.name}
+                                                                            </div>
+
+                                                                        ))}
 
                                                                 </div>
+
                                                             )}
 
                                                         </div>

@@ -48,6 +48,8 @@ import classroomRoutes from "./routes/classroomRoutes.js";
 import classroomLayoutRoutes from "./routes/classroomLayoutRoutes.js";
 import classroomSeatRoutes from "./routes/classroomSeatRoutes.js";
 
+import groupSeatAssignmentRoutes from "./routes/groupSeatAssignmentRoutes.js";
+
 import cors from "cors";
 
 console.log("SERVER FILE START");
@@ -115,6 +117,7 @@ app.use("/api/presentations", presentationRoutes);
 app.use("/api/classrooms", classroomRoutes);
 app.use("/api/classroom-layouts", classroomLayoutRoutes);
 app.use("/api/classroom-seats", classroomSeatRoutes);
+app.use("/api/group-seat-assignments", groupSeatAssignmentRoutes);
 
 app.use("/api/results", resultRoutes);
 app.use("/api/events", eventRoutes);
