@@ -84,6 +84,17 @@ export default function ClassroomLayoutTab({
             await load();
         }
 
+        window.dispatchEvent(
+            new CustomEvent(
+                "classroom-layout-updated",
+                {
+                    detail: {
+                        layoutId
+                    }
+                }
+            )
+        );
+
     };
 
     const saveSeatPosition = async (
@@ -117,6 +128,17 @@ export default function ClassroomLayoutTab({
                         y_position: y
                     }
                     : seat
+            )
+        );
+
+        window.dispatchEvent(
+            new CustomEvent(
+                "classroom-layout-updated",
+                {
+                    detail: {
+                        layoutId
+                    }
+                }
             )
         );
 

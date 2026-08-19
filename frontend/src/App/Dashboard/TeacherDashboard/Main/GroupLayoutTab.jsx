@@ -6,6 +6,7 @@ import { Pin } from "lucide-react";
 
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 import ShuffleSeatsDialog from "./ShuffleSeatsDialog";
+import SaveLayoutSnapshotDialog from "./SaveLayoutSnapshotDialog";
 
 export default function GroupLayoutTab({
     groupId,
@@ -18,6 +19,9 @@ export default function GroupLayoutTab({
     const [assignments, setAssignments] = useState([]);
     const [draggedAssignmentId, setDraggedAssignmentId] = useState(null);
     const [shuffleDialogOpen, setShuffleDialogOpen] = useState(false);
+    const [studentView, setStudentView] = useState(false);
+    const [saveSnapshotDialogOpen, setSaveSnapshotDialogOpen] = useState(false);
+
 
     useEffect(() => {
 
@@ -42,6 +46,38 @@ export default function GroupLayoutTab({
         };
 
     }, [groupId]);
+
+    useEffect(() => {
+
+        const handleLayoutUpdated =
+            async (event) => {
+
+                if (
+                    event.detail.layoutId !==
+                    layoutId
+                ) {
+                    return;
+                }
+
+                await load();
+
+            };
+
+        window.addEventListener(
+            "classroom-layout-updated",
+            handleLayoutUpdated
+        );
+
+        return () => {
+
+            window.removeEventListener(
+                "classroom-layout-updated",
+                handleLayoutUpdated
+            );
+
+        };
+
+    }, [layoutId]);
 
     const load = async () => {
 
@@ -209,6 +245,8 @@ export default function GroupLayoutTab({
     const handleStudentCreated =
         async (event) => {
 
+            console.log("ny elev");
+
             if (
                 event.detail.groupId !==
                 groupId
@@ -226,7 +264,32 @@ export default function GroupLayoutTab({
 
             await load();
 
-        };        
+        };   
+        
+    const CANVAS_WIDTH = 1200;
+    const SEAT_WIDTH = 120;
+
+    const PRESENTATION_SCALE = 1.8;
+
+    const minX = Math.min(
+        ...seats.map(
+            seat => Number(seat.x_position)
+        )
+    );
+
+    const maxX = Math.max(
+        ...seats.map(
+            seat => Number(seat.x_position)
+        )
+    );
+
+    const seatWidth =
+        studentView
+            ? 220
+            : 120;
+
+    const classroomWidth =
+        maxX + seatWidth + 100;
 
     return (
         <>
@@ -236,166 +299,296 @@ export default function GroupLayoutTab({
                     "Sittplacering"
                 }
                 actions={
-                    <Button
-                        variant="outline"
-                        onClick={() =>
-                            setShuffleDialogOpen(true)
-                        }
-                    >
-                        Slumpa platser
-                    </Button>
+                    <div className="flex gap-2">
 
+                        {!studentView && (
+
+                            <Button
+                                variant="outline"
+                                onClick={() =>
+                                    setShuffleDialogOpen(true)
+                                }
+                            >
+                                Slumpa platser
+                            </Button>
+
+                        )}
+
+                        <Button
+                            variant="outline"
+                            onClick={() =>
+                                setStudentView(
+                                    prev => !prev
+                                )
+                            }
+                        >
+                            {
+                                studentView
+                                    ? "Lärarvy"
+                                    : "Elevvy"
+                            }
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={() =>
+                                setSaveSnapshotDialogOpen(
+                                    true
+                                )
+                            }
+                        >
+                            Spara placering
+                        </Button>
+
+                    </div>
                 }
             >
 
                 <div
-                    className="
-                        relative
-                        bg-slate-50
-                        border
-                        rounded-lg
-                        w-full
-                        h-[700px]
-                    "
+                    className={
+                        studentView
+                            ? `
+                                presentation-shell-fullscreen
+                            `
+                            : `
+                                relative
+                                bg-slate-50
+                                border
+                                rounded-lg
+                                w-full
+                                h-[700px]
+                            `
+                    }
                 >
 
-                {seats.map((seat, index) => {
+                    <div
+                        className={
+                            studentView
+                                ? `
+                                    presentation-slide-fullscreen
+                                    relative
+                                `
+                                : `
+                                    relative
+                                    w-full
+                                    h-full
+                                `
+                        }
+                    >
 
-                    const assignment =
-                        assignments.find(
-                            a =>
-                                a.classroom_seat_id ===
-                                seat.id
-                        );
+                        {seats.map(seat => {
 
-                    const student =
-                        students.find(
-                            s =>
-                                s.id ===
-                                assignment?.student_id
-                        );
-
-                    return (
-
-                        <div
-                            key={seat.id}
-                            draggable={
-                                !!assignment &&
-                                assignment.pinned !== 1
-                            }
-                            onDragStart={() => {
-
-                                setDraggedAssignmentId(
-                                    assignment.id
+                            const assignment =
+                                assignments.find(
+                                    a =>
+                                        a.classroom_seat_id ===
+                                        seat.id
                                 );
 
-                            }}
-                            onDragOver={(e) => {
-
-                                e.preventDefault();
-
-                            }}
-                            onDrop={async (e) => {
-
-                                e.preventDefault();
-
-                                if (!draggedAssignmentId) {
-                                    return;
-                                }
-
-                                await swapSeats(
-                                    draggedAssignmentId,
-                                    seat.id
+                            const student =
+                                students.find(
+                                    s =>
+                                        s.id ===
+                                        assignment?.student_id
                                 );
 
-                            }}
-                            className="
-                                absolute
-                                border
-                                rounded
-                                bg-white
-                                shadow-sm
-                                flex
-                                items-center
-                                justify-center
-                                text-center
-                                px-2
-                            "
-                            style={{
-                                width: "120px",
-                                height: "64px",
-                                left: Number(
-                                    seat.x_position
-                                ),
-                                top: Number(
-                                    seat.y_position
-                                )
-                            }}
-                        >
+                            const seatWidth =
+                                studentView
+                                    ? 220
+                                    : 120;
 
-                            {student ? (
+                            const seatHeight =
+                                studentView
+                                    ? 120
+                                    : 64;
+
+                            const x =
+                                Number(seat.x_position);
+
+                            const left =
+                                studentView
+                                    ? minX +
+                                    (maxX - x) * PRESENTATION_SCALE
+                                    : x;
+
+                            const top =
+                                studentView
+                                    ? Number(seat.y_position) * PRESENTATION_SCALE
+                                    : Number(seat.y_position);
+
+                            return (
+
                                 <div
                                     key={seat.id}
-                                    className="
-                                        absolute
-                                    "
-                                >
-                                <Pin
-                                    onClick={async (e) => {
+                                    draggable={
+                                        !studentView &&
+                                        !!assignment &&
+                                        assignment.pinned !== 1
+                                    }
+                                    onDragStart={() => {
 
-                                        e.stopPropagation();
+                                        if (
+                                            !assignment ||
+                                            studentView
+                                        ) {
+                                            return;
+                                        }
 
-                                        await togglePinned(
+                                        setDraggedAssignmentId(
                                             assignment.id
                                         );
 
                                     }}
-                                    className={`
-                                        absolute
-                                        -top-1
-                                        -right-6
-                                        h-4
-                                        w-4
-                                        cursor-pointer
-                                        ${
-                                            assignment?.pinned === 1
-                                                ? "text-amber-500 fill-amber-500"
-                                                : "text-slate-400"
+                                    onDragOver={(e) => {
+
+                                        if (
+                                            studentView
+                                        ) {
+                                            return;
                                         }
-                                    `}
-                                />
 
-                                    <div>
-                                        {student.first_name}
-                                    </div>
+                                        e.preventDefault();
 
-                                    <div 
+                                    }}
+                                    onDrop={async (e) => {
+
+                                        if (
+                                            studentView
+                                        ) {
+                                            return;
+                                        }
+
+                                        e.preventDefault();
+
+                                        if (
+                                            !draggedAssignmentId
+                                        ) {
+                                            return;
+                                        }
+
+                                        await swapSeats(
+                                            draggedAssignmentId,
+                                            seat.id
+                                        );
+
+                                    }}
                                     className="
-                                        text-xs
-                                        text-muted-foreground
-                                    ">
-                                        {student.last_name}
-                                    </div>
-                                </div>
-
-                            ) : (
-
-                                <div
-                                    className="
-                                        text-xs
-                                        text-muted-foreground
+                                        absolute
+                                        bg-card
+                                        text-card-foreground
+                                        border
+                                        border-border
+                                        rounded-xl
+                                        shadow-sm
+                                        flex
+                                        items-center
+                                        justify-center
+                                        text-center
+                                        px-2
                                     "
+                                    style={{
+                                        width: seatWidth,
+                                        height: seatHeight,
+                                        left,
+                                        top
+                                    }}
                                 >
-                                    Tom plats
+
+                                    {student ? (
+
+                                        <div
+                                            className="
+                                                flex
+                                                flex-col
+                                                items-center
+                                                justify-center
+                                            "
+                                        >
+
+                                            {!studentView && (
+
+                                                <Pin
+                                                    onClick={async (e) => {
+
+                                                        e.stopPropagation();
+
+                                                        await togglePinned(
+                                                            assignment.id
+                                                        );
+
+                                                    }}
+                                                    className={`
+                                                        absolute
+                                                        top-1
+                                                        right-1
+                                                        h-4
+                                                        w-4
+                                                        cursor-pointer
+                                                        ${
+                                                            assignment?.pinned === 1
+                                                                ? "text-amber-500 fill-amber-500"
+                                                                : "text-slate-400"
+                                                        }
+                                                    `}
+                                                />
+
+                                            )}
+
+                                            {studentView ? (
+
+                                                <div
+                                                    className="
+                                                        text-3xl
+                                                        font-bold
+                                                    "
+                                                >
+                                                    {student.first_name}
+                                                </div>
+
+                                            ) : (
+
+                                                <>
+                                                    <div>
+                                                        {student.first_name}
+                                                    </div>
+
+                                                    <div
+                                                        className="
+                                                            text-xs
+                                                            text-muted-foreground
+                                                        "
+                                                    >
+                                                        {student.last_name}
+                                                    </div>
+                                                </>
+
+                                            )}
+
+                                        </div>
+
+                                    ) : (
+
+                                        !studentView && (
+
+                                            <div
+                                                className="
+                                                    text-xs
+                                                    text-muted-foreground
+                                                "
+                                            >
+                                                Tom plats
+                                            </div>
+
+                                        )
+
+                                    )}
+
                                 </div>
 
-                            )}
+                            );
 
-                        </div>
+                        })}
 
-                    );
-
-                })}
+                    </div>
 
                 </div>
 
@@ -407,6 +600,16 @@ export default function GroupLayoutTab({
                 }
                 groupId={groupId}
                 onCompleted={load}
+            />
+            <SaveLayoutSnapshotDialog
+                open={
+                    saveSnapshotDialogOpen
+                }
+                onOpenChange={
+                    setSaveSnapshotDialogOpen
+                }
+                groupId={groupId}
+                layoutId={layoutId}
             />
         </>
 

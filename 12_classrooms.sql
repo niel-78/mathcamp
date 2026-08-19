@@ -255,3 +255,58 @@ CREATE TABLE assessment_seat_assignments (
     FOREIGN KEY (classroom_seat_id)
         REFERENCES classroom_seats(id)
 );
+
+/* =====================================================
+   ASSESSMENT SEATING SNAPSHOTS
+   Historisk placering vid prov
+   ===================================================== */
+
+CREATE TABLE group_layout_snapshots (
+
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    group_id INT NOT NULL,
+
+    classroom_layout_id INT NOT NULL,
+
+    name VARCHAR(255) NOT NULL,
+
+    created_at DATETIME NOT NULL
+        DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (group_id)
+        REFERENCES groups(id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (classroom_layout_id)
+        REFERENCES classroom_layouts(id)
+        ON DELETE CASCADE
+
+);
+
+
+CREATE TABLE group_layout_snapshot_items (
+
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    snapshot_id INT NOT NULL,
+
+    student_id INT NOT NULL,
+
+    classroom_seat_id INT NOT NULL,
+
+    pinned TINYINT(1) NOT NULL DEFAULT 0,
+
+    FOREIGN KEY (snapshot_id)
+        REFERENCES group_layout_snapshots(id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (student_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (classroom_seat_id)
+        REFERENCES classroom_seats(id)
+        ON DELETE CASCADE
+
+);

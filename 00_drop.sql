@@ -18,6 +18,8 @@ DROP TABLE IF EXISTS assessment_type_settings;
    CLASSROOMS
    ===================================================== */
 
+DROP TABLE IF EXISTS group_layout_snapshot_items;
+DROP TABLE IF EXISTS group_layout_snapshots;
 DROP TABLE IF EXISTS assessment_seat_assignments;
 DROP TABLE IF EXISTS lesson_seat_assignments;
 

@@ -49,6 +49,7 @@ import classroomLayoutRoutes from "./routes/classroomLayoutRoutes.js";
 import classroomSeatRoutes from "./routes/classroomSeatRoutes.js";
 
 import groupSeatAssignmentRoutes from "./routes/groupSeatAssignmentRoutes.js";
+import layoutSnapshotRoutes from "./routes/layoutSnapshotsRoutes.js";
 
 import cors from "cors";
 

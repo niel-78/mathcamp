@@ -51,6 +51,17 @@ export default function CreateStudentDialog({
             `Elev skapad. Lösenord: ${data.password}`
         );
 
+        window.dispatchEvent(
+            new CustomEvent(
+                "student-created",
+                {
+                    detail: {
+                        groupId: group.groupId
+                    }
+                }
+            )
+        );
+
         setUsername("");
         setFirstName("");
         setLastName("");

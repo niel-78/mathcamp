@@ -1501,7 +1501,7 @@ router.post("/:groupId/seat-assignments/generate",
 
             await db.query(
                 `
-                INSERT INTO
+                INSERT IGNORE INTO
                     group_seat_assignments (
                         group_id,
                         student_id,
@@ -1791,6 +1791,142 @@ router.post("/:groupId/seat-assignments/sync",
 
     }
 );
+
+
+router.get("/:groupId/layout-snapshots",
+    async (req, res) => {
+
+        try {
+
+            const [snapshots] =
+                await db.query(
+                    `
+                    SELECT *
+                    FROM group_layout_snapshots
+                    WHERE group_id = ?
+                    ORDER BY created_at DESC
+                    `,
+                    [
+                        req.params.groupId
+                    ]
+                );
+
+            res.json(
+                snapshots
+            );
+
+        } catch (error) {
+
+            console.error(error);
+
+            res.status(500).json({
+                error:
+                    "Kunde inte hämta placeringar"
+            });
+
+        }
+
+    }
+);
+
+
+router.post("/:groupId/layout-snapshots",
+    async (req, res) => {
+
+        try {
+
+            const groupId =
+                req.params.groupId;
+
+            const {
+                name,
+                layoutId
+            } = req.body;
+
+            const [result] =
+                await db.query(
+                    `
+                    INSERT INTO
+                        group_layout_snapshots (
+                            group_id,
+                            classroom_layout_id,
+                            name
+                        )
+                    VALUES (
+                        ?, ?, ?
+                    )
+                    `,
+                    [
+                        groupId,
+                        layoutId,
+                        name
+                    ]
+                );
+
+            const snapshotId =
+                result.insertId;
+
+            const [assignments] =
+                await db.query(
+                    `
+                    SELECT
+                        student_id,
+                        classroom_seat_id,
+                        pinned
+                    FROM
+                        group_seat_assignments
+                    WHERE
+                        group_id = ?
+                    `,
+                    [groupId]
+                );
+
+            for (
+                const assignment
+                of assignments
+            ) {
+
+                await db.query(
+                    `
+                    INSERT INTO
+                        group_layout_snapshot_items (
+                            snapshot_id,
+                            student_id,
+                            classroom_seat_id,
+                            pinned
+                        )
+                    VALUES (
+                        ?, ?, ?, ?
+                    )
+                    `,
+                    [
+                        snapshotId,
+                        assignment.student_id,
+                        assignment.classroom_seat_id,
+                        assignment.pinned
+                    ]
+                );
+
+            }
+
+            res.status(201).json({
+                id: snapshotId
+            });
+
+        } catch (error) {
+
+            console.error(error);
+
+            res.status(500).json({
+                error:
+                    "Kunde inte spara placering"
+            });
+
+        }
+
+    }
+);
+
 
 
 
