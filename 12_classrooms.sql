@@ -54,7 +54,7 @@ CREATE TABLE classroom_seats (
 
     layout_id INT NOT NULL,
 
-    seat_label VARCHAR(20) NOT NULL,
+    seat_label VARCHAR(20),
 
     seat_row INT NULL,
 

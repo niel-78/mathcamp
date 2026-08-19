@@ -103,7 +103,7 @@ VALUES
 
 INSERT INTO group_permissions (
     group_id,
-    teacher_id,
+    user_id,
     role
 )
 VALUES

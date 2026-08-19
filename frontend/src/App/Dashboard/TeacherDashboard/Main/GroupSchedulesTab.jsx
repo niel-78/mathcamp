@@ -23,6 +23,8 @@ export default function GroupSchedulesTab({
 
     }, [groupId]);
 
+    console.log("GROUP ID", groupId);
+
     const loadSchedules = async () => {
 
         const response =
@@ -36,10 +38,30 @@ export default function GroupSchedulesTab({
 
         const data =
             await response.json();
-
+        console.log("SCHEDULE DATA", data);
         setSchedules(data);
 
+        
+
     };
+
+
+    if (schedules.length === 0) {
+        return (
+            <BaseTabLayout title="Scheman">
+
+                <CardSection title="Schema">
+
+                    <div className="text-muted-foreground">
+                        Gruppen har inga lektioner ännu.
+                        Skapa lektioner först.
+                    </div>
+
+                </CardSection>
+
+            </BaseTabLayout>
+        );
+    }
 
     return (
 

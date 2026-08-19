@@ -45,10 +45,22 @@ export default function ContextMenu(props) {
             case "group":
                 return (
                     <GroupMenu
-                        contextMenu={contextMenu}
-                        setContextMenu={setContextMenu}
-                        setRenameDialog={props.setRenameDialog}
-                        setArchiveDialog={props.setArchiveDialog}
+                        onRename={() => {
+                            props.onRenameGroup?.(
+                                contextMenu.groupId,
+                                contextMenu.groupName
+                            );
+
+                            setContextMenu(null);
+                        }}
+                        onArchive={() => {
+                            props.onArchiveGroup?.(
+                                contextMenu.groupId,
+                                contextMenu.groupName
+                            );
+
+                            setContextMenu(null);
+                        }}
                     />
                 );
                 
@@ -64,12 +76,15 @@ export default function ContextMenu(props) {
                             setContextMenu(null);
                         }}
                         onManageSchedule={() => {
-                            props.onManageSchedule?.(
-                                contextMenu.groupId,
-                                contextMenu.groupName
-                            );
+                            props.openTab?.({
+                                id: `schedule-${contextMenu.groupId}`,
+                                type: "group-schedule",
+                                title: `${contextMenu.groupName} - Schema`,
+                                groupId: contextMenu.groupId
+                            });
 
                             setContextMenu(null);
+
                         }}
                         onOpenQueue={() => {
                             props.onOpenQueue?.(
@@ -109,6 +124,7 @@ export default function ContextMenu(props) {
                 return (
                     <StudentMenu
                         contextMenu={contextMenu}
+
                         onResetPassword={() => {
                             props.onResetPassword?.(
                                 contextMenu.userId,
@@ -117,6 +133,7 @@ export default function ContextMenu(props) {
 
                             setContextMenu(null);
                         }}
+
                         onRename={() => {
                             props.onRenameStudent?.(
                                 contextMenu
@@ -124,6 +141,7 @@ export default function ContextMenu(props) {
 
                             setContextMenu(null);
                         }}
+
                         onArchive={() => {
                             props.onArchiveStudent?.(
                                 contextMenu
@@ -261,24 +279,41 @@ export default function ContextMenu(props) {
                     <AbilitySeriesMenu
                         contextMenu={contextMenu}
                         user={user}
-                        setContextMenu={setContextMenu}
+
                         onCreateAbility={() => {
                             props.onCreateAbility?.(
                                 contextMenu.seriesId,
                                 contextMenu.seriesName
                             );
+
+                            setContextMenu(null);
                         }}
+
                         onImportAbilities={() => {
                             props.onImportAbilities?.(
                                 contextMenu.seriesId,
                                 contextMenu.seriesName
                             );
+
+                            setContextMenu(null);
                         }}
+
                         onRenameSeries={() => {
                             props.onRenameAbilitySeries?.(
                                 contextMenu.seriesId,
                                 contextMenu.seriesName
                             );
+
+                            setContextMenu(null);
+                        }}
+
+                        onDeleteSeries={() => {
+                            props.onDeleteAbilitySeries?.(
+                                contextMenu.seriesId,
+                                contextMenu.seriesName
+                            );
+
+                            setContextMenu(null);
                         }}
                     />
                 );
@@ -289,6 +324,7 @@ export default function ContextMenu(props) {
                     return null;
                 }
 
+            case "ability":
                 return (
                     <AbilityMenu
                         onRename={() => {
@@ -299,6 +335,7 @@ export default function ContextMenu(props) {
 
                             setContextMenu(null);
                         }}
+
                         onDelete={() => {
                             props.onDeleteAbility?.(
                                 contextMenu.abilityId,

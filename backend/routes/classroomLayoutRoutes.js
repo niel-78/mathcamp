@@ -26,6 +26,38 @@ router.get("/",
     }
 );
 
+// GET /api/classroom-layouts/templates
+router.get("/templates", requireAuth,
+    async (req, res) => {
+
+        const [rows] = await db.query(
+            `
+            SELECT
+                cl.id,
+                cl.name,
+                c.name AS classroom_name
+            FROM classroom_layouts cl
+
+            JOIN classrooms c
+                ON c.id = cl.classroom_id
+
+            JOIN school_teachers st
+                ON st.school_id = c.school_id
+
+            WHERE st.teacher_id = ?
+
+            ORDER BY
+                c.name,
+                cl.name
+            `,
+            [req.user.id]
+        );
+
+        res.json(rows);
+
+    }
+);
+
 // GET /api/classroom-layouts/:id
 router.get("/:id", async (req, res) => {
 
@@ -206,5 +238,8 @@ router.post("/:id/seats",
 
     }
 );
+
+
+
 
 export default router;

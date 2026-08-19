@@ -24,7 +24,7 @@ router.get("/groups", requireAuth,
                 JOIN group_permissions gp
                     ON gp.group_id = g.id
 
-                WHERE gp.teacher_id = ?
+                WHERE gp.user_id = ?
                 AND gp.role = 'owner'
                 AND g.archived_at IS NOT NULL
                 AND g.deleted_at IS NULL

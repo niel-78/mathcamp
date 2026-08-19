@@ -38,9 +38,9 @@ export default function PlanningQueueTab({
 
         const data = await response.json();
         setPagesPerLesson(
-            data.pages_per_lesson
+            data.pages_per_lesson ?? 4
         );
-
+                console.log("QUEUE DATA", data);
         setSections(
             data.sections
         );
@@ -122,8 +122,8 @@ export default function PlanningQueueTab({
     };
 
     const allSelected =
-        sections.length > 0 &&
-        sections.every(
+        (sections ?? []).length > 0 &&
+        (sections ?? []).every(
             section => section.selected
         );
 
@@ -229,10 +229,10 @@ export default function PlanningQueueTab({
                                     "
                                 >
                                     {
-                                        sections.filter(
+                                        (sections).filter(
                                             s => s.selected
                                         ).length
-                                    }
+                                        }
                                     {" av "}
                                     {sections.length}
                                 </div>

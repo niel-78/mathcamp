@@ -56,7 +56,7 @@ router.get("/", async (req, res) => {
             FROM groups g
             INNER JOIN group_permissions gp
                 ON gp.group_id = g.id
-            WHERE gp.teacher_id = ?
+            WHERE gp.user_id = ?
             AND g.archived_at IS NULL
             ORDER BY g.name
             `,
@@ -215,7 +215,7 @@ router.post("/", async (req, res) => {
         `
         INSERT INTO group_permissions (
             group_id,
-            teacher_id,
+            user_id,
             role
         )
         VALUES (?, ?, 'owner')
@@ -249,7 +249,7 @@ router.get("/:id", async (req, res) => {
             ON gp.group_id = g.id
 
         WHERE g.id = ?
-        AND gp.teacher_id = ?
+        AND gp.user_id = ?
         `,
         [
             req.params.id,
@@ -771,6 +771,7 @@ router.get("/:groupId/planning-sections/edit", requireAuth,
                 `,
                 [req.params.groupId]
             );
+        console.log("GROUP", group);
 
         if (!group?.book_id) {
 
@@ -1343,6 +1344,452 @@ router.post("/:groupId/fill-planning",
     }
 );
 
+// GET /api/groups/:id/classrooms
+router.get("/:id/classrooms",
+    async (req, res) => {
 
+        const [rows] = await db.query(
+            `
+            SELECT DISTINCT
+                c.id AS classroom_id,
+                c.name AS classroom_name,
+
+                cl.id AS layout_id,
+                cl.name AS layout_name
+
+            FROM group_schedules gs
+
+            INNER JOIN classrooms c
+                ON c.id = gs.classroom_id
+
+            INNER JOIN classroom_layouts cl
+                ON cl.id =
+                    gs.classroom_layout_id
+
+            WHERE gs.group_id = ?
+
+            ORDER BY
+                c.name,
+                cl.name
+            `,
+            [req.params.id]
+        );
+
+        const classrooms = [];
+
+        for (const row of rows) {
+
+            let classroom =
+                classrooms.find(
+                    c =>
+                        c.id ===
+                        row.classroom_id
+                );
+
+            if (!classroom) {
+
+                classroom = {
+                    id:
+                        row.classroom_id,
+
+                    name:
+                        row.classroom_name,
+
+                    layouts: []
+                };
+
+                classrooms.push(
+                    classroom
+                );
+
+            }
+
+            classroom.layouts.push({
+                id: row.layout_id,
+                name: row.layout_name
+            });
+
+        }
+
+        res.json(classrooms);
+
+    }
+);
+
+router.get("/:groupId/seat-assignments",
+    async (req, res) => {
+
+        const [rows] =
+            await db.query(
+                `
+                SELECT
+                    *
+                FROM group_seat_assignments
+                WHERE group_id = ?
+                `,
+                [req.params.groupId]
+            );
+
+        res.json(rows);
+
+    }
+);
+
+router.post("/:groupId/seat-assignments/generate",
+    async (req, res) => {
+
+        const groupId =
+            req.params.groupId;
+
+        const [existing] =
+            await db.query(
+                `
+                SELECT id
+                FROM group_seat_assignments
+                WHERE group_id = ?
+                LIMIT 1
+                `,
+                [groupId]
+            );
+
+        if (existing.length > 0) {
+
+            return res.json({
+                created: 0
+            });
+
+        }
+
+        const [students] = await db.query(
+            `
+            SELECT
+                u.id
+            FROM group_students gs
+            INNER JOIN users u
+                ON u.id = gs.user_id
+            WHERE gs.group_id = ?
+            AND u.role = 'student'
+            AND gs.deleted_at IS NULL
+            ORDER BY u.last_name, u.first_name
+            `,
+            [groupId]
+        );
+
+        const [seats] =
+            await db.query(
+                `
+                SELECT cs.id
+                FROM classroom_seats cs
+                JOIN classroom_layouts cl
+                    ON cl.id = cs.layout_id
+                JOIN group_schedules gs
+                    ON gs.classroom_layout_id = cl.id
+                WHERE gs.group_id = ?
+                ORDER BY
+                    cs.id
+                `,
+                [groupId]
+            );
+
+        const count =
+            Math.min(
+                students.length,
+                seats.length
+            );
+
+        for (let i = 0; i < count; i++) {
+
+            await db.query(
+                `
+                INSERT INTO
+                    group_seat_assignments (
+                        group_id,
+                        student_id,
+                        classroom_seat_id,
+                        pinned
+                    )
+                VALUES (?, ?, ?, FALSE)
+                `,
+                [
+                    groupId,
+                    students[i].id,
+                    seats[i].id
+                ]
+            );
+
+        }
+
+        res.json({
+            created: count
+        });
+
+    }
+);
+
+// POST /api/groups/:groupId/seat-assignments/shuffle
+router.post("/:groupId/seat-assignments/shuffle",
+    async (req, res) => {
+
+        try {
+
+            const groupId =
+                req.params.groupId;
+
+            const [assignments] =
+                await db.query(
+                    `
+                    SELECT *
+                    FROM group_seat_assignments
+                    WHERE group_id = ?
+                    `,
+                    [groupId]
+                );
+
+            const pinned =
+                assignments.filter(
+                    assignment =>
+                        assignment.pinned === 1
+                );
+
+            const movable =
+                assignments.filter(
+                    assignment =>
+                        assignment.pinned !== 1
+                );
+
+            const availableSeatIds =
+                movable.map(
+                    assignment =>
+                        assignment.classroom_seat_id
+                );
+
+            for (
+                let i =
+                    availableSeatIds.length - 1;
+                i > 0;
+                i--
+            ) {
+
+                const j =
+                    Math.floor(
+                        Math.random() *
+                        (i + 1)
+                    );
+
+                [
+                    availableSeatIds[i],
+                    availableSeatIds[j]
+                ] = [
+                    availableSeatIds[j],
+                    availableSeatIds[i]
+                ];
+
+            }
+
+            await db.query(
+                "START TRANSACTION"
+            );
+
+            for (
+                const assignment
+                of movable
+            ) {
+
+                await db.query(
+                    `
+                    UPDATE
+                        group_seat_assignments
+                    SET
+                        classroom_seat_id = NULL
+                    WHERE id = ?
+                    `,
+                    [assignment.id]
+                );
+
+            }
+
+            for (
+                let i = 0;
+                i < movable.length;
+                i++
+            ) {
+
+                await db.query(
+                    `
+                    UPDATE
+                        group_seat_assignments
+                    SET
+                        classroom_seat_id = ?
+                    WHERE id = ?
+                    `,
+                    [
+                        availableSeatIds[i],
+                        movable[i].id
+                    ]
+                );
+
+            }
+
+            await db.query(
+                "COMMIT"
+            );
+
+            res.json({
+                success: true
+            });
+
+        } catch (error) {
+
+            await db.query(
+                "ROLLBACK"
+            );
+
+            console.error(error);
+
+            res.status(500).json({
+                error:
+                    "Kunde inte slumpa platser"
+            });
+
+        }
+
+    }
+);
+
+// POST /api/groups/:groupId/seat-assignments/sync
+router.post("/:groupId/seat-assignments/sync",
+    async (req, res) => {
+
+        try {
+
+            const groupId =
+                req.params.groupId;
+
+            const [students] =
+                await db.query(
+                    `
+                    SELECT
+                        u.id
+                    FROM group_students gs
+                    INNER JOIN users u
+                        ON u.id = gs.user_id
+                    WHERE gs.group_id = ?
+                    AND u.role = 'student'
+                    AND gs.deleted_at IS NULL
+                    `,
+                    [groupId]
+                );
+
+            const [assignments] =
+                await db.query(
+                    `
+                    SELECT
+                        student_id,
+                        classroom_seat_id
+                    FROM group_seat_assignments
+                    WHERE group_id = ?
+                    `,
+                    [groupId]
+                );
+
+            const assignedStudentIds =
+                new Set(
+                    assignments.map(
+                        assignment =>
+                            assignment.student_id
+                    )
+                );
+
+            const assignedSeatIds =
+                new Set(
+                    assignments.map(
+                        assignment =>
+                            assignment.classroom_seat_id
+                    )
+                );
+
+            const [seats] =
+                await db.query(
+                    `
+                    SELECT
+                        cs.id
+                    FROM classroom_seats cs
+                    INNER JOIN classroom_layouts cl
+                        ON cl.id = cs.layout_id
+                    INNER JOIN group_schedules gs
+                        ON gs.classroom_layout_id = cl.id
+                    WHERE gs.group_id = ?
+                    ORDER BY cs.id
+                    `,
+                    [groupId]
+                );
+
+            const missingStudents =
+                students.filter(
+                    student =>
+                        !assignedStudentIds.has(
+                            student.id
+                        )
+                );
+
+            const freeSeats =
+                seats.filter(
+                    seat =>
+                        !assignedSeatIds.has(
+                            seat.id
+                        )
+                );
+
+            const count =
+                Math.min(
+                    missingStudents.length,
+                    freeSeats.length
+                );
+
+            for (
+                let i = 0;
+                i < count;
+                i++
+            ) {
+
+                await db.query(
+                    `
+                    INSERT INTO
+                        group_seat_assignments (
+                            group_id,
+                            student_id,
+                            classroom_seat_id,
+                            pinned
+                        )
+                    VALUES (
+                        ?, ?, ?, 0
+                    )
+                    `,
+                    [
+                        groupId,
+                        missingStudents[i].id,
+                        freeSeats[i].id
+                    ]
+                );
+
+            }
+
+            res.json({
+                added: count
+            });
+
+        } catch (error) {
+
+            console.error(error);
+
+            res.status(500).json({
+                error:
+                    "Kunde inte synkronisera sittplatser"
+            });
+
+        }
+
+    }
+);
 
 export default router

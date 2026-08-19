@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
@@ -11,9 +11,7 @@ import {
 } from "@/components/ui/dialog";
 
 import { Button } from "@/components/ui/button";
-
 import { Input } from "@/components/ui/input";
-
 import { Label } from "@/components/ui/label";
 
 export default function CreateClassroomLayoutDialog({
@@ -23,8 +21,48 @@ export default function CreateClassroomLayoutDialog({
     onCreated
 }) {
 
+    const [layouts, setLayouts] =
+        useState([]);
+
     const [name, setName] =
         useState("");
+
+    const [sourceLayoutId,
+        setSourceLayoutId] =
+        useState("");
+
+    useEffect(() => {
+
+        if (!open) {
+            return;
+        }
+
+        loadLayouts();
+
+    }, [open]);
+
+    const loadLayouts = async () => {
+
+        const response =
+            await fetch(
+                `${API_URL}/api/classroom-layouts/templates`,
+                {
+                    headers: authHeaders()
+                }
+            )
+
+        if (!response.ok) {
+            return;
+        }
+
+        const data =
+            await response.json();
+
+        console.log(data);
+
+        setLayouts(data);
+
+    };
 
     const createLayout =
         async () => {
@@ -42,7 +80,9 @@ export default function CreateClassroomLayoutDialog({
                         },
 
                         body: JSON.stringify({
-                            name
+                            name,
+                            source_layout_id:
+                                sourceLayoutId || null
                         })
                     }
                 );
@@ -52,6 +92,7 @@ export default function CreateClassroomLayoutDialog({
             }
 
             setName("");
+            setSourceLayoutId("");
 
             onCreated?.();
 
@@ -71,9 +112,7 @@ export default function CreateClassroomLayoutDialog({
                 <DialogHeader>
 
                     <DialogTitle>
-
                         Ny möblering
-
                     </DialogTitle>
 
                 </DialogHeader>
@@ -100,11 +139,49 @@ export default function CreateClassroomLayoutDialog({
 
                     </div>
 
+                    <div className="space-y-2">
+
+                        <Label>
+                            Kopiera från
+                        </Label>
+
+                        <select
+                            className="
+                                w-full
+                                border
+                                rounded
+                                p-2
+                            "
+                            value={sourceLayoutId}
+                            onChange={(e) =>
+                                setSourceLayoutId(
+                                    e.target.value
+                                )
+                            }
+                        >
+
+                            <option value="">
+                                Tom möblering
+                            </option>
+
+                            {layouts.map(layout => (
+
+                                <option
+                                    key={layout.id}
+                                    value={layout.id}
+                                >
+                                    {layout.classroom_name} - {layout.name}
+                                </option>
+
+                            ))}
+
+                        </select>
+
+                    </div>
+
                     <Button
-                        onClick={
-                            createLayout
-                        }
-                        disabled={!name}
+                        onClick={createLayout}
+                        disabled={!name.trim()}
                     >
                         Skapa möblering
                     </Button>

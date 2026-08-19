@@ -229,7 +229,8 @@ router.get("/:id/layouts",
 router.post("/:id/layouts", async (req, res) => {
 
     const {
-        name
+        name,
+        source_layout_id
     } = req.body;
 
     const [result] = await db.query(
@@ -246,10 +247,50 @@ router.post("/:id/layouts", async (req, res) => {
         ]
     );
 
+    const newLayoutId =
+        result.insertId;
+
+    if (source_layout_id) {
+
+        const [seats] =
+            await db.query(
+                `
+                SELECT
+                    x_position,
+                    y_position
+                FROM classroom_seats
+                WHERE layout_id = ?
+                `,
+                [source_layout_id]
+            );
+
+        for (const seat of seats) {
+
+            await db.query(
+                `
+                INSERT INTO classroom_seats (
+                    layout_id,
+                    x_position,
+                    y_position
+                )
+                VALUES (?, ?, ?)
+                `,
+                [
+                    newLayoutId,
+                    seat.x_position,
+                    seat.y_position
+                ]
+            );
+
+        }
+
+    }
+
     res.status(201).json({
-        id: result.insertId
+        id: newLayoutId
     });
 
 });
+
 
 export default router;

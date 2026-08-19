@@ -9,7 +9,7 @@ export async function getGroupPermission(
             SELECT role
             FROM group_permissions
             WHERE group_id = ?
-            AND teacher_id = ?
+            AND user_id = ?
             `,
             [
                 groupId,

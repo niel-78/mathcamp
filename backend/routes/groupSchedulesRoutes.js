@@ -17,24 +17,25 @@ router.use(requireRole("student", "teacher"));
 router.get("/",requireAuth,
     async (req, res) => {
 
-        const [rows] =
-            await db.query(
-                `
-                SELECT
-                    gs.*,
-                    c.name AS classroom_name,
-                    cl.name AS classroom_layout_name
-                FROM group_schedules gs
-                LEFT JOIN classrooms c
-                    ON c.id = gs.classroom_id
-                LEFT JOIN classroom_layouts cl
-                    ON cl.id = gs.classroom_layout_id
-                `,
-                [
-                    req.query.groupId
-                ]
-            );
-
+    const [rows] =
+        await db.query(
+            `
+            SELECT
+                gs.*,
+                c.name AS classroom_name,
+                cl.name AS classroom_layout_name
+            FROM group_schedules gs
+            LEFT JOIN classrooms c
+                ON c.id = gs.classroom_id
+            LEFT JOIN classroom_layouts cl
+                ON cl.id = gs.classroom_layout_id
+            WHERE gs.group_id = ?
+            `,
+            [
+                req.query.groupId
+            ]
+        );
+        
         res.json(rows);
 
     }

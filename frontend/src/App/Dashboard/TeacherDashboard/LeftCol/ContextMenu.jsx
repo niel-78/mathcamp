@@ -72,6 +72,11 @@ export default function ContextMenu(props) {
                             setContextMenu(null);
                         }}
                         onOpenQueue={() => {
+
+                            if (!contextMenu.bookId) {
+                                return;
+                            }
+
                             props.onOpenQueue?.(
                                 contextMenu.groupId,
                                 contextMenu.groupName

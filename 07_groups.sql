@@ -38,7 +38,7 @@ CREATE TABLE groups (
 CREATE TABLE group_permissions (
     group_id INT NOT NULL,
 
-    teacher_id INT NOT NULL,
+    user_id INT NOT NULL,
 
     role ENUM(
         'owner',
@@ -51,14 +51,14 @@ CREATE TABLE group_permissions (
 
     PRIMARY KEY (
         group_id,
-        teacher_id
+        user_id
     ),
 
     FOREIGN KEY (group_id)
         REFERENCES groups(id)
         ON DELETE CASCADE,
 
-    FOREIGN KEY (teacher_id)
+    FOREIGN KEY (user_id)
         REFERENCES users(id)
         ON DELETE CASCADE
 );

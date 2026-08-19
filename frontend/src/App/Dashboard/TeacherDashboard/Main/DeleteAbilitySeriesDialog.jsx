@@ -5,22 +5,22 @@ import {
     Dialog,
     DialogContent,
     DialogHeader,
-    DialogTitle,
+    DialogTitle
 } from "@/components/ui/dialog";
 
 import { Button } from "@/components/ui/button";
 
-export default function DeleteLayoutDialog({
-    layout,
+export default function DeleteAbilitySeriesDialog({
     open,
     onOpenChange,
+    series,
     onDeleted
 }) {
 
-    const deleteLayout = async () => {
+    const remove = async () => {
 
         const response = await fetch(
-            `${API_URL}/api/classroom-layouts/${layout.id}`,
+            `${API_URL}/api/ability-series/${series.id}`,
             {
                 method: "DELETE",
                 headers: authHeaders()
@@ -49,32 +49,36 @@ export default function DeleteLayoutDialog({
                 <DialogHeader>
 
                     <DialogTitle>
-                        Radera möblering
+                        Ta bort serie
                     </DialogTitle>
 
                 </DialogHeader>
 
-                <div className="space-y-4">
+                <p>
+                    Vill du ta bort serien
+                    <strong>
+                        {" "}
+                        {series?.name}
+                    </strong>
+                    ?
+                </p>
 
-                    <p>
+                <div className="flex gap-2">
 
-                        Vill du verkligen
-                        radera möbleringen
-
-                        <strong>
-                            {" "}
-                            {layout?.name}
-                        </strong>
-
-                        ?
-
-                    </p>
+                    <Button
+                        variant="outline"
+                        onClick={() =>
+                            onOpenChange(false)
+                        }
+                    >
+                        Avbryt
+                    </Button>
 
                     <Button
                         variant="destructive"
-                        onClick={deleteLayout}
+                        onClick={remove}
                     >
-                        Radera
+                        Ta bort
                     </Button>
 
                 </div>

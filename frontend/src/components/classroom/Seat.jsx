@@ -18,7 +18,6 @@ const GRID_Y = SEAT_HEIGHT / 3;
 export default function Seat({
     seat,
     onMove,
-    onRename,
     onDelete
 }) {
 
@@ -99,14 +98,6 @@ export default function Seat({
                         </DropdownMenuTrigger>
 
                         <DropdownMenuContent>
-
-                            <DropdownMenuItem
-                                onClick={() =>
-                                    onRename?.(seat)
-                                }
-                            >
-                                Byt namn
-                            </DropdownMenuItem>
 
                             <DropdownMenuItem
                                 className="

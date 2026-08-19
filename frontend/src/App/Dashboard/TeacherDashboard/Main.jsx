@@ -366,12 +366,6 @@ export default function Main({
                         />
 
                     )}
-                    {/* {currentTab?.type === "classroom-layout" && (
-                        <ClassroomLayoutTab
-                            layoutId={currentTab.layoutId}
-                        />
-                    )} */}
-
 
                 </div>
 
