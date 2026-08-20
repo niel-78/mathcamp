@@ -771,7 +771,6 @@ router.get("/:groupId/planning-sections/edit", requireAuth,
                 `,
                 [req.params.groupId]
             );
-        console.log("GROUP", group);
 
         if (!group?.book_id) {
 
@@ -1657,7 +1656,8 @@ router.post("/:groupId/seat-assignments/shuffle",
 );
 
 // POST /api/groups/:groupId/seat-assignments/sync
-router.post("/:groupId/seat-assignments/sync",
+router.post(
+    "/:groupId/seat-assignments/sync",
     async (req, res) => {
 
         try {
@@ -1708,20 +1708,44 @@ router.post("/:groupId/seat-assignments/sync",
                     )
                 );
 
+            const [[currentLayout]] =
+                await db.query(
+                    `
+                    SELECT
+                        cs.layout_id
+                    FROM group_seat_assignments gsa
+
+                    INNER JOIN classroom_seats cs
+                        ON cs.id =
+                            gsa.classroom_seat_id
+
+                    WHERE gsa.group_id = ?
+
+                    LIMIT 1
+                    `,
+                    [groupId]
+                );
+
+            if (!currentLayout) {
+
+                return res.json({
+                    added: 0
+                });
+
+            }
+
             const [seats] =
                 await db.query(
                     `
                     SELECT
-                        cs.id
-                    FROM classroom_seats cs
-                    INNER JOIN classroom_layouts cl
-                        ON cl.id = cs.layout_id
-                    INNER JOIN group_schedules gs
-                        ON gs.classroom_layout_id = cl.id
-                    WHERE gs.group_id = ?
-                    ORDER BY cs.id
+                        id
+                    FROM classroom_seats
+                    WHERE layout_id = ?
+                    ORDER BY seat_number
                     `,
-                    [groupId]
+                    [
+                        currentLayout.layout_id
+                    ]
                 );
 
             const missingStudents =
@@ -1839,8 +1863,7 @@ router.post("/:groupId/layout-snapshots",
                 req.params.groupId;
 
             const {
-                name,
-                layoutId
+                name
             } = req.body;
 
             const [result] =
@@ -1849,16 +1872,14 @@ router.post("/:groupId/layout-snapshots",
                     INSERT INTO
                         group_layout_snapshots (
                             group_id,
-                            classroom_layout_id,
                             name
                         )
                     VALUES (
-                        ?, ?, ?
+                        ?, ?
                     )
                     `,
                     [
                         groupId,
-                        layoutId,
                         name
                     ]
                 );
@@ -1870,13 +1891,19 @@ router.post("/:groupId/layout-snapshots",
                 await db.query(
                     `
                     SELECT
-                        student_id,
-                        classroom_seat_id,
-                        pinned
+                        gsa.student_id,
+                        cs.seat_number,
+                        gsa.pinned
                     FROM
-                        group_seat_assignments
+                        group_seat_assignments gsa
+
+                    INNER JOIN
+                        classroom_seats cs
+                        ON cs.id =
+                            gsa.classroom_seat_id
+
                     WHERE
-                        group_id = ?
+                        gsa.group_id = ?
                     `,
                     [groupId]
                 );
@@ -1892,7 +1919,7 @@ router.post("/:groupId/layout-snapshots",
                         group_layout_snapshot_items (
                             snapshot_id,
                             student_id,
-                            classroom_seat_id,
+                            seat_number,
                             pinned
                         )
                     VALUES (
@@ -1902,7 +1929,7 @@ router.post("/:groupId/layout-snapshots",
                     [
                         snapshotId,
                         assignment.student_id,
-                        assignment.classroom_seat_id,
+                        assignment.seat_number,
                         assignment.pinned
                     ]
                 );
@@ -1927,6 +1954,108 @@ router.post("/:groupId/layout-snapshots",
     }
 );
 
+// POST /api/groups/:groupId/seat-assignments/apply-layout
+router.post("/:groupId/seat-assignments/apply-layout",
+    async (req, res) => {
+
+        try {
+
+            const groupId =
+                req.params.groupId;
+
+            const {
+                layoutId
+            } = req.body;
+
+            const [assignments] =
+                await db.query(
+                    `
+                    SELECT
+                        gsa.id,
+                        cs.seat_number
+                    FROM group_seat_assignments gsa
+
+                    INNER JOIN classroom_seats cs
+                        ON cs.id =
+                            gsa.classroom_seat_id
+
+                    WHERE gsa.group_id = ?
+                    `,
+                    [groupId]
+                );
+
+            await db.query(
+                "START TRANSACTION"
+            );
+
+            for (
+                const assignment
+                of assignments
+            ) {
+
+                const [seats] =
+                    await db.query(
+                        `
+                        SELECT
+                            id
+                        FROM classroom_seats
+                        WHERE layout_id = ?
+                        AND seat_number = ?
+                        LIMIT 1
+                        `,
+                        [
+                            layoutId,
+                            assignment.seat_number
+                        ]
+                    );
+
+                if (
+                    seats.length === 0
+                ) {
+                    continue;
+                }
+
+                await db.query(
+                    `
+                    UPDATE
+                        group_seat_assignments
+                    SET
+                        classroom_seat_id = ?
+                    WHERE id = ?
+                    `,
+                    [
+                        seats[0].id,
+                        assignment.id
+                    ]
+                );
+
+            }
+
+            await db.query(
+                "COMMIT"
+            );
+
+            res.json({
+                success: true
+            });
+
+        } catch (error) {
+
+            await db.query(
+                "ROLLBACK"
+            );
+
+            console.error(error);
+
+            res.status(500).json({
+                error:
+                    "Kunde inte applicera layout"
+            });
+
+        }
+
+    }
+);
 
 
 

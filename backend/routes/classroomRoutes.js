@@ -256,6 +256,10 @@ router.post("/:id/layouts", async (req, res) => {
             await db.query(
                 `
                 SELECT
+                    seat_number,
+                    seat_label,
+                    seat_row,
+                    seat_column,
                     x_position,
                     y_position
                 FROM classroom_seats
@@ -270,13 +274,21 @@ router.post("/:id/layouts", async (req, res) => {
                 `
                 INSERT INTO classroom_seats (
                     layout_id,
+                    seat_label,
+                    seat_number,
+                    seat_row,
+                    seat_column,
                     x_position,
                     y_position
                 )
-                VALUES (?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 `,
                 [
                     newLayoutId,
+                    seat.seat_label,
+                    seat.seat_number,
+                    seat.seat_row,
+                    seat.seat_column,
                     seat.x_position,
                     seat.y_position
                 ]

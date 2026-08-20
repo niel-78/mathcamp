@@ -27,6 +27,7 @@ import ImportBookStructureDialog from "./LeftCol/ImportBookStructureDialog";
 import CreateBookDialog from "./LeftCol/CreateBookDialog";
 import CreateAbilitySeriesDialog from "./LeftCol/CreateAbilitySeriesDialog";
 import RenameAbilitySeriesDialog from "./LeftCol/RenameAbilitySeriesDialog";
+import DeleteAbilitySeriesDialog from "./LeftCol/DeleteAbilitySeriesDialog";
 import ContextMenu from "./LeftCol/ContextMenu";
 import CreateClassroomLayoutDialog from "./Main/CreateClassroomLayoutDialog";
 import RenameClassroomDialog from "./Main/RenameClassroomDialog";
@@ -34,8 +35,6 @@ import DeleteClassroomDialog from "./Main/DeleteClassroomDialog";
 import RenameLayoutDialog from "./Main/RenameLayoutDialog";
 import DeleteLayoutDialog from "./Main/DeleteLayoutDialog";
 import DuplicateLayoutDialog from "./Main/DuplicateLayoutDialog";
-import DeleteAbilitySeriesDialog from "./Main/DeleteAbilitySeriesDialog";
-
 
 export default function LeftCol( {openTab, hoverTarget} ) {
 
@@ -819,12 +818,12 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                                                         {(group.sections || []).map(section => (
 
-                                                            <div
+                                                            <SectionTreeItem
                                                                 key={section.id}
-                                                                className="tree-file cursor-pointer"
-                                                            >
-                                                                {section.title}
-                                                            </div>
+                                                                section={section}
+                                                                openTab={openTab}
+                                                                hoverTarget={hoverTarget}
+                                                            />
 
                                                         ))}
 
@@ -1038,9 +1037,9 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                         )}    
 
 
-                                        <div className="tree-file">
+                                        {/* <div className="tree-file">
                                             Inställningar
-                                        </div>
+                                        </div> */}
                                     </div>
                                 )}
 
@@ -1955,7 +1954,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                 Elever
                             </div>
 
-                            <div
+                            {/* <div
                                 className="tree-file"
                                 onClick={() =>
                                     openTab({
@@ -1966,7 +1965,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                 }
                             >
                                 Prov
-                            </div>
+                            </div> */}
 
                             <div
                                 className="tree-file"

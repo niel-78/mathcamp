@@ -41,6 +41,29 @@ export default function CreateClassroomLayoutDialog({
 
     }, [open]);
 
+    useEffect(() => {
+
+        const handleUpdate = () => {
+
+            if (open) {
+                loadLayouts();
+            }
+
+        };
+
+        window.addEventListener(
+            "classroom-layout-updated",
+            handleUpdate
+        );
+
+        return () =>
+            window.removeEventListener(
+                "classroom-layout-updated",
+                handleUpdate
+            );
+
+    }, [open]);
+
     const loadLayouts = async () => {
 
         const response =

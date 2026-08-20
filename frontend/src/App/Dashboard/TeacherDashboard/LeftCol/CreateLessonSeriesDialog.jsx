@@ -47,30 +47,34 @@ export default function CreateLessonSeriesDialog({
 
     useEffect(() => {
 
-        const loadClassrooms = async () => {
-
-            const response =
-                await fetch(
-                    `${API_URL}/api/classrooms`,
-                    {
-                        headers:
-                            authHeaders()
-                    }
-                );
-
-            if (!response.ok) {
-                return;
-            }
-
-            setClassrooms(
-                await response.json()
-            );
-
-        };
+        if (!open) {
+            return;
+        }
 
         loadClassrooms();
 
-    }, []);
+    }, [open]);
+
+    const loadClassrooms = async () => {
+
+        const response =
+            await fetch(
+                `${API_URL}/api/classrooms`,
+                {
+                    headers:
+                        authHeaders()
+                }
+            );
+
+        if (!response.ok) {
+            return;
+        }
+
+        setClassrooms(
+            await response.json()
+        );
+
+    };
 
     useEffect(() => {
 

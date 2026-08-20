@@ -23,8 +23,6 @@ export default function GroupSchedulesTab({
 
     }, [groupId]);
 
-    console.log("GROUP ID", groupId);
-
     const loadSchedules = async () => {
 
         const response =

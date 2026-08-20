@@ -29,7 +29,7 @@ export default function ContextMenu(props) {
     }
 
     const renderMenu = () => {
-        console.log(contextMenu.type)
+        
         switch (contextMenu.type) {
 
             case "groups":
@@ -45,10 +45,22 @@ export default function ContextMenu(props) {
             case "group":
                 return (
                     <GroupMenu
-                        contextMenu={contextMenu}
-                        setContextMenu={setContextMenu}
-                        setRenameDialog={props.setRenameDialog}
-                        setArchiveDialog={props.setArchiveDialog}
+                        onRename={() => {
+                            props.onRenameGroup?.(
+                                contextMenu.groupId,
+                                contextMenu.groupName
+                            );
+
+                            setContextMenu(null);
+                        }}
+                        onArchive={() => {
+                            props.onArchiveGroup?.(
+                                contextMenu.groupId,
+                                contextMenu.groupName
+                            );
+
+                            setContextMenu(null);
+                        }}
                     />
                 );
                 
@@ -267,24 +279,36 @@ export default function ContextMenu(props) {
                         contextMenu={contextMenu}
                         user={user}
                         setContextMenu={setContextMenu}
+
                         onCreateAbility={() => {
                             props.onCreateAbility?.(
                                 contextMenu.seriesId,
                                 contextMenu.seriesName
                             );
                         }}
+
                         onImportAbilities={() => {
                             props.onImportAbilities?.(
                                 contextMenu.seriesId,
                                 contextMenu.seriesName
                             );
                         }}
+
                         onRenameSeries={() => {
                             props.onRenameAbilitySeries?.(
                                 contextMenu.seriesId,
                                 contextMenu.seriesName
                             );
                         }}
+                        onDeleteSeries={() => {
+                            props.onDeleteAbilitySeries?.(
+                                contextMenu.seriesId,
+                                contextMenu.seriesName
+                            );
+
+                            setContextMenu(null);
+                        }}
+
                     />
                 );
 

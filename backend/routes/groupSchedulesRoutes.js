@@ -118,24 +118,28 @@ router.post("/", requireAuth,
 
                 await db.query(
                     `
-                    INSERT INTO lessons (
-                        group_id,
-                        group_schedule_id,
-                        starts_at,
-                        ends_at
-                    )
-                    VALUES (?, ?, ?, ?)
-                    `,
-                    [
-                        group_id,
-                        scheduleId,
-                        startsAt.format(
-                            "YYYY-MM-DD HH:mm:ss"
-                        ),
-                        endsAt.format(
-                            "YYYY-MM-DD HH:mm:ss"
+                        INSERT INTO lessons (
+                            group_id,
+                            group_schedule_id,
+                            classroom_id,
+                            classroom_layout_id,
+                            starts_at,
+                            ends_at
                         )
-                    ]
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    `,
+                        [
+                            group_id,
+                            scheduleId,
+                            classroom_id,
+                            classroom_layout_id,
+                            startsAt.format(
+                                "YYYY-MM-DD HH:mm:ss"
+                            ),
+                            endsAt.format(
+                                "YYYY-MM-DD HH:mm:ss"
+                            )
+                        ]
                 );
 
             }
@@ -169,19 +173,32 @@ router.put("/:id", requireAuth,
 
             await db.query(
                 `
-                UPDATE group_schedules
+                UPDATE lessons
                 SET
-                    start_time = ?,
-                    end_time = ?,
                     classroom_id = ?,
-                    classroom_layout_id = ?
-                WHERE id = ?
+                    classroom_layout_id = ?,
+
+                    starts_at = CONCAT(
+                        DATE(starts_at),
+                        ' ',
+                        ?
+                    ),
+
+                    ends_at = CONCAT(
+                        DATE(ends_at),
+                        ' ',
+                        ?
+                    )
+
+                WHERE group_schedule_id = ?
                 `,
                 [
-                    start_time,
-                    end_time,
                     classroom_id || null,
                     classroom_layout_id || null,
+
+                    start_time,
+                    end_time,
+
                     req.params.id
                 ]
             );
@@ -217,22 +234,31 @@ router.put("/:id", requireAuth,
                 `
                 UPDATE lessons
                 SET
+                    classroom_id = ?,
+                    classroom_layout_id = ?,
+
                     starts_at = CONCAT(
                         DATE(starts_at),
                         ' ',
                         ?
                     ),
+
                     ends_at = CONCAT(
                         DATE(ends_at),
                         ' ',
                         ?
                     )
+
                 WHERE group_schedule_id = ?
                 AND DATE(starts_at) >= ?
                 `,
                 [
+                    classroom_id || null,
+                    classroom_layout_id || null,
+
                     start_time,
                     end_time,
+
                     req.params.id,
                     effective_from
                 ]

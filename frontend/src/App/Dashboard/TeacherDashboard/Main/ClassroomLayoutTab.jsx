@@ -10,6 +10,13 @@ import Seat from "@/components/classroom/Seat";
 import RenameSeatDialog from "@/components/classroom/RenameSeatDialog";
 import DeleteSeatDialog from "@/components/classroom/DeleteSeatDialog";
 
+import {
+    CLASSROOM_START_X,
+    CLASSROOM_START_Y,
+    GRID_X,
+    GRID_Y
+} from "@/constants/classroomConstants";
+
 export default function ClassroomLayoutTab({
     layoutId
 }) {
@@ -63,6 +70,21 @@ export default function ClassroomLayoutTab({
 
     const createSeat = async () => {
 
+        const nextSeatNumber =
+            seats.length + 1;
+
+        const x =
+            CLASSROOM_START_X +
+            ((nextSeatNumber - 1) % 4) *
+            (GRID_X * 3);
+
+        const y =
+            CLASSROOM_START_Y +
+            Math.floor(
+                (nextSeatNumber - 1) / 4
+            ) *
+            (GRID_Y * 4);
+            
         const response =
             await fetch(
                 `${API_URL}/api/classroom-layouts/${layoutId}/seats`,
@@ -74,8 +96,8 @@ export default function ClassroomLayoutTab({
                             "application/json"
                     },
                     body: JSON.stringify({
-                        x_position: 100,
-                        y_position: 100
+                        x_position: x,
+                        y_position: y
                     })
                 }
             );

@@ -25,9 +25,35 @@ export default function GroupLayoutTab({
 
     useEffect(() => {
 
-            load();
+        const initialize = async () => {
 
-        }, [layoutId]);
+            await applyLayout();
+
+            await load();
+
+        };
+
+        initialize();
+
+    }, [layoutId]);
+
+    useEffect(() => {
+
+        if (!layoutId) {
+            return;
+        }
+
+        const initialize = async () => {
+
+            await applyLayout();
+
+            await load();
+
+        };
+
+        initialize();
+
+    }, [layoutId]);
 
     useEffect(() => {
 
@@ -184,7 +210,45 @@ export default function GroupLayoutTab({
             }
 
         }
-    }    
+    }
+    
+    const applyLayout = async () => {
+
+        await fetch(
+            `${API_URL}/api/groups/${groupId}/seat-assignments/apply-layout`,
+            {
+                method: "POST",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type":
+                        "application/json"
+                },
+                body: JSON.stringify({
+                    layoutId
+                })
+            }
+        );
+
+    };
+
+    const syncAssignments = async () => {
+
+        await fetch(
+            `${API_URL}/api/groups/${groupId}/seat-assignments/sync`,
+            {
+                method: "POST",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type":
+                        "application/json"
+                },
+                body: JSON.stringify({
+                    layoutId
+                })
+            }
+        );
+
+    };
 
     const togglePinned =
         async (assignmentId) => {

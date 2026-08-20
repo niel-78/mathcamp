@@ -19,7 +19,6 @@ export default function LessonCard({
     onCancelLesson,
     onDeleteLesson
 }) {
-
     return (
 
         <CardSection
@@ -130,6 +129,32 @@ export default function LessonCard({
                             "
                         >
                             {lesson.group_name}
+                        </div>
+
+                    )}
+
+                    {lesson.classroom_name && (
+
+                        <div
+                            className="
+                                text-sm
+                                text-muted-foreground
+                            "
+                        >
+                            Klassrum: {lesson.classroom_name}
+                        </div>
+
+                    )}
+
+                    {lesson.classroom_layout_name && (
+
+                        <div
+                            className="
+                                text-sm
+                                text-muted-foreground
+                            "
+                        >
+                            Möblering: {lesson.classroom_layout_name}
                         </div>
 
                     )}

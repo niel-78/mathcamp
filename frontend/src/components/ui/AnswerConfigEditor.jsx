@@ -15,15 +15,12 @@ export default function AnswerConfigEditor({
     onChanged
 }) {
 
-    const config =
-        typeof question.answer_config ===
-        "string"
-            ? JSON.parse(
-                question.answer_config
-            )
-            : (
-                question.answer_config || {}
-            );
+    let config =
+        typeof question.answer_config === "string"
+            ? JSON.parse(question.answer_config)
+            : question.answer_config;
+
+    config = config ?? {};
 
     const [editing, setEditing] =
         useState(false);
@@ -33,7 +30,7 @@ export default function AnswerConfigEditor({
 
     const [gradingMode, setGradingMode] =
         useState(
-            config.grading_mode ||
+            config?.grading_mode ??
             GRADING_MODES.TEXT.value
         );
 

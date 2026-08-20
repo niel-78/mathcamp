@@ -28,10 +28,6 @@ export default function CreateAbilityDialog({
                 seriesId: series.id
             };
 
-            console.log("payload", payload);
-
-            console.log("before fetch");
-
             const res = await fetch(
                 `${API_URL}/api/abilities`,
                 {
@@ -44,12 +40,21 @@ export default function CreateAbilityDialog({
                 }
             );
 
-            console.log("after fetch");
-            console.log("status", res.status);
+            if (!res.ok) {
+                throw new Error(
+                    "Kunde inte skapa förmåga"
+                );
+            }
+
+            setName("");
+
+            await onCreated?.();
+
+            onOpenChange(false);
 
         } catch (error) {
 
-            console.error("FETCH ERROR", error);
+            console.error(error);
 
         }
 

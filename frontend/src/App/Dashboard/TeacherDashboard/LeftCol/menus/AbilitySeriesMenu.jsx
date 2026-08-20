@@ -5,7 +5,8 @@ export default function AbilitySeriesMenu({
     user,
     onCreateAbility,
     onImportAbilities,
-    onRenameSeries
+    onRenameSeries,
+    onDeleteSeries
 }) {
 
     const canEdit =
@@ -57,16 +58,17 @@ export default function AbilitySeriesMenu({
                         Byt namn
                     </Button>
 
-                    <Button
+                    {/* <Button
                         variant="inline"
                         className="context-menu-button"
                     >
                         Dela serie
-                    </Button>
+                    </Button> */}
 
                     <Button
                         variant="inline"
                         className="context-menu-button"
+                        onClick={onDeleteSeries}
                     >
                         Ta bort serie
                     </Button>

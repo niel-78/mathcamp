@@ -1,5 +1,6 @@
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
+
 import { Button } from "@/components/ui/button";
 
 import {
@@ -9,30 +10,30 @@ import {
     DialogTitle
 } from "@/components/ui/dialog";
 
-export default function DeleteAbilityDialog({
+export default function DeleteLessonDialog({
     open,
     onOpenChange,
-    ability,
+    lesson,
     onDeleted
 }) {
-    
-    const deleteAbility = async () => {
 
-        const res = await fetch(
-            `${API_URL}/api/abilities/${ability.id}`,
+    const deleteLesson = async () => {
+
+        const response = await fetch(
+            `${API_URL}/api/lessons/${lesson.id}`,
             {
                 method: "DELETE",
                 headers: authHeaders()
             }
         );
 
-        if (res.ok) {
-
-            onOpenChange(false);
-
-            onDeleted?.();
-
+        if (!response.ok) {
+            return;
         }
+
+        onOpenChange(false);
+
+        onDeleted?.();
 
     };
 
@@ -48,29 +49,25 @@ export default function DeleteAbilityDialog({
                 <DialogHeader>
 
                     <DialogTitle>
-                        Radera förmåga
+                        Radera lektion
                     </DialogTitle>
 
                 </DialogHeader>
 
                 <p>
-                    Vill du radera förmågan
-                    <strong>
-                        {" "}
-                        {ability?.name}
-                        {" "}
-                    </strong>
-                    ?
+                    Vill du radera denna lektion?
                 </p>
 
-                <Button
-                    variant="destructive"
-                    onClick={
-                        deleteAbility
-                    }
-                >
-                    Radera
-                </Button>
+                <div className="flex justify-end">
+
+                    <Button
+                        variant="destructive"
+                        onClick={deleteLesson}
+                    >
+                        Radera
+                    </Button>
+
+                </div>
 
             </DialogContent>
 

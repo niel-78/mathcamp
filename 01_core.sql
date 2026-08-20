@@ -156,3 +156,32 @@ CREATE TABLE app_settings (
     settings JSON NOT NULL
 
 );
+
+/* =====================================================
+   SYSTEM ERRORS
+   ===================================================== */
+
+
+CREATE TABLE system_errors (
+
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    created_at DATETIME NOT NULL
+        DEFAULT CURRENT_TIMESTAMP,
+
+    user_id INT NULL,
+
+    school_id INT NULL,
+
+    source VARCHAR(255) NOT NULL,
+
+    message TEXT NOT NULL,
+
+    stacktrace LONGTEXT NULL,
+
+    context JSON NULL,
+
+    resolved BOOLEAN NOT NULL
+        DEFAULT FALSE
+
+);

@@ -34,12 +34,23 @@ router.get("/", requireAuth,
                 `
                 SELECT
                     l.*,
-                    g.name AS group_name
+
+                    g.name AS group_name,
+
+                    c.name AS classroom_name,
+
+                    cl.name AS classroom_layout_name
+
                 FROM lessons l
+
                 JOIN groups g
                     ON g.id = l.group_id
-                WHERE l.group_id IN (${placeholders})
-                ORDER BY l.starts_at
+
+                LEFT JOIN classrooms c
+                    ON c.id = l.classroom_id
+
+                LEFT JOIN classroom_layouts cl
+                    ON cl.id = l.classroom_layout_id
                 `,
                 groupIds
             );
@@ -421,6 +432,23 @@ router.put("/:id/cancel",requireAuth,
             `
             UPDATE lessons
             SET cancelled_at = NOW()
+            WHERE id = ?
+            `,
+            [req.params.id]
+        );
+
+        res.sendStatus(204);
+
+    }
+);
+
+// DELETE /api/lessons/:id
+router.delete("/:id", requireAuth,
+    async (req, res) => {
+
+        await db.query(
+            `
+            DELETE FROM lessons
             WHERE id = ?
             `,
             [req.params.id]

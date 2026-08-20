@@ -10,8 +10,10 @@ export const gradeAnswer = ({
     config = {}
 }) => {
 
+    config = config || {};
+
     const mode =
-        config.grading_mode || "text";
+        config?.grading_mode || "text";
 
     switch (mode) {
 

@@ -198,6 +198,7 @@ router.get("/:id/seats",
     }
 );
 
+
 // POST /api/classroom-layouts/:id/seats
 router.post("/:id/seats",
     async (req, res) => {
@@ -210,27 +211,46 @@ router.post("/:id/seats",
             y_position
         } = req.body;
 
-        const [result] = await db.query(
-            `
-            INSERT INTO classroom_seats (
-                layout_id,
-                seat_label,
-                seat_row,
-                seat_column,
-                x_position,
-                y_position
-            )
-            VALUES (?, ?, ?, ?, ?, ?)
-            `,
-            [
-                req.params.id,
-                seat_label,
-                seat_row,
-                seat_column,
-                x_position,
-                y_position
-            ]
-        );
+        const [[row]] =
+            await db.query(
+                `
+                SELECT
+                    COALESCE(
+                        MAX(seat_number),
+                        0
+                    ) + 1 AS nextSeatNumber
+                FROM classroom_seats
+                WHERE layout_id = ?
+                `,
+                [req.params.id]
+            );
+
+        const [result] =
+            await db.query(
+                `
+                INSERT INTO classroom_seats (
+                    layout_id,
+                    seat_label,
+                    seat_number,
+                    seat_row,
+                    seat_column,
+                    x_position,
+                    y_position
+                )
+                VALUES (
+                    ?, ?, ?, ?, ?, ?, ?
+                )
+                `,
+                [
+                    req.params.id,
+                    seat_label,
+                    row.nextSeatNumber,
+                    seat_row,
+                    seat_column,
+                    x_position,
+                    y_position
+                ]
+            );
 
         res.status(201).json({
             id: result.insertId

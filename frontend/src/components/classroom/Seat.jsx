@@ -9,11 +9,12 @@ import {
 
 import { MoreVertical } from "lucide-react";
 
-const SEAT_WIDTH = 120;
-const SEAT_HEIGHT = 64;
-
-const GRID_X = SEAT_WIDTH / 3;
-const GRID_Y = SEAT_HEIGHT / 3;
+import {
+    SEAT_WIDTH,
+    SEAT_HEIGHT,
+    GRID_X,
+    GRID_Y
+} from "@/constants/classroomConstants";
 
 export default function Seat({
     seat,
@@ -71,6 +72,39 @@ export default function Seat({
                     height: `${SEAT_HEIGHT}px`
                 }}
             >
+                <div
+                    className="
+                        flex
+                        flex-col
+                        items-center
+                        justify-center
+                        h-full
+                    "
+                >
+
+                    <div
+                        className="
+                            text-xl
+                            font-bold
+                        "
+                    >
+                        {seat.seat_number}
+                    </div>
+
+                    {/* {seat.seat_label && (
+
+                        <div
+                            className="
+                                text-xs
+                                text-muted-foreground
+                            "
+                        >
+                            {seat.seat_label}
+                        </div>
+
+                    )} */}
+
+                </div>
                 <div
                     className="
                         absolute

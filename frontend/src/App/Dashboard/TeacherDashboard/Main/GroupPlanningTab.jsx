@@ -5,6 +5,7 @@ import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 import PlanningBoard from "@/components/planning/PlanningBoard";
 import EditLessonDialog from "@/components/ui/EditLessonDialog";
 import CancelLessonDialog from "@/components/ui/CancelLessonDialog";
+import DeleteLessonDialog from "@/components/ui/DeleteLessonDialog";
 
 export default function GroupPlanningTab({
     groupId
@@ -103,6 +104,15 @@ export default function GroupPlanningTab({
                     setLessonStatusDialog(null)
                 }
                 onSaved={loadLessons}
+            />
+
+            <DeleteLessonDialog
+                lesson={deleteLesson}
+                open={!!deleteLesson}
+                onOpenChange={() =>
+                    setDeleteLesson(null)
+                }
+                onDeleted={loadLessons}
             />
         </>
 

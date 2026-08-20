@@ -7,11 +7,13 @@ import { gradeFraction } from "./gradeFraction.js";
 export const gradeAnswer = ({
     studentAnswer,
     correctAnswer,
-    config = {}
+    config
 }) => {
 
+    config = config || {};
+
     const mode =
-        config.grading_mode || "text";
+        config?.grading_mode || "text";
 
     switch (mode) {
 

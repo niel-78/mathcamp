@@ -1,5 +1,4 @@
 import express from "express";
-import path from "path";
 
 import authRoutes from "./routes/authRoutes.js";
 
@@ -37,7 +36,6 @@ import studentRoutes from "./routes/studentRoutes.js";
 import bookRoutes from "./routes/bookRoutes.js";
 import sectionRoutes from "./routes/sectionRoutes.js";
 
-import eventRoutes from "./routes/eventRoutes.js";
 import resultRoutes from "./routes/resultRoutes.js";
 
 import groupAssessmentLobbyRoutes from "./routes/groupAssessmentLobbyRoutes.js";
@@ -49,9 +47,12 @@ import classroomLayoutRoutes from "./routes/classroomLayoutRoutes.js";
 import classroomSeatRoutes from "./routes/classroomSeatRoutes.js";
 
 import groupSeatAssignmentRoutes from "./routes/groupSeatAssignmentRoutes.js";
-import layoutSnapshotRoutes from "./routes/layoutSnapshotsRoutes.js";
+
+import eventRoutes from "./routes/eventRoutes.js";
 
 import cors from "cors";
+
+import logSystemError from "./helpers/logSystemError.js"
 
 console.log("SERVER FILE START");
 
@@ -123,10 +124,24 @@ app.use("/api/group-seat-assignments", groupSeatAssignmentRoutes);
 app.use("/api/results", resultRoutes);
 app.use("/api/events", eventRoutes);
 
-
 app.use(
   "/uploads",
   express.static("uploads")
+);
+
+app.use(
+    async (error, req, res, next) => {
+
+        await logSystemError({
+            source: req.originalUrl,
+            error
+        });
+
+        res.status(500).json({
+            message: "Internt serverfel"
+        });
+
+    }
 );
 
 app.listen(3000, "0.0.0.0", () => {
