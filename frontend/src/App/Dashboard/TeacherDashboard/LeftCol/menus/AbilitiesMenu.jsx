@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 
 export default function AbilitiesMenu({
-    onCreateSeries
+    onCreateSeries,
+    onDownloadTemplate
 }) {
 
     return (
@@ -14,6 +15,14 @@ export default function AbilitiesMenu({
                 onClick={onCreateSeries}
             >
                 Ny serie
+            </Button>
+
+            <Button
+                variant="inline"
+                className="context-menu-button"
+                onClick={onDownloadTemplate}
+            >
+                Ladda ner mall
             </Button>
 
         </div>

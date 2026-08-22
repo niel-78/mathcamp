@@ -413,4 +413,123 @@ router.post("/:id/import-central-content",
     }
 );
 
+router.get("/criteria-template",
+    requireAuth,
+    requireRole("super"),
+    async (req, res) => {
+
+        const workbook =
+            XLSX.utils.book_new();
+
+        const worksheet =
+            XLSX.utils.json_to_sheet([
+                {
+                    LevelId: 1,
+                    Förmåga: "Problemlösning",
+                    Betyg: "E",
+                    Beskrivning:
+                        "Eleven kan lösa enkla problem."
+                },
+                {
+                    LevelId: 1,
+                    Förmåga: "Problemlösning",
+                    Betyg: "C",
+                    Beskrivning:
+                        "Eleven kan lösa problem på ett utvecklat sätt."
+                },
+                {
+                    LevelId: 1,
+                    Förmåga: "Problemlösning",
+                    Betyg: "A",
+                    Beskrivning:
+                        "Eleven kan lösa problem på ett välutvecklat sätt."
+                }
+            ]);
+
+        XLSX.utils.book_append_sheet(
+            workbook,
+            worksheet,
+            "Kriterier"
+        );
+
+        const buffer =
+            XLSX.write(
+                workbook,
+                {
+                    type: "buffer",
+                    bookType: "xlsx"
+                }
+            );
+
+        res.setHeader(
+            "Content-Type",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+
+        res.setHeader(
+            "Content-Disposition",
+            'attachment; filename="kriterier-mall.xlsx"'
+        );
+
+        res.send(buffer);
+    }
+);
+
+router.get("/central-content-template",
+    requireAuth,
+    requireRole("super"),
+    async (req, res) => {
+
+        const workbook =
+            XLSX.utils.book_new();
+
+        const worksheet =
+            XLSX.utils.json_to_sheet([
+                {
+                    Område: "Taluppfattning",
+                    Innehåll:
+                        "Naturliga tal och deras egenskaper."
+                },
+                {
+                    Område: "Taluppfattning",
+                    Innehåll:
+                        "Rationella tal och deras användning."
+                },
+                {
+                    Område: "Algebra",
+                    Innehåll:
+                        "Variabler och algebraiska uttryck."
+                }
+            ]);
+
+        XLSX.utils.book_append_sheet(
+            workbook,
+            worksheet,
+            "Centralt innehåll"
+        );
+
+        const buffer =
+            XLSX.write(
+                workbook,
+                {
+                    type: "buffer",
+                    bookType: "xlsx"
+                }
+            );
+
+        res.setHeader(
+            "Content-Type",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+
+        res.setHeader(
+            "Content-Disposition",
+            'attachment; filename="centralt-innehall-mall.xlsx"'
+        );
+
+        res.send(buffer);
+    }
+);
+
+
 export default router;

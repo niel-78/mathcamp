@@ -36,6 +36,7 @@ import RenameLayoutDialog from "./Main/RenameLayoutDialog";
 import DeleteLayoutDialog from "./Main/DeleteLayoutDialog";
 import DuplicateLayoutDialog from "./Main/DuplicateLayoutDialog";
 import CreateScheduleExceptionDialog from "./Main/CreateScheduleExceptionDialog";
+import ImportScheduleExceptionsDialog from "./Main/ImportScheduleExceptionsDialog";
 import DeleteScheduleExceptionDialog from "./Main/DeleteScheduleExceptionDialog";
 import { scheduleExceptionLabels } from "@/constants/scheduleExceptionLabels";
 
@@ -104,13 +105,13 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [groupClassrooms, setGroupClassrooms] = useState({});
     const [selectedSchoolId, setSelectedSchoolId] = useState(null);
     const [deleteAbilitySeriesDialog, setDeleteAbilitySeriesDialog] = useState(null);
-    const [manageScheduleDialog, setManageScheduleDialog] = useState(null);
     const [schools, setSchools] = useState([]);
     const [expandedGroupClassroomItems,setExpandedGroupClassroomItems] = useState({});
     const [groupScheduleExceptions, setGroupScheduleExceptions] = useState({})
     const [expandedSchoolScheduleExceptions, setExpandedSchoolScheduleExceptions] = useState({});
     const [createScheduleExceptionDialog, setCreateScheduleExceptionDialog] = useState(null);
     const [deleteScheduleExceptionDialog, setDeleteScheduleExceptionDialog] = useState(null);
+    const [importScheduleExceptionsDialog,setImportScheduleExceptionsDialog] = useState(null);
 
     const [showSchools, setShowSchools] =
         useState(false);
@@ -567,6 +568,174 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
         };
 
+    const downloadScheduleExceptionTemplate = () => {
+
+        const csv = [
+            "Datum,Typ,Anteckning",
+            "2026-10-26,study_day,Studiedag",
+            "2026-12-24,holiday,Julafton",
+            "2027-01-08,other,Temadag"
+        ].join("\n");
+
+        const blob = new Blob(
+            [csv],
+            {
+                type: "text/csv;charset=utf-8;"
+            }
+        );
+
+        const url =
+            URL.createObjectURL(blob);
+
+        const link =
+            document.createElement("a");
+
+        link.href = url;
+
+        link.download =
+            "schemabrytande-dagar-mall.csv";
+
+        link.click();
+
+        URL.revokeObjectURL(url);
+    };
+
+    const downloadBookSectionsTemplate =
+        async () => {
+
+            const response =
+                await fetch(
+                    `${API_URL}/api/books/import-sections-template`,
+                    {
+                        headers: authHeaders()
+                    }
+                );
+
+            if (!response.ok) {
+                return;
+            }
+
+            const blob =
+                await response.blob();
+
+            const url =
+                URL.createObjectURL(blob);
+
+            const a =
+                document.createElement("a");
+
+            a.href = url;
+            a.download =
+                "bokstruktur-mall.xlsx";
+
+            document.body.appendChild(a);
+
+            a.click();
+
+            a.remove();
+
+            URL.revokeObjectURL(url);
+        };
+
+    const downloadAbilityTemplate =
+        async () => {
+
+            const response =
+                await fetch(
+                    `${API_URL}/api/abilities/import-template`,
+                    {
+                        headers: authHeaders()
+                    }
+                );
+
+            if (!response.ok) {
+                return;
+            }
+
+            const blob =
+                await response.blob();
+
+            const url =
+                URL.createObjectURL(blob);
+
+            const a =
+                document.createElement("a");
+
+            a.href = url;
+            a.download =
+                "formagor-mall.xlsx";
+
+            a.click();
+
+            URL.revokeObjectURL(url);
+        };
+
+    const downloadCriteriaTemplate =
+        async () => {
+
+            const response =
+                await fetch(
+                    `${API_URL}/api/levels/criteria-template`,
+                    {
+                        headers: authHeaders()
+                    }
+                );
+
+            if (!response.ok) {
+                return;
+            }
+
+            const blob =
+                await response.blob();
+
+            const url =
+                URL.createObjectURL(blob);
+
+            const a =
+                document.createElement("a");
+
+            a.href = url;
+            a.download =
+                "kriterier-mall.xlsx";
+
+            a.click();
+
+            URL.revokeObjectURL(url);
+        };
+
+    const downloadCentralContentTemplate =
+        async () => {
+
+            const response =
+                await fetch(
+                    `${API_URL}/api/levels/central-content-template`,
+                    {
+                        headers: authHeaders()
+                    }
+                );
+
+            if (!response.ok) {
+                return;
+            }
+
+            const blob =
+                await response.blob();
+
+            const url =
+                URL.createObjectURL(blob);
+
+            const a =
+                document.createElement("a");
+
+            a.href = url;
+            a.download =
+                "centralt-innehall-mall.xlsx";
+
+            a.click();
+
+            URL.revokeObjectURL(url);
+        };
+
     return (
         <>
             <UserProfile />
@@ -675,11 +844,18 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                         levelName
                     });
                 }}
+                onDownloadCentralContentTemplate={
+                    downloadCentralContentTemplate
+                }
+                onDownloadCriteriaTemplate={
+                    downloadCriteriaTemplate}
 
                 onCreateBookRoot={() => {
                     setCreateBookDialog(true);
                 }}
-
+                onDownloadBookSectionsTemplate={
+                    downloadBookSectionsTemplate
+                }
                 onImportBookStructure={(bookId, bookTitle) => {
                     setImportBookStructureDialog({
                         bookId,
@@ -725,7 +901,9 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                         name
                     });
                 }}
-
+                onDownloadAbilityTemplate={
+                    downloadAbilityTemplate
+                }
                 onDeleteAbility={(id, name) => {
                     setDeleteAbilityDialog({
                         id,
@@ -743,6 +921,20 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                     });
 
                 }}
+                onImportScheduleExceptions={(
+                    schoolId,
+                    schoolName
+                ) => {
+
+                    setImportScheduleExceptionsDialog({
+                        schoolId,
+                        schoolName
+                    });
+
+                }}
+                onDownloadScheduleExceptionTemplate={
+                    downloadScheduleExceptionTemplate
+                }
                 onDeleteScheduleException={(
                     exceptionId,
                     schoolId
@@ -2417,6 +2609,18 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                             .schoolId
                     );
 
+                }}
+            />
+            <ImportScheduleExceptionsDialog
+                open={!!importScheduleExceptionsDialog}
+                school={importScheduleExceptionsDialog}
+                onOpenChange={() =>
+                    setImportScheduleExceptionsDialog(null)
+                }
+                onImported={() => {
+                    loadSchoolScheduleExceptions(
+                        importScheduleExceptionsDialog.schoolId
+                    );
                 }}
             />
         </>

@@ -63,6 +63,8 @@ CREATE TABLE sections (
 
     content LONGTEXT NULL,
 
+    included_by_default BOOLEAN NOT NULL DEFAULT TRUE,
+
     page_number INT,
 
     sort_order INT NOT NULL,

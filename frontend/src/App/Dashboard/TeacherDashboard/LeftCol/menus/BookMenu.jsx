@@ -1,13 +1,13 @@
 import { Button } from "@/components/ui/button";
 
 export default function BookMenu({
-    onImportStructure
+    onImportStructure,
+    onDownloadTemplate
 }) {
 
     return (
 
-        <div className="context-menu">
-
+        <>
             <Button
                 variant="inline"
                 className="context-menu-button"
@@ -15,8 +15,13 @@ export default function BookMenu({
             >
                 Importera bokstruktur via Excel
             </Button>
-
-        </div>
+            <Button
+                variant="ghost"
+                onClick={onDownloadTemplate}
+            >
+                Ladda ner mall
+            </Button>
+        </>
 
     );
 

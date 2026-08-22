@@ -43,9 +43,8 @@ export default function ImportBookStructureDialog({
                 "replaceExisting",
                 replaceExisting
             );
-
             const response = await fetch(
-                `${API_URL}/api/books/${book.id}/import-sections`,
+                `${API_URL}/api/books/${book.bookId}/import-sections`,
                 {
                     method: "POST",
                     headers: authHeaders(),

@@ -19,6 +19,10 @@ export const gradeFraction = (
                 .split("/")
                 .map(Number);
 
+            if (denominator === 0) {
+                return false;
+            }
+
             const correct =
                 numerator /
                 denominator;
@@ -42,53 +46,35 @@ export const gradeFraction = (
         return false;
     }
 
-    if (config.allow_decimal) {
-
-        const student =
-            Number(studentAnswer);
-
-        if (!Number.isNaN(student)) {
+    const parseFraction =
+        fraction => {
 
             const [
                 numerator,
                 denominator
-            ] = correctAnswer
+            ] = fraction
                 .replace(/\s/g, "")
                 .split("/")
                 .map(Number);
 
-            const correct =
-                numerator /
-                denominator;
-
-            return student === correct;
-        }
-    }
-
-
-    const parseFraction = (
-        fraction
-    ) => {
-
-        const [
-            numerator,
-            denominator
-        ] = fraction
-            .replace(/\s/g, "")
-            .split("/")
-            .map(Number);
-
-        return {
-            numerator,
-            denominator
+            return {
+                numerator,
+                denominator
+            };
         };
-    };
 
     const student =
         parseFraction(studentAnswer);
 
     const correct =
         parseFraction(correctAnswer);
+
+    if (
+        student.denominator === 0 ||
+        correct.denominator === 0
+    ) {
+        return false;
+    }
 
     const sameValue =
         student.numerator *
@@ -103,14 +89,12 @@ export const gradeFraction = (
     if (
         config.require_simplified
     ) {
-
         return (
             gcd(
-                student.numerator,
-                student.denominator
+                Math.abs(student.numerator),
+                Math.abs(student.denominator)
             ) === 1
         );
-
     }
 
     return true;

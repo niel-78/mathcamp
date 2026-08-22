@@ -404,6 +404,22 @@ router.post("/:id/import-sections",
                 const pageNumber =
                     Number(row.Sida);
 
+                const includedByDefault =
+                    [
+                        "ja",
+                        "true",
+                        "1",
+                        "yes"
+                    ].includes(
+                        String(
+                            row.Ingår ??
+                            row.ingår ??
+                            "Ja"
+                        )
+                        .trim()
+                        .toLowerCase()
+                    );
+
                 if (
                     !chapterNumber ||
                     !chapterTitle ||
@@ -539,15 +555,17 @@ router.post("/:id/import-sections",
                         subchapter_id,
                         title,
                         page_number,
-                        sort_order
+                        sort_order,
+                        included_by_default
                     )
-                    VALUES (?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?)
                     `,
                     [
                         subchapterId,
                         sectionTitle,
                         pageNumber,
-                        pageNumber
+                        pageNumber,
+                        includedByDefault
                     ]
                 );
 
@@ -570,6 +588,74 @@ router.post("/:id/import-sections",
 
         }
 
+    }
+);
+
+router.get("/import-sections-template",
+    requireAuth,
+    requireRole("super"),
+    async (req, res) => {
+
+        const workbook =
+            XLSX.utils.book_new();
+
+        const worksheet =
+            XLSX.utils.json_to_sheet([
+                {
+                    KapitelNr: "1",
+                    KapitelTitel: "Tal",
+                    DelkapitelNr: "1.1",
+                    DelkapitelTitel: "Heltal",
+                    SektionTitel: "Positiva tal",
+                    Sida: 10,
+                    Ingår: "Ja"
+                },
+                {
+                    KapitelNr: "1",
+                    KapitelTitel: "Tal",
+                    DelkapitelNr: "1.1",
+                    DelkapitelTitel: "Heltal",
+                    SektionTitel: "Negativa tal",
+                    Sida: 12,
+                    Ingår: "Ja"
+                },
+                {
+                    KapitelNr: "1",
+                    KapitelTitel: "Tal",
+                    DelkapitelNr: "1.2",
+                    DelkapitelTitel: "Bråk",
+                    SektionTitel: "Bråktal",
+                    Sida: 15,
+                    Ingår: "Nej"
+                }
+            ]);
+
+        XLSX.utils.book_append_sheet(
+            workbook,
+            worksheet,
+            "Sektioner"
+        );
+
+        const buffer =
+            XLSX.write(
+                workbook,
+                {
+                    type: "buffer",
+                    bookType: "xlsx"
+                }
+            );
+
+        res.setHeader(
+            "Content-Type",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+
+        res.setHeader(
+            "Content-Disposition",
+            'attachment; filename="bokstruktur-mall.xlsx"'
+        );
+
+        res.send(buffer);
     }
 );
 

@@ -44,6 +44,7 @@ export default function PlanningQueueTab({
         setSections(
             data.sections
         );
+        console.log(data.sections);
 
     };
 
@@ -161,6 +162,21 @@ export default function PlanningQueueTab({
 
     };
 
+    const applyDefaults = () => {
+
+        setSections(
+            prev =>
+                prev.map(
+                    section => ({
+                        ...section,
+                        selected:
+                            !!section.included_by_default
+                    })
+                )
+        );
+
+    };
+
     return (
 
         <BaseTabLayout
@@ -179,6 +195,12 @@ export default function PlanningQueueTab({
                         onClick={fillPlanning}
                     >
                         Fyll planering
+                    </Button>
+                    <Button
+                        variant="outline"
+                        onClick={applyDefaults}
+                    >
+                        Återställ standardval
                     </Button>
 
                 </div>

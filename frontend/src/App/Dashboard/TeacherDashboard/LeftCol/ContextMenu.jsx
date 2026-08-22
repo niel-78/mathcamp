@@ -207,6 +207,10 @@ export default function ContextMenu(props) {
 
                             setContextMenu(null);
                         }}
+                        onDownloadTemplate={() => {
+                            props.onDownloadCentralContentTemplate?.();
+                            setContextMenu(null);
+                        }}
                     />
                 );
 
@@ -218,6 +222,7 @@ export default function ContextMenu(props) {
 
                 return (
                     <CriteriaLevelMenu
+
                         onImportCriteria={() => {
                             props.onImportCriteria?.(
                                 contextMenu.levelId,
@@ -226,8 +231,16 @@ export default function ContextMenu(props) {
 
                             setContextMenu(null);
                         }}
+
+                        onDownloadTemplate={() => {
+                            props.onDownloadCriteriaTemplate?.();
+
+                            setContextMenu(null);
+                        }}
+
                     />
                 );
+
 
             case "books":
 
@@ -261,17 +274,32 @@ export default function ContextMenu(props) {
 
                             setContextMenu(null);
                         }}
+                        onDownloadTemplate={() => {
+                            props.onDownloadBookSectionsTemplate?.(
+                                contextMenu.bookId
+                            );
+
+                            setContextMenu(null);
+                        }}
                     />
                 );
 
             case "abilities":
                 return (
                     <AbilitiesMenu
+
                         onCreateSeries={() => {
                             props.onCreateAbilitySeries?.();
 
                             setContextMenu(null);
                         }}
+
+                        onDownloadTemplate={() => {
+                            props.onDownloadAbilityTemplate?.();
+
+                            setContextMenu(null);
+                        }}
+
                     />
                 );
 
@@ -441,6 +469,7 @@ export default function ContextMenu(props) {
                 case "schedule-exceptions":
                     return (
                         <ScheduleExceptionsMenu
+
                             onCreate={() => {
 
                                 props.onCreateScheduleException?.(
@@ -449,8 +478,25 @@ export default function ContextMenu(props) {
                                 );
 
                                 setContextMenu(null);
+                            }}
+
+                            onImport={() => {
+
+                                props.onImportScheduleExceptions?.(
+                                    contextMenu.schoolId,
+                                    contextMenu.schoolName
+                                );
+
+                                setContextMenu(null);
+                            }}
+                            onDownloadTemplate={() => {
+
+                                props.onDownloadScheduleExceptionTemplate?.();
+
+                                setContextMenu(null);
 
                             }}
+
                         />
                     );
 

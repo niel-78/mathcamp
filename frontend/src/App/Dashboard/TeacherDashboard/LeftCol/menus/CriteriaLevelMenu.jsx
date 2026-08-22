@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 
 export default function CriteriaLevelMenu({
-    onImportCriteria
+    onImportCriteria,
+    onDownloadTemplate
 }) {
 
     return (
@@ -14,6 +15,14 @@ export default function CriteriaLevelMenu({
                 onClick={onImportCriteria}
             >
                 Importera betygskriterier via Excel
+            </Button>
+
+            <Button
+                className="context-menu-button"
+                variant="inline"
+                onClick={onDownloadTemplate}
+            >
+                Ladda ner mall
             </Button>
 
         </div>

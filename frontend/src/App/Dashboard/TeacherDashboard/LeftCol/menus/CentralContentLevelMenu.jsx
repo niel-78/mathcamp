@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 
 export default function CentralContentLevelMenu({
-    onImportCentralContent
+    onImportCentralContent,
+    onDownloadTemplate
 }) {
 
     return (
@@ -14,6 +15,13 @@ export default function CentralContentLevelMenu({
                 onClick={onImportCentralContent}
             >
                 Importera centralt innehåll via Excel
+            </Button>
+            <Button
+                className="context-menu-button"
+                variant="inline"
+                onClick={onDownloadTemplate}
+            >
+                Ladda ner mall
             </Button>
 
         </div>

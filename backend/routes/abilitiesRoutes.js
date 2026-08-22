@@ -215,5 +215,55 @@ router.post("/import",
     }
 );
 
+router.get("/import-template",
+    requireAuth,
+    requireRole("super"),
+    async (req, res) => {
+
+        const workbook =
+            XLSX.utils.book_new();
+
+        const worksheet =
+            XLSX.utils.json_to_sheet([
+                {
+                    Förmåga: "Problemlösning"
+                },
+                {
+                    Förmåga: "Begreppsförståelse"
+                },
+                {
+                    Förmåga: "Metodförmåga"
+                }
+            ]);
+
+        XLSX.utils.book_append_sheet(
+            workbook,
+            worksheet,
+            "Förmågor"
+        );
+
+        const buffer =
+            XLSX.write(
+                workbook,
+                {
+                    type: "buffer",
+                    bookType: "xlsx"
+                }
+            );
+
+        res.setHeader(
+            "Content-Type",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+
+        res.setHeader(
+            "Content-Disposition",
+            'attachment; filename="formagor-mall.xlsx"'
+        );
+
+        res.send(buffer);
+    }
+);
+
 
 export default router;

@@ -791,7 +791,7 @@ router.get("/:groupId/planning-sections/edit", requireAuth,
 
                     c.chapter_number,
                     sc.subchapter_number,
-
+                    s.included_by_default,
                     s.title,
 
                     CASE

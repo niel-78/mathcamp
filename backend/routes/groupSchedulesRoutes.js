@@ -1,11 +1,17 @@
 import express from "express";
 import db from "../db.js";
+import multer from "multer";
+import XLSX from "xlsx";
 import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
 import dayjs from "dayjs";
 
 
 const router = express.Router();
+
+const upload = multer({
+    storage: multer.memoryStorage()
+});
 
 router.use(requireAuth);
 router.use(requireRole("student", "teacher"));
@@ -414,6 +420,105 @@ router.delete("/exceptions/:id",
         );
 
         res.sendStatus(204);
+    }
+);
+
+router.post("/exceptions/import",
+    upload.single("file"),
+    async (req, res) => {
+
+        try {
+
+            if (!req.file) {
+                return res.status(400).json({
+                    error: "Ingen fil uppladdad"
+                });
+            }
+
+            const schoolId =
+                req.body.schoolId;
+
+            const workbook =
+                XLSX.read(
+                    req.file.buffer
+                );
+
+            const sheet =
+                workbook.Sheets[
+                    workbook.SheetNames[0]
+                ];
+
+            const rows =
+                XLSX.utils.sheet_to_json(
+                    sheet,
+                    {
+                        raw: false
+                    }
+                );
+
+            let imported = 0;
+
+            for (const row of rows) {
+
+                const date =
+                    row.Datum ||
+                    row.datum ||
+                    row.Date;
+
+                const type =
+                    row.Typ ||
+                    row.typ ||
+                    row.Type;
+
+                const note =
+                    row.Anteckning ||
+                    row.anteckning ||
+                    row.Note ||
+                    null;
+
+                if (!date || !type) {
+                    continue;
+                }
+
+                await db.query(
+                    `
+                    INSERT INTO
+                    school_schedule_exceptions
+                    (
+                        school_id,
+                        date,
+                        type,
+                        note
+                    )
+                    VALUES (?, ?, ?, ?)
+                    ON DUPLICATE KEY UPDATE
+                        type = VALUES(type),
+                        note = VALUES(note)
+                    `,
+                    [
+                        schoolId,
+                        date,
+                        type,
+                        note
+                    ]
+                );
+
+                imported++;
+            }
+
+            res.json({
+                success: true,
+                imported
+            });
+
+        } catch (error) {
+
+            console.error(error);
+
+            res.status(500).json({
+                error: "Import failed"
+            });
+        }
     }
 );
 

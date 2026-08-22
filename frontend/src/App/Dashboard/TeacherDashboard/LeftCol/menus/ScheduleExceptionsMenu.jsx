@@ -1,14 +1,34 @@
 export default function ScheduleExceptionsMenu({
-    onCreate
+    onCreate,
+    onImport,
+    onDownloadTemplate
 }) {
 
     return (
-        <button
-            className="w-full text-left px-3 py-2 hover:bg-accent"
-            onClick={onCreate}
-        >
-            Lägg till schemabrytande dag
-        </button>
-    );
+        <>
+            <button
+                className="context-menu-button"
+                variant="inline"
+                onClick={onCreate}
+            >
+                Lägg till schemabrytande dag
+            </button>
 
+            <button
+                className="context-menu-button"
+                variant="inline"
+                onClick={onImport}
+            >
+                Importera från Excel
+            </button>
+
+            <button
+                className="context-menu-button"
+                variant="inline"
+                onClick={onDownloadTemplate}
+            >
+                Ladda ner mall
+            </button>
+        </>
+    );
 }
