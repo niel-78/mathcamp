@@ -13,8 +13,8 @@ import AbilityMenu from "./menus/AbilityMenu";
 import CriteriaLevelMenu from "./menus/CriteriaLevelMenu";
 import CentralContentLevelMenu from "./menus/CentralContentLevelMenu";
 import ClassroomsMenu from "./menus/ClassroomsMenu";
-import ClassroomMenu from "./menus/ClassRoomMenu";
-import ClassroomLayoutMenu from "./menus/ClassRoomLayoutMenu";
+import ClassroomMenu from "./menus/ClassroomMenu";
+import ClassroomLayoutMenu from "./menus/ClassroomLayoutMenu";
 import ScheduleExceptionsMenu from "./menus/ScheduleExceptionsMenu";
 import ScheduleExceptionMenu from "./menus/ScheduleExceptionMenu";
 

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import CardSection from "@/components/layouts/CardSection";
 
-import FormatTime from "@/utils/FormatTime";
+import FormatTime from "@/utils/formatTime";
 import {
     statusLabels,
     statusClasses

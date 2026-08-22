@@ -8,7 +8,7 @@ import DetailLayout from "@/components/layouts/DetailLayout";
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 import StudentMonitorCard from "@/components/ui/StudentMonitorCard";
 import CardSection from "@/components/layouts/CardSection";
-import FormatTime from "@/utils/FormatTime";
+import FormatTime from "@/utils/formatTime";
 import {
     AlertDialog,
     AlertDialogAction,
