@@ -1,6 +1,6 @@
 import CardSection from "@/components/layouts/CardSection";
 import DropZone from "@/components/ui/DropZone";
-import FormatDateTimeShort from "@/utils/FormatDateTimeShort";
+import FormatDateTimeShort from "@/utils/formatDateTimeShort";
 import LessonSection from "./LessonSection";
 
 import {

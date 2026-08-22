@@ -4,7 +4,7 @@ import { GripVertical } from "lucide-react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import MathContent from "@/components/ui/MathContent";
-import FormatDateTimeShort from "@/utils/FormatDateTimeShort";
+import FormatDateTimeShort from "@/utils/formatDateTimeShort";
 import BlockPoints from "@/components/ui/BlockPoints";
 
 export default function BlockCard({
