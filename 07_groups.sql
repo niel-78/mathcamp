@@ -4,7 +4,7 @@ USE mydb;
    GROUPS
    ===================================================== */
 
-CREATE TABLE groups (
+CREATE TABLE `groups`(
     id INT AUTO_INCREMENT PRIMARY KEY,
 
     name VARCHAR(100) NOT NULL,
@@ -60,7 +60,7 @@ CREATE TABLE group_permissions (
     ),
 
     FOREIGN KEY (group_id)
-        REFERENCES groups(id)
+        REFERENCES `groups`(id)
         ON DELETE CASCADE,
 
     FOREIGN KEY (user_id)
@@ -94,6 +94,6 @@ CREATE TABLE group_students (
 
     CONSTRAINT fk_group_students_group
         FOREIGN KEY (group_id)
-        REFERENCES groups(id)
+        REFERENCES `groups`(id)
         ON DELETE CASCADE
 );

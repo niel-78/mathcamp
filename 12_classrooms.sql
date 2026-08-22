@@ -105,7 +105,7 @@ CREATE TABLE group_seat_assignments (
     ),
 
     FOREIGN KEY (group_id)
-        REFERENCES groups(id)
+        REFERENCES `groups`(id)
         ON DELETE CASCADE,
 
     FOREIGN KEY (student_id)
@@ -141,7 +141,7 @@ CREATE TABLE group_seat_assignment_history (
         DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (group_id)
-        REFERENCES groups(id),
+        REFERENCES `groups`(id),
 
     FOREIGN KEY (student_id)
         REFERENCES users(id),
@@ -271,7 +271,7 @@ CREATE TABLE group_layout_snapshots (
         DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (group_id)
-        REFERENCES groups(id)
+        REFERENCES `groups`(id)
         ON DELETE CASCADE,
 
     FOREIGN KEY (classroom_layout_id)

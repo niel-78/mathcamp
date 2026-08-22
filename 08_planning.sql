@@ -18,7 +18,7 @@ CREATE TABLE group_schedules (
     valid_to DATE NOT NULL,
 
     FOREIGN KEY (group_id)
-        REFERENCES groups(id)
+        REFERENCES `groups`(id)
         ON DELETE CASCADE
 );
 
@@ -71,7 +71,7 @@ CREATE TABLE lessons (
     deleted_at DATETIME NULL,
 
     FOREIGN KEY (group_id)
-        REFERENCES groups(id)
+        REFERENCES `groups`(id)
         ON DELETE CASCADE,
 
     FOREIGN KEY (group_schedule_id)
@@ -120,7 +120,7 @@ CREATE TABLE group_planning_sections (
         DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (group_id)
-        REFERENCES groups(id),
+        REFERENCES `groups`(id),
 
     FOREIGN KEY (section_id)
         REFERENCES sections(id)

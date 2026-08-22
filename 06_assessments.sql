@@ -181,7 +181,7 @@ CREATE TABLE group_assessments (
         DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (group_id)
-        REFERENCES groups(id)
+        REFERENCES `groups`(id)
         ON DELETE CASCADE,
 
     FOREIGN KEY (assessment_id)

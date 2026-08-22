@@ -97,7 +97,7 @@ VALUES
 );
 
 
-INSERT INTO groups (id, name, school_id, archived_at,book_id,level_id)
+INSERT INTO `groups` (id, name, school_id, archived_at,book_id,level_id)
 VALUES
 (1, 'Niklas grupp',1,NULL,2,2),(2, 'Jolines grupp',1,CURRENT_TIMESTAMP,2,1);
 

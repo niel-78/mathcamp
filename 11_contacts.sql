@@ -79,7 +79,7 @@ CREATE TABLE group_contacts (
         DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (group_id)
-        REFERENCES groups(id)
+        REFERENCES `groups`(id)
         ON DELETE CASCADE
 );
 
