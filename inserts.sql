@@ -97,9 +97,9 @@ VALUES
 );
 
 
-INSERT INTO groups (id, name, archived_at,book_id,level_id)
+INSERT INTO groups (id, name, school_id, archived_at,book_id,level_id)
 VALUES
-(1, 'Niklas grupp',NULL,2,2),(2, 'Jolines grupp',CURRENT_TIMESTAMP,2,1);
+(1, 'Niklas grupp',1,NULL,2,2),(2, 'Jolines grupp',1,CURRENT_TIMESTAMP,2,1);
 
 INSERT INTO group_permissions (
     group_id,
@@ -1021,24 +1021,6 @@ INSERT INTO level_books (level_id, book_id) VALUES (2,1);
 -- (2, 5, '08:30:00', '09:50:00', '2026-08-17', '2026-12-18');
 
 
-INSERT INTO group_schedule_exceptions (
-    group_id,
-    date,
-    type,
-    note
-)
-VALUES
-
--- Grupp 1
-(1, '2026-09-23', 'study_day', 'Studiedag'),
-(1, '2026-11-12', 'cancelled', 'Utvecklingssamtal'),
-(1, '2026-12-17', 'other', 'Gemensam aktivitetsdag'),
-
--- Grupp 2
-(2, '2026-10-28', 'study_day', 'Studiedag'),
-(2, '2026-11-27', 'cancelled', 'Praouppföljning');
-
-
 -- INSERT INTO lessons (
 --     group_id,
 --     starts_at,
@@ -1555,3 +1537,33 @@ VALUES
 (1, 'D2', 14, 170, 350),
 (1, 'D3', 15, 290, 350),
 (1, 'D4', 16, 410, 350);
+
+INSERT INTO school_schedule_exceptions (
+    school_id,
+    date,
+    type,
+    note,
+    affects_lessons
+)
+VALUES
+(
+    1,
+    '2026-10-26',
+    'study_day',
+    'Studiedag för personal',
+    TRUE
+),
+(
+    1,
+    '2026-12-24',
+    'holiday',
+    'Julafton',
+    TRUE
+),
+(
+    1,
+    '2027-01-08',
+    'other',
+    'Temadag om hållbar utveckling',
+    FALSE
+);

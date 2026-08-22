@@ -9,6 +9,8 @@ CREATE TABLE groups (
 
     name VARCHAR(100) NOT NULL,
 
+    school_id INT NOT NULL,
+
     description TEXT,
 
     level_id INT NULL,
@@ -23,6 +25,9 @@ CREATE TABLE groups (
 
     created_at DATETIME NOT NULL
         DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (school_id)
+        REFERENCES schools(id),
 
     FOREIGN KEY (level_id)
         REFERENCES levels(id),

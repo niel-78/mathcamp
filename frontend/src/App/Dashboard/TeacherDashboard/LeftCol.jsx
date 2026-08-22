@@ -35,6 +35,9 @@ import DeleteClassroomDialog from "./Main/DeleteClassroomDialog";
 import RenameLayoutDialog from "./Main/RenameLayoutDialog";
 import DeleteLayoutDialog from "./Main/DeleteLayoutDialog";
 import DuplicateLayoutDialog from "./Main/DuplicateLayoutDialog";
+import CreateScheduleExceptionDialog from "./Main/CreateScheduleExceptionDialog";
+import DeleteScheduleExceptionDialog from "./Main/DeleteScheduleExceptionDialog";
+import { scheduleExceptionLabels } from "@/constants/scheduleExceptionLabels";
 
 export default function LeftCol( {openTab, hoverTarget} ) {
 
@@ -104,7 +107,10 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [manageScheduleDialog, setManageScheduleDialog] = useState(null);
     const [schools, setSchools] = useState([]);
     const [expandedGroupClassroomItems,setExpandedGroupClassroomItems] = useState({});
-
+    const [groupScheduleExceptions, setGroupScheduleExceptions] = useState({})
+    const [expandedSchoolScheduleExceptions, setExpandedSchoolScheduleExceptions] = useState({});
+    const [createScheduleExceptionDialog, setCreateScheduleExceptionDialog] = useState(null);
+    const [deleteScheduleExceptionDialog, setDeleteScheduleExceptionDialog] = useState(null);
 
     const [showSchools, setShowSchools] =
         useState(false);
@@ -353,6 +359,32 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
     };
 
+    const loadSchoolScheduleExceptions =
+        async (schoolId) => {
+
+            const response =
+                await fetch(
+                    `${API_URL}/api/group-schedules/school/${schoolId}/exceptions`,
+                    {
+                        headers: authHeaders()
+                    }
+                );
+
+            if (!response.ok) {
+                return;
+            }
+
+            const data =
+                await response.json();
+
+            setGroupScheduleExceptions(
+                previous => ({
+                    ...previous,
+                    [schoolId]: data
+                })
+            );
+        };
+
     const toggle = (name) => {
         setShow(prev => ({
             ...prev,
@@ -513,6 +545,26 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                     )
                 );
             }
+        };
+
+    const toggleSchoolScheduleExceptions =
+        async (schoolId) => {
+
+            if (
+                !groupScheduleExceptions[schoolId]
+            ) {
+                await loadSchoolScheduleExceptions(
+                    schoolId
+                );
+            }
+
+            setExpandedSchoolScheduleExceptions(
+                previous => ({
+                    ...previous,
+                    [schoolId]: !previous[schoolId]
+                })
+            );
+
         };
 
     return (
@@ -680,6 +732,29 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                         name
                     });
                 }}
+                onCreateScheduleException={(
+                    schoolId,
+                    schoolName
+                ) => {
+
+                    setCreateScheduleExceptionDialog({
+                        schoolId,
+                        schoolName
+                    });
+
+                }}
+                onDeleteScheduleException={(
+                    exceptionId,
+                    schoolId
+                ) => {
+
+                    setDeleteScheduleExceptionDialog({
+                        exceptionId,
+                        schoolId
+                    });
+
+                }}
+
 
                 setRenameDialog={setRenameDialog}
                 setArchiveDialog={setArchiveDialog}
@@ -1890,6 +1965,85 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                             </div>
                                         )}
 
+                                        <div
+                                            className="tree-folder"
+                                            onClick={() =>
+                                                toggleSchoolScheduleExceptions(
+                                                    school.id
+                                                )
+                                            }
+                                            onContextMenu={(e) => {
+
+                                                e.preventDefault();
+
+                                                setContextMenu({
+                                                    type: "schedule-exceptions",
+                                                    schoolId: school.id,
+                                                    schoolName: school.name,
+                                                    x: e.clientX,
+                                                    y: e.clientY
+                                                });
+
+                                            }}
+                                        >
+                                            {
+                                                expandedSchoolScheduleExceptions[
+                                                    school.id
+                                                ]
+                                                    ? "▼"
+                                                    : "▶"
+                                            }
+
+                                            {" "}
+
+                                            Schemabrytande dagar
+                                        </div>
+
+                                        {expandedSchoolScheduleExceptions[
+                                            school.id
+                                        ] && (
+
+                                            <div className="ml-4">
+
+                                                {(
+                                                    groupScheduleExceptions[
+                                                        school.id
+                                                    ] || []
+                                                ).map(exception => (
+
+                                                    <div
+                                                        key={exception.id}
+                                                        className="
+                                                            tree-file
+                                                            cursor-pointer
+                                                        "
+                                                        onContextMenu={(e) => {
+
+                                                            e.preventDefault();
+
+                                                            setContextMenu({
+                                                                type: "schedule-exception",
+                                                                exceptionId: exception.id,
+                                                                schoolId: school.id,
+                                                                date: exception.date,
+                                                                x: e.clientX,
+                                                                y: e.clientY
+                                                            });
+
+                                                        }}
+                                                    >
+                                                        {exception.date}
+                                                        {" - "}
+                                                        {scheduleExceptionLabels[
+                                                            exception.type
+                                                        ]}
+                                                    </div>
+
+                                                ))}
+
+                                            </div>
+                                        )}
+
                                     </div>
                                 )}
 
@@ -2231,6 +2385,39 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                     setDuplicateLayoutDialog(null)
                 }
                 onDuplicated={loadClassrooms}
+            />
+            <CreateScheduleExceptionDialog
+                open={!!createScheduleExceptionDialog}
+                school={createScheduleExceptionDialog}
+                onOpenChange={() =>
+                    setCreateScheduleExceptionDialog(null)
+                }
+                onCreated={() => {
+
+                    loadSchoolScheduleExceptions(
+                        createScheduleExceptionDialog.schoolId
+                    );
+
+                }}
+            />
+            <DeleteScheduleExceptionDialog
+                open={!!deleteScheduleExceptionDialog}
+                exception={
+                    deleteScheduleExceptionDialog
+                }
+                onOpenChange={() =>
+                    setDeleteScheduleExceptionDialog(
+                        null
+                    )
+                }
+                onDeleted={() => {
+
+                    loadSchoolScheduleExceptions(
+                        deleteScheduleExceptionDialog
+                            .schoolId
+                    );
+
+                }}
             />
         </>
 

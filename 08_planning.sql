@@ -23,13 +23,13 @@ CREATE TABLE group_schedules (
 );
 
 /* =====================================================
-   GROUP SCHEDULE EXCEPTIONS
+   SCHOOL SCHEDULE EXCEPTIONS
    ===================================================== */
 
-CREATE TABLE group_schedule_exceptions (
+CREATE TABLE school_schedule_exceptions (
     id INT AUTO_INCREMENT PRIMARY KEY,
 
-    group_id INT NOT NULL,
+    school_id INT NOT NULL,
 
     date DATE NOT NULL,
 
@@ -42,8 +42,14 @@ CREATE TABLE group_schedule_exceptions (
 
     note VARCHAR(255),
 
-    FOREIGN KEY (group_id)
-        REFERENCES groups(id)
+    affects_lessons BOOLEAN DEFAULT TRUE,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE(school_id, date),
+
+    FOREIGN KEY (school_id)
+        REFERENCES schools(id)
         ON DELETE CASCADE
 );
 

@@ -1,4 +1,6 @@
-export async function logSystemError({
+import db from "../db.js";
+
+export default async function logSystemError({
     source,
     error,
     context = {}

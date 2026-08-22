@@ -230,14 +230,6 @@ router.get("/", async (req, res) => {
 
         }
 
-        console.log(
-            JSON.stringify(
-                subjects[0].levels[0].competencies,
-                null,
-                2
-            )
-        );
-
         res.json(subjects);
 
     } catch (error) {

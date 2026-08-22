@@ -7,6 +7,7 @@ SET FOREIGN_KEY_CHECKS = 0;
    ===================================================== */
 
 DROP TABLE IF EXISTS assessment_type_settings;
+DROP TABLE IF EXISTS system_errors;
 
 /* =====================================================
    SETTINGS
@@ -53,7 +54,7 @@ DROP TABLE IF EXISTS presentations;
 
 DROP TABLE IF EXISTS lesson_sections;
 DROP TABLE IF EXISTS lessons;
-DROP TABLE IF EXISTS group_schedule_exceptions;
+DROP TABLE IF EXISTS school_schedule_exceptions;
 DROP TABLE IF EXISTS group_schedules;
 DROP TABLE IF EXISTS group_planning_sections;
 
@@ -87,7 +88,7 @@ DROP TABLE IF EXISTS presentations;
 
 DROP TABLE IF EXISTS lesson_sections;
 DROP TABLE IF EXISTS lessons;
-DROP TABLE IF EXISTS group_schedule_exceptions;
+DROP TABLE IF EXISTS school_schedule_exceptions;
 DROP TABLE IF EXISTS group_schedules;
 DROP TABLE IF EXISTS group_planning_sections;
 

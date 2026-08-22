@@ -84,11 +84,6 @@ router.post("/", async (req, res) => {
             configKey &&
             config.monitoring?.[configKey];
 
-        console.log(
-            "SHOULD LOCK",
-            shouldLock
-        );
-
         if (shouldLock) {
 
             await db.query(

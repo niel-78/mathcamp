@@ -15,6 +15,8 @@ import CentralContentLevelMenu from "./menus/CentralContentLevelMenu";
 import ClassroomsMenu from "./menus/ClassroomsMenu";
 import ClassroomMenu from "./menus/ClassRoomMenu";
 import ClassroomLayoutMenu from "./menus/ClassRoomLayoutMenu";
+import ScheduleExceptionsMenu from "./menus/ScheduleExceptionsMenu";
+import ScheduleExceptionMenu from "./menus/ScheduleExceptionMenu";
 
 export default function ContextMenu(props) {
 
@@ -435,6 +437,37 @@ export default function ContextMenu(props) {
                         }}
                                             />
                 );
+
+                case "schedule-exceptions":
+                    return (
+                        <ScheduleExceptionsMenu
+                            onCreate={() => {
+
+                                props.onCreateScheduleException?.(
+                                    contextMenu.schoolId,
+                                    contextMenu.schoolName
+                                );
+
+                                setContextMenu(null);
+
+                            }}
+                        />
+                    );
+
+                case "schedule-exception":
+                    return (
+                        <ScheduleExceptionMenu
+                            onDelete={() => {
+
+                                props.onDeleteScheduleException?.(
+                                    contextMenu.exceptionId,
+                                    contextMenu.schoolId
+                                );
+
+                                setContextMenu(null);
+                            }}
+                        />
+                    );
 
             default:
                 return null;

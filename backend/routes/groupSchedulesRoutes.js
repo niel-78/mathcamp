@@ -1,10 +1,7 @@
 import express from "express";
 import db from "../db.js";
-import crypto from "crypto";
 import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
-import { gradeAnswer } from "../utils/grading/gradeAnswer.js";
-import { buildExamSession } from "../utils/buildExamSession.js";
 import dayjs from "dayjs";
 
 
@@ -14,7 +11,7 @@ router.use(requireAuth);
 router.use(requireRole("student", "teacher"));
 
 // GET /api/group-schedules
-router.get("/",requireAuth,
+router.get("/",
     async (req, res) => {
 
     const [rows] =
@@ -42,7 +39,7 @@ router.get("/",requireAuth,
 );
 
 // POST /api/group-schedules
-router.post("/", requireAuth,
+router.post("/",
     async (req, res) => {
 
         const {
@@ -85,6 +82,25 @@ router.post("/", requireAuth,
         const scheduleId =
             result.insertId;
 
+
+        const [exceptions] = await db.query(
+            `
+            SELECT *
+            FROM school_schedule_exceptions
+            WHERE schoool_id = ?
+            `,
+            [school_id]
+        );
+
+        const exceptionMap = new Map();
+
+        for (const exception of exceptions) {
+            exceptionMap.set(
+                dayjs(exception.date).format("YYYY-MM-DD"),
+                exception
+            );
+        }
+
         let current =
             dayjs(valid_from);
 
@@ -95,6 +111,23 @@ router.post("/", requireAuth,
             current.isBefore(endDate) ||
             current.isSame(endDate, "day")
         ) {
+
+            const exception =
+                exceptionMap.get(
+                    current.format("YYYY-MM-DD")
+                );
+
+            if (
+                exception &&
+                [
+                    "holiday",
+                    "study_day",
+                    "cancelled"
+                ].includes(exception.type)
+            ) {
+                current = current.add(1, "day");
+                continue;
+            }
 
             const mysqlWeekday =
                 current.day() === 0
@@ -157,7 +190,7 @@ router.post("/", requireAuth,
 );
 
 // PUT /api/group-schedules/:id
-router.put("/:id", requireAuth,
+router.put("/:id",
     async (req, res) => {
 
         const {
@@ -271,5 +304,117 @@ router.put("/:id", requireAuth,
     }
 );
 
+// GET /api/group-schedules/exceptions?schoolId=1
+router.get("/school/:schoolId/exceptions",
+    async (req, res) => {
+        try {
+
+            const [rows] = await db.query(
+                `
+                SELECT *
+                FROM school_schedule_exceptions
+                WHERE school_id = ?
+                ORDER BY date
+                `,
+                [req.params.schoolId]
+            );
+
+            res.json(rows);
+
+        } catch (error) {
+
+            console.error(error);
+
+            res.status(500).json({
+                message: "Internt serverfel"
+            });
+        }
+    }
+);
+router.post("/exceptions", async (req, res) => {
+
+    const {
+        school_id,
+        date,
+        type,
+        note,
+        affects_lessons = true
+    } = req.body;
+
+    const [result] = await db.query(
+        `
+        INSERT INTO school_schedule_exceptions
+        (
+            school_id,
+            date,
+            type,
+            note,
+            affects_lessons
+        )
+        VALUES (?, ?, ?, ?, ?)
+        `,
+        [
+            school_id,
+            date,
+            type,
+            note,
+            affects_lessons
+        ]
+    );
+
+    res.status(201).json({
+        id: result.insertId
+    });
+
+});
+
+router.put("/exceptions/:id",
+    async (req, res) => {
+
+        const {
+            date,
+            type,
+            note,
+            affects_lessons
+        } = req.body;
+
+        await db.query(
+            `
+            UPDATE school_schedule_exceptions
+            SET
+                date = ?,
+                type = ?,
+                note = ?,
+                affects_lessons = ?
+            WHERE id = ?
+            `,
+            [
+                date,
+                type,
+                note,
+                affects_lessons,
+                req.params.id
+            ]
+        );
+
+        res.sendStatus(204);
+    }
+);
+
+router.delete("/exceptions/:id",
+    async (req, res) => {
+
+        await db.query(
+            `
+            DELETE
+            FROM school_schedule_exceptions
+            WHERE id = ?
+            `,
+            [req.params.id]
+        );
+
+        res.sendStatus(204);
+    }
+);
 
 export default router

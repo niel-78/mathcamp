@@ -30,6 +30,9 @@ export default function CreateGroupDialog({
 
     const [name, setName] = useState("");
 
+    const [schools, setSchools] = useState([]);
+    const [schoolId, setSchoolId] = useState("");
+
     const [subjects, setSubjects] = useState([]);
     const [books, setBooks] = useState([]);
 
@@ -40,7 +43,26 @@ export default function CreateGroupDialog({
     useEffect(() => {
         loadSubjects();
         loadBooks();
+        loadSchools();
     }, []);
+
+    const loadSchools = async () => {
+
+        const response = await fetch(
+            `${API_URL}/api/schools`,
+            {
+                headers: authHeaders()
+            }
+        );
+
+        if (!response.ok) {
+            return;
+        }
+
+        const data = await response.json();
+
+        setSchools(data);
+    };
 
     const loadSubjects = async () => {
 
@@ -87,6 +109,7 @@ export default function CreateGroupDialog({
                 },
                 body: JSON.stringify({
                     name,
+                    school_id: schoolId,
                     level_id: levelId,
                     book_id: bookId,
                 }),
@@ -96,6 +119,7 @@ export default function CreateGroupDialog({
         if (response.ok) {
 
             setName("");
+            setSchoolId("");
             setSubjectId(null);
             setLevelId(null);
             setBookId(null);
@@ -126,6 +150,41 @@ export default function CreateGroupDialog({
                             Gruppnamn
                         </Label>
 
+                    <div className="space-y-2">
+
+                        <Label>
+                            Skola
+                        </Label>
+
+                        <Select
+                            value={String(schoolId)}
+                            onValueChange={(value) =>
+                                setSchoolId(Number(value))
+                            }
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Välj skola" />
+                            </SelectTrigger>
+
+                            <SelectContent>
+
+                                {schools.map(school => (
+
+                                    <SelectItem
+                                        key={school.id}
+                                        value={String(school.id)}
+                                    >
+                                        {school.name}
+                                    </SelectItem>
+
+                                ))}
+
+                            </SelectContent>
+
+                        </Select>
+
+                    </div>
+
                         <Input
                             value={name}
                             placeholder="Gruppnamn"
@@ -137,6 +196,7 @@ export default function CreateGroupDialog({
                                 if (
                                     e.key === "Enter" &&
                                     name &&
+                                    schoolId &&
                                     levelId &&
                                     bookId
                                 ) {
@@ -269,6 +329,7 @@ export default function CreateGroupDialog({
                         onClick={createGroup}
                         disabled={
                             !name ||
+                            !schoolId ||
                             !levelId ||
                             !bookId
                         }

@@ -191,6 +191,7 @@ router.post("/", async (req, res) => {
 
     const {
         name,
+        school_id,
         level_id,
         book_id
     } = req.body;
@@ -199,13 +200,15 @@ router.post("/", async (req, res) => {
         `
         INSERT INTO groups (
             name,
+            school_id,
             level_id,
             book_id
         )
-        VALUES (?, ?, ?)
+        VALUES (?, ?, ?, ?)
         `,
         [
             name,
+            school_id,
             level_id,
             book_id
         ]
@@ -229,6 +232,7 @@ router.post("/", async (req, res) => {
     res.status(201).json({
         id: result.insertId,
         name,
+        school_id,
         level_id,
         book_id,
         role: "owner"

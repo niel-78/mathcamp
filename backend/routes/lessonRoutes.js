@@ -1,11 +1,7 @@
 import express from "express";
 import db from "../db.js";
-import crypto from "crypto";
 import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
-import { gradeAnswer } from "../utils/grading/gradeAnswer.js";
-import { buildExamSession } from "../utils/buildExamSession.js";
-
 
 const router = express.Router();
 
