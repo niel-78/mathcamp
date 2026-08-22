@@ -43,7 +43,7 @@ CREATE TABLE assessments (
 
     deleted_at DATETIME NULL,
 
-    config JSON DEFAULT,
+    config JSON,
 
     FOREIGN KEY (subject_id)
         REFERENCES subjects(id),
