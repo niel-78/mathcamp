@@ -43,15 +43,7 @@ CREATE TABLE assessments (
 
     deleted_at DATETIME NULL,
 
-    config JSON DEFAULT JSON_OBJECT(
-        'allowCalculator', false,
-        'allowFormulaSheet', true,
-        'defaultTimeLimitMinutes', 60000,
-        'lock_tab_hidden', true,
-        'lock_window_blur', true,
-        'lock_context_menu', true,
-        'lock_page_unload', false
-    ),
+    config JSON DEFAULT,
 
     FOREIGN KEY (subject_id)
         REFERENCES subjects(id),
@@ -150,32 +142,7 @@ CREATE TABLE group_assessments (
 
     available_until DATETIME NULL,
 
-    config JSON DEFAULT JSON_OBJECT(
-
-        'attempt', JSON_OBJECT(
-            'defaultTimeLimitMinutes', 15,
-            'maxAttempts', 1
-        ),
-
-        'presentation', JSON_OBJECT(
-            'allowCalculator', false,
-            'allowFormulaSheet', true
-        ),
-
-        'monitoring', JSON_OBJECT(
-            'lock_page_refresh', true,
-            'lock_tab_hidden', true,
-            'lock_window_blur', true,
-            'lock_context_menu', true,
-            'lock_page_unload', false
-        ),
-
-        'navigation', JSON_OBJECT(
-            'allowGoToPreviousQuestion', true
-        ),
-
-        'question_selection', JSON_OBJECT()
-    ),
+    config JSON,
 
     created_at DATETIME NOT NULL
         DEFAULT CURRENT_TIMESTAMP,

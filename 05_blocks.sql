@@ -90,10 +90,7 @@ CREATE TABLE questions (
     archived_at DATETIME NULL,
     deleted_at DATETIME NULL,
 
-    answer_config JSON DEFAULT JSON_OBJECT(
-        'mode',
-        'numeric'
-    ),
+    answer_config JSON,
 
     FOREIGN KEY (block_id)
         REFERENCES blocks(id),
