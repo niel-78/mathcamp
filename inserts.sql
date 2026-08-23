@@ -143,7 +143,7 @@ VALUES
 (5, 'Orientering om något ur matematikens historia, till exempel hur ett matematiskt begrepp utvecklats, matematikens roll i något historiskt skeende, en betydande person inom matematiken eller ett historiskt matematiskt problem.', 4);
 
 
---Nivå 1b
+-- Nivå 1b
 INSERT INTO levels (
     subject_id,
     code,
