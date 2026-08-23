@@ -8,8 +8,8 @@ VALUES (1,'DBGY HALMSTAD');
 
 INSERT INTO users (id, username, password_hash, first_name, last_name, role)
 VALUES
-(1, 'teacher', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas', 'Elofsson' , 'teacher'),
-(2, 'super', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas', 'Elofsson' , 'super');
+(1, 'niklas', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas', 'Elofsson' , 'teacher'),
+(2, 'waitingforsuperman', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas', 'Elofsson' , 'super');
 
 
 INSERT INTO subjects (
