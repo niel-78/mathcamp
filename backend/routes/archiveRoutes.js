@@ -57,8 +57,8 @@ router.post("/groups/:id/restore", requireAuth,
     }
 );
 
-// DELETE /api/archive/groups/:id
-router.delete("/groups/:id", requireAuth,
+// DELETE /api/archive/`groups`/:id
+router.delete("/`groups`/:id", requireAuth,
     async (req, res) => {
 
         await db.query(
@@ -162,7 +162,7 @@ router.get("/students", requireAuth,
                 JOIN users u
                     ON u.id = gs.user_id
 
-                JOIN groups g
+                JOIN \`groups\` g
                     ON g.id = gs.group_id
 
                 JOIN group_permissions gp

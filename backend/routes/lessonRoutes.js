@@ -39,7 +39,7 @@ router.get("/", requireAuth,
 
                 FROM lessons l
 
-                JOIN groups g
+                JOIN \`groups\` g
                     ON g.id = l.group_id
 
                 LEFT JOIN classrooms c

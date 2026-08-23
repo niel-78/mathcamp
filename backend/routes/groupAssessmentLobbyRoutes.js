@@ -255,7 +255,7 @@ router.post("/find", async (req, res) => {
             INNER JOIN assessments e
                 ON e.id = ge.assessment_id
 
-            INNER JOIN groups g
+            INNER JOIN \`groups\` g
                 ON g.id = ge.group_id
 
             WHERE ge.group_assessment_key = ?

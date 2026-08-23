@@ -42,7 +42,7 @@ router.get("/", async (req, res) => {
         [groups] = await db.query(
             `
             SELECT *
-            FROM groups
+            FROM \`groups\`
             WHERE archived_at IS NULL
             ORDER BY name
             `
@@ -53,7 +53,7 @@ router.get("/", async (req, res) => {
         [groups] = await db.query(
             `
             SELECT g.*
-            FROM groups g
+            FROM \`groups\` g
             INNER JOIN group_permissions gp
                 ON gp.group_id = g.id
             WHERE gp.user_id = ?
@@ -198,7 +198,7 @@ router.post("/", async (req, res) => {
 
     const [result] = await db.query(
         `
-        INSERT INTO groups (
+        INSERT INTO \`groups\` (
             name,
             school_id,
             level_id,
@@ -247,7 +247,7 @@ router.get("/:id", async (req, res) => {
         SELECT
             g.*,
             gp.role
-        FROM groups g
+        FROM \`groups\` g
 
         INNER JOIN group_permissions gp
             ON gp.group_id = g.id
@@ -308,7 +308,7 @@ router.put("/:id", async (req, res) => {
 
         await db.query(
             `
-            UPDATE groups
+            UPDATE \`groups\`
             SET
                 name = ?,
                 description = ?
@@ -650,7 +650,7 @@ router.put("/:id/archive", async (req, res) => {
 
         await db.query(
             `
-            UPDATE groups
+            UPDATE \`groups\`
             SET archived_at = NOW()
             WHERE id = ?
             `,
@@ -704,7 +704,7 @@ router.put("/:id/planning-sections", requireAuth,
 
         await db.query(
             `
-            UPDATE groups
+            UPDATE \`groups\`
             SET pages_per_lesson = ?
             WHERE id = ?
             `,
@@ -770,7 +770,7 @@ router.get("/:groupId/planning-sections/edit", requireAuth,
                 SELECT 
                     book_id,
                     pages_per_lesson
-                FROM groups
+                FROM \`groups\`
                 WHERE id = ?
                 `,
                 [req.params.groupId]
@@ -848,7 +848,7 @@ router.post("/:groupId/fill-planning",
                 `
                 SELECT
                     pages_per_lesson
-                FROM groups
+                FROM \`groups\`
                 WHERE id = ?
                 `,
                 [groupId]

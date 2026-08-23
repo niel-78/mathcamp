@@ -46,7 +46,7 @@ router.get("/", async (req, res) => {
         JOIN assessments e
             ON e.id = ge.assessment_id
 
-        JOIN groups g
+        JOIN \`groups\` g
             ON g.id = ge.group_id
 
         JOIN assessment_permissions ep
@@ -216,7 +216,7 @@ router.get("/:id", async (req, res) => {
         JOIN assessments e
             ON e.id = ge.assessment_id
 
-        JOIN groups g
+        JOIN \`groups\` g
             ON g.id = ge.group_id
 
         JOIN assessment_permissions ep

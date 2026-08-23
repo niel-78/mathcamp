@@ -6,6 +6,8 @@ import express from "express";
 
 const router = express.Router();
 
+console.log("AUTH ROUTES LOADED");
+
 /*
 POST   /api/auth/login
 POST   /api/auth/logout
@@ -13,23 +15,17 @@ GET    /api/auth/me
 POST   /api/auth/refresh
 */
 
-//POST /api/auth/login
 // POST /api/auth/login
 router.post("/login", async (req, res) => {
 
     try {
 
-        const {
-            username,
-            password
-        } = req.body || {};
+        const { username, password } = req.body || {};
 
         if (!username || !password) {
-
             return res.status(400).json({
                 error: "Missing fields"
             });
-
         }
 
         const [rows] = await db.query(
@@ -42,11 +38,9 @@ router.post("/login", async (req, res) => {
         );
 
         if (rows.length === 0) {
-
             return res.status(401).json({
                 error: "User not found"
             });
-
         }
 
         const user = rows[0];
@@ -57,11 +51,9 @@ router.post("/login", async (req, res) => {
         );
 
         if (!valid) {
-
             return res.status(401).json({
                 error: "Wrong password"
             });
-
         }
 
         const token = crypto.randomUUID();
@@ -74,10 +66,7 @@ router.post("/login", async (req, res) => {
             )
             VALUES (?, ?)
             `,
-            [
-                user.id,
-                token
-            ]
+            [user.id, token]
         );
 
         const [[school]] = await db.query(
@@ -94,18 +83,16 @@ router.post("/login", async (req, res) => {
             [user.id]
         );
 
-        res.json({
+        console.log("BEFORE RESPONSE");
 
+        return res.json({
             token,
-
             user: {
-
                 id: user.id,
                 username: user.username,
                 first_name: user.first_name,
                 last_name: user.last_name,
                 role: user.role,
-
                 school: school
                     ? {
                         id: school.id,
@@ -113,16 +100,14 @@ router.post("/login", async (req, res) => {
                         is_admin: !!school.is_admin
                     }
                     : null
-
             }
-
         });
 
     } catch (err) {
 
-        console.log("❌ ERROR:",err);
+        console.error("LOGIN ERROR:", err);
 
-        res.status(500).json({
+        return res.status(500).json({
             error: err.message
         });
 

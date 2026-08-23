@@ -60,7 +60,15 @@ const app = express();
 
 const allowedOrigins = [
   "http://localhost:5173",
-  "http://192.168.1.115:5173"
+  "http://192.168.1.115:5173",
+
+  "http://85.190.97.203",
+
+  "http://mathcamp.one",
+  "https://mathcamp.one",
+
+  "http://www.mathcamp.one",
+  "https://www.mathcamp.one"
 ];
 
 app.use(cors({
@@ -75,6 +83,11 @@ app.use(cors({
 
 
 app.use(express.json());
+
+app.use((req, res, next) => {
+  console.log("REQUEST:", req.method, req.originalUrl);
+  next();
+});
 
 app.use("/api/auth", authRoutes);
 
@@ -129,20 +142,21 @@ app.use(
   express.static("uploads")
 );
 
-app.use(
-    async (error, req, res, next) => {
+app.use(async (error, req, res, next) => {
 
-        await logSystemError({
-            source: req.originalUrl,
-            error
-        });
+    console.error("GLOBAL ERROR:");
+    console.error(error);
 
-        res.status(500).json({
-            message: "Internt serverfel"
-        });
+    await logSystemError({
+        source: req.originalUrl,
+        error
+    });
 
-    }
-);
+    res.status(500).json({
+        message: "Internt serverfel"
+    });
+
+});
 
 app.listen(3000, "0.0.0.0", () => {
   console.log("🚀 SERVER STARTED ON 0.0.0.0");
