@@ -45,11 +45,11 @@ VALUES
 );
 
 
---Niva 1a
+-- Niva 1a
 INSERT INTO levels (
     subject_id,
     code,
-    name
+    `name`
 )
 VALUES (
     '1',
@@ -223,59 +223,59 @@ VALUES (
     'Matematik 7–9'
 );
 
--- INSERT INTO content_areas (
---     level_id,
---     title,
---     sort_order
--- )
--- VALUES
--- (3, 'Taluppfattning och tals användning', 1),
--- (3, 'Algebra', 2),
--- (3, 'Geometri', 3),
--- (3, 'Sannolikhet och statistik', 4),
--- (3, 'Samband och förändring', 5),
--- (3, 'Problemlösning', 6);
+INSERT INTO content_areas (
+    level_id,
+    title,
+    sort_order
+)
+VALUES
+(3, 'Taluppfattning och tals användning', 1),
+(3, 'Algebra', 2),
+(3, 'Geometri', 3),
+(3, 'Sannolikhet och statistik', 4),
+(3, 'Samband och förändring', 5),
+(3, 'Problemlösning', 6);
 
--- INSERT INTO central_content (area_id, content, sort_order)
--- VALUES
--- (10,'Reella tal och deras egenskaper samt talens användning i matematiska situationer.',1),
--- (10,'Talsystemets utveckling från naturliga tal till reella tal.',2),
--- (10,'Tal i potensform. Grundpotensform för att uttrycka små och stora tal samt användning av prefix.',3),
--- (10,'Matematiska lagar och regler samt deras användning vid beräkningar med tal i bråk-, decimal- och potensform.',4),
--- (10,'Metoder för beräkningar med tal i bråk- och decimalform vid överslagsräkning, huvudräkning och skriftlig beräkning. Användning av digitala verktyg vid beräkningar.',5),
--- (10,'Rimlighetsbedömning vid uppskattningar och beräkningar.',6);
--- INSERT INTO central_content (area_id, content, sort_order)
--- VALUES
--- (11,'Matematiska likheter samt hur likhetstecknet används för att teckna ekvationer och funktioner.',1),
--- (11,'Variablers användning i algebraiska uttryck, formler, ekvationer och funktioner.',2),
--- (11,'Metoder för att lösa linjära ekvationer och enkla andragradsekvationer.',3),
--- (11,'Mönster i talföljder och geometriska mönster samt hur de konstrueras, beskrivs och uttrycks generellt.',4),
--- (11,'Programmering i visuell och textbaserad programmeringsmiljö. Hur algoritmer skapas, testas och förbättras vid programmering.',5);
--- INSERT INTO central_content (area_id, content, sort_order)
--- VALUES
--- (12,'Geometriska objekt samt deras egenskaper och inbördes relationer. Konstruktion av geometriska objekt, såväl med som utan digitala verktyg.',1),
--- (12,'Metoder för beräkning av area, omkrets och volym hos geometriska objekt samt enhetsbyten i samband med detta.',2),
--- (12,'Geometriska satser och formler samt argumentation för deras giltighet.',3),
--- (12,'Skala vid förminskning och förstoring av två- och tredimensionella objekt.',4),
--- (12,'Likformighet och kongruens.',5);
--- INSERT INTO central_content (area_id, content, sort_order)
--- VALUES
--- (13,'Sannolikhet och metoder för att beräkna sannolikhet i olika situationer. Bedömningar av risker och chanser utifrån datorsimuleringar och statistiskt material.',1),
--- (13,'Kombinatoriska principer och hur de kan användas i olika situationer.',2),
--- (13,'Tabeller, diagram och grafer samt hur de tolkas och används för att beskriva resultat av egna och andras undersökningar, såväl med som utan digitala verktyg.',3),
--- (13,'Lägesmått och spridningsmått samt hur de används för bedömning av resultat vid statistiska undersökningar.',4);
--- INSERT INTO central_content (area_id, content, sort_order)
--- VALUES
--- (14,'Proportionalitet och hur det används för att uttrycka skala, likformighet och förändring.',1),
--- (14,'Härledda enheter, till exempel km/h och kr/kg.',2),
--- (14,'Procent och förändringsfaktor för att uttrycka förändring samt beräkningar med procent i vardagliga situationer och inom olika ämnesområden.',3),
--- (14,'Räta linjens ekvation och förändringstakt. Användning av räta linjens ekvation för att beskriva samband.',4),
--- (14,'Funktioner och hur de används för att beskriva samband och förändring samt undersöka förändringstakt. Hur funktioner uttrycks i form av grafer, tabeller och funktionsuttryck.',5);
--- INSERT INTO central_content (area_id, content, sort_order)
--- VALUES
--- (15,'Strategier för att lösa matematiska problem i olika situationer och inom olika ämnesområden samt värdering av valda strategier och metoder.',1),
--- (15,'Formulering av matematiska frågeställningar utifrån olika situationer och ämnesområden.',2),
--- (15,'Enkla matematiska modeller och hur de kan användas i olika situationer.',3);
+INSERT INTO central_content (area_id, content, sort_order)
+VALUES
+(10,'Reella tal och deras egenskaper samt talens användning i matematiska situationer.',1),
+(10,'Talsystemets utveckling från naturliga tal till reella tal.',2),
+(10,'Tal i potensform. Grundpotensform för att uttrycka små och stora tal samt användning av prefix.',3),
+(10,'Matematiska lagar och regler samt deras användning vid beräkningar med tal i bråk-, decimal- och potensform.',4),
+(10,'Metoder för beräkningar med tal i bråk- och decimalform vid överslagsräkning, huvudräkning och skriftlig beräkning. Användning av digitala verktyg vid beräkningar.',5),
+(10,'Rimlighetsbedömning vid uppskattningar och beräkningar.',6);
+INSERT INTO central_content (area_id, content, sort_order)
+VALUES
+(11,'Matematiska likheter samt hur likhetstecknet används för att teckna ekvationer och funktioner.',1),
+(11,'Variablers användning i algebraiska uttryck, formler, ekvationer och funktioner.',2),
+(11,'Metoder för att lösa linjära ekvationer och enkla andragradsekvationer.',3),
+(11,'Mönster i talföljder och geometriska mönster samt hur de konstrueras, beskrivs och uttrycks generellt.',4),
+(11,'Programmering i visuell och textbaserad programmeringsmiljö. Hur algoritmer skapas, testas och förbättras vid programmering.',5);
+INSERT INTO central_content (area_id, content, sort_order)
+VALUES
+(12,'Geometriska objekt samt deras egenskaper och inbördes relationer. Konstruktion av geometriska objekt, såväl med som utan digitala verktyg.',1),
+(12,'Metoder för beräkning av area, omkrets och volym hos geometriska objekt samt enhetsbyten i samband med detta.',2),
+(12,'Geometriska satser och formler samt argumentation för deras giltighet.',3),
+(12,'Skala vid förminskning och förstoring av två- och tredimensionella objekt.',4),
+(12,'Likformighet och kongruens.',5);
+INSERT INTO central_content (area_id, content, sort_order)
+VALUES
+(13,'Sannolikhet och metoder för att beräkna sannolikhet i olika situationer. Bedömningar av risker och chanser utifrån datorsimuleringar och statistiskt material.',1),
+(13,'Kombinatoriska principer och hur de kan användas i olika situationer.',2),
+(13,'Tabeller, diagram och grafer samt hur de tolkas och används för att beskriva resultat av egna och andras undersökningar, såväl med som utan digitala verktyg.',3),
+(13,'Lägesmått och spridningsmått samt hur de används för bedömning av resultat vid statistiska undersökningar.',4);
+INSERT INTO central_content (area_id, content, sort_order)
+VALUES
+(14,'Proportionalitet och hur det används för att uttrycka skala, likformighet och förändring.',1),
+(14,'Härledda enheter, till exempel km/h och kr/kg.',2),
+(14,'Procent och förändringsfaktor för att uttrycka förändring samt beräkningar med procent i vardagliga situationer och inom olika ämnesområden.',3),
+(14,'Räta linjens ekvation och förändringstakt. Användning av räta linjens ekvation för att beskriva samband.',4),
+(14,'Funktioner och hur de används för att beskriva samband och förändring samt undersöka förändringstakt. Hur funktioner uttrycks i form av grafer, tabeller och funktionsuttryck.',5);
+INSERT INTO central_content (area_id, content, sort_order)
+VALUES
+(15,'Strategier för att lösa matematiska problem i olika situationer och inom olika ämnesområden samt värdering av valda strategier och metoder.',1),
+(15,'Formulering av matematiska frågeställningar utifrån olika situationer och ämnesområden.',2),
+(15,'Enkla matematiska modeller och hur de kan användas i olika situationer.',3);
 
 
 INSERT INTO books (title)
