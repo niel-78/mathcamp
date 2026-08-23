@@ -54,8 +54,6 @@ CREATE TABLE question_levels (
 
     name VARCHAR(50) NOT NULL,
 
-    sort_order INT,
-
     description TEXT,
 
     sort_order INT NOT NULL
