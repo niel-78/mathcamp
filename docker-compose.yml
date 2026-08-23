@@ -1,30 +1,13 @@
 version: "3.8"
 
 services:
-  db:
-    image: mariadb:latest
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: mydb
-    ports:
-      - "3307:3306"
-    volumes:
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-      - db-data:/var/lib/mysql
-
   backend:
     build: ./backend
     container_name: my-backend
     ports:
       - "3000:3000"
-    depends_on:
-      - db
-    environment:
-      DB_HOST: db
-      DB_USER: root
-      DB_PASS: password
-      DB_NAME: mydb
+    env_file:
+      - ./backend/.env
 
 volumes:
   db-data:

@@ -529,12 +529,6 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                 const layouts =
                     await response.json();
 
-                console.log(
-                    "LAYOUTS",
-                    classroomId,
-                    layouts
-                );
-
                 setClassrooms(prev =>
                     prev.map(classroom =>
                         classroom.id === classroomId

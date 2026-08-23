@@ -6,8 +6,6 @@ import express from "express";
 
 const router = express.Router();
 
-console.log("AUTH ROUTES LOADED");
-
 /*
 POST   /api/auth/login
 POST   /api/auth/logout
@@ -83,8 +81,6 @@ router.post("/login", async (req, res) => {
             [user.id]
         );
 
-        console.log("BEFORE RESPONSE");
-
         return res.json({
             token,
             user: {
@@ -104,8 +100,6 @@ router.post("/login", async (req, res) => {
         });
 
     } catch (err) {
-
-        console.error("LOGIN ERROR:", err);
 
         return res.status(500).json({
             error: err.message

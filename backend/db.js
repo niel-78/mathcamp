@@ -15,4 +15,5 @@ console.log(
     process.env.DB_NAME
 );
 
+
 export default db;

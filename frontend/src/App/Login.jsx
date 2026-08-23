@@ -12,10 +12,6 @@ export default function Login() {
     const handleLogin = async (e) => {
         e.preventDefault();
 
-        console.log("LOGIN BUTTON CLICKED");
-        console.log("USERNAME", username);
-        console.log("PASSWORD", password);
-
         const res = await fetch(`${API_URL}/api/auth/login`, {
             method: "POST",
             headers: {
@@ -25,9 +21,6 @@ export default function Login() {
         });
 
         const data = await res.json();
-
-        console.log("STATUS:", res.status);
-        console.log("LOGIN RESPONSE:", data);
 
         if (!res.ok) {
             toast.error(data.error);

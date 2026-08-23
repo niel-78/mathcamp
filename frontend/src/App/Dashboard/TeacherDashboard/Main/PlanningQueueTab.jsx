@@ -42,7 +42,7 @@ export default function PlanningQueueTab({
         );
                 console.log("QUEUE DATA", data);
         setSections(
-            data.sections
+            data.sections ?? []
         );
         console.log(data.sections);
 
@@ -251,7 +251,7 @@ export default function PlanningQueueTab({
                                     "
                                 >
                                     {
-                                        (sections).filter(
+                                        (sections ?? []).filter(
                                             s => s.selected
                                         ).length
                                         }

@@ -34,10 +34,6 @@ export default function LockedExamPage({
                 const data =
                     await response.json();
 
-                console.log(
-                    "STATUS",
-                    data.attempt?.status
-                );
 
                 if (
                     data.attempt?.status ===
