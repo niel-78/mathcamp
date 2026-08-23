@@ -4,13 +4,65 @@ INSERT INTO schools (
     id,
     name
 )
-VALUES (1,'DBGY HALMSTAD');
+VALUES (1,'School of Rock'),(2,'Chicagoskolan');
 
 INSERT INTO users (id, username, password_hash, first_name, last_name, role)
 VALUES
 (1, 'teacher', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas', 'Elofsson' , 'teacher'),
-(2, 'super', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas', 'Elofsson' , 'super');
+(2, 'teacher2', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas', 'Elofsson' , 'teacher'),
+(3, 'student', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas', 'Elofsson' , 'student'),
+(4, 'Abba', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Abba', 'Babby' , 'student'),
+(5, 'Betty', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Betty', 'Blue' , 'student'),
+(6, 'Calle', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Calle', 'Arvidsson' , 'student'),
+(7, 'jol', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Joline', 'Arvidsson' , 'student'),
+(8, 'vil', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Vilhelm', 'Arvidsson' , 'student'),
+(9, 'super', '$2a$12$gjIfWb/g7c/4ejxERnt/7eAeTepdhlg1G.8qYjOzbqCkhpdpztTyC', 'Niklas', 'Elofsson' , 'super');
 
+
+INSERT INTO question_levels
+(
+    name,
+    description,
+    sort_order
+)
+VALUES
+(
+    'Repetition',
+    'Träning av tidigare genomgångna moment',
+    1
+),
+(
+    'Grundläggande',
+    'Grundnivå som alla elever förväntas behärska',
+    2
+),
+(
+    'Påbyggnad',
+    'Mer utmanande uppgifter som kräver djupare förståelse',
+    3
+),
+(
+    'Avancerad',
+    'Komplexa uppgifter med hög problemlösningsgrad',
+    4
+);
+
+INSERT INTO books (
+    id,
+    title,
+    description
+)
+VALUES
+(
+    1,
+    'Matematik 1',
+    'Testbok Matematik 1'
+),
+(
+    2,
+    'Matematik 2',
+    'Testbok Matematik 2'
+);
 
 INSERT INTO subjects (
     id,
@@ -45,6 +97,65 @@ VALUES
 );
 
 
+INSERT INTO `groups` (id, name, school_id, archived_at,book_id,level_id)
+VALUES
+(1, 'Niklas grupp',1,NULL,2,2),(2, 'Jolines grupp',1,CURRENT_TIMESTAMP,2,1);
+
+INSERT INTO group_permissions (
+    group_id,
+    user_id,
+    role
+)
+VALUES
+(
+    1,
+    1,
+    'owner'
+),
+(
+    2,
+    1,
+    'owner'
+);
+
+INSERT INTO group_students (user_id, group_id)
+VALUES (7, 1),(8, 1),(4, 2),(5, 2),(6, 2);
+
+INSERT INTO group_students (user_id, group_id, deleted_at)
+VALUES (1, 1, CURRENT_TIMESTAMP);
+
+
+INSERT INTO ability_series (
+    id,
+    subject_id,
+    name,
+    visibility,
+    created_by,
+    updated_by
+)
+VALUES (
+    1,
+    1,
+    'Matematik - Generella förmågor',
+    'global',
+    1,
+    1
+);
+
+INSERT INTO abilities (
+    id,
+    series_id,
+    name,
+    created_by,
+    updated_by
+)
+VALUES
+(1, 1, 'Begreppet procent', 1, 1),
+(2, 1, 'Begreppet förändringsfaktor', 1, 1),
+(3, 1, 'Lösa linjära ekvationer', 1, 1),
+(4, 1, 'Lösa ekvationssystem', 1, 1);
+
+
 --Niva 1a
 INSERT INTO levels (
     subject_id,
@@ -56,6 +167,20 @@ VALUES (
     'MATE1A00X',
     'Matematik nivå 1a'
 );
+
+
+
+INSERT INTO competencies (
+    subject_id,
+    name
+)
+VALUES
+    (1, 'Beskriva och använda begrepp'),
+    (1, 'Hantera procedurer'),
+    (1, 'Lösa problem'),
+    (1, 'Använda modeller'),
+    (1, 'Föra resonemang'),
+    (1, 'Kommunicera matematik');
 
 INSERT INTO app_settings (
     id,
@@ -77,7 +202,140 @@ INSERT INTO school_teachers (
     is_admin
 )
 VALUES
-    (1, 1, true);
+    (1, 1, true),
+    (1, 2, false);
+
+
+-- ======================
+-- BLOCK 1 (TEXT TAL)
+-- ======================
+
+INSERT INTO blocks (id,created_by,updated_by,school_id,archived_at) VALUES (1,2,2,1,CURRENT_TIMESTAMP);
+
+INSERT INTO questions (id,question,block_id,created_by,updated_by,answer_config,question_type, archived_at) VALUES (NULL,'Skriv 1 074 000 med ord.',1,2,2,JSON_OBJECT('grading_mode', 'text','default_answer','en miljon sjuttiofyra tusen'),'text', CURRENT_TIMESTAMP);
+SET @q = LAST_INSERT_ID();
+
+INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUES (NULL,@q,'en miljon sjuttiofyra tusen',1,2,2);
+
+
+-- ======================
+-- BLOCK 2 (TALLINJE MCQ)
+-- ======================
+
+INSERT INTO blocks (id,created_by,updated_by,school_id) VALUES (2,2,2,1);
+
+INSERT INTO questions (id,question,block_id,created_by,updated_by,answer_config,question_type) VALUES (NULL,'Vilket tal är närmast 35.1?',2,2,2,JSON_OBJECT(),'single_choice');
+SET @q = LAST_INSERT_ID();
+INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUES
+(NULL,@q,'30',0,2,2),
+(NULL,@q,'40',1,2,2),
+(NULL,@q,'50',0,2,2);
+
+
+-- ======================
+-- BLOCK 3 (ARITMETIK)
+-- ======================
+
+INSERT INTO blocks (id,created_by,updated_by,school_id) VALUES (3,2,2,1);
+
+INSERT INTO questions (id,question,block_id,created_by,updated_by,answer_config,question_type) VALUES (NULL,'Skriv $\\pi$ med minst 2 decimaler',3,2,2,JSON_OBJECT('grading_mode','numeric',"decimals",2,'default_answer','3.14'),'text');
+SET @q = LAST_INSERT_ID();
+INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUES (NULL,@q,'3.1415',1,2,2);
+
+
+-- ======================
+-- BLOCK 4 (NEGATIVA TAL)
+-- ======================
+
+INSERT INTO blocks (id,created_by,updated_by,school_id) VALUES (4,2,2,1);
+
+INSERT INTO questions (id,question,block_id,created_by,updated_by,answer_config,question_type) VALUES (NULL,'Förenkla $2x-1+x+7$',4,2,2,JSON_OBJECT('grading_mode', 'algebra','default_answer','6+3x'),'text');
+SET @q = LAST_INSERT_ID();
+INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUES (NULL,@q,'3x+6',1,2,2);
+
+/*
+-- ======================
+-- BLOCK 5 (DECIMAL MCQ)
+-- ======================
+*/
+INSERT INTO blocks (id,created_by,updated_by,school_id) VALUES (5,2,2,1);
+
+INSERT INTO questions (id,question,block_id,created_by,updated_by,answer_config,question_type) VALUES (NULL,'Lös ekvationen $x^2-5x+6=0$',5,2,2,JSON_OBJECT('grading_mode', 'variables','ignore_variable_names', true,'default_answer','x_1=3,x_2=2'),'text');
+SET @q = LAST_INSERT_ID();
+INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUES (NULL,@q,'x_1=2,x_2=3',1,2,2);
+
+
+-- ======================
+-- BLOCK 6 BRÅK (ska tas bort)
+-- ======================
+
+INSERT INTO blocks (id,created_by,updated_by,school_id) VALUES (6,2,2,1);
+
+INSERT INTO questions (id,question,block_id,created_by,updated_by,answer_config,question_type) VALUES (NULL,'Vilka tal är lika stora?',2,2,2,JSON_OBJECT(),'multiple_choice');
+SET @q = LAST_INSERT_ID();
+INSERT INTO options (id,question_id,text,is_correct,created_by,updated_by) VALUES
+(NULL,@q,'$\\frac{3}{4}$',0,2,2),
+(NULL,@q,'$\\frac{2}{3}$',1,2,2),
+(NULL,@q,'$\\frac{4}{6}$',1,2,2),
+(NULL,@q,'$\\frac{4}{3}$',0,2,2);
+
+
+
+-- ======================
+-- EXAM BLOCKS
+-- ======================
+
+INSERT INTO assessments(`id`,`title`,subject_id,level_id,created_by,updated_by, archived_at) VALUES(1,'Test',1,2,2,2,CURRENT_TIMESTAMP);
+
+INSERT INTO assessment_permissions (
+    assessment_id,
+    user_id,
+    role
+)
+VALUES
+(1,1,'owner'),
+(1,2,'reader');
+
+INSERT INTO assessment_blocks (
+    assessment_id,
+    block_id,
+    sort_order
+)
+VALUES
+(1,1,6),
+(1,2,2),
+(1,3,3),
+(1,4,4),
+(1,5,5),
+(1,6,1);
+
+INSERT INTO group_assessments(
+    assessment_id,
+    group_id,
+    access_key
+)
+VALUES
+(1,1,'A');
+
+
+INSERT INTO block_abilities (
+    block_id,
+    ability_id
+)
+VALUES
+(1, 1),
+(2, 2),
+(3, 3),
+(4, 4);
+
+
+
+
+
+
+
+
+
 
 
 INSERT INTO content_areas (
@@ -743,6 +1001,383 @@ VALUES
 INSERT INTO level_books (level_id, book_id) VALUES (2,1);
 
 
+
+-- INSERT INTO group_schedules (
+--     group_id,
+--     weekday,
+--     start_time,
+--     end_time,
+--     valid_from,
+--     valid_to
+-- )
+-- VALUES
+
+-- -- Grupp 1
+-- (1, 1, '08:00:00', '09:20:00', '2026-08-17', '2026-12-18'),
+-- (1, 4, '13:00:00', '14:20:00', '2026-08-17', '2026-12-18'),
+
+-- -- Grupp 2
+-- (2, 2, '10:00:00', '11:20:00', '2026-08-17', '2026-12-18'),
+-- (2, 5, '08:30:00', '09:50:00', '2026-08-17', '2026-12-18');
+
+
+-- INSERT INTO lessons (
+--     group_id,
+--     starts_at,
+--     ends_at,
+--     status
+-- )
+-- VALUES
+
+-- -- Grupp 1
+-- (1, '2026-08-17 08:00:00', '2026-08-17 09:20:00', 'planned'),
+-- (1, '2026-08-20 13:00:00', '2026-08-20 14:20:00', 'planned'),
+-- (1, '2026-08-23 08:00:00', '2026-08-23 09:20:00', 'planned'),
+-- (1, '2026-08-27 13:00:00', '2026-08-27 14:20:00', 'planned'),
+
+-- -- Grupp 2
+-- (2, '2026-08-18 10:00:00', '2026-08-18 11:20:00', 'planned'),
+-- (2, '2026-08-21 08:30:00', '2026-08-21 09:50:00', 'planned'),
+-- (2, '2026-08-25 10:00:00', '2026-08-25 11:20:00', 'planned'),
+-- (2, '2026-08-28 08:30:00', '2026-08-28 09:50:00', 'planned');
+
+-- INSERT INTO lesson_sections (
+--     lesson_id,
+--     section_id,
+--     sort_order
+-- )
+-- VALUES
+
+-- -- Lektion 1
+-- (1, 1, 1),
+-- (1, 2, 2),
+
+-- -- Lektion 2
+-- (2, 3, 1),
+
+-- -- Lektion 3
+-- (3, 4, 1),
+-- (3, 5, 2),
+
+-- -- Lektion 4
+-- (4, 6, 1);
+
+
+INSERT INTO presentations (
+    title,
+    content,
+    section_id,
+    school_id,
+    created_by,
+    updated_by
+)
+VALUES (
+    'Potensregler',
+'
+# Potensregler
+
+Välkommen!
+
+Vi ska repetera potensregler.
+
+$$
+a^m \cdot a^n = a^{m+n}
+$$
+
+---
+
+# Multiplikation
+
+Exempel:
+
+$$
+x^2 \cdot x^3 = x^5
+$$
+
+Eftersom:
+
+$$
+2 + 3 = 5
+$$
+
+---
+
+# Division
+
+$$
+\frac{a^m}{a^n}=a^{m-n}
+$$
+
+Exempel:
+
+$$
+\frac{x^7}{x^2}=x^5
+$$
+
+---
+
+# Potens av potens
+
+$$
+(a^m)^n=a^{mn}
+$$
+
+Exempel:
+
+$$
+(x^2)^3=x^6
+$$
+
+---
+
+# Quiz
+
+{{group_assessment:42}}
+
+När alla är klara går vi vidare.
+
+---
+
+# Sammanfattning
+
+* Multiplikation: addera exponenter
+* Division: subtrahera exponenter
+* Potens av potens: multiplicera exponenter
+
+Bra jobbat!
+',
+125,
+1,
+1,
+1
+);
+
+
+-- =========================================================
+-- KOMPETENSER / BEDÖMNINGSFÖRMÅGOR
+-- Matematik
+-- =========================================================
+
+INSERT INTO competencies (
+    subject_id,
+    sort_order,
+    name
+)
+VALUES
+    (1, 1, 'Begrepp och samband'),
+    (1, 2, 'Procedurer'),
+    (1, 3, 'Problemlösning'),
+    (1, 4, 'Matematiska modeller'),
+    (1, 5, 'Matematiska resonemang'),
+    (1, 6, 'Kommunikation');
+
+
+-- =========================================================
+-- BETYGSKRITERIER
+-- Matematik nivå 1a
+-- level_id = 1
+--
+-- Förutsätter att ovanstående competencies får
+-- id 1–6.
+-- =========================================================
+
+
+-- ---------------------------------------------------------
+-- 1. Begrepp och samband
+-- ---------------------------------------------------------
+
+INSERT INTO competency_descriptors (
+    level_id,
+    competency_id,
+    grade,
+    description
+)
+VALUES
+(
+    1,
+    1,
+    'E',
+    'Eleven beskriver grundläggande begrepp och samband mellan begrepp samt använder dem med tillfredsställande säkerhet.'
+),
+(
+    1,
+    1,
+    'C',
+    'Eleven beskriver ett omfattande antal begrepp och samband mellan begrepp samt använder dem med god säkerhet.'
+),
+(
+    1,
+    1,
+    'A',
+    'Eleven beskriver ett omfattande antal begrepp och samband mellan begrepp samt använder dem med mycket god säkerhet.'
+);
+
+
+-- ---------------------------------------------------------
+-- 2. Procedurer
+-- ---------------------------------------------------------
+
+INSERT INTO competency_descriptors (
+    level_id,
+    competency_id,
+    grade,
+    description
+)
+VALUES
+(
+    1,
+    2,
+    'E',
+    'Eleven hanterar grundläggande procedurer och löser uppgifter av standardkaraktär med tillfredsställande säkerhet, både utan och med digitala verktyg.'
+),
+(
+    1,
+    2,
+    'C',
+    'Eleven hanterar ett omfattande antal procedurer och löser uppgifter av standardkaraktär med god säkerhet, både utan och med digitala verktyg.'
+),
+(
+    1,
+    2,
+    'A',
+    'Eleven hanterar ett omfattande antal procedurer och löser uppgifter av standardkaraktär med mycket god säkerhet, både utan och med digitala verktyg.'
+);
+
+
+-- ---------------------------------------------------------
+-- 3. Problemlösning
+-- ---------------------------------------------------------
+
+INSERT INTO competency_descriptors (
+    level_id,
+    competency_id,
+    grade,
+    description
+)
+VALUES
+(
+    1,
+    3,
+    'E',
+    'Eleven löser enkla problem inom kursens olika områden. Eleven bedömer resultatens rimlighet.'
+),
+(
+    1,
+    3,
+    'C',
+    'Eleven löser relativt komplexa problem inom kursens olika områden. Eleven bedömer resultatens rimlighet.'
+),
+(
+    1,
+    3,
+    'A',
+    'Eleven löser komplexa problem inom kursens olika områden. Eleven bedömer resultatens rimlighet.'
+);
+
+
+-- ---------------------------------------------------------
+-- 4. Matematiska modeller
+-- ---------------------------------------------------------
+
+INSERT INTO competency_descriptors (
+    level_id,
+    competency_id,
+    grade,
+    description
+)
+VALUES
+(
+    1,
+    4,
+    'E',
+    'Eleven tillämpar och formulerar matematiska modeller i enkla uppgifter.'
+),
+(
+    1,
+    4,
+    'C',
+    'Eleven tillämpar och formulerar matematiska modeller i relativt komplexa uppgifter.'
+),
+(
+    1,
+    4,
+    'A',
+    'Eleven tillämpar och formulerar matematiska modeller i komplexa uppgifter.'
+);
+
+
+-- ---------------------------------------------------------
+-- 5. Matematiska resonemang
+-- ---------------------------------------------------------
+
+INSERT INTO competency_descriptors (
+    level_id,
+    competency_id,
+    grade,
+    description
+)
+VALUES
+(
+    1,
+    5,
+    'E',
+    'Eleven för delvis underbyggda matematiska resonemang och följer enkla matematiska resonemang.'
+),
+(
+    1,
+    5,
+    'C',
+    'Eleven för relativt väl underbyggda matematiska resonemang och följer relativt avancerade matematiska resonemang.'
+),
+(
+    1,
+    5,
+    'A',
+    'Eleven för väl underbyggda matematiska resonemang och följer avancerade matematiska resonemang.'
+);
+
+
+
+-- INSERT INTO block_points (
+--     block_id,
+--     central_content_id,
+--     competency_descriptor_id,
+--     points
+-- )
+-- VALUES
+
+-- -- Block 1 (Begrepp)
+-- (1, 1, 1, 1),
+-- (1, 1, 2, 2),
+
+
+-- -- Block 2 (Problemlösning)
+-- (2, 1, 7, 1),
+-- (2, 1, 8, 2),
+
+
+-- -- Block 3 (Procedurer)
+-- (3, 2, 4, 1),
+-- (3, 2, 5, 2),
+
+
+-- -- Block 4 (Resonemang)
+-- (4, 2, 13, 1),
+-- (4, 2, 14, 2),
+
+
+-- -- Block 5 (Modellering)
+-- (5, 3, 10, 1),
+-- (5, 3, 11, 2),
+
+
+-- -- Block 6 (Kommunikation)
+-- (6, 4, 16, 1),
+-- (6, 4, 17, 2);
+
+
+
+
 INSERT INTO assessment_type_settings (
     assessment_type,
     config
@@ -837,4 +1472,98 @@ VALUES
             'allowGoToPreviousQuestion', true
         )
     )
+);
+
+INSERT INTO classrooms (
+    school_id,
+    name,
+    description
+)
+VALUES
+(
+    1,
+    'Musiksal A',
+    'Stor sal med plats för ensembler och prov'
+),
+(
+    1,
+    'Studio B',
+    'Mindre rum för individuellt arbete och handledning'
+);
+
+/* Layouts för Musiksal A */
+
+INSERT INTO classroom_layouts (
+    classroom_id,
+    name,
+    is_default
+)
+VALUES
+(
+    1,
+    'Standard',
+    TRUE
+),
+(
+    1,
+    'Provmöblering',
+    FALSE
+);
+
+INSERT INTO classroom_seats (
+    layout_id,
+    seat_label,
+    seat_number,
+    x_position,
+    y_position
+)
+VALUES
+(1, 'A1', 1, 50, 50),
+(1, 'A2', 2, 170, 50),
+(1, 'A3', 3, 290, 50),
+(1, 'A4', 4, 410, 50),
+
+(1, 'B1', 5, 50, 150),
+(1, 'B2', 6, 170, 150),
+(1, 'B3', 7, 290, 150),
+(1, 'B4', 8, 410, 150),
+
+(1, 'C1', 9, 50, 250),
+(1, 'C2', 10, 170, 250),
+(1, 'C3', 11, 290, 250),
+(1, 'C4', 12, 410, 250),
+
+(1, 'D1', 13, 50, 350),
+(1, 'D2', 14, 170, 350),
+(1, 'D3', 15, 290, 350),
+(1, 'D4', 16, 410, 350);
+
+INSERT INTO school_schedule_exceptions (
+    school_id,
+    date,
+    type,
+    note,
+    affects_lessons
+)
+VALUES
+(
+    1,
+    '2026-10-26',
+    'study_day',
+    'Studiedag för personal',
+    TRUE
+),
+(
+    1,
+    '2026-12-24',
+    'holiday',
+    'Julafton',
+    TRUE
+),
+(
+    1,
+    '2027-01-08',
+    'other',
+    'Temadag om hållbar utveckling',
+    FALSE
 );

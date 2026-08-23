@@ -11,6 +11,8 @@ CREATE TABLE classrooms (
 
     name VARCHAR(100) NOT NULL,
 
+    sort_order INT,
+
     description TEXT NULL,
 
     created_at DATETIME NOT NULL
@@ -32,6 +34,8 @@ CREATE TABLE classroom_layouts (
     classroom_id INT NOT NULL,
 
     name VARCHAR(100) NOT NULL,
+
+    sort_order INT,
 
     is_default BOOLEAN NOT NULL
         DEFAULT FALSE,

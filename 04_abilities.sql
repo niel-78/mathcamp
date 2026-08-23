@@ -17,6 +17,8 @@ CREATE TABLE ability_series (
         'global'
     ) NOT NULL DEFAULT 'private',
 
+    sort_order INT,
+
     created_at DATETIME NOT NULL
         DEFAULT CURRENT_TIMESTAMP,
 
@@ -48,6 +50,8 @@ CREATE TABLE abilities (
     series_id INT NOT NULL,
 
     name VARCHAR(255) NOT NULL,
+
+    sort_order INT,
 
     deleted_at DATETIME NULL,
 

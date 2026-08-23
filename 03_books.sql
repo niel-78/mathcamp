@@ -9,6 +9,8 @@ CREATE TABLE books (
 
     title VARCHAR(255) NOT NULL,
 
+    sort_order INT,
+
     description TEXT
 );
 

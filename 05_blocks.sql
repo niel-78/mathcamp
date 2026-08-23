@@ -9,6 +9,8 @@ CREATE TABLE blocks (
 
     school_id INT NOT NULL,
 
+    sort_order INT,
+
     created_at DATETIME NOT NULL
         DEFAULT CURRENT_TIMESTAMP,
 
@@ -52,6 +54,8 @@ CREATE TABLE question_levels (
 
     name VARCHAR(50) NOT NULL,
 
+    sort_order INT,
+
     description TEXT,
 
     sort_order INT NOT NULL
@@ -75,6 +79,8 @@ CREATE TABLE questions (
     ),
 
     level_id INT NULL,
+
+    sort_order INT,
 
     created_at DATETIME NOT NULL
         DEFAULT CURRENT_TIMESTAMP,
@@ -138,6 +144,8 @@ CREATE TABLE options (
     question_id INT,
 
     text TEXT,
+
+    sort_order INT,
 
     is_correct BOOLEAN DEFAULT 0,
 

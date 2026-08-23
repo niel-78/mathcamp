@@ -9,6 +9,8 @@ CREATE TABLE schools (
 
     name VARCHAR(255) NOT NULL,
 
+    sort_order INT,
+
     created_at TIMESTAMP
         DEFAULT CURRENT_TIMESTAMP
 );
@@ -31,6 +33,8 @@ CREATE TABLE users (
         'teacher',
         'super'
     ) NOT NULL DEFAULT 'student',
+
+    sort_order INT,
 
     first_name VARCHAR(255),
     last_name VARCHAR(255),

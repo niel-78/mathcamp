@@ -9,6 +9,8 @@ CREATE TABLE subjects (
 
     code VARCHAR(20) UNIQUE,
 
+    sort_order INT,
+
     name VARCHAR(100)
 );
 
@@ -22,6 +24,8 @@ CREATE TABLE levels (
     subject_id INT NOT NULL,
 
     code VARCHAR(20) UNIQUE,
+
+    sort_order INT,
 
     name VARCHAR(100),
 
@@ -96,6 +100,8 @@ CREATE TABLE competency_descriptors (
         'C',
         'A'
     ) NOT NULL,
+
+    sort_order INT,
 
     description LONGTEXT NOT NULL,
 
