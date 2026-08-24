@@ -63,6 +63,7 @@ const allowedOrigins = [
   "http://192.168.1.115:5173",
 
   "http://85.190.97.203",
+  "https://85.190.97.203",
 
   "http://mathcamp.one",
   "https://mathcamp.one",
