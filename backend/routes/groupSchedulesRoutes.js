@@ -313,17 +313,42 @@ router.put("/:id",
 // GET /api/group-schedules/exceptions?schoolId=1
 router.get("/school/:schoolId/exceptions",
     async (req, res) => {
+
         try {
 
-            const [rows] = await db.query(
-                `
-                SELECT *
-                FROM school_schedule_exceptions
-                WHERE school_id = ?
-                ORDER BY date
-                `,
-                [req.params.schoolId]
-            );
+            const [rows] =
+                await db.query(
+                    `
+                    SELECT *
+                    FROM school_schedule_exceptions
+                    WHERE school_id = ?
+                    ORDER BY date
+                    `,
+                    [req.params.schoolId]
+                );
+
+            for (const exception of rows) {
+
+                const [groups] =
+                    await db.query(
+                        `
+                        SELECT
+                            g.id,
+                            g.name
+                        FROM schedule_exception_groups seg
+
+                        JOIN \`groups\` g
+                            ON g.id = seg.group_id
+
+                        WHERE
+                            seg.schedule_exception_id = ?
+                        `,
+                        [exception.id]
+                    );
+
+                exception.groups = groups;
+
+            }
 
             res.json(rows);
 
@@ -334,9 +359,13 @@ router.get("/school/:schoolId/exceptions",
             res.status(500).json({
                 message: "Internt serverfel"
             });
+
         }
+
     }
 );
+
+
 router.post("/exceptions", async (req, res) => {
 
     const {
@@ -344,29 +373,59 @@ router.post("/exceptions", async (req, res) => {
         date,
         type,
         note,
-        affects_lessons = true
+        affects_lessons = true,
+        scope = "school",
+        groupIds = []
     } = req.body;
 
-    const [result] = await db.query(
-        `
-        INSERT INTO school_schedule_exceptions
-        (
-            school_id,
-            date,
-            type,
-            note,
-            affects_lessons
-        )
-        VALUES (?, ?, ?, ?, ?)
-        `,
-        [
-            school_id,
-            date,
-            type,
-            note,
-            affects_lessons
-        ]
-    );
+    const [result] =
+        await db.query(
+            `
+            INSERT INTO school_schedule_exceptions
+            (
+                school_id,
+                date,
+                type,
+                note,
+                affects_lessons
+            )
+            VALUES (?, ?, ?, ?, ?)
+            `,
+            [
+                school_id,
+                date,
+                type,
+                note,
+                affects_lessons
+            ]
+        );
+
+    if (
+        scope === "groups" &&
+        groupIds.length > 0
+    ) {
+
+        for (const groupId of groupIds) {
+
+            await db.query(
+                `
+                INSERT INTO
+                    schedule_exception_groups
+                (
+                    schedule_exception_id,
+                    group_id
+                )
+                VALUES (?, ?)
+                `,
+                [
+                    result.insertId,
+                    groupId
+                ]
+            );
+
+        }
+
+    }
 
     res.status(201).json({
         id: result.insertId
@@ -381,7 +440,9 @@ router.put("/exceptions/:id",
             date,
             type,
             note,
-            affects_lessons
+            affects_lessons,
+            scope = "school",
+            groupIds = []
         } = req.body;
 
         await db.query(
@@ -403,7 +464,43 @@ router.put("/exceptions/:id",
             ]
         );
 
+        await db.query(
+            `
+            DELETE FROM schedule_exception_groups
+            WHERE schedule_exception_id = ?
+            `,
+            [req.params.id]
+        );
+
+        if (
+            scope === "groups" &&
+            groupIds.length > 0
+        ) {
+
+            for (const groupId of groupIds) {
+
+                await db.query(
+                    `
+                    INSERT INTO
+                        schedule_exception_groups
+                    (
+                        schedule_exception_id,
+                        group_id
+                    )
+                    VALUES (?, ?)
+                    `,
+                    [
+                        req.params.id,
+                        groupId
+                    ]
+                );
+
+            }
+
+        }
+
         res.sendStatus(204);
+
     }
 );
 

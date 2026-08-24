@@ -1538,6 +1538,10 @@ router.post("/:groupId/seat-assignments/shuffle",
             const groupId =
                 req.params.groupId;
 
+            const {
+                mode = "current-seats"
+            } = req.body;
+
             const [assignments] =
                 await db.query(
                     `
@@ -1560,11 +1564,91 @@ router.post("/:groupId/seat-assignments/shuffle",
                         assignment.pinned !== 1
                 );
 
-            const availableSeatIds =
-                movable.map(
-                    assignment =>
-                        assignment.classroom_seat_id
-                );
+            let availableSeatIds = [];
+
+            if (mode === "current-seats") {
+
+                availableSeatIds =
+                    movable.map(
+                        assignment =>
+                            assignment.classroom_seat_id
+                    );
+
+            }
+
+            else if (mode === "all-seats") {
+
+                const firstAssignment =
+                    assignments.find(
+                        assignment =>
+                            assignment.classroom_seat_id
+                    );
+
+                if (!firstAssignment) {
+
+                    return res.status(400).json({
+                        error:
+                            "Gruppen har inga tilldelade platser."
+                    });
+
+                }
+
+                const [[seat]] =
+                    await db.query(
+                        `
+                        SELECT
+                            classroom_layout_id
+                        FROM classroom_seats
+                        WHERE id = ?
+                        `,
+                        [
+                            firstAssignment.classroom_seat_id
+                        ]
+                    );
+
+                const [seats] =
+                    await db.query(
+                        `
+                        SELECT id
+                        FROM classroom_seats
+                        WHERE classroom_layout_id = ?
+                        `,
+                        [
+                            seat.classroom_layout_id
+                        ]
+                    );
+
+                const pinnedSeatIds =
+                    pinned
+                        .map(
+                            assignment =>
+                                assignment.classroom_seat_id
+                        )
+                        .filter(Boolean);
+
+                availableSeatIds =
+                    seats
+                        .map(seat => seat.id)
+                        .filter(
+                            seatId =>
+                                !pinnedSeatIds.includes(
+                                    seatId
+                                )
+                        );
+
+            }
+
+            if (
+                availableSeatIds.length <
+                movable.length
+            ) {
+
+                return res.status(400).json({
+                    error:
+                        "Det finns inte tillräckligt många platser i klassrummet."
+                });
+
+            }
 
             for (
                 let i =

@@ -42,4 +42,26 @@ router.get("/",
     }
 );
 
+router.get("/:schoolId/groups",
+    requireAuth,
+    async (req, res) => {
+
+        const [groups] =
+            await db.query(
+                `
+                SELECT
+                    id,
+                    name
+                FROM \`groups\`
+                WHERE school_id = ?
+                ORDER BY name
+                `,
+                [req.params.schoolId]
+            );
+
+        res.json(groups);
+
+    }
+);
+
 export default router;

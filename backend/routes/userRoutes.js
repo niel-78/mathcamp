@@ -1,5 +1,6 @@
 import express from "express";
 import db from "../db.js";
+import bcrypt from "bcrypt";
 import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
 
@@ -57,6 +58,64 @@ router.put("/active-school",
             `,
             [
                 school_id,
+                req.user.id
+            ]
+        );
+
+        res.json({
+            success: true
+        });
+
+    }
+);
+
+router.put("/change-password",
+    requireAuth,
+    async (req, res) => {
+
+        const {
+            currentPassword,
+            newPassword
+        } = req.body;
+
+        const [[user]] =
+            await db.query(
+                `
+                SELECT password_hash
+                FROM users
+                WHERE id = ?
+                `,
+                [req.user.id]
+            );
+
+        const valid =
+            await bcrypt.compare(
+                currentPassword,
+                user.password_hash
+            );
+
+        if (!valid) {
+
+            return res.status(400).json({
+                error: "Nuvarande lösenord är fel"
+            });
+
+        }
+
+        const hash =
+            await bcrypt.hash(
+                newPassword,
+                10
+            );
+
+        await db.query(
+            `
+            UPDATE users
+            SET password_hash = ?
+            WHERE id = ?
+            `,
+            [
+                hash,
                 req.user.id
             ]
         );
