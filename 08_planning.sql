@@ -137,7 +137,7 @@ CREATE TABLE schedule_exception_groups (
     ),
 
     FOREIGN KEY (schedule_exception_id)
-        REFERENCES schedule_exceptions(id)
+        REFERENCES school_schedule_exceptions(id)
         ON DELETE CASCADE,
 
     FOREIGN KEY (group_id)

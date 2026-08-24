@@ -301,6 +301,20 @@ router.post("/:id/import-central-content",
 
                 } else {
 
+                    const [[sortOrderRow]] =
+                        await db.query(
+                            `
+                            SELECT
+                                COALESCE(
+                                    MAX(sort_order),
+                                    0
+                                ) + 1 AS next_sort_order
+                            FROM content_areas
+                            WHERE level_id = ?
+                            `,
+                            [levelId]
+                        );
+
                     const [areaResult] =
                         await db.query(
                             `
@@ -309,27 +323,15 @@ router.post("/:id/import-central-content",
                                 title,
                                 sort_order
                             )
-                            VALUES (
-                                ?,
-                                ?,
-                                (
-                                    SELECT
-                                        COALESCE(
-                                            MAX(sort_order),
-                                            0
-                                        ) + 1
-                                    FROM content_areas
-                                    WHERE level_id = ?
-                                )
-                            )
+                            VALUES (?, ?, ?)
                             `,
                             [
                                 levelId,
                                 areaTitle,
-                                levelId
+                                sortOrderRow.next_sort_order
                             ]
                         );
-
+                        
                     areaId =
                         areaResult.insertId;
 
