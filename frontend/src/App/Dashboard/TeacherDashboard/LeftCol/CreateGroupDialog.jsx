@@ -162,7 +162,7 @@ export default function CreateGroupDialog({
                                 setSchoolId(Number(value))
                             }
                         >
-                            <SelectTrigger>
+                            <SelectTrigger className="w-full min-w-[300px]">
                                 <SelectValue placeholder="Välj skola" />
                             </SelectTrigger>
 
@@ -225,7 +225,7 @@ export default function CreateGroupDialog({
 
                             }}
                         >
-                            <SelectTrigger>
+                            <SelectTrigger className="w-full min-w-[300px]">
                                 <SelectValue placeholder="Välj ämne" />
                             </SelectTrigger>
 
@@ -263,7 +263,7 @@ export default function CreateGroupDialog({
                                 )
                             }
                         >
-                            <SelectTrigger>
+                            <SelectTrigger className="w-full min-w-[300px]">
                                 <SelectValue placeholder="Välj nivå" />
                             </SelectTrigger>
 
@@ -302,7 +302,7 @@ export default function CreateGroupDialog({
                                 )
                             }
                         >
-                            <SelectTrigger>
+                            <SelectTrigger className="w-full min-w-[300px]">
                                 <SelectValue placeholder="Välj bok" />
                             </SelectTrigger>
 

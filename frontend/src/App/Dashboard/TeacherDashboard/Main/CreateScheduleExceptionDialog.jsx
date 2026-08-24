@@ -180,7 +180,7 @@ export default function CreateScheduleExceptionDialog({
                             onValueChange={setType}
                         >
 
-                            <SelectTrigger>
+                            <SelectTrigger className="w-full min-w-[300px]">
                                 <SelectValue />
                             </SelectTrigger>
 

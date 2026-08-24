@@ -98,7 +98,35 @@ router.post("/:id/import-criteria",
 
             for (const row of rows) {
 
+                const competencyMap = {
+
+                    "Begrepp":
+                        "Beskriva och använda begrepp",
+
+                    "Metoder":
+                        "Hantera procedurer",
+
+                    "Problemlösning":
+                        "Lösa problem",
+
+                    "Modeller":
+                        "Använda modeller",
+
+                    "Resonemang":
+                        "Föra resonemang",
+
+                    "Kommunikation":
+                        "Kommunicera matematik",
+
+                    "Kommunikation och resonemang":
+                        "Kommunicera matematik"
+
+                };
+
                 const competencyName =
+                    competencyMap[
+                        row.Förmåga?.trim()
+                    ] ??
                     row.Förmåga?.trim();
 
                 const grade =
@@ -128,10 +156,6 @@ router.post("/:id/import-criteria",
 
                 if (!competency) {
 
-                    console.log(
-                        `Förmåga saknas: ${competencyName}`
-                    );
-
                     skipped++;
                     continue;
                 }
@@ -153,6 +177,12 @@ router.post("/:id/import-criteria",
                     );
 
                 if (existing) {
+
+                    console.log(
+                        "Finns redan:",
+                        competencyName,
+                        grade
+                    );
 
                     skipped++;
                     continue;

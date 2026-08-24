@@ -132,7 +132,7 @@ export default function CreateAbilitySeriesDialog({
                         onValueChange={setSubjectId}
                     >
 
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full min-w-[300px]">
 
                             <SelectValue
                                 placeholder="Välj ämne"
@@ -162,7 +162,7 @@ export default function CreateAbilitySeriesDialog({
                         onValueChange={setVisibility}
                     >
 
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full min-w-[300px]">
 
                             <SelectValue />
 

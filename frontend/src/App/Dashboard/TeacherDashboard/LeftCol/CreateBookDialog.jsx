@@ -166,7 +166,7 @@ export default function CreateBookDialog({
                         onValueChange={setLevelId}
                     >
 
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full min-w-[300px]">
 
                             <SelectValue
                                 placeholder="Välj kurs"

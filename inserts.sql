@@ -23,6 +23,18 @@ VALUES (
     'Matematik'
 );
 
+INSERT INTO competencies (
+    subject_id,
+    name
+)
+VALUES
+    (1, 'Beskriva och använda begrepp'),
+    (1, 'Hantera procedurer'),
+    (1, 'Lösa problem'),
+    (1, 'Använda modeller'),
+    (1, 'Föra resonemang'),
+    (1, 'Kommunicera matematik');
+
 INSERT INTO app_settings (
     id,
     settings

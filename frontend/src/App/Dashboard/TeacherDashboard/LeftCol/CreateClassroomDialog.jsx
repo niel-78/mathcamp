@@ -121,7 +121,7 @@ export default function CreateClassroomDialog({
                     value={sourceLayoutId}
                     onValueChange={setSourceLayoutId}
                 >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full min-w-[300px]">
                         <SelectValue placeholder="Ingen" />
                     </SelectTrigger>
 
