@@ -38,6 +38,7 @@ import DuplicateLayoutDialog from "./Main/DuplicateLayoutDialog";
 import CreateScheduleExceptionDialog from "./Main/CreateScheduleExceptionDialog";
 import ImportScheduleExceptionsDialog from "./Main/ImportScheduleExceptionsDialog";
 import DeleteScheduleExceptionDialog from "./Main/DeleteScheduleExceptionDialog";
+import EditScheduleExceptionDialog from "./Main/EditScheduleExceptionDialog";
 import { scheduleExceptionLabels } from "@/constants/scheduleExceptionLabels";
 
 export default function LeftCol( {openTab, hoverTarget} ) {
@@ -111,6 +112,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [expandedSchoolScheduleExceptions, setExpandedSchoolScheduleExceptions] = useState({});
     const [createScheduleExceptionDialog, setCreateScheduleExceptionDialog] = useState(null);
     const [deleteScheduleExceptionDialog, setDeleteScheduleExceptionDialog] = useState(null);
+    const [editScheduleExceptionDialog, setEditScheduleExceptionDialog] = useState(null);
     const [importScheduleExceptionsDialog,setImportScheduleExceptionsDialog] = useState(null);
 
     const [showSchools, setShowSchools] =
@@ -913,6 +915,13 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                         schoolId,
                         schoolName
                     });
+
+                }}
+                onEditScheduleException={(exception) => {
+
+                    setEditScheduleExceptionDialog(
+                        exception
+                    );
 
                 }}
                 onImportScheduleExceptions={(
@@ -2209,9 +2218,8 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                                                             setContextMenu({
                                                                 type: "schedule-exception",
-                                                                exceptionId: exception.id,
+                                                                exception,
                                                                 schoolId: school.id,
-                                                                date: exception.date,
                                                                 x: e.clientX,
                                                                 y: e.clientY
                                                             });
@@ -2615,6 +2623,20 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                     loadSchoolScheduleExceptions(
                         importScheduleExceptionsDialog.schoolId
                     );
+                }}
+            />
+            <EditScheduleExceptionDialog
+                open={!!editScheduleExceptionDialog}
+                exception={editScheduleExceptionDialog}
+                onOpenChange={() =>
+                    setEditScheduleExceptionDialog(null)
+                }
+                onSaved={() => {
+
+                    loadSchoolScheduleExceptions(
+                        editScheduleExceptionDialog.schoolId
+                    );
+
                 }}
             />
         </>

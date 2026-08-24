@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 import CardSection from "@/components/layouts/CardSection";
 
@@ -29,9 +30,16 @@ export default function UserProfileDialog({
         logout
     } = useAuth();
 
-    const [sessions, setSessions] =
-        useState([]);
-    
+    const [sessions, setSessions] = useState([]);
+
+    const [currentPassword, setCurrentPassword] = useState("");
+
+    const [newPassword, setNewPassword] = useState("");
+
+    const [confirmPassword, setConfirmPassword] = useState("");
+
+    const [savingPassword, setSavingPassword] = useState(false);
+        
     useEffect(() => {
 
         if (!open || !user) {
@@ -114,6 +122,89 @@ export default function UserProfileDialog({
 
         };
 
+    const changePassword = async () => {
+
+        if (!currentPassword) {
+
+            toast.error(
+                "Ange nuvarande lösenord"
+            );
+
+            return;
+
+        }
+
+        if (newPassword.length < 8) {
+
+            toast.error(
+                "Lösenordet måste vara minst 8 tecken"
+            );
+
+            return;
+
+        }
+
+        if (newPassword !== confirmPassword) {
+
+            toast.error(
+                "Lösenorden matchar inte"
+            );
+
+            return;
+
+        }
+
+        setSavingPassword(true);
+
+        try {
+
+            const response =
+                await fetch(
+                    `${API_URL}/api/users/change-password`,
+                    {
+                        method: "PUT",
+                        headers: {
+                            ...authHeaders(),
+                            "Content-Type":
+                                "application/json"
+                        },
+                        body: JSON.stringify({
+                            currentPassword,
+                            newPassword
+                        })
+                    }
+                );
+
+            const data =
+                await response.json();
+
+            if (!response.ok) {
+
+                toast.error(
+                    data.error ||
+                    "Kunde inte byta lösenord"
+                );
+
+                return;
+
+            }
+
+            setCurrentPassword("");
+            setNewPassword("");
+            setConfirmPassword("");
+
+            toast.success(
+                "Lösenordet har uppdaterats"
+            );
+
+        } finally {
+
+            setSavingPassword(false);
+
+        }
+
+    };
+
     return (
 
         <Dialog
@@ -169,6 +260,59 @@ export default function UserProfileDialog({
                     )}
 
                 </div>
+
+                <CardSection title="Byt lösenord">
+
+                    <div className="space-y-3">
+
+                        <Input
+                            type="password"
+                            placeholder="Nuvarande lösenord"
+                            value={currentPassword}
+                            onChange={e =>
+                                setCurrentPassword(
+                                    e.target.value
+                                )
+                            }
+                        />
+
+                        <Input
+                            type="password"
+                            placeholder="Nytt lösenord"
+                            value={newPassword}
+                            onChange={e =>
+                                setNewPassword(
+                                    e.target.value
+                                )
+                            }
+                        />
+
+                        <Input
+                            type="password"
+                            placeholder="Bekräfta nytt lösenord"
+                            value={confirmPassword}
+                            onChange={e =>
+                                setConfirmPassword(
+                                    e.target.value
+                                )
+                            }
+                        />
+
+                        <Button
+                            className="w-full"
+                            onClick={changePassword}
+                            disabled={savingPassword}
+                        >
+
+                            {savingPassword
+                                ? "Sparar..."
+                                : "Byt lösenord"}
+
+                        </Button>
+
+                    </div>
+
+                </CardSection>
 
                 <div className="border-t pt-4">
 

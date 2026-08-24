@@ -1,18 +1,26 @@
+import { Button } from "@/components/ui/button";
+
 export default function ScheduleExceptionMenu({
-    onDelete
+    onDelete,
+    onEdit
 }) {
     return (
-        <button
-            className="
-                w-full
-                px-3
-                py-2
-                text-left
-                hover:bg-accent
-            "
-            onClick={onDelete}
-        >
-            Ta bort
-        </button>
+        <>
+            <Button
+                className="context-menu-button"
+                variant="inline"
+                onClick={onDelete}
+            >
+                Ta bort
+            </Button>
+            <Button
+                className="context-menu-button"
+                variant="inline"
+                onClick={onEdit}
+            >
+                Redigera
+            </Button>
+                    
+        </>
     );
 }

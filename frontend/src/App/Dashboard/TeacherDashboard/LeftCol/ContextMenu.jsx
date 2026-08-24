@@ -503,22 +503,38 @@ export default function ContextMenu(props) {
                 case "schedule-exception":
                     return (
                         <ScheduleExceptionMenu
+
+                            onEdit={() => {
+
+                                props.onEditScheduleException?.(
+                                    {
+                                        ...contextMenu.exception,
+                                        schoolId: contextMenu.schoolId
+                                    }
+                                );
+
+                                setContextMenu(null);
+
+                            }}
+
                             onDelete={() => {
 
                                 props.onDeleteScheduleException?.(
-                                    contextMenu.exceptionId,
+                                    contextMenu.exception.id,
                                     contextMenu.schoolId
                                 );
 
                                 setContextMenu(null);
+
                             }}
+
                         />
                     );
 
-            default:
-                return null;
-        }
-    };
+                default:
+                    return null;
+            }
+        };
 
     return (
 

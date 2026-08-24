@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/button";
+
 export default function ScheduleExceptionsMenu({
     onCreate,
     onImport,
@@ -6,21 +8,21 @@ export default function ScheduleExceptionsMenu({
 
     return (
         <>
-            <button
+            <Button
                 className="context-menu-button"
                 variant="inline"
                 onClick={onCreate}
             >
                 Lägg till schemabrytande dag
-            </button>
+            </Button>
 
-            <button
+            <Button
                 className="context-menu-button"
                 variant="inline"
                 onClick={onImport}
             >
                 Importera från Excel
-            </button>
+            </Button>
 
             <button
                 className="context-menu-button"
