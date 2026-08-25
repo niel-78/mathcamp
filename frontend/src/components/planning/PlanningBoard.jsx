@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import WeekView from "./WeekView";
 import CompactWeekView from "./CompactWeekView";
 import ListView from "./ListView";
+import MonthView from "./MonthView";
 import { Button } from "@/components/ui/button";
 import {
     getCurrentWeek,
@@ -49,16 +50,28 @@ export default function PlanningBoard({
 
     }, [onReload]);
 
-    const previousWeek = () => {
+    const previousPeriod = () => {
 
         setSelectedDate(prev => {
 
             const date =
                 new Date(prev);
 
-            date.setDate(
-                date.getDate() - 7
-            );
+            if (
+                viewMode === "month"
+            ) {
+
+                date.setMonth(
+                    date.getMonth() - 1
+                );
+
+            } else {
+
+                date.setDate(
+                    date.getDate() - 7
+                );
+
+            }
 
             return date;
 
@@ -66,16 +79,28 @@ export default function PlanningBoard({
 
     };
 
-    const nextWeek = () => {
+    const nextPeriod = () => {
 
         setSelectedDate(prev => {
 
             const date =
                 new Date(prev);
 
-            date.setDate(
-                date.getDate() + 7
-            );
+            if (
+                viewMode === "month"
+            ) {
+
+                date.setMonth(
+                    date.getMonth() + 1
+                );
+
+            } else {
+
+                date.setDate(
+                    date.getDate() + 7
+                );
+
+            }
 
             return date;
 
@@ -91,7 +116,7 @@ export default function PlanningBoard({
 
                 <Button
                     variant="outline"
-                    onClick={previousWeek}
+                    onClick={previousPeriod}
                 >
                     ◀
                 </Button>
@@ -104,12 +129,22 @@ export default function PlanningBoard({
                         )
                     }
                 >
-                    Vecka {selectedWeek}
+                    {
+                        viewMode === "month"
+                            ? selectedDate.toLocaleDateString(
+                                "sv-SE",
+                                {
+                                    month: "long",
+                                    year: "numeric"
+                                }
+                            )
+                            : `Vecka ${selectedWeek}`
+                    }
                 </Button>
 
                 <Button
                     variant="outline"
-                    onClick={nextWeek}
+                    onClick={nextPeriod}
                 >
                     ▶
                 </Button>
@@ -149,6 +184,13 @@ export default function PlanningBoard({
                     >
                         Lista
                     </Button>
+                    <Button
+                        onClick={() =>
+                            setViewMode("month")
+                        }
+                    >
+                        Månad
+                    </Button>
 
                 </div>
 
@@ -183,6 +225,12 @@ export default function PlanningBoard({
                 <ListView
                     lessons={lessons}
                     onReload={onReload}
+                />
+            )}
+            {viewMode === "month" && (
+                <MonthView
+                    lessons={lessons}
+                    selectedDate={selectedDate}
                 />
             )}
 

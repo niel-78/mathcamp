@@ -113,11 +113,18 @@ export default function ContextMenu(props) {
 
                             setContextMenu(null);
                         }}
+
                         onImportStudents={() => {
                             props.onImportStudents?.(
                                 contextMenu.groupId,
                                 contextMenu.groupName
                             );
+
+                            setContextMenu(null);
+                        }}
+
+                        onDownloadStudentTemplate={() => {
+                            props.onDownloadStudentTemplate?.();
 
                             setContextMenu(null);
                         }}

@@ -32,6 +32,60 @@ GET    /api/groups/:id/group-assessments
 PUT    /api/groups/:id/archive
 */
 
+
+// GET /api/groups/student-import-template - måste ligga före /
+router.get("/student-import-template",
+    async (req, res) => {
+
+        const workbook =
+            XLSX.utils.book_new();
+
+        const worksheet =
+            XLSX.utils.json_to_sheet([
+                {
+                    Efternamn: "Andersson",
+                    Förnamn: "Anna",
+                    Visningsnamn: "",
+                    Användarnamn: ""
+                },
+                {
+                    Efternamn: "Svensson",
+                    Förnamn: "Karl",
+                    Visningsnamn: "Kalle",
+                    Användarnamn: "kalle"
+                }
+            ]);
+
+        XLSX.utils.book_append_sheet(
+            workbook,
+            worksheet,
+            "Elever"
+        );
+
+        const buffer =
+            XLSX.write(
+                workbook,
+                {
+                    type: "buffer",
+                    bookType: "xlsx"
+                }
+            );
+
+        res.setHeader(
+            "Content-Type",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+
+        res.setHeader(
+            "Content-Disposition",
+            'attachment; filename="elever-mall.xlsx"'
+        );
+
+        res.send(buffer);
+
+    }
+);
+
 // GET /api/groups
 router.get("/", async (req, res) => {
 
@@ -347,6 +401,7 @@ router.get("/:id/students", async (req, res) => {
                 u.first_name,
                 u.last_name,
                 u.username,
+                u.display_name,
                 gs.joined_at
             FROM group_students gs
             INNER JOIN users u
@@ -487,9 +542,8 @@ router.post("/:id/import-students",
                 });
             }
 
-            const workbook = XLSX.read(
-                req.file.buffer
-            );
+            const workbook =
+                XLSX.read(req.file.buffer);
 
             const sheet =
                 workbook.Sheets[
@@ -500,6 +554,10 @@ router.post("/:id/import-students",
                 XLSX.utils.sheet_to_json(sheet);
 
             const imported = [];
+            const skipped = [];
+
+            const importedNames =
+                new Set();
 
             for (const row of rows) {
 
@@ -516,36 +574,56 @@ router.post("/:id/import-students",
                     continue;
                 }
 
-                let username =
-                    (
-                        firstName.toLowerCase() +
-                        "." +
-                        lastName.toLowerCase()
-                    )
-                    .replace(/å/g, "a")
-                    .replace(/ä/g, "a")
-                    .replace(/ö/g, "o")
-                    .replace(/\s+/g, "");
+                const fullName =
+                    `${firstName} ${lastName}`;
 
+                if (
+                    importedNames.has(fullName)
+                ) {
 
-                let counter = 1;
+                    skipped.push({
+                        fullName,
+                        reason:
+                            "Förekommer flera gånger i filen"
+                    });
 
-                while (true) {
+                    continue;
+                }
 
-                    const [[existing]] = await db.query(
+                importedNames.add(
+                    fullName
+                );
+
+                const [[existingStudent]] =
+                    await db.query(
                         `
                         SELECT id
                         FROM users
-                        WHERE username = ?
+                        WHERE full_name = ?
+                        LIMIT 1
                         `,
-                        [username]
+                        [fullName]
                     );
 
-                    if (!existing) {
-                        break;
-                    }
+                if (existingStudent) {
 
-                    counter++;
+                    skipped.push({
+                        fullName,
+                        reason:
+                            "Finns redan i systemet"
+                    });
+
+                    continue;
+                }
+
+                const displayName =
+                    row.Visningsnamn?.trim()
+                    || null;
+
+                let username =
+                    row.Användarnamn?.trim();
+
+                if (!username) {
 
                     username =
                         (
@@ -556,12 +634,41 @@ router.post("/:id/import-students",
                         .replace(/å/g, "a")
                         .replace(/ä/g, "a")
                         .replace(/ö/g, "o")
-                        .replace(/\s+/g, "")
-                        + counter;
+                        .replace(/\s+/g, "");
+
                 }
 
-                const password = generatePassword();
-                
+                const originalUsername =
+                    username;
+
+                let counter = 1;
+
+                while (true) {
+
+                    const [[existingUsername]] =
+                        await db.query(
+                            `
+                            SELECT id
+                            FROM users
+                            WHERE username = ?
+                            `,
+                            [username]
+                        );
+
+                    if (!existingUsername) {
+                        break;
+                    }
+
+                    counter++;
+
+                    username =
+                        originalUsername +
+                        counter;
+                }
+
+                const password =
+                    generatePassword();
+
                 const passwordHash =
                     await bcrypt.hash(
                         password,
@@ -580,12 +687,16 @@ router.post("/:id/import-students",
                             role,
                             first_name,
                             last_name,
+                            full_name,
+                            display_name,
                             user_key
                         )
                         VALUES (
                             ?,
                             ?,
                             'student',
+                            ?,
+                            ?,
                             ?,
                             ?,
                             ?
@@ -596,6 +707,8 @@ router.post("/:id/import-students",
                             passwordHash,
                             firstName,
                             lastName,
+                            fullName,
+                            displayName,
                             userKey
                         ]
                     );
@@ -618,8 +731,10 @@ router.post("/:id/import-students",
                     id: userResult.insertId,
                     firstName,
                     lastName,
+                    fullName,
+                    displayName,
                     username,
-                    password: password
+                    password
                 });
 
             }
@@ -627,8 +742,14 @@ router.post("/:id/import-students",
             res.json({
                 importedCount:
                     imported.length,
+
+                skippedCount:
+                    skipped.length,
+
                 students:
-                    imported
+                    imported,
+
+                skipped
             });
 
         } catch (error) {
@@ -636,7 +757,8 @@ router.post("/:id/import-students",
             console.error(error);
 
             res.status(500).json({
-                error: "Importen misslyckades"
+                error:
+                    "Importen misslyckades"
             });
 
         }
@@ -1597,7 +1719,7 @@ router.post("/:groupId/seat-assignments/shuffle",
                     await db.query(
                         `
                         SELECT
-                            classroom_layout_id
+                            layout_id
                         FROM classroom_seats
                         WHERE id = ?
                         `,
@@ -1611,10 +1733,10 @@ router.post("/:groupId/seat-assignments/shuffle",
                         `
                         SELECT id
                         FROM classroom_seats
-                        WHERE classroom_layout_id = ?
+                        WHERE layout_id = ?
                         `,
                         [
-                            seat.classroom_layout_id
+                            seat.layout_id
                         ]
                     );
 
@@ -1744,8 +1866,7 @@ router.post("/:groupId/seat-assignments/shuffle",
 );
 
 // POST /api/groups/:groupId/seat-assignments/sync
-router.post(
-    "/:groupId/seat-assignments/sync",
+router.post("/:groupId/seat-assignments/sync",
     async (req, res) => {
 
         try {

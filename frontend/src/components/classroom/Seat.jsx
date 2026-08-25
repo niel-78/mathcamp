@@ -19,7 +19,8 @@ import {
 export default function Seat({
     seat,
     onMove,
-    onDelete
+    onDelete,
+    zIndex
 }) {
 
     const nodeRef = useRef(null);
@@ -69,7 +70,8 @@ export default function Seat({
                 "
                 style={{
                     width: `${SEAT_WIDTH}px`,
-                    height: `${SEAT_HEIGHT}px`
+                    height: `${SEAT_HEIGHT}px`,
+                    zIndex
                 }}
             >
                 <div
@@ -131,7 +133,7 @@ export default function Seat({
 
                         </DropdownMenuTrigger>
 
-                        <DropdownMenuContent>
+                        <DropdownMenuContent className="z-[100]">
 
                             <DropdownMenuItem
                                 className="

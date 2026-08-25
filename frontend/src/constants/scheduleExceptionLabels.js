@@ -1,15 +1,28 @@
-export const scheduleExceptionLabels = {
+export const scheduleEventLabels = {
 
-    holiday:
-        "Lovdag",
+    holiday: "Lovdag",
 
-    study_day:
-        "Studiedag",
+    study_day: "Studiedag",
 
-    cancelled:
-        "Inställd undervisning",
+    cancelled: "Inställd undervisning",
 
-    other:
-        "Övrigt"
+    info: "Information",
+
+    test: "Prov",
+
+    presentation: "Redovisning",
+
+    excursion: "Utflykt",
+
+    other: "Övrigt"
 
 };
+
+export const scheduleExceptionLabels =
+    scheduleEventLabels;
+
+export const scheduleBreakingTypes = [
+    "holiday",
+    "study_day",
+    "cancelled"
+];

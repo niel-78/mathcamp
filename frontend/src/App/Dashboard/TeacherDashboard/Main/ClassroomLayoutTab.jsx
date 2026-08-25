@@ -253,6 +253,7 @@ export default function ClassroomLayoutTab({
                         <Seat
                             key={seat.id}
                             seat={seat}
+                            zIndex={seat.seat_number}
                             onMove={saveSeatPosition}
                             onDelete={
                                 setDeleteSeatDialog

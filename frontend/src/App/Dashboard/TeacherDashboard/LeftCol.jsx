@@ -736,6 +736,40 @@ export default function LeftCol( {openTab, hoverTarget} ) {
             URL.revokeObjectURL(url);
         };
 
+    const downloadStudentTemplate =
+        async () => {
+
+            const response =
+                await fetch(
+                    `${API_URL}/api/groups/student-import-template`,
+                    {
+                        headers: authHeaders()
+                    }
+                );
+
+            if (!response.ok) {
+                return;
+            }
+
+            const blob =
+                await response.blob();
+
+            const url =
+                URL.createObjectURL(blob);
+
+            const a =
+                document.createElement("a");
+
+            a.href = url;
+
+            a.download =
+                "elever-mall.xlsx";
+
+            a.click();
+
+            URL.revokeObjectURL(url);
+        };
+
     return (
         <>
             <UserProfile />
@@ -848,8 +882,11 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                     downloadCentralContentTemplate
                 }
                 onDownloadCriteriaTemplate={
-                    downloadCriteriaTemplate}
-
+                    downloadCriteriaTemplate
+                }
+                onDownloadStudentTemplate={
+                    downloadStudentTemplate
+                }
                 onCreateBookRoot={() => {
                     setCreateBookDialog(true);
                 }}

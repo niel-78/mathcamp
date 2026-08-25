@@ -17,7 +17,7 @@ export default function CreateLessonSeriesDialog({
     onOpenChange,
     group
 }) {
-
+    console.log(group);
     const [weekday, setWeekday] =
         useState(1);
 
@@ -109,6 +109,7 @@ export default function CreateLessonSeriesDialog({
                 },
                 body: JSON.stringify({
                     group_id: group.groupId,
+                    school_id: group.schoolId,
                     weekday,
                     start_time: startTime,
                     end_time: endTime,

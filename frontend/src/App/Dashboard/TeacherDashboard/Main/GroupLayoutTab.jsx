@@ -21,6 +21,7 @@ export default function GroupLayoutTab({
     const [shuffleDialogOpen, setShuffleDialogOpen] = useState(false);
     const [studentView, setStudentView] = useState(false);
     const [saveSnapshotDialogOpen, setSaveSnapshotDialogOpen] = useState(false);
+    const [showDisplayNames, setShowDisplayNames] = useState(true);
 
 
     useEffect(() => {
@@ -157,6 +158,7 @@ export default function GroupLayoutTab({
             setStudents(
                 data.students || []
             );
+            console.log(students)
 
         }
 
@@ -216,25 +218,6 @@ export default function GroupLayoutTab({
 
         await fetch(
             `${API_URL}/api/groups/${groupId}/seat-assignments/apply-layout`,
-            {
-                method: "POST",
-                headers: {
-                    ...authHeaders(),
-                    "Content-Type":
-                        "application/json"
-                },
-                body: JSON.stringify({
-                    layoutId
-                })
-            }
-        );
-
-    };
-
-    const syncAssignments = async () => {
-
-        await fetch(
-            `${API_URL}/api/groups/${groupId}/seat-assignments/sync`,
             {
                 method: "POST",
                 headers: {
@@ -347,6 +330,18 @@ export default function GroupLayoutTab({
         )
     );
 
+    const minY = Math.min(
+        ...seats.map(
+            seat => Number(seat.y_position)
+        )
+    );
+
+    const maxY = Math.max(
+        ...seats.map(
+            seat => Number(seat.y_position)
+        )
+    );
+
     const seatWidth =
         studentView
             ? 220
@@ -390,6 +385,20 @@ export default function GroupLayoutTab({
                                 studentView
                                     ? "Lärarvy"
                                     : "Elevvy"
+                            }
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={() =>
+                                setShowDisplayNames(
+                                    previous => !previous
+                                )
+                            }
+                        >
+                            {
+                                showDisplayNames
+                                    ? "Visa fullständiga namn"
+                                    : "Visa visningsnamn"
                             }
                         </Button>
                         <Button
@@ -476,7 +485,9 @@ export default function GroupLayoutTab({
 
                             const top =
                                 studentView
-                                    ? Number(seat.y_position) * PRESENTATION_SCALE
+                                    ? minY +
+                                    (maxY - Number(seat.y_position)) *
+                                    PRESENTATION_SCALE
                                     : Number(seat.y_position);
 
                             return (
@@ -598,31 +609,51 @@ export default function GroupLayoutTab({
                                             )}
 
                                             {studentView ? (
+                                                <>
+                                                    {!showDisplayNames ? (
+                                                        <>
+                                                            <div>
+                                                                {student.first_name}
+                                                            </div>
 
-                                                <div
-                                                    className="
-                                                        text-3xl
-                                                        font-bold
-                                                    "
-                                                >
-                                                    {student.display_name || student.first_name}
-                                                </div>
-
+                                                            <div
+                                                                className="
+                                                                    text-xs
+                                                                    text-muted-foreground
+                                                                "
+                                                            >
+                                                                {student.last_name}
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <div>
+                                                            {student.display_name || student.first_name}
+                                                        </div>
+                                                    )}
+                                                </>
                                             ) : (
 
                                                 <>
-                                                    <div>
-                                                        {student.display_name || student.first_name}
-                                                    </div>
+                                                    {!showDisplayNames ? (
+                                                        <>
+                                                            <div>
+                                                                {student.first_name}
+                                                            </div>
 
-                                                    <div
-                                                        className="
-                                                            text-xs
-                                                            text-muted-foreground
-                                                        "
-                                                    >
-                                                        {student.last_name}
-                                                    </div>
+                                                            <div
+                                                                className="
+                                                                    text-xs
+                                                                    text-muted-foreground
+                                                                "
+                                                            >
+                                                                {student.last_name}
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <div>
+                                                            {student.display_name || student.first_name}
+                                                        </div>
+                                                    )}
                                                 </>
 
                                             )}

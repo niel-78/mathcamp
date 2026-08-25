@@ -50,6 +50,7 @@ router.post("/",
 
         const {
             group_id,
+            school_id,
             weekday,
             start_time,
             end_time,
@@ -93,7 +94,7 @@ router.post("/",
             `
             SELECT *
             FROM school_schedule_exceptions
-            WHERE schoool_id = ?
+            WHERE school_id = ?
             `,
             [school_id]
         );
