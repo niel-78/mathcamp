@@ -605,14 +605,14 @@ export default function GroupLayoutTab({
                                                         font-bold
                                                     "
                                                 >
-                                                    {student.first_name}
+                                                    {student.display_name || student.first_name}
                                                 </div>
 
                                             ) : (
 
                                                 <>
                                                     <div>
-                                                        {student.first_name}
+                                                        {student.display_name || student.first_name}
                                                     </div>
 
                                                     <div

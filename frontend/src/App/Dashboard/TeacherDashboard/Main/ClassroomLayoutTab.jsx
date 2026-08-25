@@ -68,39 +68,83 @@ export default function ClassroomLayoutTab({
 
     };
 
-    const createSeat = async () => {
+    // const createSeat = async () => {
 
-        const nextSeatNumber =
-            seats.length + 1;
+    //     const nextSeatNumber =
+    //         seats.length + 1;
 
-        const x =
-            CLASSROOM_START_X +
-            ((nextSeatNumber - 1) % 4) *
-            (GRID_X * 3);
+    //     const x =
+    //         CLASSROOM_START_X +
+    //         ((nextSeatNumber - 1) % 4) *
+    //         (GRID_X * 3);
 
-        const y =
-            CLASSROOM_START_Y +
-            Math.floor(
-                (nextSeatNumber - 1) / 4
-            ) *
-            (GRID_Y * 4);
+    //     const y =
+    //         CLASSROOM_START_Y +
+    //         Math.floor(
+    //             (nextSeatNumber - 1) / 4
+    //         ) *
+    //         (GRID_Y * 4);
             
-        const response =
-            await fetch(
-                `${API_URL}/api/classroom-layouts/${layoutId}/seats`,
-                {
-                    method: "POST",
-                    headers: {
-                        ...authHeaders(),
-                        "Content-Type":
-                            "application/json"
-                    },
-                    body: JSON.stringify({
-                        x_position: x,
-                        y_position: y
-                    })
-                }
-            );
+    //     const response =
+    //         await fetch(
+    //             `${API_URL}/api/classroom-layouts/${layoutId}/seats`,
+    //             {
+    //                 method: "POST",
+    //                 headers: {
+    //                     ...authHeaders(),
+    //                     "Content-Type":
+    //                         "application/json"
+    //                 },
+    //                 body: JSON.stringify({
+    //                     x_position: x,
+    //                     y_position: y
+    //                 })
+    //             }
+    //         );
+
+    //     if (response.ok) {
+    //         await load();
+    //     }
+
+    //     window.dispatchEvent(
+    //         new CustomEvent(
+    //             "classroom-layout-updated",
+    //             {
+    //                 detail: {
+    //                     layoutId
+    //                 }
+    //             }
+    //         )
+    //     );
+
+    // };
+
+
+    const createSeat = async () => {
+        const lastSeat = seats[seats.length - 1];
+
+        const x = lastSeat
+            ? lastSeat.x_position + (GRID_X * 3)
+            : CLASSROOM_START_X;
+
+        const y = lastSeat
+            ? lastSeat.y_position
+            : CLASSROOM_START_Y;
+
+        const response = await fetch(
+            `${API_URL}/api/classroom-layouts/${layoutId}/seats`,
+            {
+                method: "POST",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    x_position: x,
+                    y_position: y
+                })
+            }
+        );
 
         if (response.ok) {
             await load();
@@ -110,14 +154,12 @@ export default function ClassroomLayoutTab({
             new CustomEvent(
                 "classroom-layout-updated",
                 {
-                    detail: {
-                        layoutId
-                    }
+                    detail: { layoutId }
                 }
             )
         );
-
     };
+
 
     const saveSeatPosition = async (
         seatId,

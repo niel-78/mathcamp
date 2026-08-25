@@ -26,6 +26,11 @@ export default function CreateClassroomDialog({
     schoolId
 }) {
 
+    console.log("CreateClassroomDialog", {
+        open,
+        schoolId
+    });
+
     const [name, setName] =
         useState("");
 

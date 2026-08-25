@@ -39,6 +39,7 @@ import CreateScheduleExceptionDialog from "./Main/CreateScheduleExceptionDialog"
 import ImportScheduleExceptionsDialog from "./Main/ImportScheduleExceptionsDialog";
 import DeleteScheduleExceptionDialog from "./Main/DeleteScheduleExceptionDialog";
 import EditScheduleExceptionDialog from "./Main/EditScheduleExceptionDialog";
+import CreateClassroomDialog from "./LeftCol/CreateClassroomDialog";
 import { scheduleExceptionLabels } from "@/constants/scheduleExceptionLabels";
 
 export default function LeftCol( {openTab, hoverTarget} ) {
@@ -114,6 +115,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [deleteScheduleExceptionDialog, setDeleteScheduleExceptionDialog] = useState(null);
     const [editScheduleExceptionDialog, setEditScheduleExceptionDialog] = useState(null);
     const [importScheduleExceptionsDialog,setImportScheduleExceptionsDialog] = useState(null);
+    const [createClassroomDialogOpen, setCreateClassroomDialogOpen] = useState(false);
 
     const [showSchools, setShowSchools] =
         useState(false);
@@ -315,6 +317,8 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
         const data =
             await response.json();
+
+        console.log(data);
 
         setClassrooms(data);
 
@@ -949,12 +953,16 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                     });
 
                 }}
-
+                onCreateClassroom={(schoolId) => {
+                    setSelectedSchoolId(schoolId);
+                    setCreateClassroomDialogOpen(true);
+                }}
 
                 setRenameDialog={setRenameDialog}
                 setArchiveDialog={setArchiveDialog}
 
                 setSelectedClassroomId={setSelectedClassroomId}
+                setCreateClassroomDialogOpen={setCreateClassroomDialogOpen}
                 setCreateLayoutDialogOpen={setCreateLayoutDialogOpen}
                 setRenameClassroomDialog={setRenameClassroomDialog}
                 setDeleteClassroomDialog={setDeleteClassroomDialog}
@@ -2527,6 +2535,12 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                     setDeleteAbilitySeriesDialog(null)
                 }
                 onDeleted={loadAbilitySeries}
+            />
+            <CreateClassroomDialog
+                open={createClassroomDialogOpen}
+                onOpenChange={setCreateClassroomDialogOpen}
+                onCreated={loadClassrooms}
+                schoolId={selectedSchoolId}
             />
             <CreateClassroomLayoutDialog
                 open={createLayoutDialogOpen}

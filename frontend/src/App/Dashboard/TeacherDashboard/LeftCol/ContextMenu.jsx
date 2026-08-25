@@ -373,13 +373,8 @@ export default function ContextMenu(props) {
                 return (
                     <ClassroomsMenu
                         onCreate={() => {
-
-                            props.setSelectedSchoolId(
+                            props.onCreateClassroom(
                                 contextMenu.schoolId
-                            );
-
-                            props.setCreateClassroomDialogOpen(
-                                true
                             );
 
                             setContextMenu(null);

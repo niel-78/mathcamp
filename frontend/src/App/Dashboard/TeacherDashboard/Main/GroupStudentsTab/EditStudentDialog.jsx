@@ -19,7 +19,7 @@ export default function EditStudentDialog({
 
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
-    const [username, setUsername] = useState("");
+    const [displayName, setDisplayName] = useState("");
 
     useEffect(() => {
 
@@ -29,7 +29,7 @@ export default function EditStudentDialog({
 
         setFirstName(student.first_name);
         setLastName(student.last_name);
-        setUsername(student.username);
+        setDisplayName(student.display_name ?? "");
 
     }, [student]);
 
@@ -47,7 +47,7 @@ export default function EditStudentDialog({
                 body: JSON.stringify({
                     first_name: firstName,
                     last_name: lastName,
-                    email: username
+                    display_name: displayName
                 })
             }
         );
@@ -77,6 +77,16 @@ export default function EditStudentDialog({
             <div className="space-y-4">
 
                 <Input
+                    placeholder="Visningsnamn"
+                    value={displayName}
+                    onChange={(e) =>
+                        setDisplayName(
+                            e.target.value
+                        )
+                    }
+                />
+
+                <Input
                     value={firstName}
                     onChange={(e) =>
                         setFirstName(
@@ -89,15 +99,6 @@ export default function EditStudentDialog({
                     value={lastName}
                     onChange={(e) =>
                         setLastName(
-                            e.target.value
-                        )
-                    }
-                />
-
-                <Input
-                    value={username}
-                    onChange={(e) =>
-                        setUsername(
                             e.target.value
                         )
                     }
