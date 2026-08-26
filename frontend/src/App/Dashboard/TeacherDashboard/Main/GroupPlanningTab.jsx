@@ -78,6 +78,7 @@ export default function GroupPlanningTab({
             >
 
             <PlanningBoard
+                groupId={groupId}
                 lessons={lessons}
                 loading={loading}
                 onReload={loadLessons}

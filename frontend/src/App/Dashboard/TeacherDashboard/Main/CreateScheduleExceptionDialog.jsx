@@ -31,11 +31,19 @@ export default function CreateScheduleExceptionDialog({
     const [date, setDate] =
         useState("");
 
+    const [title, setTitle] =
+        useState("");
+
     const [type, setType] =
         useState("study_day");
 
     const [note, setNote] =
         useState("");
+
+    const [
+        affectsLessons,
+        setAffectsLessons
+    ] = useState(true);
 
     const [scope, setScope] =
         useState("school");
@@ -43,8 +51,10 @@ export default function CreateScheduleExceptionDialog({
     const [groups, setGroups] =
         useState([]);
 
-    const [selectedGroups, setSelectedGroups] =
-        useState([]);
+    const [
+        selectedGroups,
+        setSelectedGroups
+    ] = useState([]);
 
     useEffect(() => {
 
@@ -80,6 +90,7 @@ export default function CreateScheduleExceptionDialog({
             );
 
             return;
+
         }
 
         setSelectedGroups(
@@ -107,8 +118,11 @@ export default function CreateScheduleExceptionDialog({
                         school_id:
                             school.schoolId,
                         date,
+                        title,
                         type,
                         note,
+                        affects_lessons:
+                            affectsLessons,
                         scope,
                         groupIds:
                             selectedGroups
@@ -123,10 +137,12 @@ export default function CreateScheduleExceptionDialog({
         onCreated?.();
 
         setDate("");
+        setTitle("");
         setType("study_day");
         setNote("");
         setScope("school");
         setSelectedGroups([]);
+        setAffectsLessons(true);
 
         onOpenChange(false);
 
@@ -144,7 +160,7 @@ export default function CreateScheduleExceptionDialog({
                 <DialogHeader>
 
                     <DialogTitle>
-                        Lägg till schemabrytande dag
+                        Lägg till händelse
                     </DialogTitle>
 
                 </DialogHeader>
@@ -165,6 +181,24 @@ export default function CreateScheduleExceptionDialog({
                                     event.target.value
                                 )
                             }
+                        />
+
+                    </div>
+
+                    <div>
+
+                        <label>
+                            Rubrik
+                        </label>
+
+                        <Input
+                            value={title}
+                            onChange={event =>
+                                setTitle(
+                                    event.target.value
+                                )
+                            }
+                            placeholder="T.ex. Kapitelprov"
                         />
 
                     </div>
@@ -218,8 +252,36 @@ export default function CreateScheduleExceptionDialog({
 
                     <div>
 
+                        <label
+                            className="
+                                flex
+                                items-center
+                                gap-2
+                            "
+                        >
+
+                            <input
+                                type="checkbox"
+                                checked={
+                                    affectsLessons
+                                }
+                                onChange={event =>
+                                    setAffectsLessons(
+                                        event.target.checked
+                                    )
+                                }
+                            />
+
+                            Påverkar undervisning
+
+                        </label>
+
+                    </div>
+
+                    <div>
+
                         <label>
-                            Anteckning
+                            Beskrivning
                         </label>
 
                         <Input
@@ -229,6 +291,7 @@ export default function CreateScheduleExceptionDialog({
                                     event.target.value
                                 )
                             }
+                            placeholder="Valfri beskrivning"
                         />
 
                     </div>
@@ -295,64 +358,60 @@ export default function CreateScheduleExceptionDialog({
 
                     </div>
 
-                    {
-                        scope === "groups" && (
+                    {scope === "groups" && (
 
-                            <div
-                                className="
-                                    border
-                                    rounded
-                                    p-3
-                                    max-h-60
-                                    overflow-auto
-                                    space-y-2
-                                "
-                            >
+                        <div
+                            className="
+                                border
+                                rounded
+                                p-3
+                                max-h-60
+                                overflow-auto
+                                space-y-2
+                            "
+                        >
 
-                                {
-                                    groups.map(
-                                        group => (
+                            {groups.map(
+                                group => (
 
-                                            <label
-                                                key={
+                                    <label
+                                        key={
+                                            group.id
+                                        }
+                                        className="
+                                            flex
+                                            items-center
+                                            gap-2
+                                        "
+                                    >
+
+                                        <input
+                                            type="checkbox"
+                                            checked={
+                                                selectedGroups.includes(
                                                     group.id
-                                                }
-                                                className="
-                                                    flex
-                                                    items-center
-                                                    gap-2
-                                                "
-                                            >
+                                                )
+                                            }
+                                            onChange={e =>
+                                                toggleGroup(
+                                                    group.id,
+                                                    e.target.checked
+                                                )
+                                            }
+                                        />
 
-                                                <input
-                                                    type="checkbox"
-                                                    checked={
-                                                        selectedGroups.includes(
-                                                            group.id
-                                                        )
-                                                    }
-                                                    onChange={e =>
-                                                        toggleGroup(
-                                                            group.id,
-                                                            e.target.checked
-                                                        )
-                                                    }
-                                                />
+                                        {
+                                            group.name
+                                        }
 
-                                                {
-                                                    group.name
-                                                }
+                                    </label>
 
-                                            </label>
+                                )
+                            )}
 
-                                        )
-                                    )
-                                }
+                        </div>
 
-                            </div>
-
-                        )
-                    }
+                    )}
 
                     <div className="flex justify-end">
 

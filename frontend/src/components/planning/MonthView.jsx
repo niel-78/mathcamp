@@ -2,9 +2,12 @@ import dayjs from "dayjs";
 
 export default function MonthView({
     lessons,
+    events = [],
+    showEvents,
     selectedDate
 }) {
-
+    console.log("MontView");
+    console.log(events);
     const currentMonth =
         dayjs(selectedDate);
 
@@ -59,6 +62,22 @@ export default function MonthView({
         lessonsByDate[key].push(
             lesson
         );
+    }
+
+    const eventsByDate = {};
+
+    for (const event of events) {
+
+        const key =
+            dayjs(event.date)
+                .format("YYYY-MM-DD");
+
+        if (!eventsByDate[key]) {
+            eventsByDate[key] = [];
+        }
+
+        eventsByDate[key].push(event);
+
     }
 
     return (
@@ -122,6 +141,11 @@ export default function MonthView({
                                 dayjs(),
                                 "day"
                             );
+
+                        const dayEvents =
+                            eventsByDate[
+                                dateKey
+                            ] || [];
 
                         return (
 
@@ -215,6 +239,37 @@ export default function MonthView({
 
                                         )
                                     )}
+
+                                    {showEvents &&
+                                        dayEvents.map(event => (
+
+                                            <div
+                                                key={`event-${event.id}`}
+                                                className={`
+                                                    text-xs
+                                                    rounded
+                                                    px-2
+                                                    py-1
+                                                    mt-1
+
+                                                    ${
+                                                        event.affects_lessons
+                                                            ? `
+                                                                bg-red-100
+                                                                text-red-900
+                                                            `
+                                                            : `
+                                                                bg-amber-100
+                                                                text-amber-900
+                                                            `
+                                                    }
+                                                `}
+                                            >
+                                                {event.title}
+                                            </div>
+
+                                        ))
+                                    }
 
                                 </div>
 

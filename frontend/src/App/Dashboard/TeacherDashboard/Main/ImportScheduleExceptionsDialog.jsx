@@ -91,10 +91,26 @@ export default function ImportScheduleExceptionsDialog({
 
                 <div className="space-y-4">
 
-                    <div>
-                        Excel-fil med kolumner:
-                        <br />
-                        Datum, Typ, Anteckning
+                    <div className="text-sm space-y-2">
+                        <div>
+                            Excel-filen måste innehålla följande kolumnrubriker:
+                        </div>
+
+                        <ul className="list-disc ml-5">
+                            <li><strong>Datum</strong></li>
+                            <li><strong>Typ</strong></li>
+                            <li><strong>Anteckning</strong></li>
+                        </ul>
+
+                        <div className="text-muted-foreground">
+                            Exempel:
+                            <br />
+                            Datum = 2026-10-26
+                            <br />
+                            Typ = study_day
+                            <br />
+                            Anteckning = Studiedag
+                        </div>
                     </div>
 
                     <Input

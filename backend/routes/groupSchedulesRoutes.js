@@ -92,12 +92,27 @@ router.post("/",
 
         const [exceptions] = await db.query(
             `
-            SELECT *
-            FROM school_schedule_exceptions
-            WHERE school_id = ?
+            SELECT DISTINCT
+                sse.*
+            FROM school_schedule_exceptions sse
+
+            LEFT JOIN
+                schedule_exception_groups seg
+                ON seg.schedule_exception_id = sse.id
+
+            WHERE sse.school_id = ?
+
+            AND (
+                seg.group_id IS NULL
+                OR seg.group_id = ?
+            )
             `,
-            [school_id]
+            [
+                school_id,
+                group_id
+            ]
         );
+
 
         const exceptionMap = new Map();
 
@@ -126,11 +141,7 @@ router.post("/",
 
             if (
                 exception &&
-                [
-                    "holiday",
-                    "study_day",
-                    "cancelled"
-                ].includes(exception.type)
+                exception.affects_lessons
             ) {
                 current = current.add(1, "day");
                 continue;
@@ -372,6 +383,7 @@ router.post("/exceptions", async (req, res) => {
     const {
         school_id,
         date,
+        title,
         type,
         note,
         affects_lessons = true,
@@ -386,15 +398,17 @@ router.post("/exceptions", async (req, res) => {
             (
                 school_id,
                 date,
+                title,
                 type,
                 note,
                 affects_lessons
             )
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?)
             `,
             [
                 school_id,
                 date,
+                title,
                 type,
                 note,
                 affects_lessons
@@ -439,6 +453,7 @@ router.put("/exceptions/:id",
 
         const {
             date,
+            title,
             type,
             note,
             affects_lessons,
@@ -451,6 +466,7 @@ router.put("/exceptions/:id",
             UPDATE school_schedule_exceptions
             SET
                 date = ?,
+                title = ?,
                 type = ?,
                 note = ?,
                 affects_lessons = ?
@@ -458,6 +474,7 @@ router.put("/exceptions/:id",
             `,
             [
                 date,
+                title,
                 type,
                 note,
                 affects_lessons,
@@ -563,10 +580,17 @@ router.post("/exceptions/import",
                     row.datum ||
                     row.Date;
 
+                const title =
+                    row.Rubrik ||
+                    row.rubrik ||
+                    row.Title ||
+                    null;
+
                 const type =
                     row.Typ ||
                     row.typ ||
-                    row.Type;
+                    row.Type ||
+                    "other";
 
                 const note =
                     row.Anteckning ||
@@ -574,7 +598,23 @@ router.post("/exceptions/import",
                     row.Note ||
                     null;
 
-                if (!date || !type) {
+                const affectsLessons =
+                    [
+                        "ja",
+                        "true",
+                        "1",
+                        "yes"
+                    ].includes(
+                        String(
+                            row["Påverkar undervisning"] ??
+                            row.affects_lessons ??
+                            "Ja"
+                        )
+                        .trim()
+                        .toLowerCase()
+                    );
+
+                if (!date) {
                     continue;
                 }
 
@@ -585,23 +625,31 @@ router.post("/exceptions/import",
                     (
                         school_id,
                         date,
+                        title,
                         type,
-                        note
+                        note,
+                        affects_lessons
                     )
-                    VALUES (?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?)
                     ON DUPLICATE KEY UPDATE
+                        title = VALUES(title),
                         type = VALUES(type),
-                        note = VALUES(note)
+                        note = VALUES(note),
+                        affects_lessons =
+                            VALUES(affects_lessons)
                     `,
                     [
                         schoolId,
                         date,
+                        title,
                         type,
-                        note
+                        note,
+                        affectsLessons
                     ]
                 );
 
                 imported++;
+
             }
 
             res.json({
@@ -616,8 +664,63 @@ router.post("/exceptions/import",
             res.status(500).json({
                 error: "Import failed"
             });
+
         }
+
     }
 );
 
+// GET /api/group-schedules/groups/:groupId/events
+router.get("/groups/:groupId/events",
+    async (req, res) => {
+
+        try {
+
+            const [events] =
+                await db.query(
+                    `
+                    SELECT DISTINCT
+                        sse.*
+
+                    FROM school_schedule_exceptions sse
+
+                    LEFT JOIN
+                        schedule_exception_groups seg
+                        ON seg.schedule_exception_id = sse.id
+
+                    INNER JOIN \`groups\` g
+                        ON g.id = ?
+
+                    WHERE
+                        (
+                            seg.group_id = ?
+                        )
+                        OR
+                        (
+                            seg.group_id IS NULL
+                            AND sse.school_id = g.school_id
+                        )
+
+                    ORDER BY sse.date
+                    `,
+                    [
+                        req.params.groupId,
+                        req.params.groupId
+                    ]
+                );
+
+            res.json(events);
+
+        } catch (error) {
+
+            console.error(error);
+
+            res.status(500).json({
+                error: error.message
+            });
+
+        }
+
+    }
+);
 export default router

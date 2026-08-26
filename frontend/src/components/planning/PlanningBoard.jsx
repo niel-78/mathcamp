@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { API_URL } from "@/config";
+import { authHeaders } from "@/api/authHeaders";
 import WeekView from "./WeekView";
 import CompactWeekView from "./CompactWeekView";
 import ListView from "./ListView";
@@ -10,6 +12,7 @@ import {
 } from "@/utils/planningDates";
 
 export default function PlanningBoard({
+    groupId,
     lessons,
     loading,
     onReload,
@@ -20,11 +23,54 @@ export default function PlanningBoard({
 
 
     const [viewMode, setViewMode] = useState("week");
-    const [selectedDate, setSelectedDate] =
-        useState(new Date());
+    const [selectedDate, setSelectedDate] = useState(new Date());
+    const selectedWeek = getWeekNumber(selectedDate);
+    const [events, setEvents] = useState([]);
+    const [showEvents, setShowEvents] = useState(true);
 
-    const selectedWeek =
-        getWeekNumber(selectedDate);
+    useEffect(() => {
+
+        const loadEvents =
+            async () => {
+
+                console.log(
+                    "Laddar events för grupp",
+                    groupId
+                );
+
+                const response =
+                    await fetch(
+                        `${API_URL}/api/group-schedules/groups/${groupId}/events`,
+                        {
+                            headers:
+                                authHeaders()
+                        }
+                    );
+
+                console.log(
+                    "Status:",
+                    response.status
+                );
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const data =
+                    await response.json();
+
+                console.log(
+                    "Events från API:",
+                    data
+                );
+
+                setEvents(data);
+
+            };
+
+        loadEvents();
+
+    }, [groupId]);
 
     useEffect(() => {
 
@@ -205,6 +251,8 @@ export default function PlanningBoard({
             {viewMode === "week" && (
                 <WeekView
                     lessons={lessons}
+                    events={events}
+                    showEvents={showEvents}
                     selectedWeek={selectedWeek}
                     onReload={onReload}
                     onEditLesson={onEditLesson}
@@ -216,6 +264,8 @@ export default function PlanningBoard({
             {viewMode === "compact" && (
                 <CompactWeekView
                     lessons={lessons}
+                    events={events}
+                    showEvents={showEvents}
                     selectedWeek={selectedWeek}
                     onReload={onReload}
                 />
@@ -224,12 +274,16 @@ export default function PlanningBoard({
             {viewMode === "list" && (
                 <ListView
                     lessons={lessons}
+                    events={events}
+                    showEvents={showEvents}
                     onReload={onReload}
                 />
             )}
             {viewMode === "month" && (
                 <MonthView
                     lessons={lessons}
+                    events={events}
+                    showEvents={showEvents}
                     selectedDate={selectedDate}
                 />
             )}

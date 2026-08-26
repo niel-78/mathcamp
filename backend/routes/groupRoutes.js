@@ -2266,6 +2266,54 @@ router.post("/:groupId/seat-assignments/apply-layout",
     }
 );
 
+// GET /api/groups/:groupId/lesson-events
+router.get("/:groupId/lesson-events",
+    async (req, res) => {
 
+        const [rows] =
+            await db.query(
+                `
+                SELECT
+                    l.id AS lesson_id,
+
+                    sse.id,
+                    sse.title,
+                    sse.note,
+                    sse.type,
+                    sse.affects_lessons
+
+                FROM lessons l
+
+                JOIN groups g
+                    ON g.id = l.group_id
+
+                JOIN school_schedule_exceptions sse
+                    ON sse.school_id = g.school_id
+                    AND sse.date =
+                        DATE(l.starts_at)
+
+                LEFT JOIN
+                    schedule_exception_groups seg
+                    ON seg.schedule_exception_id =
+                        sse.id
+
+                WHERE l.group_id = ?
+                AND (
+                    seg.group_id IS NULL
+                    OR seg.group_id = ?
+                )
+
+                ORDER BY l.starts_at
+                `,
+                [
+                    req.params.groupId,
+                    req.params.groupId
+                ]
+            );
+
+        res.json(rows);
+
+    }
+);
 
 export default router

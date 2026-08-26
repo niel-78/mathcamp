@@ -17,9 +17,22 @@ export default function EditScheduleExceptionDialog({
     onSaved
 }) {
 
-    const [date, setDate] = useState("");
-    const [type, setType] = useState("");
-    const [note, setNote] = useState("");
+    const [date, setDate] =
+        useState("");
+
+    const [title, setTitle] =
+        useState("");
+
+    const [type, setType] =
+        useState("");
+
+    const [note, setNote] =
+        useState("");
+
+    const [
+        affectsLessons,
+        setAffectsLessons
+    ] = useState(true);
 
     const [scope, setScope] =
         useState("school");
@@ -27,19 +40,25 @@ export default function EditScheduleExceptionDialog({
     const [groups, setGroups] =
         useState([]);
 
-    const [selectedGroups, setSelectedGroups] =
-        useState([]);
+    const [
+        selectedGroups,
+        setSelectedGroups
+    ] = useState([]);
 
     useEffect(() => {
 
-        if (!open || !exception?.schoolId) {
+        if (
+            !open ||
+            !exception?.schoolId
+        ) {
             return;
         }
 
         fetch(
             `${API_URL}/api/schools/${exception.schoolId}/groups`,
             {
-                headers: authHeaders()
+                headers:
+                    authHeaders()
             }
         )
             .then(res => res.json())
@@ -55,12 +74,20 @@ export default function EditScheduleExceptionDialog({
             exception?.date ?? ""
         );
 
+        setTitle(
+            exception?.title ?? ""
+        );
+
         setType(
             exception?.type ?? ""
         );
 
         setNote(
             exception?.note ?? ""
+        );
+
+        setAffectsLessons(
+            exception?.affects_lessons ?? true
         );
 
         if (
@@ -120,15 +147,20 @@ export default function EditScheduleExceptionDialog({
                 {
                     method: "PUT",
                     headers: {
-                        "Content-Type": "application/json",
+                        "Content-Type":
+                            "application/json",
                         ...authHeaders()
                     },
                     body: JSON.stringify({
                         date,
+                        title,
                         type,
                         note,
+                        affects_lessons:
+                            affectsLessons,
                         scope,
-                        groupIds: selectedGroups
+                        groupIds:
+                            selectedGroups
                     })
                 }
             );
@@ -147,7 +179,9 @@ export default function EditScheduleExceptionDialog({
 
         <Dialog
             open={open}
-            onOpenChange={onOpenChange}
+            onOpenChange={
+                onOpenChange
+            }
         >
 
             <DialogContent>
@@ -155,7 +189,7 @@ export default function EditScheduleExceptionDialog({
                 <DialogHeader>
 
                     <DialogTitle>
-                        Redigera schemabrytande dag
+                        Redigera händelse
                     </DialogTitle>
 
                 </DialogHeader>
@@ -164,8 +198,26 @@ export default function EditScheduleExceptionDialog({
                     type="date"
                     value={date}
                     onChange={(e) =>
-                        setDate(e.target.value)
+                        setDate(
+                            e.target.value
+                        )
                     }
+                    className="
+                        w-full
+                        border
+                        rounded
+                        p-2
+                    "
+                />
+
+                <input
+                    value={title}
+                    onChange={(e) =>
+                        setTitle(
+                            e.target.value
+                        )
+                    }
+                    placeholder="Rubrik"
                     className="
                         w-full
                         border
@@ -177,7 +229,9 @@ export default function EditScheduleExceptionDialog({
                 <select
                     value={type}
                     onChange={(e) =>
-                        setType(e.target.value)
+                        setType(
+                            e.target.value
+                        )
                     }
                     className="
                         w-full
@@ -206,9 +260,11 @@ export default function EditScheduleExceptionDialog({
                 <input
                     value={note}
                     onChange={(e) =>
-                        setNote(e.target.value)
+                        setNote(
+                            e.target.value
+                        )
                     }
-                    placeholder="Anteckning"
+                    placeholder="Beskrivning"
                     className="
                         w-full
                         border
@@ -216,6 +272,30 @@ export default function EditScheduleExceptionDialog({
                         p-2
                     "
                 />
+
+                <label
+                    className="
+                        flex
+                        items-center
+                        gap-2
+                    "
+                >
+
+                    <input
+                        type="checkbox"
+                        checked={
+                            affectsLessons
+                        }
+                        onChange={(e) =>
+                            setAffectsLessons(
+                                e.target.checked
+                            )
+                        }
+                    />
+
+                    Påverkar undervisning
+
+                </label>
 
                 <div className="space-y-2">
 
@@ -237,7 +317,9 @@ export default function EditScheduleExceptionDialog({
                                 scope === "school"
                             }
                             onChange={() =>
-                                setScope("school")
+                                setScope(
+                                    "school"
+                                )
                             }
                         />
 
@@ -259,7 +341,9 @@ export default function EditScheduleExceptionDialog({
                                 scope === "groups"
                             }
                             onChange={() =>
-                                setScope("groups")
+                                setScope(
+                                    "groups"
+                                )
                             }
                         />
 
@@ -269,70 +353,61 @@ export default function EditScheduleExceptionDialog({
 
                 </div>
 
-                {
-                    scope === "groups" && (
+                {scope === "groups" && (
 
-                        <div
-                            className="
-                                border
-                                rounded
-                                p-3
-                                max-h-48
-                                overflow-auto
-                            "
-                        >
+                    <div
+                        className="
+                            border
+                            rounded
+                            p-3
+                            max-h-48
+                            overflow-auto
+                        "
+                    >
 
-                            {
-                                groups.map(
-                                    group => (
+                        {groups.map(
+                            group => (
 
-                                        <label
-                                            key={group.id}
-                                            className="
-                                                flex
-                                                items-center
-                                                gap-2
-                                                mb-2
-                                            "
-                                        >
+                                <label
+                                    key={
+                                        group.id
+                                    }
+                                    className="
+                                        flex
+                                        items-center
+                                        gap-2
+                                        mb-2
+                                    "
+                                >
 
-                                            <input
-                                                type="checkbox"
-                                                checked={
-                                                    selectedGroups.includes(
-                                                        group.id
-                                                    )
-                                                }
-                                                onChange={(e) =>
-                                                    toggleGroup(
-                                                        group.id,
-                                                        e.target.checked
-                                                    )
-                                                }
-                                            />
+                                    <input
+                                        type="checkbox"
+                                        checked={
+                                            selectedGroups.includes(
+                                                group.id
+                                            )
+                                        }
+                                        onChange={(e) =>
+                                            toggleGroup(
+                                                group.id,
+                                                e.target.checked
+                                            )
+                                        }
+                                    />
 
-                                            {group.name}
+                                    {group.name}
 
-                                        </label>
+                                </label>
 
-                                    )
-                                )
-                            }
+                            )
+                        )}
 
-                        </div>
+                    </div>
 
-                    )
-                }
+                )}
 
                 <Button
                     onClick={save}
-                    className="
-                        bg-blue-600
-                        text-white
-                        rounded
-                        px-4
-                        py-2
-                    "
                 >
                     Spara
                 </Button>
