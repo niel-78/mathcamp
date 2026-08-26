@@ -106,23 +106,43 @@ export default function SharePlanningDialog({
 
         };
 
-    const copyLink =
-        async () => {
+        const copyLink = async () => {
 
-            if (!link?.url) {
-                return;
+            try {
+
+                if (
+                    navigator.clipboard?.writeText
+                ) {
+
+                    await navigator.clipboard.writeText(
+                        link.url
+                    );
+
+                    toast.success(
+                        "Länken kopierad"
+                    );
+
+                } else {
+
+                    window.prompt(
+                        "Kopiera länken:",
+                        link.url
+                    );
+
+                }
+
+            } catch {
+
+                window.prompt(
+                    "Kopiera länken:",
+                    link.url
+                );
+
             }
-
-            await navigator.clipboard.writeText(
-                link.url
-            );
-
-            toast.success(
-                "Länken kopierad"
-            );
 
         };
 
+        
     return (
 
         <Dialog
