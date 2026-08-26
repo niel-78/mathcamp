@@ -900,14 +900,6 @@ export default function TeacherDashboard() {
                             }
                         );
 
-                    console.log(
-                    "status",
-                    response.status
-                    );
-                    console.log(
-                    "response received"
-                    );
-
                     setMoveSectionDialog(null);
 
                     if (response.status === 409) {

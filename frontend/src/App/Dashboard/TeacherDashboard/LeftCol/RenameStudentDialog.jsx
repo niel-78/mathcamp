@@ -3,6 +3,7 @@ import { API_URL } from "@/config";
 import { toast } from "sonner";
 import { authHeaders } from "@/api/authHeaders";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 import {
     Dialog,
@@ -20,22 +21,17 @@ export default function RenameStudentDialog({
 
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
+    const [displayName, setDisplayName] = useState("");
     
     useEffect(() => {
 
-        setFirstName(
-            student?.firstName ?? ""
-        );
-
-        setLastName(
-            student?.lastName ?? ""
-        );
+        setFirstName(student.first_name);
+        setLastName(student.last_name);
+        setDisplayName(student.display_name ?? "");
 
     }, [student]);
 
     const save = async () => {
-
-        console.log("SAVE", student);
 
         const response = await fetch(
             `${API_URL}/api/students/${student.userId}`,
@@ -47,7 +43,8 @@ export default function RenameStudentDialog({
                 },
                 body: JSON.stringify({
                     first_name: firstName,
-                    last_name: lastName
+                    last_name: lastName,
+                    display_name: displayName
                 })
             }
         );
@@ -80,6 +77,16 @@ export default function RenameStudentDialog({
                 </DialogHeader>
 
                 <div className="space-y-3">
+
+                    <Input
+                        placeholder="Visningsnamn"
+                        value={displayName}
+                        onChange={(e) =>
+                            setDisplayName(
+                                e.target.value
+                            )
+                        }
+                    />
 
                     <input
                         className="w-full border rounded p-2"

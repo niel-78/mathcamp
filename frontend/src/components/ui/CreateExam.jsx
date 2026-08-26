@@ -70,13 +70,6 @@ export default function CreateExam({
 
     const createExam = async () => {
 
-        console.log({
-            title,
-            subjectId,
-            levelId,
-            bookId
-        });
-
         const response = await fetch(
             `${API_URL}/api/assessments`,
             {

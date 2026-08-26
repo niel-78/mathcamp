@@ -671,10 +671,80 @@ router.post("/exceptions/import",
 );
 
 // GET /api/group-schedules/groups/:groupId/events
-router.get("/groups/:groupId/events",
+// router.get("/groups/:groupId/events",
+//     async (req, res) => {
+
+//         try {
+
+//             const [events] =
+//                 await db.query(
+//                     `
+//                     SELECT DISTINCT
+//                         sse.*
+
+//                     FROM school_schedule_exceptions sse
+
+//                     LEFT JOIN
+//                         schedule_exception_groups seg
+//                         ON seg.schedule_exception_id = sse.id
+
+//                     INNER JOIN \`groups\` g
+//                         ON g.id = ?
+
+//                     WHERE
+//                         (
+//                             seg.group_id = ?
+//                         )
+//                         OR
+//                         (
+//                             seg.group_id IS NULL
+//                             AND sse.school_id = g.school_id
+//                         )
+
+//                     ORDER BY sse.date
+//                     `,
+//                     [
+//                         req.params.groupId,
+//                         req.params.groupId
+//                     ]
+//                 );
+
+//             res.json(events);
+
+//         } catch (error) {
+
+//             console.error(error);
+
+//             res.status(500).json({
+//                 error: error.message
+//             });
+
+//         }
+
+//     }
+// );
+
+router.get(
+    "/groups/:groupId/events",
     async (req, res) => {
 
         try {
+
+            const [[group]] =
+                await db.query(
+                    `
+                    SELECT school_id
+                    FROM \`groups\`
+                    WHERE id = ?
+                    `,
+                    [req.params.groupId]
+                );
+
+            if (!group) {
+                return res.status(404).json({
+                    error: "Gruppen hittades inte"
+                });
+            }
 
             const [events] =
                 await db.query(
@@ -688,24 +758,24 @@ router.get("/groups/:groupId/events",
                         schedule_exception_groups seg
                         ON seg.schedule_exception_id = sse.id
 
-                    INNER JOIN \`groups\` g
-                        ON g.id = ?
-
                     WHERE
+
                         (
                             seg.group_id = ?
                         )
+
                         OR
+
                         (
                             seg.group_id IS NULL
-                            AND sse.school_id = g.school_id
+                            AND sse.school_id = ?
                         )
 
                     ORDER BY sse.date
                     `,
                     [
                         req.params.groupId,
-                        req.params.groupId
+                        group.school_id
                     ]
                 );
 

@@ -123,6 +123,16 @@ export default function Main({
                         />
                     )}
 
+                    {currentTab?.type === "my-lessons" && (
+
+                        <MyLessonsTab
+                            openTab={(tab) =>
+                                openTab(tab, area)
+                            }
+                        />
+
+                    )}
+
                     {currentTab?.type === "assessments" && (
 
                         <ExamListTab

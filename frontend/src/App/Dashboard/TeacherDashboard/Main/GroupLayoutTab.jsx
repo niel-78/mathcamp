@@ -158,7 +158,6 @@ export default function GroupLayoutTab({
             setStudents(
                 data.students || []
             );
-            console.log(students)
 
         }
 
@@ -291,8 +290,6 @@ export default function GroupLayoutTab({
 
     const handleStudentCreated =
         async (event) => {
-
-            console.log("ny elev");
 
             if (
                 event.detail.groupId !==

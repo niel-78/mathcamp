@@ -16,7 +16,6 @@ export default function EditStudentDialog({
     onSaved
 }) {
 
-
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [displayName, setDisplayName] = useState("");
@@ -26,17 +25,24 @@ export default function EditStudentDialog({
         if (!student) {
             return;
         }
+        setFirstName(
+            student.firstName ?? ""
+        );
 
-        setFirstName(student.first_name);
-        setLastName(student.last_name);
-        setDisplayName(student.display_name ?? "");
+        setLastName(
+            student.lastName ?? ""
+        );
+
+        setDisplayName(
+            student.displayName ?? ""
+        );
 
     }, [student]);
 
     const saveStudent = async () => {
 
         await fetch(
-            `${API_URL}/api/students/${student.id}`,
+            `${API_URL}/api/students/${student.userId}`,
             {
                 method: "PUT",
                 headers: {

@@ -9,71 +9,122 @@ router.use(requireAuth);
 router.use(requireRole("student", "teacher", "super"));
 
 // GET /api/lessons?groupIds=1,2,3
-router.get("/", requireAuth,
+router.get("/",
+    requireAuth,
     async (req, res) => {
 
-        const groupIds =
-            req.query.groupIds
-                ?.split(",")
-                .map(Number)
-                .filter(Boolean);
+        try {
 
-        if (!groupIds?.length) {
-            return res.json([]);
-        }
+            const groupIds =
+                req.query.groupIds
+                    ?.split(",")
+                    .map(Number)
+                    .filter(Boolean);
 
-        const placeholders =
-            groupIds.map(() => "?").join(",");
+            if (!groupIds?.length) {
+                return res.json([]);
+            }
 
-        const [lessons] =
-            await db.query(
-                `
-                SELECT
-                    l.*,
+            const placeholders =
+                groupIds.map(() => "?").join(",");
 
-                    g.name AS group_name,
-
-                    c.name AS classroom_name,
-
-                    cl.name AS classroom_layout_name
-
-                FROM lessons l
-
-                JOIN \`groups\` g
-                    ON g.id = l.group_id
-
-                LEFT JOIN classrooms c
-                    ON c.id = l.classroom_id
-
-                LEFT JOIN classroom_layouts cl
-                    ON cl.id = l.classroom_layout_id
-                `,
-                groupIds
-            );
-
-        for (const lesson of lessons) {
-
-            const [sections] =
+            const [lessons] =
                 await db.query(
                     `
                     SELECT
-                        s.*,
-                        ls.id AS lesson_section_id,
-                        ls.pinned
-                    FROM lesson_sections ls
-                    JOIN sections s
-                        ON s.id = ls.section_id
-                    WHERE ls.lesson_id = ?
-                    ORDER BY s.page_number
+                        l.*,
+
+                        g.name AS group_name,
+                        g.school_id,
+
+                        c.name AS classroom_name,
+
+                        cl.name AS classroom_layout_name,
+
+                        sse.id AS schedule_exception_id,
+                        sse.title AS schedule_exception_title,
+                        sse.type AS schedule_exception_type,
+                        sse.note AS schedule_exception_note,
+                        sse.affects_lessons
+
+                    FROM lessons l
+
+                    JOIN \`groups\` g
+                        ON g.id = l.group_id
+
+                    LEFT JOIN classrooms c
+                        ON c.id = l.classroom_id
+
+                    LEFT JOIN classroom_layouts cl
+                        ON cl.id = l.classroom_layout_id
+
+                    LEFT JOIN school_schedule_exceptions sse
+                        ON sse.school_id = g.school_id
+                        AND sse.date = DATE(l.starts_at)
+
+                    WHERE l.group_id IN (${placeholders})
+
+                    ORDER BY l.starts_at
                     `,
-                    [lesson.id]
+                    groupIds
                 );
 
-            lesson.sections = sections;
+            for (const lesson of lessons) {
+
+                lesson.cancelled_by_exception =
+                    !!lesson.schedule_exception_id &&
+                    lesson.affects_lessons === 1;
+
+                if (
+                    lesson.cancelled_by_exception
+                ) {
+
+                    lesson.cancelled_reason =
+                        lesson.schedule_exception_title ||
+                        lesson.schedule_exception_note ||
+                        "Inställd undervisning";
+
+                }
+
+                const [sections] =
+                    await db.query(
+                        `
+                        SELECT
+                            s.*,
+                            ls.id AS lesson_section_id,
+                            ls.pinned
+
+                        FROM lesson_sections ls
+
+                        JOIN sections s
+                            ON s.id = ls.section_id
+
+                        WHERE ls.lesson_id = ?
+
+                        ORDER BY
+                            ls.pinned DESC,
+                            s.page_number
+                        `,
+                        [lesson.id]
+                    );
+
+                lesson.sections =
+                    sections;
+
+            }
+
+            res.json(lessons);
+
+        } catch (err) {
+
+            console.error(err);
+
+            res.status(500).json({
+                error:
+                    "Kunde inte hämta lektioner."
+            });
 
         }
-
-        res.json(lessons);
 
     }
 );

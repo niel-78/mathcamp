@@ -1,5 +1,7 @@
 import express from "express";
 
+import publicRoutes from "./routes/publicRoutes.js";
+
 import authRoutes from "./routes/authRoutes.js";
 
 import appSettingsRoutes from "./routes/appSettingsRoutes.js";
@@ -89,6 +91,8 @@ app.use((req, res, next) => {
   console.log("REQUEST:", req.method, req.originalUrl);
   next();
 });
+
+app.use("/api/public", publicRoutes);
 
 app.use("/api/auth", authRoutes);
 

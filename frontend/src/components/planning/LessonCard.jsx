@@ -17,10 +17,66 @@ export default function LessonCard({
     showGroupName = false,
     onEditLesson,
     onCancelLesson,
-    onDeleteLesson
+    onDeleteLesson,
+    readOnly = false
 }) {
-    return (
 
+    if (lesson.cancelled_by_exception) {
+
+        return (
+
+            <CardSection
+                title={
+                    <FormatDateTimeShort
+                        value={lesson.starts_at}
+                    />
+                }
+            >
+
+                <div
+                    className="
+                        rounded-md
+                        border
+                        border-destructive
+                        bg-destructive/10
+                        p-4
+                    "
+                >
+
+                    <div
+                        className="
+                            font-semibold
+                            text-destructive
+                        "
+                    >
+                        Undervisningen utgår
+                    </div>
+
+                    <div className="mt-1">
+                        {lesson.schedule_exception_title}
+                    </div>
+
+                    {lesson.schedule_exception_note && (
+                        <div
+                            className="
+                                mt-1
+                                text-sm
+                                text-muted-foreground
+                            "
+                        >
+                            {lesson.schedule_exception_note}
+                        </div>
+                    )}
+
+                </div>
+
+            </CardSection>
+
+        );
+
+    }
+
+    return(
         <CardSection
             title={
                 <FormatDateTimeShort
@@ -28,72 +84,74 @@ export default function LessonCard({
                 />
             }
             actions={
-                <DropdownMenu>
+                !readOnly && (
+                    <DropdownMenu>
 
-                    <DropdownMenuTrigger
-                        className="
-                            inline-flex
-                            h-8
-                            w-8
-                            items-center
-                            justify-center
-                            rounded-md
-                            hover:bg-accent
-                        "
-                    >
-
-                        <MoreVertical size={16} />
-
-                    </DropdownMenuTrigger>
-
-                    <DropdownMenuContent>
-
-                        <DropdownMenuItem
-                            onClick={() =>
-                                onEditLesson?.(lesson)
-                            }
+                        <DropdownMenuTrigger
+                            className="
+                                inline-flex
+                                h-8
+                                w-8
+                                items-center
+                                justify-center
+                                rounded-md
+                                hover:bg-accent
+                            "
                         >
-                            Redigera lektion
-                        </DropdownMenuItem>
 
-                        {lesson.cancelled_at ? (
+                            <MoreVertical size={16} />
+
+                        </DropdownMenuTrigger>
+
+                        <DropdownMenuContent>
 
                             <DropdownMenuItem
                                 onClick={() =>
-                                    onCancelLesson?.(
-                                        lesson
-                                    )
+                                    onEditLesson?.(lesson)
                                 }
                             >
-                                Återaktivera lektion
+                                Redigera lektion
                             </DropdownMenuItem>
 
-                        ) : (
+                            {lesson.cancelled_at ? (
+
+                                <DropdownMenuItem
+                                    onClick={() =>
+                                        onCancelLesson?.(
+                                            lesson
+                                        )
+                                    }
+                                >
+                                    Återaktivera lektion
+                                </DropdownMenuItem>
+
+                            ) : (
+
+                                <DropdownMenuItem
+                                    onClick={() =>
+                                        onCancelLesson?.(
+                                            lesson
+                                        )
+                                    }
+                                >
+                                    Ställ in lektion
+                                </DropdownMenuItem>
+
+                            )}
 
                             <DropdownMenuItem
+                                className="text-destructive"
                                 onClick={() =>
-                                    onCancelLesson?.(
-                                        lesson
-                                    )
+                                    onDeleteLesson?.(lesson)
                                 }
                             >
-                                Ställ in lektion
+                                Ta bort lektion
                             </DropdownMenuItem>
 
-                        )}
+                        </DropdownMenuContent>
 
-                        <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={() =>
-                                onDeleteLesson?.(lesson)
-                            }
-                        >
-                            Ta bort lektion
-                        </DropdownMenuItem>
-
-                    </DropdownMenuContent>
-
-                </DropdownMenu>
+                    </DropdownMenu>
+                )    
             }
         >
 
@@ -146,7 +204,7 @@ export default function LessonCard({
 
                     )}
 
-                    {lesson.classroom_layout_name && (
+                    {/* {lesson.classroom_layout_name && (
 
                         <div
                             className="
@@ -157,7 +215,7 @@ export default function LessonCard({
                             Möblering: {lesson.classroom_layout_name}
                         </div>
 
-                    )}
+                    )} */}
 
                 </div>
 
@@ -178,6 +236,45 @@ export default function LessonCard({
 
                 )}
 
+                {lesson.schedule_exception_id &&
+                !lesson.cancelled_by_exception && (
+
+                    <div
+                        className="
+                            rounded-md
+                            border
+                            border-green-500
+                            bg-green-50
+                            p-3
+                        "
+                    >
+
+                        <div
+                            className="
+                                font-medium
+                                text-green-700
+                            "
+                        >
+                            {lesson.schedule_exception_title}
+                        </div>
+
+                        {lesson.schedule_exception_note && (
+                            <div
+                                className="
+                                    mt-1
+                                    text-sm
+                                    text-green-600
+                                "
+                            >
+                                {lesson.schedule_exception_note}
+                            </div>
+                        )}
+
+                    </div>
+
+                )}
+
+
                 <div className="space-y-2">
 
                     {lesson.sections?.map(
@@ -194,11 +291,14 @@ export default function LessonCard({
 
                 </div>
 
-                <DropZone
-                    id={`lesson-${lesson.id}`}
-                    text="Släpp sektion här"
-                    className="min-h-[100px]"
-                />
+                {!readOnly && (
+                    <DropZone
+                        id={`lesson-${lesson.id}`}
+                        readOnly={readOnly}
+                        text="Släpp sektion här"
+                        className="min-h-[100px]"
+                    />
+                )}    
 
             </div>
 

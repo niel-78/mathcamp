@@ -52,8 +52,6 @@ export default function CreateBlock({
 
             const data = await response.json();
 
-            console.log(data);
-
             setQuestion("");
 
             await onCreated?.();

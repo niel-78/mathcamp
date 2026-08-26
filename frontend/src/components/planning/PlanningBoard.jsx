@@ -14,29 +14,30 @@ import {
 export default function PlanningBoard({
     groupId,
     lessons,
+    events: initialEvents = [],
     loading,
     onReload,
     onEditLesson,
     onCancelLesson,
-    onDeleteLesson
-}) {  
+    onDeleteLesson,
+    readOnly = false
+}) {
 
 
     const [viewMode, setViewMode] = useState("week");
     const [selectedDate, setSelectedDate] = useState(new Date());
     const selectedWeek = getWeekNumber(selectedDate);
-    const [events, setEvents] = useState([]);
+    const [events, setEvents] = useState(initialEvents);
     const [showEvents, setShowEvents] = useState(true);
 
     useEffect(() => {
 
+        if (!groupId) {
+            return;
+        }
+
         const loadEvents =
             async () => {
-
-                console.log(
-                    "Laddar events för grupp",
-                    groupId
-                );
 
                 const response =
                     await fetch(
@@ -47,22 +48,12 @@ export default function PlanningBoard({
                         }
                     );
 
-                console.log(
-                    "Status:",
-                    response.status
-                );
-
                 if (!response.ok) {
                     return;
                 }
 
                 const data =
                     await response.json();
-
-                console.log(
-                    "Events från API:",
-                    data
-                );
 
                 setEvents(data);
 
@@ -90,6 +81,31 @@ export default function PlanningBoard({
             window.removeEventListener(
                 "group-schedule-created",
                 handleScheduleCreated
+            );
+
+        };
+
+    }, [onReload]);
+
+    useEffect(() => {
+
+        const handleScheduleChanged =
+            () => {
+
+                onReload?.();
+
+            };
+
+        window.addEventListener(
+            "group-schedule-changed",
+            handleScheduleChanged
+        );
+
+        return () => {
+
+            window.removeEventListener(
+                "group-schedule-changed",
+                handleScheduleChanged
             );
 
         };

@@ -13,6 +13,18 @@ export default function StartPage({
             <Button
                 onClick={() =>
                     openTab({
+                        id: "my-lessons",
+                        title: "Mina lektioner",
+                        type: "my-lessons"
+                    })
+                }
+            >
+                Mina lektioner
+            </Button>
+
+            <Button
+                onClick={() =>
+                    openTab({
                         id: "assessments",
                         title: "Provbank",
                         type: "assessments"

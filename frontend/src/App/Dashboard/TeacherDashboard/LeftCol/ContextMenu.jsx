@@ -64,6 +64,7 @@ export default function ContextMenu(props) {
                             setContextMenu(null);
                         }}
                     />
+
                 );
                 
             case "planning":
@@ -97,6 +98,13 @@ export default function ContextMenu(props) {
                             );
 
                             setContextMenu(null);
+                        }}
+                        onSharePlanning={() => {
+                            props.onSharePlanning?.(
+                                contextMenu.groupId,
+                                contextMenu.groupName,
+                            );
+                        setContextMenu(null);
                         }}
                     />
                 );

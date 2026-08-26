@@ -171,6 +171,12 @@ export default function EditScheduleExceptionDialog({
 
             onSaved?.();
 
+            window.dispatchEvent(
+                new Event(
+                    "group-schedule-changed"
+                )
+            );
+
         }
 
     };

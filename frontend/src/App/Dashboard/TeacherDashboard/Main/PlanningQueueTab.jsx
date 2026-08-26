@@ -40,11 +40,10 @@ export default function PlanningQueueTab({
         setPagesPerLesson(
             data.pages_per_lesson ?? 4
         );
-                console.log("QUEUE DATA", data);
+
         setSections(
             data.sections ?? []
         );
-        console.log(data.sections);
 
     };
 

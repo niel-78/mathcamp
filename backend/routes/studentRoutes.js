@@ -61,6 +61,7 @@ router.get("/:studentId", async (req, res) => {
                 username,
                 first_name,
                 last_name,
+                display_name,
                 user_key
             FROM users
             WHERE id = ?
@@ -81,7 +82,8 @@ router.put("/:studentId", async (req, res) => {
 
         const {
             first_name,
-            last_name
+            last_name,
+            display_name
         } = req.body;
 
         await db.query(
@@ -89,12 +91,14 @@ router.put("/:studentId", async (req, res) => {
             UPDATE users
             SET
                 first_name = ?,
-                last_name = ?
+                last_name = ?,
+                display_name = ?
             WHERE id = ?
             `,
             [
                 first_name,
                 last_name,
+                display_name,
                 req.params.studentId
             ]
         );

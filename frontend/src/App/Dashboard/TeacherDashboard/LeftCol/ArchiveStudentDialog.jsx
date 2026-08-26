@@ -35,7 +35,6 @@ export default function ArchiveStudentDialog({
             toast.error(
                 "Kunde inte arkivera eleven"
             );
-            console.log(response.status);
 
             return;
         }

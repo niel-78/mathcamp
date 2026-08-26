@@ -68,11 +68,7 @@ export default function GroupExamWaitingRoomTab({
         if (!response.ok) {
             return;
         }
-
-        console.log(
-            await response.text()
-        );    
-
+ 
         await load();
 
     };
@@ -93,10 +89,6 @@ export default function GroupExamWaitingRoomTab({
                     user_id: userId
                 })
             }
-        );
-
-        console.log(
-            await response.text()
         );
 
         await load();

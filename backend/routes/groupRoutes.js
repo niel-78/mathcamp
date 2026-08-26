@@ -329,6 +329,7 @@ router.get("/:id", async (req, res) => {
             u.id,
             u.first_name,
             u.last_name,
+            u.display_name,
             u.username,
             u.user_key
         FROM group_students gs
@@ -430,6 +431,7 @@ router.get("/:id/students", async (req, res) => {
 });
 // POST /api/groups/:id/students
 router.post("/:id/students", async (req, res) => {
+
     try {
 
         const {
@@ -438,35 +440,71 @@ router.post("/:id/students", async (req, res) => {
             last_name
         } = req.body;
 
-        const password = generatePassword();
+        let userId = null;
+        let password = null;
 
+        const [[existingUser]] =
+            await db.query(
+                `
+                SELECT id
+                FROM users
+                WHERE username = ?
+                `,
+                [username]
+            );
 
-        const password_hash =
-            await bcrypt.hash(password, 12);
+        if (existingUser) {
 
+            userId =
+                existingUser.id;
 
-        const [userResult] = await db.query(
-            `
-            INSERT INTO users (
-                username,
-                password_hash,
-                role,
-                first_name,
-                last_name
-            )
-            VALUES (?, ?, 'student', ?, ?)
-            `,
-            [
-                username,
-                password_hash,
-                first_name,
-                last_name
-            ]
-        );
+        } else {
+
+            password =
+                generatePassword();
+
+            const password_hash =
+                await bcrypt.hash(
+                    password,
+                    12
+                );
+
+            const [userResult] =
+                await db.query(
+                    `
+                    INSERT INTO users (
+                        username,
+                        password_hash,
+                        role,
+                        first_name,
+                        last_name
+                    )
+                    VALUES (
+                        ?,
+                        ?,
+                        'student',
+                        ?,
+                        ?
+                    )
+                    `,
+                    [
+                        username,
+                        password_hash,
+                        first_name,
+                        last_name
+                    ]
+                );
+
+            userId =
+                userResult.insertId;
+
+        }
 
         await db.query(
             `
-            INSERT INTO group_students (
+            INSERT IGNORE INTO
+                group_students
+            (
                 group_id,
                 user_id
             )
@@ -474,13 +512,13 @@ router.post("/:id/students", async (req, res) => {
             `,
             [
                 req.params.id,
-                userResult.insertId
+                userId
             ]
         );
 
         res.status(201).json({
-            id: userResult.insertId,
-            password: password 
+            id: userId,
+            password
         });
 
     } catch (err) {
@@ -488,10 +526,12 @@ router.post("/:id/students", async (req, res) => {
         console.error(err);
 
         res.status(500).json({
-            error: "Kunde inte skapa elev."
+            error:
+                "Kunde inte skapa elev."
         });
 
     }
+
 });
 // DELETE /api/groups/:id/students/:studentId
 router.delete("/:id/students/:studentId", async (req, res) => {
@@ -588,33 +628,12 @@ router.post("/:id/import-students",
                     });
 
                     continue;
+
                 }
 
                 importedNames.add(
                     fullName
                 );
-
-                const [[existingStudent]] =
-                    await db.query(
-                        `
-                        SELECT id
-                        FROM users
-                        WHERE full_name = ?
-                        LIMIT 1
-                        `,
-                        [fullName]
-                    );
-
-                if (existingStudent) {
-
-                    skipped.push({
-                        fullName,
-                        reason:
-                            "Finns redan i systemet"
-                    });
-
-                    continue;
-                }
 
                 const displayName =
                     row.Visningsnamn?.trim()
@@ -638,32 +657,49 @@ router.post("/:id/import-students",
 
                 }
 
-                const originalUsername =
-                    username;
+                const [[existingUser]] =
+                    await db.query(
+                        `
+                        SELECT
+                            id,
+                            username
+                        FROM users
+                        WHERE username = ?
+                        LIMIT 1
+                        `,
+                        [username]
+                    );
 
-                let counter = 1;
+                if (existingUser) {
 
-                while (true) {
+                    await db.query(
+                        `
+                        INSERT IGNORE INTO
+                            group_students
+                        (
+                            user_id,
+                            group_id
+                        )
+                        VALUES (?, ?)
+                        `,
+                        [
+                            existingUser.id,
+                            req.params.id
+                        ]
+                    );
 
-                    const [[existingUsername]] =
-                        await db.query(
-                            `
-                            SELECT id
-                            FROM users
-                            WHERE username = ?
-                            `,
-                            [username]
-                        );
+                    imported.push({
+                        id: existingUser.id,
+                        firstName,
+                        lastName,
+                        fullName,
+                        username:
+                            existingUser.username,
+                        existing: true
+                    });
 
-                    if (!existingUsername) {
-                        break;
-                    }
+                    continue;
 
-                    counter++;
-
-                    username =
-                        originalUsername +
-                        counter;
                 }
 
                 const password =
@@ -715,7 +751,9 @@ router.post("/:id/import-students",
 
                 await db.query(
                     `
-                    INSERT INTO group_students (
+                    INSERT IGNORE INTO
+                        group_students
+                    (
                         user_id,
                         group_id
                     )
@@ -728,18 +766,21 @@ router.post("/:id/import-students",
                 );
 
                 imported.push({
-                    id: userResult.insertId,
+                    id:
+                        userResult.insertId,
                     firstName,
                     lastName,
                     fullName,
                     displayName,
                     username,
-                    password
+                    password,
+                    existing: false
                 });
 
             }
 
             res.json({
+
                 importedCount:
                     imported.length,
 
@@ -750,6 +791,7 @@ router.post("/:id/import-students",
                     imported,
 
                 skipped
+
             });
 
         } catch (error) {
@@ -2315,5 +2357,98 @@ router.get("/:groupId/lesson-events",
 
     }
 );
+
+router.get("/:groupId/share-link",
+    requireAuth,
+    async (req, res) => {
+
+        const [[link]] =
+            await db.query(
+                `
+                SELECT *
+                FROM planning_share_links
+                WHERE group_id = ?
+                AND revoked_at IS NULL
+                ORDER BY created_at DESC
+                LIMIT 1
+                `,
+                [req.params.groupId]
+            );
+
+        if (!link) {
+            return res.json(null);
+        }
+
+        res.json({
+            id: link.id,
+            url:
+                `${process.env.FRONTEND_URL}/shared-planning/${link.id}`
+        });
+
+    }
+);
+
+router.post("/:groupId/share-link",
+    requireAuth,
+    async (req, res) => {
+
+        await db.query(
+            `
+            UPDATE planning_share_links
+            SET revoked_at = NOW()
+            WHERE group_id = ?
+            AND revoked_at IS NULL
+            `,
+            [req.params.groupId]
+        );
+
+        const shareId =
+            crypto.randomUUID();
+
+        await db.query(
+            `
+            INSERT INTO
+                planning_share_links
+            (
+                id,
+                group_id,
+                created_by
+            )
+            VALUES (?, ?, ?)
+            `,
+            [
+                shareId,
+                req.params.groupId,
+                req.user.id
+            ]
+        );
+
+        res.json({
+            id: shareId,
+            url:
+                `${process.env.FRONTEND_URL}/shared-planning/${shareId}`
+        });
+
+    }
+);
+
+router.delete("/share-link/:id",
+    requireAuth,
+    async (req, res) => {
+
+        await db.query(
+            `
+            UPDATE planning_share_links
+            SET revoked_at = NOW()
+            WHERE id = ?
+            `,
+            [req.params.id]
+        );
+
+        res.sendStatus(204);
+
+    }
+);
+
 
 export default router

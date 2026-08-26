@@ -10,7 +10,8 @@ import {
 
 export default function LessonSection({
     section,
-    lessonId
+    lessonId,
+    readOnly = false
 }) {
 
     const {
@@ -20,6 +21,7 @@ export default function LessonSection({
         transform
     } = useDraggable({
         id: `lesson-section-${lessonId}-${section.id}`,
+        disabled: readOnly,
         data: {
             type: "lesson-section",
             sectionId: section.id,
@@ -78,7 +80,7 @@ export default function LessonSection({
                 bg-card
             "
         >
-            <div
+            {/* <div
                 className="
                     flex
                     items-center
@@ -114,7 +116,64 @@ export default function LessonSection({
 
                 </Button>
 
+            </div> */}
+
+            <div
+                className="
+                    flex
+                    items-center
+                    justify-between
+                    gap-2
+                "
+            >
+
+                <div
+                    className="
+                        flex
+                        items-center
+                        gap-2
+                    "
+                >
+
+                    <GripVertical
+                        size={16}
+                        className="
+                            cursor-grab
+                            text-muted-foreground
+                        "
+                        {...listeners}
+                        {...attributes}
+                    />
+
+                    <div>
+                        {section.title}
+                    </div>
+
+                </div>
+
+                <Button
+                    size="icon"
+                    variant={
+                        section.pinned
+                            ? "default"
+                            : "ghost"
+                    }
+                    onClick={() =>
+                        togglePin(
+                            section.lesson_section_id,
+                            !section.pinned
+                        )
+                    }
+                >
+                    {
+                        section.pinned
+                            ? <Pin size={14} />
+                            : <PinOff size={14} />
+                    }
+                </Button>
+
             </div>
+
 
         </div>
 

@@ -4,11 +4,12 @@ import { authHeaders } from "@/api/authHeaders";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import UserProfile from "@/components/ui/UserProfile";
+import SharePlanningDialog from "./LeftCol/SharePlanningDialog";
 import CreateGroupDialog from "./LeftCol/CreateGroupDialog";
 import RenameGroupDialog from "./LeftCol/RenameGroupDialog";
 import ArchiveGroupDialog from "./LeftCol/ArchiveGroupDialog";
 import CreateStudentDialog from "./LeftCol/CreateStudentDialog";
-import RenameStudentDialog from "./LeftCol/RenameStudentDialog";
+import EditStudentDialog from "./LeftCol/EditStudentDialog";
 import ResetPasswordDialog from "./LeftCol/ResetPasswordDialog";
 import ArchiveStudentDialog from "./LeftCol/ArchiveStudentDialog";
 import ImportStudentsDialog from "./LeftCol/ImportStudentsDialog";
@@ -116,6 +117,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [editScheduleExceptionDialog, setEditScheduleExceptionDialog] = useState(null);
     const [importScheduleExceptionsDialog,setImportScheduleExceptionsDialog] = useState(null);
     const [createClassroomDialogOpen, setCreateClassroomDialogOpen] = useState(false);
+    const [sharePlanningDialog, setSharePlanningDialog] = useState(null);
 
     const [showSchools, setShowSchools] =
         useState(false);
@@ -318,8 +320,6 @@ export default function LeftCol( {openTab, hoverTarget} ) {
         const data =
             await response.json();
 
-        console.log(data);
-
         setClassrooms(data);
 
     };
@@ -342,7 +342,6 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
         const data =
             await response.json();
-        console.log(data)
 
         setGroupClassrooms(prev => ({
             ...prev,
@@ -791,6 +790,13 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                     });
                 }}
 
+                onSharePlanning={(groupId, groupName) => {
+                    setSharePlanningDialog({
+                        groupId,
+                        groupName
+                    });
+                }}
+
                 onArchiveGroup={(groupId, groupName) => {
                     setArchiveDialog({
                         id: groupId,
@@ -1236,6 +1242,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                                         userId: student.id,
                                                                         firstName: student.first_name,
                                                                         lastName: student.last_name,
+                                                                        displayName: student.display_name,
                                                                         userName: student.username,
                                                                         groupId: group.id,
                                                                         x: e.clientX,
@@ -2402,7 +2409,13 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                 }
                 onArchived={loadGroups}
             /> 
-
+            <SharePlanningDialog
+                open={!!sharePlanningDialog}
+                groupId={sharePlanningDialog?.groupId}
+                onOpenChange={() =>
+                    setSharePlanningDialog(null)
+                }
+            />
             <CreateGroupDialog
                 open={showCreateGroupDialog}
                 onOpenChange={setShowCreateGroupDialog}
@@ -2428,7 +2441,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                     )
                 }
             />
-            <RenameStudentDialog
+            <EditStudentDialog
                 student={renameStudentDialog}
                 open={!!renameStudentDialog}
                 onOpenChange={() =>

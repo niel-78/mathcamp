@@ -26,11 +26,6 @@ export default function CreateClassroomDialog({
     schoolId
 }) {
 
-    console.log("CreateClassroomDialog", {
-        open,
-        schoolId
-    });
-
     const [name, setName] =
         useState("");
 
@@ -94,8 +89,6 @@ export default function CreateClassroomDialog({
         onOpenChange(false);
 
     };
-
-    console.log(layouts);
 
     return (
 

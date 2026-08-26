@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 export default function PlanningMenu({
     onCreateLessons,
     onManageSchedule,
-    onOpenQueue
+    onOpenQueue,
+    onSharePlanning
 }) {
 
     return (
@@ -33,6 +34,15 @@ export default function PlanningMenu({
             >
                 Planeringskö
             </Button>
+
+            <Button
+                className="context-menu-button"
+                variant="inline"
+                onClick={onSharePlanning}
+            >
+                Dela planering
+            </Button>
+
 
         </div>
 

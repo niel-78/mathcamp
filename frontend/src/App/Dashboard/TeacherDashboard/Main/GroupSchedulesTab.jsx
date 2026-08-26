@@ -36,7 +36,6 @@ export default function GroupSchedulesTab({
 
         const data =
             await response.json();
-        console.log("SCHEDULE DATA", data);
         setSchedules(data);
 
         

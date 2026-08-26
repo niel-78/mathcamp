@@ -6,8 +6,7 @@ export default function MonthView({
     showEvents,
     selectedDate
 }) {
-    console.log("MontView");
-    console.log(events);
+
     const currentMonth =
         dayjs(selectedDate);
 
