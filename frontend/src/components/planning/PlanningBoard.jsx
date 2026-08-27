@@ -274,6 +274,7 @@ export default function PlanningBoard({
                     onEditLesson={onEditLesson}
                     onCancelLesson={onCancelLesson}
                     onDeleteLesson={onDeleteLesson}
+                    readOnly={readOnly}
                 />
             )}
 
@@ -284,6 +285,7 @@ export default function PlanningBoard({
                     showEvents={showEvents}
                     selectedWeek={selectedWeek}
                     onReload={onReload}
+                    readOnly={readOnly}
                 />
             )}
 
@@ -293,6 +295,7 @@ export default function PlanningBoard({
                     events={events}
                     showEvents={showEvents}
                     onReload={onReload}
+                    readOnly={readOnly}
                 />
             )}
             {viewMode === "month" && (
@@ -301,6 +304,7 @@ export default function PlanningBoard({
                     events={events}
                     showEvents={showEvents}
                     selectedDate={selectedDate}
+                    readOnly={readOnly}
                 />
             )}
 

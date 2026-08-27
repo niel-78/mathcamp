@@ -18,7 +18,8 @@ export default function WeekView({
     selectedWeek,
     onEditLesson,
     onCancelLesson,
-    onDeleteLesson
+    onDeleteLesson,
+    readOnly = false,
 }) {
 
     const weekLessons =
@@ -117,6 +118,7 @@ export default function WeekView({
                                         <LessonCard
                                             key={lesson.id}
                                             lesson={lesson}
+                                            readOnly={readOnly}
                                             onEditLesson={onEditLesson}
                                             onCancelLesson={onCancelLesson}
                                             onDeleteLesson={onDeleteLesson}

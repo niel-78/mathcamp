@@ -33,6 +33,7 @@ router.get("/",
             LEFT JOIN classroom_layouts cl
                 ON cl.id = gs.classroom_layout_id
             WHERE gs.group_id = ?
+            AND gs.deleted_at IS NULL
             `,
             [
                 req.query.groupId
@@ -322,6 +323,35 @@ router.put("/:id",
     }
 );
 
+// DELETE /api/group-schedules/:id
+router.delete("/:id",
+    async (req, res) => {
+
+        await db.query(
+            `
+            UPDATE group_schedules
+            SET deleted_at = NOW()
+            WHERE id = ?
+            `,
+            [req.params.id]
+        );
+
+        await db.query(
+            `
+            UPDATE lessons
+            SET deleted_at = NOW()
+            WHERE group_schedule_id = ?
+            AND starts_at >= NOW()
+
+            `,
+            [req.params.id]
+        );
+
+        res.sendStatus(204);
+
+    }
+);
+
 // GET /api/group-schedules/exceptions?schoolId=1
 router.get("/school/:schoolId/exceptions",
     async (req, res) => {
@@ -376,7 +406,6 @@ router.get("/school/:schoolId/exceptions",
 
     }
 );
-
 
 router.post("/exceptions", async (req, res) => {
 
@@ -671,61 +700,7 @@ router.post("/exceptions/import",
 );
 
 // GET /api/group-schedules/groups/:groupId/events
-// router.get("/groups/:groupId/events",
-//     async (req, res) => {
-
-//         try {
-
-//             const [events] =
-//                 await db.query(
-//                     `
-//                     SELECT DISTINCT
-//                         sse.*
-
-//                     FROM school_schedule_exceptions sse
-
-//                     LEFT JOIN
-//                         schedule_exception_groups seg
-//                         ON seg.schedule_exception_id = sse.id
-
-//                     INNER JOIN \`groups\` g
-//                         ON g.id = ?
-
-//                     WHERE
-//                         (
-//                             seg.group_id = ?
-//                         )
-//                         OR
-//                         (
-//                             seg.group_id IS NULL
-//                             AND sse.school_id = g.school_id
-//                         )
-
-//                     ORDER BY sse.date
-//                     `,
-//                     [
-//                         req.params.groupId,
-//                         req.params.groupId
-//                     ]
-//                 );
-
-//             res.json(events);
-
-//         } catch (error) {
-
-//             console.error(error);
-
-//             res.status(500).json({
-//                 error: error.message
-//             });
-
-//         }
-
-//     }
-// );
-
-router.get(
-    "/groups/:groupId/events",
+router.get("/groups/:groupId/events",
     async (req, res) => {
 
         try {

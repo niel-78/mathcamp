@@ -26,6 +26,7 @@ import PresentationEditorTab from "@/components/ui/PresentationEditorTab";
 import PresentationPlayerTab from "@/components/ui/PresentationPlayerTab";
 import ClassroomLayoutTab from "./Main/ClassroomLayoutTab";
 import GroupLayoutTab from "./Main/GroupLayoutTab";
+import TeacherCalendarTab from "@/components/tabs/TeacherCalenderTab";
 
 
 
@@ -123,9 +124,9 @@ export default function Main({
                         />
                     )}
 
-                    {currentTab?.type === "my-lessons" && (
+                    {currentTab?.type === "teacher-calendar" && (
 
-                        <MyLessonsTab
+                        <TeacherCalendarTab
                             openTab={(tab) =>
                                 openTab(tab, area)
                             }

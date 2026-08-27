@@ -5,6 +5,7 @@ import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 import CardSection from "@/components/layouts/CardSection";
 import { Button } from "@/components/ui/button";
 import EditGroupScheduleDialog from "./EditGroupScheduleDialog";
+import { Trash2 } from "lucide-react";
 
 export default function GroupSchedulesTab({
     groupId
@@ -39,6 +40,33 @@ export default function GroupSchedulesTab({
         setSchedules(data);
 
         
+
+    };
+
+    const deleteSchedule = async schedule => {
+
+        if (
+            !window.confirm(
+                "Ta bort schemapositionen och alla tillhörande lektioner?"
+            )
+        ) {
+            return;
+        }
+
+        const response =
+            await fetch(
+                `${API_URL}/api/group-schedules/${schedule.id}`,
+                {
+                    method: "DELETE",
+                    headers: authHeaders()
+                }
+            );
+
+        if (!response.ok) {
+            return;
+        }
+
+        loadSchedules();
 
     };
 
@@ -116,15 +144,31 @@ export default function GroupSchedulesTab({
 
                                     </div>
 
-                                    <Button
-                                        onClick={() =>
-                                            setScheduleToEdit(
-                                                schedule
-                                            )
-                                        }
-                                    >
-                                        Redigera
-                                    </Button>
+                                    <div className="flex gap-2">
+
+                                        <Button
+                                            onClick={() =>
+                                                setScheduleToEdit(
+                                                    schedule
+                                                )
+                                            }
+                                        >
+                                            Redigera
+                                        </Button>
+
+                                        <Button
+                                            variant="destructive"
+                                            onClick={() =>
+                                                deleteSchedule(
+                                                    schedule
+                                                )
+                                            }
+                                        >
+                                            Ta bort
+                                        </Button>
+
+                                    </div>
+
 
                                 </div>
 

@@ -28,6 +28,9 @@ export default function EditLessonDialog({
     const [endTime, setEndTime] =
         useState("");
 
+    const [description, setDescription] =
+        useState("");
+
     useEffect(() => {
 
         if (!lesson) {
@@ -55,6 +58,10 @@ export default function EditLessonDialog({
             )
         );
 
+        setDescription(
+            lesson.description ?? ""
+        );
+
     }, [lesson]);
 
     const save = async () => {
@@ -72,7 +79,8 @@ export default function EditLessonDialog({
                     body: JSON.stringify({
                         date,
                         start_time: startTime,
-                        end_time: endTime
+                        end_time: endTime,
+                        description
                     })
                 }
             );
@@ -158,6 +166,39 @@ export default function EditLessonDialog({
                                     e.target.value
                                 )
                             }
+                        />
+
+                    </div>
+
+                    <div>
+
+                        <label>
+                            Beskrivning
+                        </label>
+
+                        <textarea
+                            className="
+                                w-full
+                                rounded-md
+                                border
+                                p-2
+                                min-h-[150px]
+                            "
+                            value={description}
+                            onChange={(e) =>
+                                setDescription(
+                                    e.target.value
+                                )
+                            }
+                            placeholder={`
+                    Skriv lektionsinformation här.
+
+                    LaTeX kommer att kunna användas:
+
+                    $$
+                    x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}
+                    $$
+                            `}
                         />
 
                     </div>

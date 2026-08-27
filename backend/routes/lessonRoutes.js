@@ -63,6 +63,7 @@ router.get("/",
                         AND sse.date = DATE(l.starts_at)
 
                     WHERE l.group_id IN (${placeholders})
+                    AND l.deleted_at IS NULL
 
                     ORDER BY l.starts_at
                     `,
@@ -136,7 +137,8 @@ router.put("/:id", requireAuth,
         const {
             date,
             start_time,
-            end_time
+            end_time,
+            description
         } = req.body;
 
         await db.query(
@@ -144,12 +146,14 @@ router.put("/:id", requireAuth,
             UPDATE lessons
             SET
                 starts_at = ?,
-                ends_at = ?
+                ends_at = ?,
+                description = ?
             WHERE id = ?
             `,
             [
                 `${date} ${start_time}:00`,
                 `${date} ${end_time}:00`,
+                description,
                 req.params.id
             ]
         );
@@ -557,6 +561,167 @@ router.put("/lesson-sections/:id/pin", requireAuth,
         );
 
         res.sendStatus(204);
+
+    }
+);
+
+// GET /api/lessons/teacher
+router.get("/teacher",
+    requireAuth,
+    async (req, res) => {
+
+        try {
+
+            const [lessons] =
+                await db.query(
+                    `
+                    SELECT
+                        l.*,
+
+                        g.name AS group_name,
+                        g.school_id,
+
+                        c.name AS classroom_name,
+
+                        cl.name AS classroom_layout_name,
+
+                        sse.id AS schedule_exception_id,
+                        sse.title AS schedule_exception_title,
+                        sse.type AS schedule_exception_type,
+                        sse.note AS schedule_exception_note,
+                        sse.affects_lessons
+
+                    FROM lessons l
+
+                    JOIN \`groups\` g
+                        ON g.id = l.group_id
+
+                    JOIN group_permissions gp
+                        ON gp.group_id = g.id
+
+                    LEFT JOIN classrooms c
+                        ON c.id = l.classroom_id
+
+                    LEFT JOIN classroom_layouts cl
+                        ON cl.id = l.classroom_layout_id
+
+                    LEFT JOIN school_schedule_exceptions sse
+                        ON sse.school_id = g.school_id
+                        AND sse.date = DATE(l.starts_at)
+
+                    WHERE gp.user_id = ?
+                    AND l.deleted_at IS NULL
+
+                    ORDER BY l.starts_at
+                    `,
+                    [req.user.id]
+                );
+
+
+            for (const lesson of lessons) {
+
+                lesson.cancelled_by_exception =
+                    !!lesson.schedule_exception_id &&
+                    lesson.affects_lessons === 1;
+
+                if (lesson.cancelled_by_exception) {
+
+                    lesson.cancelled_reason =
+                        lesson.schedule_exception_title ||
+                        lesson.schedule_exception_note ||
+                        "Inställd undervisning";
+
+                }
+
+            }
+
+
+            const lessonIds =
+                lessons.map(
+                    lesson => lesson.id
+                );
+
+            if (lessonIds.length) {
+
+                const placeholders =
+                    lessonIds
+                        .map(() => "?")
+                        .join(",");
+
+                const [sections] =
+                    await db.query(
+                        `
+                        SELECT
+                            s.*,
+                            ls.id AS lesson_section_id,
+                            ls.lesson_id,
+                            ls.pinned
+
+                        FROM lesson_sections ls
+
+                        JOIN sections s
+                            ON s.id = ls.section_id
+
+                        WHERE ls.lesson_id
+                            IN (${placeholders})
+
+                        ORDER BY
+                            ls.pinned DESC,
+                            s.page_number
+                        `,
+                        lessonIds
+                    );
+
+                const sectionsByLesson =
+                    {};
+
+                for (const section of sections) {
+
+                    if (
+                        !sectionsByLesson[
+                            section.lesson_id
+                        ]
+                    ) {
+
+                        sectionsByLesson[
+                            section.lesson_id
+                        ] = [];
+
+                    }
+
+                    sectionsByLesson[
+                        section.lesson_id
+                    ].push(section);
+
+                }
+
+                for (const lesson of lessons) {
+
+                    lesson.sections =
+                        sectionsByLesson[
+                            lesson.id
+                        ] ?? [];
+
+                }
+
+            }
+
+
+
+            res.json(
+                lessons
+            );
+
+        } catch (err) {
+
+            console.error(err);
+
+            res.status(500).json({
+                error:
+                    "Kunde inte hämta lärarkalendern."
+            });
+
+        }
 
     }
 );

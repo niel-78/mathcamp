@@ -9,6 +9,17 @@ export default function StartPage({
         <BaseTabLayout
             title="Startsida"
         >
+            <Button
+                onClick={() =>
+                    openTab({
+                        id: "teacher-calendar",
+                        title: "Min kalender",
+                        type: "teacher-calendar"
+                    })
+                }
+            >
+                Min kalender
+            </Button>
 
             <Button
                 onClick={() =>

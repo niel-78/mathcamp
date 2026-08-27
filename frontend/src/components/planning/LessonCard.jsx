@@ -14,7 +14,7 @@ import { MoreVertical } from "lucide-react";
 
 export default function LessonCard({
     lesson,
-    showGroupName = false,
+    showGroupName = true,
     onEditLesson,
     onCancelLesson,
     onDeleteLesson,
@@ -27,9 +27,7 @@ export default function LessonCard({
 
             <CardSection
                 title={
-                    <FormatDateTimeShort
-                        value={lesson.starts_at}
-                    />
+                    lesson.group_name
                 }
             >
 
@@ -79,9 +77,25 @@ export default function LessonCard({
     return(
         <CardSection
             title={
-                <FormatDateTimeShort
-                    value={lesson.starts_at}
-                />
+                    <div
+                        className="
+                            // text-sm
+                            // text-muted-foreground
+                        "
+                    >
+                        <FormatDateTimeShort
+                            value={lesson.starts_at}
+                            showDate={false}
+                        />
+
+                        {" - "}
+
+                        <FormatDateTimeShort
+                            value={lesson.ends_at}
+                            showDate={false}
+                        />
+
+                    </div>
             }
             actions={
                 !readOnly && (
@@ -159,24 +173,6 @@ export default function LessonCard({
 
                 <div>
 
-                    <div
-                        className="
-                            text-sm
-                            text-muted-foreground
-                        "
-                    >
-                        <FormatDateTimeShort
-                            value={lesson.starts_at}
-                        />
-
-                        {" - "}
-
-                        <FormatDateTimeShort
-                            value={lesson.ends_at}
-                        />
-
-                    </div>
-
                     {showGroupName && (
 
                         <div
@@ -203,19 +199,6 @@ export default function LessonCard({
                         </div>
 
                     )}
-
-                    {/* {lesson.classroom_layout_name && (
-
-                        <div
-                            className="
-                                text-sm
-                                text-muted-foreground
-                            "
-                        >
-                            Möblering: {lesson.classroom_layout_name}
-                        </div>
-
-                    )} */}
 
                 </div>
 
@@ -274,6 +257,22 @@ export default function LessonCard({
 
                 )}
 
+                {lesson.description && (
+
+                    <div
+                        className="
+                            rounded-md
+                            border
+                            bg-muted/30
+                            p-3
+                            text-sm
+                            whitespace-pre-wrap
+                        "
+                    >
+                        {lesson.description}
+                    </div>
+
+                )}
 
                 <div className="space-y-2">
 
