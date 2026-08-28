@@ -1515,70 +1515,76 @@ router.post("/:groupId/fill-planning",
 router.get("/:id/classrooms",
     async (req, res) => {
 
-        const [rows] = await db.query(
-            `
-            SELECT DISTINCT
-                c.id AS classroom_id,
-                c.name AS classroom_name,
+        const [rows] =
+            await db.query(
+                `
+                SELECT DISTINCT
+                    c.id AS classroom_id,
+                    c.name AS classroom_name,
 
-                cl.id AS layout_id,
-                cl.name AS layout_name
+                    cl.id AS layout_id,
+                    cl.name AS layout_name
 
-            FROM group_schedules gs
+                FROM lessons l
 
-            INNER JOIN classrooms c
-                ON c.id = gs.classroom_id
+                JOIN classrooms c
+                    ON c.id = l.classroom_id
 
-            INNER JOIN classroom_layouts cl
-                ON cl.id =
-                    gs.classroom_layout_id
+                LEFT JOIN classroom_layouts cl
+                    ON cl.id = l.classroom_layout_id
 
-            WHERE gs.group_id = ?
+                WHERE l.group_id = ?
+                AND l.deleted_at IS NULL
 
-            ORDER BY
-                c.name,
-                cl.name
-            `,
-            [req.params.id]
-        );
+                ORDER BY
+                    c.name,
+                    cl.name
+                                `,
+                [req.params.id]
+            );
 
-        const classrooms = [];
+        const classroomMap =
+            new Map();
 
         for (const row of rows) {
 
-            let classroom =
-                classrooms.find(
-                    c =>
-                        c.id ===
-                        row.classroom_id
-                );
+            if (
+                !classroomMap.has(
+                    row.classroom_id
+                )
+            ) {
 
-            if (!classroom) {
+                classroomMap.set(
+                    row.classroom_id,
+                    {
+                        id:
+                            row.classroom_id,
 
-                classroom = {
-                    id:
-                        row.classroom_id,
+                        name:
+                            row.classroom_name,
 
-                    name:
-                        row.classroom_name,
-
-                    layouts: []
-                };
-
-                classrooms.push(
-                    classroom
+                        layouts: []
+                    }
                 );
 
             }
 
-            classroom.layouts.push({
-                id: row.layout_id,
-                name: row.layout_name
-            });
+            classroomMap
+                .get(row.classroom_id)
+                .layouts
+                .push({
+                    id:
+                        row.layout_id,
+
+                    name:
+                        row.layout_name
+                });
 
         }
 
-        res.json(classrooms);
+        res.json(
+            [...classroomMap.values()]
+        );
 
     }
 );

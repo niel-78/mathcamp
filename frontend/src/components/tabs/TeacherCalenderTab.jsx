@@ -57,7 +57,7 @@ export default function TeacherCalendarTab() {
                 lessons={lessons}
                 loading={loading}
                 showGroupName={true}
-                readOnly
+                readOnly={true}
             />
 
         </BaseTabLayout>

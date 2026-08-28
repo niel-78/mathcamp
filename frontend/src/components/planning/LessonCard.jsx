@@ -27,7 +27,25 @@ export default function LessonCard({
 
             <CardSection
                 title={
-                    lesson.group_name
+                    <div
+                        className="
+                            // text-sm
+                            // text-muted-foreground
+                        "
+                    >
+                        <FormatDateTimeShort
+                            value={lesson.starts_at}
+                            showDate={false}
+                        />
+
+                        {" - "}
+
+                        <FormatDateTimeShort
+                            value={lesson.ends_at}
+                            showDate={false}
+                        />
+
+                    </div>
                 }
             >
 

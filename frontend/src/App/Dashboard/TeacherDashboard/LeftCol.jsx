@@ -342,7 +342,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
         const data =
             await response.json();
-
+        console.log(data);
         setGroupClassrooms(prev => ({
             ...prev,
             [groupId]: data

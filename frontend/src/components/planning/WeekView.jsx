@@ -30,6 +30,39 @@ export default function WeekView({
                 ) === selectedWeek
         );
 
+    const getDateForWeekday = (
+        weekNumber,
+        weekdayIndex
+    ) => {
+
+        const year =
+            new Date().getFullYear();
+
+        const firstDay =
+            new Date(year, 0, 1);
+
+        const days =
+            (weekNumber - 1) * 7;
+
+        const monday =
+            new Date(
+                firstDay.setDate(
+                    firstDay.getDate() +
+                    days -
+                    firstDay.getDay() +
+                    1
+                )
+            );
+
+        monday.setDate(
+            monday.getDate() +
+            weekdayIndex
+        );
+
+        return monday;
+
+    };
+
     return (
 
         <div className="space-y-4">
@@ -88,10 +121,29 @@ export default function WeekView({
                                             border-b
                                             pb-2
                                             text-center
-                                            font-semibold
                                         "
                                     >
-                                        {weekday}
+
+                                        <div
+                                            className="font-semibold"
+                                        >
+                                            {weekday}
+                                        </div>
+
+                                        <div
+                                            className="
+                                                text-sm
+                                                text-muted-foreground
+                                            "
+                                        >
+                                            {getDateForWeekday(
+                                                selectedWeek,
+                                                index
+                                            ).toLocaleDateString(
+                                                "sv-SE"
+                                            )}
+                                        </div>
+
                                     </div>
 
                                     {dayLessons.length === 0 && (
