@@ -20,6 +20,11 @@ export default function TabBar({
         disabled: !enabled
     });
 
+    console.log(
+    "activeTab",
+    activeTab
+    );
+
     return (
 
         <div

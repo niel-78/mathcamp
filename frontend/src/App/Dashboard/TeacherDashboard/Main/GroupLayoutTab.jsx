@@ -3,14 +3,17 @@ import { Button } from "@/components/ui/button";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 import { Pin } from "lucide-react";
-
+import LoadingOverlay from "@/components/common/LoadingOverlay";
+import ReactDOMServer from "react-dom/server";
+import GroupLayoutPrintView from "@/components/classroom/GroupLayoutPrintView";
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 import ShuffleSeatsDialog from "./ShuffleSeatsDialog";
 import SaveLayoutSnapshotDialog from "./SaveLayoutSnapshotDialog";
 
 export default function GroupLayoutTab({
     groupId,
-    layoutId
+    layoutId,
+    isActive
 }) {
 
     const [layout, setLayout] = useState(null);
@@ -22,39 +25,34 @@ export default function GroupLayoutTab({
     const [studentView, setStudentView] = useState(false);
     const [saveSnapshotDialogOpen, setSaveSnapshotDialogOpen] = useState(false);
     const [showDisplayNames, setShowDisplayNames] = useState(true);
-
-
-    useEffect(() => {
-
-        const initialize = async () => {
-
-            await applyLayout();
-
-            await load();
-
-        };
-
-        initialize();
-
-    }, [layoutId]);
+    const [group, setGroup] = useState(null);
+    const [initialLoading, setInitialLoading] = useState(true);
 
     useEffect(() => {
 
-        if (!layoutId) {
+        if (
+            !isActive ||
+            !layoutId
+        ) {
             return;
         }
 
-        const initialize = async () => {
+        setInitialLoading(true);
 
-            await applyLayout();
+        const initialize =
+            async () => {
 
-            await load();
+                await applyLayout();
+                await load();
 
-        };
+            };
 
         initialize();
 
-    }, [layoutId]);
+    }, [
+        isActive,
+        layoutId
+    ]);
 
     useEffect(() => {
 
@@ -108,108 +106,130 @@ export default function GroupLayoutTab({
 
     const load = async () => {
 
-        const layoutResponse =
-            await fetch(
-                `${API_URL}/api/classroom-layouts/${layoutId}`,
-                {
-                    headers:
-                        authHeaders()
-                }
-            );
+        try{
 
-        if (layoutResponse.ok) {
+            const groupResponse =
+                await fetch(
+                    `${API_URL}/api/groups/${groupId}`,
+                    {
+                        headers:
+                            authHeaders()
+                    }
+                );
 
-            setLayout(
-                await layoutResponse.json()
-            );
+            if (groupResponse.ok) {
 
-        }
+                setGroup(
+                    await groupResponse.json()
+                );
 
-        const seatsResponse =
-            await fetch(
-                `${API_URL}/api/classroom-layouts/${layoutId}/seats`,
-                {
-                    headers:
-                        authHeaders()
-                }
-            );
+            }
 
-        if (seatsResponse.ok) {
+            const layoutResponse =
+                await fetch(
+                    `${API_URL}/api/classroom-layouts/${layoutId}`,
+                    {
+                        headers:
+                            authHeaders()
+                    }
+                );
 
-            setSeats(
-                await seatsResponse.json()
-            );
+            if (layoutResponse.ok) {
 
-        }
+                setLayout(
+                    await layoutResponse.json()
+                );
+            }
 
-        const studentsResponse =
-            await fetch(
-                `${API_URL}/api/groups/${groupId}/students`,
-                {
-                    headers: authHeaders()
-                }
-            );
+            const seatsResponse =
+                await fetch(
+                    `${API_URL}/api/classroom-layouts/${layoutId}/seats`,
+                    {
+                        headers:
+                            authHeaders()
+                    }
+                );
 
-        if (studentsResponse.ok) {
+            if (seatsResponse.ok) {
 
-            const data =
-                await studentsResponse.json();
+                setSeats(
+                    await seatsResponse.json()
+                );
 
-            setStudents(
-                data.students || []
-            );
+            }
 
-        }
+            const studentsResponse =
+                await fetch(
+                    `${API_URL}/api/groups/${groupId}/students`,
+                    {
+                        headers: authHeaders()
+                    }
+                );
 
-        const assignmentsResponse =
-            await fetch(
-                `${API_URL}/api/groups/${groupId}/seat-assignments`,
-                {
-                    headers: authHeaders()
-                }
-            );
+            if (studentsResponse.ok) {
 
-        if (assignmentsResponse.ok) {
+                const data =
+                    await studentsResponse.json();
 
-            const data =
-                await assignmentsResponse.json();
+                setStudents(
+                    data.students || []
+                );
 
-            setAssignments(data);
+            }
 
-            if (data.length === 0) {
+            const assignmentsResponse =
+                await fetch(
+                    `${API_URL}/api/groups/${groupId}/seat-assignments`,
+                    {
+                        headers: authHeaders()
+                    }
+                );
 
-                const response =
-                    await fetch(
-                        `${API_URL}/api/groups/${groupId}/seat-assignments/generate`,
-                        {
-                            method: "POST",
-                            headers: authHeaders()
-                        }
-                    );
+            if (assignmentsResponse.ok) {
 
-                if (!response.ok) {
+                const data =
+                    await assignmentsResponse.json();
+
+                setAssignments(data);
+
+                if (data.length === 0) {
+
+                    const response =
+                        await fetch(
+                            `${API_URL}/api/groups/${groupId}/seat-assignments/generate`,
+                            {
+                                method: "POST",
+                                headers: authHeaders()
+                            }
+                        );
+
+                    if (!response.ok) {
+                        return;
+                    }
+
+                    const refreshed =
+                        await fetch(
+                            `${API_URL}/api/groups/${groupId}/seat-assignments`,
+                            {
+                                headers: authHeaders()
+                            }
+                        );
+
+                    if (refreshed.ok) {
+
+                        setAssignments(
+                            await refreshed.json()
+                        );
+
+                    }
+
                     return;
                 }
 
-                const refreshed =
-                    await fetch(
-                        `${API_URL}/api/groups/${groupId}/seat-assignments`,
-                        {
-                            headers: authHeaders()
-                        }
-                    );
-
-                if (refreshed.ok) {
-
-                    setAssignments(
-                        await refreshed.json()
-                    );
-
-                }
-
-                return;
             }
 
+        } finally {
+            setInitialLoading(false);
         }
     }
     
@@ -308,11 +328,100 @@ export default function GroupLayoutTab({
 
             await load();
 
-        };   
+        };
         
-    const CANVAS_WIDTH = 1200;
-    const SEAT_WIDTH = 120;
+    const printLayout = () => {
 
+        const html =
+            ReactDOMServer.renderToStaticMarkup(
+
+                <GroupLayoutPrintView
+                    groupName={
+                        group?.name ??
+                        ""
+                    }
+                    classroomName={
+                        layout?.classroom_name ??
+                        ""
+                    }
+                    layoutName={
+                        layout?.name ??
+                        ""
+                    }
+                    seats={seats}
+                    students={students}
+                    assignments={
+                        assignments
+                    }
+                />
+
+            );
+
+        const printWindow =
+            window.open(
+                "",
+                "_blank"
+            );
+
+            printWindow.document.write(`
+            <!DOCTYPE html>
+
+            <html>
+
+                <head>
+
+                    <title>
+                        Sittplacering
+                    </title>
+
+                    <style>
+
+                        @page {
+
+                            size:
+                                A4 landscape;
+
+                            margin:
+                                10mm;
+
+                        }
+
+                        body {
+
+                            margin: 0;
+
+                            background:
+                                white;
+
+                        }
+
+                    </style>
+
+                </head>
+
+                <body>
+
+                    ${html}
+
+                </body>
+
+            </html>
+        `);
+
+        printWindow.document.close();
+
+        printWindow.focus();
+
+        setTimeout(() => {
+
+            printWindow.print();
+
+            printWindow.close();
+
+        }, 500);
+
+    };
+            
     const PRESENTATION_SCALE = 1.8;
 
     const minX = Math.min(
@@ -346,6 +455,8 @@ export default function GroupLayoutTab({
 
     const classroomWidth =
         maxX + seatWidth + 100;
+
+
 
     return (
         <>
@@ -397,6 +508,12 @@ export default function GroupLayoutTab({
                                     ? "Visa fullständiga namn"
                                     : "Visa visningsnamn"
                             }
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={printLayout}
+                        >
+                            Skriv ut
                         </Button>
                         <Button
                             variant="outline"
@@ -703,6 +820,11 @@ export default function GroupLayoutTab({
                 groupId={groupId}
                 layoutId={layoutId}
             />
+            {initialLoading && (
+                <LoadingOverlay 
+                    text="Laddar sittplacering..."
+                />
+            )}
         </>
 
     );

@@ -136,6 +136,13 @@ export default function ContextMenu(props) {
 
                             setContextMenu(null);
                         }}
+                        onPrintLogins={() => {
+                            props.onPrintLogins?.(
+                                contextMenu.groupId,
+                                contextMenu.groupName
+                            );
+                            setContextMenu(null);
+                        }}
                     />
                 );
 

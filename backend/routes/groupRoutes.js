@@ -569,6 +569,99 @@ router.delete("/:id/students/:studentId", async (req, res) => {
     }
 });
 
+// POST /api/groups/:id/reset-passwords
+router.post("/:id/reset-passwords",
+    async (req, res) => {
+
+        try {
+
+            const [students] =
+                await db.query(
+                    `
+                    SELECT
+                        u.id,
+                        u.username,
+                        u.first_name,
+                        u.last_name,
+                        u.display_name
+                    FROM users u
+                    INNER JOIN group_students gs
+                        ON gs.user_id = u.id
+                    WHERE gs.group_id = ?
+                      AND u.role = 'student'
+                    ORDER BY
+                        COALESCE(
+                            u.display_name,
+                            u.first_name
+                        )
+                    `,
+                    [req.params.id]
+                );
+
+            const credentials = [];
+
+            for (const student of students) {
+
+                const password =
+                    generatePassword();
+
+                const password_hash =
+                    await bcrypt.hash(
+                        password,
+                        12
+                    );
+
+                await db.query(
+                    `
+                    UPDATE users
+                    SET password_hash = ?
+                    WHERE id = ?
+                    `,
+                    [
+                        password_hash,
+                        student.id
+                    ]
+                );
+
+                credentials.push({
+
+                    id: student.id,
+
+                    display_name:
+                        student.display_name ||
+                        student.first_name,
+
+                    first_name:
+                        student.first_name,
+
+                    last_name:
+                        student.last_name,
+
+                    username:
+                        student.username,
+
+                    password
+
+                });
+
+            }
+
+            res.json(credentials);
+
+        } catch (err) {
+
+            console.error(err);
+
+            res.status(500).json({
+                error:
+                    "Kunde inte återställa lösenord."
+            });
+
+        }
+
+    }
+);
+
 // POST /api/groups/:id/import-students
 router.post("/:id/import-students",
     upload.single("file"),

@@ -384,6 +384,9 @@ export default function Main({
                         <GroupLayoutTab
                             groupId={currentTab.groupId}
                             layoutId={currentTab.layoutId}
+                            isActive={
+                                currentTab?.id === activeTab
+                            }
                         />
 
                     )}

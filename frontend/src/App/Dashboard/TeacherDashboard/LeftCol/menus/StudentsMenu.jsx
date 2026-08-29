@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 export default function StudentsMenu({
     onCreateStudent,
     onImportStudents,
-    onDownloadStudentTemplate
+    onDownloadStudentTemplate,
+    onPrintLogins
 }) {
 
     return (
@@ -31,6 +32,13 @@ export default function StudentsMenu({
                 onClick={onDownloadStudentTemplate}
                 >
                 Ladda ner elevmall
+            </Button>
+            <Button
+                className="context-menu-button"
+                variant="inline"
+                onClick={onPrintLogins}
+            >
+                Nya elevlösenord
             </Button>
 
         </div>

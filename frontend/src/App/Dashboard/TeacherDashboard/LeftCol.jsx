@@ -41,6 +41,7 @@ import ImportScheduleExceptionsDialog from "./Main/ImportScheduleExceptionsDialo
 import DeleteScheduleExceptionDialog from "./Main/DeleteScheduleExceptionDialog";
 import EditScheduleExceptionDialog from "./Main/EditScheduleExceptionDialog";
 import CreateClassroomDialog from "./LeftCol/CreateClassroomDialog";
+import PrintLoginDialog from "./Main/PrintLoginDialog";
 import { scheduleExceptionLabels } from "@/constants/scheduleExceptionLabels";
 
 export default function LeftCol( {openTab, hoverTarget} ) {
@@ -118,6 +119,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [importScheduleExceptionsDialog,setImportScheduleExceptionsDialog] = useState(null);
     const [createClassroomDialogOpen, setCreateClassroomDialogOpen] = useState(false);
     const [sharePlanningDialog, setSharePlanningDialog] = useState(null);
+    const [printLoginsGroup, setPrintLoginsGroup] = useState(null);
 
     const [showSchools, setShowSchools] =
         useState(false);
@@ -774,6 +776,8 @@ export default function LeftCol( {openTab, hoverTarget} ) {
             <UserProfile />
 
 
+
+
             <ContextMenu
                 contextMenu={contextMenu}
                 setContextMenu={setContextMenu}
@@ -816,7 +820,15 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                         groupName
                     });
                 }}
-
+                onPrintLogins={(
+                    groupId,
+                    groupName
+                        ) => {
+                    setPrintLoginsGroup({
+                        groupId,
+                        groupName
+                    });
+                }}
                 onResetPassword={(userId, name) => {
                     setPasswordDialog({
                         userId,
@@ -2702,6 +2714,13 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                     );
 
                 }}
+            />
+            <PrintLoginDialog
+                open={!!printLoginsGroup}
+                group={printLoginsGroup}
+                onOpenChange={() =>
+                    setPrintLoginsGroup(null)
+                }
             />
         </>
 

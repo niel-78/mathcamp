@@ -61,14 +61,19 @@ router.get("/templates", requireAuth,
 // GET /api/classroom-layouts/:id
 router.get("/:id", async (req, res) => {
 
-    const [[layout]] = await db.query(
-        `
-        SELECT *
-        FROM classroom_layouts
-        WHERE id = ?
-        `,
-        [req.params.id]
-    );
+    const [[layout]] =
+        await db.query(
+            `
+            SELECT
+                cl.*,
+                c.name AS classroom_name
+            FROM classroom_layouts cl
+            INNER JOIN classrooms c
+                ON c.id = cl.classroom_id
+            WHERE cl.id = ?
+            `,
+            [req.params.id]
+        );
 
     if (!layout) {
         return res.status(404).json({
