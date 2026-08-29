@@ -2,6 +2,7 @@ import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 import { useDraggable } from "@dnd-kit/core";
 import { GripVertical } from "lucide-react";
+import { Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     Pin,
@@ -11,6 +12,7 @@ import {
 export default function LessonSection({
     section,
     lessonId,
+    openTab,
     readOnly = false
 }) {
 
@@ -59,6 +61,37 @@ export default function LessonSection({
                 "lesson-section-added"
             )
         );
+
+    };
+
+    const openPresentation = async () => {
+
+        const response =
+            await fetch(
+                `${API_URL}/api/books/sections/${section.id}/open-presentation`,
+                {
+                    method: "POST",
+                    headers: authHeaders()
+                }
+            );
+
+        if (!response.ok) {
+            return;
+        }
+
+        const data =
+            await response.json();
+
+        openTab({
+            id:
+                `presentation-player-${data.presentation.id}`,
+            title:
+                `${data.presentation.title} (Visa)`,
+            type:
+                "presentation-player",
+            presentationId:
+                data.presentation.id
+        });
 
     };
 
@@ -151,26 +184,45 @@ export default function LessonSection({
 
                 </div>
 
-                <Button
-                    size="icon"
-                    variant={
-                        section.pinned
-                            ? "default"
-                            : "ghost"
-                    }
-                    onClick={() =>
-                        togglePin(
-                            section.lesson_section_id,
-                            !section.pinned
-                        )
-                    }
+                <div
+                    className="
+                        flex
+                        items-center
+                        gap-2
+                    "
                 >
-                    {
-                        section.pinned
-                            ? <Pin size={14} />
-                            : <PinOff size={14} />
-                    }
-                </Button>
+
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={openPresentation}
+                    >
+                        <Play size={14} />
+                        Starta
+                    </Button>
+
+                    <Button
+                        size="icon"
+                        variant={
+                            section.pinned
+                                ? "default"
+                                : "ghost"
+                        }
+                        onClick={() =>
+                            togglePin(
+                                section.lesson_section_id,
+                                !section.pinned
+                            )
+                        }
+                    >
+                        {
+                            section.pinned
+                                ? <Pin size={14} />
+                                : <PinOff size={14} />
+                        }
+                    </Button>
+
+                </div>
 
             </div>
 

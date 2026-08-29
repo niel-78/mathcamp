@@ -1,28 +1,14 @@
-import {
-    useEffect,
-    useState
-} from "react";
-
-import ReactMarkdown
-    from "react-markdown";
-
-import remarkMath
-    from "remark-math";
-
-import rehypeKatex
-    from "rehype-katex";
-
+import { useEffect, useState } from "react";
 import { useRef } from "react";
-
 import "katex/dist/katex.min.css";
-
-import BaseTabLayout
-    from "@/components/layouts/BaseTabLayout";
+import BaseTabLayout from "@/components/layouts/BaseTabLayout";
+import QuestionSlide from "@/components/presentation/QuestionSlide";
+import TitleSlide from "@/components/presentation/TitleSlide";
+import GoalsSlide from "@/components/presentation/GoalsSlide";
 
 import {
     Button
 } from "@/components/ui/button";
-
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 
@@ -158,14 +144,26 @@ export default function PresentationPlayerTab({
 
         setPresentation(data);
 
+        let content = data.content;
+
+        if (typeof content === "string") {
+
+            try {
+
+                content = JSON.parse(content);
+
+            } catch {
+
+                content = {
+                    slides: []
+                };
+
+            }
+
+        }
+
         setSlides(
-            data.content
-                .split(/\n---\n/)
-                .map(
-                    slide =>
-                        slide.trim()
-                )
-                .filter(Boolean)
+            content.slides || []
         );
 
     }
@@ -179,6 +177,40 @@ export default function PresentationPlayerTab({
     ) {
 
         return null;
+
+    }
+
+    function renderSlide(slide) {
+
+        switch (slide.type) {
+
+            case "title":
+
+                return (
+                    <TitleSlide slide={slide} />
+                );
+
+            case "goals":
+
+                return (
+                    <GoalsSlide
+                        slide={slide}
+                    />
+                );
+
+            case "question":
+
+                return (
+                    <QuestionSlide 
+                        slide={slide} 
+                        isFullscreen={isFullscreen}
+                    />
+                );
+
+            default:
+
+                return null;
+        }
 
     }
 
@@ -261,12 +293,9 @@ export default function PresentationPlayerTab({
                         }
                     >
 
-                        <ReactMarkdown
-                            remarkPlugins={[remarkMath]}
-                            rehypePlugins={[rehypeKatex]}
-                        >
-                            {slides[slideIndex] || ""}
-                        </ReactMarkdown>
+                    {renderSlide(
+                        slides[slideIndex]
+                    )}
 
                     </div>
                     

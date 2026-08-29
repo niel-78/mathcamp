@@ -8,7 +8,8 @@ import CancelLessonDialog from "@/components/ui/CancelLessonDialog";
 import DeleteLessonDialog from "@/components/ui/DeleteLessonDialog";
 
 export default function GroupPlanningTab({
-    groupId
+    groupId,
+    openTab
 }) {
 
     const [lessons, setLessons] = useState([]);
@@ -79,6 +80,7 @@ export default function GroupPlanningTab({
 
             <PlanningBoard
                 groupId={groupId}
+                openTab={openTab}
                 lessons={lessons}
                 loading={loading}
                 onReload={loadLessons}

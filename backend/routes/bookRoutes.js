@@ -660,5 +660,230 @@ router.get("/import-sections-template",
 );
 
 
+// POST /api/books/sections/:sectionId/open-presentation
+router.post("/sections/:sectionId/open-presentation",
+    requireAuth,
+    async (req, res) => {
+
+        try {
+
+            const [[existingPresentation]] =
+                await db.query(
+                    `
+                    SELECT *
+                    FROM presentations
+                    WHERE section_id = ?
+                    ORDER BY id
+                    LIMIT 1
+                    `,
+                    [req.params.sectionId]
+                );
+
+            if (existingPresentation) {
+
+                return res.json({
+                    created: false,
+                    presentation: existingPresentation
+                });
+
+            }
+
+            const [[section]] =
+                await db.query(
+                    `
+                    SELECT *
+                    FROM sections
+                    WHERE id = ?
+                    `,
+                    [req.params.sectionId]
+                );
+
+            if (!section) {
+
+                return res.status(404).json({
+                    error: "Sektionen hittades inte"
+                });
+
+            }
+
+            const [[sectionInfo]] =
+                await db.query(
+                    `
+                    SELECT
+                        s.title AS section_title,
+                        s.page_number,
+                        sc.title AS subchapter_title,
+                        c.title AS chapter_title,
+                        b.title AS book_title
+                    FROM sections s
+                    LEFT JOIN subchapters sc
+                        ON sc.id = s.subchapter_id
+                    LEFT JOIN chapters c
+                        ON c.id = sc.chapter_id
+                    LEFT JOIN books b
+                        ON b.id = c.book_id
+                    WHERE s.id = ?
+                    `,
+                    [req.params.sectionId]
+                );
+
+            const [blocks] =
+                await db.query(
+                    `
+                    SELECT
+                        b.*,
+                        GROUP_CONCAT(
+                            DISTINCT a.name
+                            ORDER BY a.name
+                            SEPARATOR ', '
+                        ) AS ability_titles
+                    FROM blocks b
+                    INNER JOIN block_sections bs
+                        ON bs.block_id = b.id
+                    LEFT JOIN block_abilities ba
+                        ON ba.block_id = b.id
+                    LEFT JOIN abilities a
+                        ON a.id = ba.ability_id
+                    WHERE bs.section_id = ?
+                    GROUP BY b.id
+                    ORDER BY b.id
+                    `,
+                    [req.params.sectionId]
+                );
+
+            const abilities = [
+                ...new Set(
+                    blocks.flatMap(
+                        block =>
+                            (block.ability_titles || "")
+                                .split(", ")
+                                .filter(Boolean)
+                    )
+                )
+            ];
+
+            const slides = [
+                {
+                    type: "title",
+                    book: sectionInfo.book_title,
+                    chapter: sectionInfo.chapter_title,
+                    subchapter: sectionInfo.subchapter_title,
+                    section: sectionInfo.section_title,
+                    page: sectionInfo.page_number
+                },
+                {
+                    type: "goals",
+                    title: "Lektionsmål",
+                    abilities
+                }
+            ];
+
+            for (const block of blocks) {
+
+                const [[question]] =
+                    await db.query(
+                        `
+                        SELECT *
+                        FROM questions
+                        WHERE block_id = ?
+                        ORDER BY id
+                        LIMIT 1
+                        `,
+                        [block.id]
+                    );
+
+                if (!question) {
+                    continue;
+                }
+
+                slides.push({
+                    type: "question",
+                    blockId: block.id,
+                    title:
+                        block.ability_titles ||
+                        "Exempel",
+                    question:
+                        question.question
+                });
+
+            }
+
+            const [[teacher]] =
+                await db.query(
+                    `
+                    SELECT school_id
+                    FROM school_teachers
+                    WHERE teacher_id = ?
+                    `,
+                    [req.user.id]
+                );
+
+            if (!teacher) {
+
+                return res.status(403).json({
+                    error:
+                        "Läraren saknar skolkoppling"
+                });
+
+            }
+
+            const [result] =
+                await db.query(
+                    `
+                    INSERT INTO presentations (
+                        school_id,
+                        section_id,
+                        title,
+                        content,
+                        created_by,
+                        updated_by
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    `,
+                    [
+                        teacher.school_id,
+                        section.id,
+                        section.title,
+                        JSON.stringify({
+                            slides
+                        }),
+                        req.user.id,
+                        req.user.id
+                    ]
+                );
+
+            const [[presentation]] =
+                await db.query(
+                    `
+                    SELECT *
+                    FROM presentations
+                    WHERE id = ?
+                    `,
+                    [result.insertId]
+                );
+
+            res.json({
+                created: true,
+                presentation
+            });
+
+        } catch (error) {
+
+            console.error(
+                "PRESENTATION ERROR:"
+            );
+
+            console.error(error);
+
+            res.status(500).json({
+                error: error.message
+            });
+
+        }
+
+    }
+);
+
+
 
 export default router;

@@ -6,6 +6,7 @@ import BlockLibrary from "@/components/ui/BlockLibrary";
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 import { Button } from "@/components/ui/button";
 import DropZone from "@/components/ui/DropZone";
+import LoadingOverlay from "@/components/common/LoadingOverlay";
 import CreateBlockFromExcelDialog from "@/components/ui/CreateBlockFromExcelDialog";
 
 export default function SectionTab({
@@ -18,6 +19,8 @@ export default function SectionTab({
     const [blocks, setBlocks] = useState([]);
     const [createBlockOpen, setCreateBlockOpen] = useState(false);
     const [importOpen, setImportOpen] = useState(false);
+    const [loading, setLoading] = useState(true);
+
 
     useEffect(() => {
 
@@ -28,14 +31,25 @@ export default function SectionTab({
 
     const loadSection = async () => {
 
-        const response = await fetch(
-            `${API_URL}/api/books/sections/${sectionId}`
-        );
+        setLoading(true);
 
-        const data =
-            await response.json();
+        try {
 
-        setSection(data);
+            const response =
+                await fetch(
+                    `${API_URL}/api/books/sections/${sectionId}`
+                );
+
+            const data =
+                await response.json();
+
+            setSection(data);
+
+        } finally {
+
+            setLoading(false);
+
+        }
 
     };
 
@@ -78,13 +92,48 @@ export default function SectionTab({
 
     };
 
-    if (!section) {
+    const createPresentation =
+        async () => {
 
-        return (
-            <div className="p-6">
-                Laddar...
-            </div>
-        );
+            const response =
+                await fetch(
+                    `${API_URL}/api/books/sections/${sectionId}/open-presentation`,
+                    {
+                        method: "POST",
+                        headers: authHeaders()
+                    }
+                );
+
+            if (!response.ok) {
+
+                const error =
+                    await response.json();
+
+                console.error(error);
+
+                return;
+
+            }
+
+            const data =
+                await response.json();
+
+            openTab({
+                id:
+                    `presentation-${data.presentation.id}`,
+                title:
+                    data.presentation.title,
+                type:
+                    "presentation-editor",
+                presentation:
+                    data.presentation
+            });
+
+        };
+
+    if (loading || !section) {
+
+        return <LoadingOverlay />;
 
     }
 
@@ -113,6 +162,12 @@ export default function SectionTab({
                             }
                         >
                             Skapa eget block
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={createPresentation}
+                            >
+                            Öppna presentation
                         </Button>
 
                     </div>

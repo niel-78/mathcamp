@@ -15,6 +15,7 @@ const weekdays = [
 
 export default function WeekView({
     lessons,
+    openTab,
     selectedWeek,
     onEditLesson,
     onCancelLesson,
@@ -169,6 +170,7 @@ export default function WeekView({
 
                                         <LessonCard
                                             key={lesson.id}
+                                            openTab={openTab}
                                             lesson={lesson}
                                             readOnly={readOnly}
                                             onEditLesson={onEditLesson}

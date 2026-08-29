@@ -17,6 +17,95 @@ const upload = multer({
 router.use(requireAuth);
 router.use(requireRole("teacher","super"));
 
+// GET /api/blocks/import-template
+router.get("/import-template", async (req, res) => {
+
+    const workbook =
+        XLSX.utils.book_new();
+
+    const worksheet =
+        XLSX.utils.json_to_sheet([
+            {
+                Fråga: "Beräkna $7 \\cdot 8$",
+                Frågetyp: "text",
+                "Korrekta alternativ": "56"
+            },
+            {
+                Fråga: "Vilket uttryck är lika med $x^2$?",
+                Frågetyp: "single_choice",
+                "Korrekta alternativ": "3",
+                "Alternativ 1": "$2x$",
+                "Alternativ 2": "$x+2$",
+                "Alternativ 3": "$x \\cdot x$",
+                "Alternativ 4": "$2x^2$"
+            },
+            {
+                Fråga: "Vilka av följande tal är lösningar till $x^2 = 25$?",
+                Frågetyp: "multiple_choice",
+                "Korrekta alternativ": "2,4",
+                "Alternativ 1": "$0$",
+                "Alternativ 2": "$5$",
+                "Alternativ 3": "$10$",
+                "Alternativ 4": "$-5$"
+            }
+        ]);
+
+    XLSX.utils.book_append_sheet(
+        workbook,
+        worksheet,
+        "Frågor"
+    );
+
+    const instructionSheet =
+        XLSX.utils.aoa_to_sheet([
+            ["Instruktioner"],
+            [],
+            ["Frågetyp kan vara:"],
+            ["text"],
+            ["single_choice"],
+            ["multiple_choice"],
+            [],
+            ["LaTeX kan användas i frågor och alternativ."],
+            ["Exempel:"],
+            ["$x^2 + 2x + 1$"],
+            ["$\\frac{3}{4}$"],
+            ["$\\sqrt{16}$"],
+            ["$\\pi r^2$"],
+            [],
+            ["text → skriv rätt svar i kolumnen 'Rätta svar'"],
+            ["single_choice → skriv numret på rätt alternativ, t.ex. 2"],
+            ["multiple_choice → skriv flera nummer, t.ex. 1,3,4"]
+        ]);
+
+    XLSX.utils.book_append_sheet(
+        workbook,
+        instructionSheet,
+        "Instruktioner"
+    );
+
+    const buffer =
+        XLSX.write(
+            workbook,
+            {
+                type: "buffer",
+                bookType: "xlsx"
+            }
+        );
+
+    res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+
+    res.setHeader(
+        "Content-Disposition",
+        'attachment; filename="block-mall.xlsx"'
+    );
+
+    res.send(buffer);
+
+});
+
 // GET /api/blocks/sections/:sectionId
 router.get("/sections/:sectionId",
     async (req, res) => {
@@ -298,6 +387,14 @@ router.get("/:blockId/", async (req, res) => {
 
     const hydratedBlocks =
         await hydrateBlocks(blocks);
+
+    if (!hydratedBlocks.length) {
+
+        return res.status(404).json({
+            error: "Block not found"
+        });
+
+    }
 
     hydratedBlocks[0].isOwner = hydratedBlocks[0].created_by === req.user.id;
 
@@ -928,6 +1025,8 @@ router.post("/import",upload.single("file"),
                     sheet
                 );
 
+            let importedCount = 0;
+
             for (const row of rows) {
 
                 const question =
@@ -940,27 +1039,107 @@ router.post("/import",upload.single("file"),
                     continue;
                 }
 
+                const questionType =
+                    row.Frågetyp ||
+                    row.frågetyp ||
+                    row.QuestionType ||
+                    row.questionType ||
+                    "text";
 
-                await db.query(
-                    `
-                    INSERT INTO questions (
-                        block_id,
-                        question,
-                        question_type,
-                        created_by,
-                        updated_by
+                const correctAnswers =
+                    String(
+                        row["Korrekta alternativ"] ||
+                        row["Rätta svar"] ||
+                        ""
                     )
-                    VALUES (
-                        ?, ?, 'text', ?, ?
-                    )
-                    `,
-                    [
-                        blockId,
-                        question,
-                        req.user.id,
-                        req.user.id
-                    ]
-                );
+                        .split(",")
+                        .map(value => value.trim())
+                        .filter(Boolean);
+
+                let answerConfig = {};
+
+                if (questionType === "text") {
+
+                    answerConfig = {
+                        correctAnswers
+                    };
+
+                }
+
+                const [questionResult] =
+                    await db.query(
+                        `
+                        INSERT INTO questions (
+                            block_id,
+                            question,
+                            question_type,
+                            created_by,
+                            updated_by,
+                            answer_config
+                        )
+                        VALUES (?, ?, ?, ?, ?, ?)
+                        `,
+                        [
+                            blockId,
+                            question,
+                            questionType,
+                            req.user.id,
+                            req.user.id,
+                            JSON.stringify(answerConfig)
+                        ]
+                    );
+
+                const questionId =
+                    questionResult.insertId;
+
+                if (
+                    questionType === "single_choice" ||
+                    questionType === "multiple_choice"
+                ) {
+
+                    for (
+                        let i = 1;
+                        i <= 20;
+                        i++
+                    ) {
+
+                        const optionText =
+                            row[`Alternativ ${i}`];
+
+                        if (!optionText) {
+                            continue;
+                        }
+
+                        const isCorrect =
+                            correctAnswers.includes(
+                                String(i)
+                            );
+
+                        await db.query(
+                            `
+                            INSERT INTO options (
+                                question_id,
+                                text,
+                                is_correct,
+                                created_by,
+                                updated_by
+                            )
+                            VALUES (?, ?, ?, ?, ?)
+                            `,
+                            [
+                                questionId,
+                                optionText,
+                                isCorrect ? 1 : 0,
+                                req.user.id,
+                                req.user.id
+                            ]
+                        );
+
+                    }
+
+                }
+
+                importedCount++;
 
             }
 
@@ -979,7 +1158,7 @@ router.post("/import",upload.single("file"),
             res.json({
                 success: true,
                 blockId,
-                questionCount: rows.length,
+                questionCount: importedCount,
                 block
             });
 

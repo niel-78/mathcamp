@@ -68,9 +68,7 @@ export const formatMathText = (text) => {
      * Kända latexkommandon
      */
     const hasLatexCommands =
-        /\\(frac|sqrt|cdot|times|pi|alpha|beta|gamma|theta|sin|cos|tan|log|ln)/.test(
-            result
-        );
+        /\\[a-zA-Z]+/.test(result);
 
     /*
      * Matematiska mönster

@@ -23,50 +23,89 @@ export default function CreateBlockFromExcelDialog({
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(false);
 
+    const downloadTemplate = async () => {
+
+        const response =
+            await fetch(
+                `${API_URL}/api/blocks/import-template`,
+                {
+                    headers: authHeaders()
+                }
+            );
+
+        if (!response.ok) {
+            return;
+        }
+
+        const blob =
+            await response.blob();
+
+        const url =
+            URL.createObjectURL(blob);
+
+        const a =
+            document.createElement("a");
+
+        a.href = url;
+        a.download =
+            "block-mall.xlsx";
+
+        a.click();
+
+        URL.revokeObjectURL(url);
+
+    };
+
     const createBlock = async () => {
+        try {
 
-        setLoading(true);
+            setLoading(true);
 
-        const formData = new FormData();
+            const formData = new FormData();
 
-        formData.append("file", file);
+            formData.append("file", file);
 
-        if (abilityId) {
-            formData.append(
-                "abilityId",
-                abilityId
-            );
-        }
-
-        if (sectionId) {
-            formData.append(
-                "sectionId",
-                sectionId
-            );
-        }
-
-        if (centralContentId) {
-            formData.append(
-                "centralContentId",
-                centralContentId
-            );
-        }
-
-        const response = await fetch(
-            `${API_URL}/api/blocks/import`,
-            {
-                method: "POST",
-                headers: authHeaders(),
-                body: formData
+            if (abilityId) {
+                formData.append(
+                    "abilityId",
+                    abilityId
+                );
             }
-        );
 
-        const data = await response.json();
+            if (sectionId) {
+                formData.append(
+                    "sectionId",
+                    sectionId
+                );
+            }
 
-        onCreated?.(data.block);
+            if (centralContentId) {
+                formData.append(
+                    "centralContentId",
+                    centralContentId
+                );
+            }
 
-        onOpenChange(false);
+            const response = await fetch(
+                `${API_URL}/api/blocks/import`,
+                {
+                    method: "POST",
+                    headers: authHeaders(),
+                    body: formData
+                }
+            );
 
+            const data = await response.json();
+
+            onCreated?.(data.block);
+
+            onOpenChange(false);
+
+        } finally {
+
+            setLoading(false);
+
+        }
     };
 
     return (
@@ -82,6 +121,13 @@ export default function CreateBlockFromExcelDialog({
                     </DialogTitle>
                 </DialogHeader>
 
+                <Button
+                    variant="outline"
+                    onClick={downloadTemplate}
+                >
+                    Ladda ner Excel-mall
+                </Button>
+
                 <input
                     type="file"
                     accept=".xlsx,.xls"
@@ -94,9 +140,11 @@ export default function CreateBlockFromExcelDialog({
 
                 <Button
                     onClick={createBlock}
-                    disabled={!file}
+                    disabled={!file || loading}
                 >
-                    Skapa block
+                    {loading
+                        ? "Skapar block..."
+                        : "Skapa block"}
                 </Button>
 
                 {result && (

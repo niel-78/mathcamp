@@ -297,6 +297,7 @@ export default function Main({
 
                         <GroupPlanningTab
                             groupId={currentTab.groupId}
+                            openTab={openTab}
                         />
 
                     )}

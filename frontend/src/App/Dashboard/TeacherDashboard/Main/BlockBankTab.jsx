@@ -3,7 +3,7 @@ import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 import { Button } from "@/components/ui/button";
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";
-import { TabSectionRow } from "@/components/layouts/TabSectionRow";
+import { TabSectionRow } from "@/components/layouts/TabSectionRow";
 import { TabSection } from "@/components/layouts/TabSection";
 import CreateBlockDialog from "@/components/ui/CreateBlockDialog";
 import BlockLibrary from "@/components/ui/BlockLibrary";

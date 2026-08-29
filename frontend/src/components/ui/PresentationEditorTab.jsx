@@ -1,55 +1,114 @@
+import { useMemo, useState } from "react";
+import BaseTabLayout from "@/components/layouts/BaseTabLayout";
+import { Button } from "@/components/ui/button";
+import MathContent from "@/components/ui/MathContent";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
-
-import {
-    useState
-} from "react";
-
-import BaseTabLayout
-    from "@/components/layouts/BaseTabLayout";
-
-import {
-    Button
-} from "@/components/ui/button";
+import { toast } from "sonner";
 
 export default function PresentationEditorTab({
     presentation,
     openTab
 }) {
 
-    const [
-        title,
-        setTitle
-    ] = useState(
-        presentation?.title || ""
-    );
+    const data =
+        useMemo(() => {
 
-    const [
-        content,
-        setContent
-    ] = useState(
-        presentation?.content || ""
-    );
+            try {
 
-    async function save() {
+                return JSON.parse(
+                    presentation?.content || "{}"
+                );
 
-        await fetch(
-            `${API_URL}/api/presentations/${presentation.id}`,
-            {
-                method: "PUT",
-                headers: {
-                    ...authHeaders(),
-                    "Content-Type":
-                        "application/json"
-                },
-                body: JSON.stringify({
-                    title,
-                    content
-                })
+            } catch {
+
+                return {
+                    slides: []
+                };
+
             }
+
+        }, [presentation]);
+
+    const [slides, setSlides] =
+        useState(
+            data.slides || []
         );
 
-    }
+    const updateSlide = (
+        index,
+        field,
+        value
+    ) => {
+
+        setSlides(prev =>
+            prev.map(
+                (slide, i) =>
+                    i === index
+                        ? {
+                            ...slide,
+                            [field]: value
+                        }
+                        : slide
+            )
+        );
+    };
+
+    const addSlide = () => {
+
+        setSlides(prev => [
+            ...prev,
+            {
+                type: "question",
+                title: "Exempel",
+                question: ""
+            }
+        ]);
+
+    };
+
+    const removeSlide = index => {
+
+        setSlides(prev =>
+            prev.filter(
+                (_, i) =>
+                    i !== index
+            )
+        );
+
+    };
+
+    const savePresentation =
+        async () => {
+
+            await fetch(
+                `${API_URL}/api/presentations/${presentation.id}`,
+                {
+                    method: "PUT",
+                    headers: {
+                        ...authHeaders(),
+                        "Content-Type":
+                            "application/json"
+                    },
+                    body: JSON.stringify({
+                        title:
+                            presentation.title,
+                        content:
+                            JSON.stringify({
+                                slides
+                            }),
+                        section_id:
+                            presentation.section_id
+                    })
+                }
+            );
+
+            toast.success(
+                "Presentation sparad"
+            );
+
+        };
+
 
     return (
 
@@ -61,32 +120,32 @@ export default function PresentationEditorTab({
                 <div className="flex gap-2">
 
                     <Button
-                        onClick={save}
-                    >
-                        Spara
-                    </Button>
-
-                    <Button
                         variant="outline"
                         onClick={() =>
                             openTab({
-
                                 id:
                                     `presentation-player-${presentation.id}`,
-
                                 title:
-                                    `${title} (Visa)`,
-
+                                    `${presentation.title} (Visa)`,
                                 type:
                                     "presentation-player",
-
                                 presentationId:
                                     presentation.id
-
                             })
                         }
                     >
                         Visa
+                    </Button>
+                    <Button
+                        variant="outline"
+                        onClick={addSlide}
+                    >
+                        Ny slide
+                    </Button>
+                    <Button
+                        onClick={savePresentation}
+                    >
+                        Spara
                     </Button>
 
                 </div>
@@ -94,33 +153,129 @@ export default function PresentationEditorTab({
 
         >
 
-            <div className="space-y-4">
+            <div className="space-y-6">
 
-                <input
-                    className="w-full border p-2"
-                    value={title}
-                    onChange={event =>
-                        setTitle(
-                            event.target.value
-                        )
-                    }
-                />
+                {slides.map(
+                    (slide, index) => (
 
-                <textarea
-                    className="
-                        w-full
-                        min-h-[600px]
-                        border
-                        p-4
-                        font-mono
-                    "
-                    value={content}
-                    onChange={event =>
-                        setContent(
-                            event.target.value
-                        )
-                    }
-                />
+                        <div
+
+                            key={index}
+
+                            className="
+                                rounded-lg
+                                border
+                                bg-card
+                                p-6
+                                shadow-sm
+                            "
+
+                        >
+
+                            <div
+                                className="
+                                    mb-4
+                                    text-sm
+                                    text-muted-foreground
+                                "
+                            >
+                                Slide {index + 1}
+                            </div>
+
+                            {slide.type === "title" && (
+                                <div className="py-16 text-center space-y-4">
+
+                                    <h1 className="text-5xl font-bold">
+                                        {slide.book}
+                                    </h1>
+
+                                    <div className="text-2xl">
+                                        {slide.chapter}
+                                    </div>
+
+                                    <div className="text-xl">
+                                        {slide.subchapter}
+                                    </div>
+
+                                    <div className="text-lg text-muted-foreground">
+                                        {slide.section}
+                                    </div>
+
+                                    <div className="text-sm text-muted-foreground">
+                                        Sidorna: {slide.startPage}–{slide.endPage}
+                                    </div>
+
+                                </div>
+                            )}                            
+
+                            {slide.type === "question" && (
+                                <div className="space-y-6">
+
+                                    <input
+                                        className="
+                                            w-full
+                                            rounded
+                                            border
+                                            p-2
+                                        "
+                                        value={slide.title || ""}
+                                        onChange={(e) =>
+                                            updateSlide(
+                                                index,
+                                                "title",
+                                                e.target.value
+                                            )
+                                        }
+                                    />
+
+                                    <div
+                                        className="
+                                            rounded-md
+                                            border
+                                            p-4
+                                            text-xl
+                                        "
+                                    >
+                                        <textarea
+                                            className="
+                                                w-full
+                                                rounded
+                                                border
+                                                p-2
+                                                mb-4
+                                            "
+                                            rows={4}
+                                            value={slide.question || ""}
+                                            onChange={(e) =>
+                                                updateSlide(
+                                                    index,
+                                                    "question",
+                                                    e.target.value
+                                                )
+                                            }
+                                        />
+
+                                        <MathContent
+                                            value={slide.question}
+                                        />
+                                        <Button
+                                            size="sm"
+                                            variant="destructive"
+                                            onClick={() =>
+                                                removeSlide(index)
+                                            }
+                                        >
+                                            Ta bort
+                                        </Button>
+                                    </div>
+
+                                </div>
+                            )}
+
+                        </div>
+
+                    )
+                )}
 
             </div>
 

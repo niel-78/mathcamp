@@ -13,6 +13,7 @@ import {
 
 export default function PlanningBoard({
     groupId,
+    openTab,
     lessons,
     events: initialEvents = [],
     loading,
@@ -267,6 +268,7 @@ export default function PlanningBoard({
             {viewMode === "week" && (
                 <WeekView
                     lessons={lessons}
+                    openTab={openTab}
                     events={events}
                     showEvents={showEvents}
                     selectedWeek={selectedWeek}

@@ -14,6 +14,7 @@ import { MoreVertical } from "lucide-react";
 
 export default function LessonCard({
     lesson,
+    openTab,
     showGroupName = true,
     onEditLesson,
     onCancelLesson,
@@ -96,10 +97,6 @@ export default function LessonCard({
         <CardSection
             title={
                     <div
-                        className="
-                            // text-sm
-                            // text-muted-foreground
-                        "
                     >
                         <FormatDateTimeShort
                             value={lesson.starts_at}
@@ -300,6 +297,7 @@ export default function LessonCard({
                             <LessonSection
                                 key={`${lesson.id}-${section.id}`}
                                 section={section}
+                                openTab={openTab}
                                 lessonId={lesson.id}
                             />
 
