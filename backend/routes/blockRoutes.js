@@ -136,6 +136,7 @@ router.get("/sections/:sectionId",
                 WHERE
                     bs.section_id = ?
                     AND b.deleted_at IS NULL
+                    AND b.archived_at IS NULL
 
                     AND (
 

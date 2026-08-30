@@ -673,6 +673,7 @@ router.post("/sections/:sectionId/open-presentation",
                     SELECT *
                     FROM presentations
                     WHERE section_id = ?
+                    AND archived_at IS NULL
                     ORDER BY id
                     LIMIT 1
                     `,
@@ -727,6 +728,26 @@ router.post("/sections/:sectionId/open-presentation",
                     [req.params.sectionId]
                 );
 
+            const [[nextSection]] =
+                await db.query(
+                    `
+                    SELECT page_number
+                    FROM sections
+                    WHERE page_number > ?
+                    ORDER BY page_number
+                    LIMIT 1
+                    `,
+                    [section.page_number]
+                );
+
+            const startPage =
+                section.page_number;
+
+            const endPage =
+                nextSection
+                    ? nextSection.page_number - 1
+                    : section.page_number;
+
             const [blocks] =
                 await db.query(
                     `
@@ -745,6 +766,8 @@ router.post("/sections/:sectionId/open-presentation",
                     LEFT JOIN abilities a
                         ON a.id = ba.ability_id
                     WHERE bs.section_id = ?
+                    AND b.archived_at IS NULL
+                    AND b.deleted_at IS NULL
                     GROUP BY b.id
                     ORDER BY b.id
                     `,
@@ -769,7 +792,8 @@ router.post("/sections/:sectionId/open-presentation",
                     chapter: sectionInfo.chapter_title,
                     subchapter: sectionInfo.subchapter_title,
                     section: sectionInfo.section_title,
-                    page: sectionInfo.page_number
+                    startPage,
+                    endPage
                 },
                 {
                     type: "goals",
@@ -827,6 +851,9 @@ router.post("/sections/:sectionId/open-presentation",
 
             }
 
+            const presentationTitle =
+                `${sectionInfo.chapter_title} - ${sectionInfo.subchapter_title}`;
+
             const [result] =
                 await db.query(
                     `
@@ -843,7 +870,7 @@ router.post("/sections/:sectionId/open-presentation",
                     [
                         teacher.school_id,
                         section.id,
-                        section.title,
+                        presentationTitle,
                         JSON.stringify({
                             slides
                         }),
@@ -858,6 +885,7 @@ router.post("/sections/:sectionId/open-presentation",
                     SELECT *
                     FROM presentations
                     WHERE id = ?
+                    AND archived_at IS NULL
                     `,
                     [result.insertId]
                 );

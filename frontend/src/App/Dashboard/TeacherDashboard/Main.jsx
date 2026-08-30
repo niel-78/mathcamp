@@ -27,7 +27,7 @@ import PresentationPlayerTab from "@/components/ui/PresentationPlayerTab";
 import ClassroomLayoutTab from "./Main/ClassroomLayoutTab";
 import GroupLayoutTab from "./Main/GroupLayoutTab";
 import TeacherCalendarTab from "@/components/tabs/TeacherCalenderTab";
-
+import ArchivedPresentationsTab from "./Main/ArchivedPresentationsTab";
 
 
 export default function Main({
@@ -345,6 +345,11 @@ export default function Main({
 
                         <ArchivedBlocksTab />
 
+                    )}
+                    {currentTab?.type === "archived-presentations" && (
+                        <ArchivedPresentationsTab
+                            openTab={openTab}
+                        />
                     )}
                     {currentTab?.type === "presentations" && (
 

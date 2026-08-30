@@ -29,8 +29,8 @@ export default function QuestionSlide({
                 className="
                     rounded-xl
                     border
-                    p-8
-                    text-3xl
+                    p-6
+                    text-2xl
                 "
             >
                 <MathContent
@@ -47,15 +47,16 @@ export default function QuestionSlide({
                         border-2
                         border-gray-300
                         overflow-hidden
+                        max-w-4xl
                     "
                 >
 
-                    {[1, 2, 3, 4, 5, 6, 7].map(row => (
+                    {[1, 2, 3, 4, 5].map(row => (
 
                         <div
                             key={row}
                             className="
-                                h-20
+                                h-12
                                 border-b
                                 border-gray-200
                                 last:border-b-0

@@ -93,12 +93,16 @@ router.get("/",
                         SELECT
                             s.*,
                             ls.id AS lesson_section_id,
-                            ls.pinned
+                            ls.pinned,
+                            p.id AS presentation_id
 
                         FROM lesson_sections ls
 
                         JOIN sections s
                             ON s.id = ls.section_id
+
+                        LEFT JOIN presentations p
+                            ON p.section_id = s.id
 
                         WHERE ls.lesson_id = ?
 

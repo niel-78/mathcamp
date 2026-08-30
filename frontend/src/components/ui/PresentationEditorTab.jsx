@@ -11,6 +11,8 @@ export default function PresentationEditorTab({
     openTab
 }) {
 
+    console.log(presentation);
+
     const data =
         useMemo(() => {
 
@@ -143,6 +145,20 @@ export default function PresentationEditorTab({
                         Ny slide
                     </Button>
                     <Button
+                        variant="outline"
+                        onClick={() =>
+                            updateSlide(index, {
+                                ...slide,
+                                abilities: [
+                                    ...(slide.abilities || []),
+                                    ""
+                                ]
+                            })
+                        }
+                    >
+                        Lägg till mål
+                    </Button>
+                    <Button
                         onClick={savePresentation}
                     >
                         Spara
@@ -202,10 +218,99 @@ export default function PresentationEditorTab({
                                     </div>
 
                                     <div className="text-sm text-muted-foreground">
-                                        Sidorna: {slide.startPage}–{slide.endPage}
+                                        Sidorna: {slide.startPage}-{slide.endPage}
                                     </div>
 
                                 </div>
+                            )}
+
+                            {slide.type === "goals" && (
+
+                                <div className="py-16">
+
+                                    <h1
+                                        className="
+                                            mb-10
+                                            text-center
+                                            text-5xl
+                                            font-bold
+                                        "
+                                    >
+                                        {slide.title}
+                                    </h1>
+
+                                    <ul
+                                        className="
+                                            mx-auto
+                                            max-w-3xl
+                                            space-y-4
+                                            text-2xl
+                                        "
+                                    >
+
+                                    <input
+                                        className="
+                                            mb-6
+                                            w-full
+                                            rounded
+                                            border
+                                            p-2
+                                            text-center
+                                            text-3xl
+                                            font-bold
+                                        "
+                                        value={slide.title}
+                                        onChange={(event) =>
+                                            updateSlide(index, {
+                                                ...slide,
+                                                title: event.target.value
+                                            })
+                                        }
+                                    />
+
+                                    <div className="space-y-2">
+
+                                        {slide.abilities?.map(
+                                            (ability, abilityIndex) => (
+
+                                                <input
+                                                    key={abilityIndex}
+                                                    className="
+                                                        w-full
+                                                        rounded
+                                                        border
+                                                        p-2
+                                                        text-xl
+                                                    "
+                                                    value={ability}
+                                                    onChange={(event) => {
+
+                                                        const abilities = [
+                                                            ...slide.abilities
+                                                        ];
+
+                                                        abilities[
+                                                            abilityIndex
+                                                        ] =
+                                                            event.target.value;
+
+                                                        updateSlide(index, {
+                                                            ...slide,
+                                                            abilities
+                                                        });
+
+                                                    }}
+                                                />
+
+                                            )
+                                        )}
+
+                                    </div>
+
+                                    </ul>
+
+                                </div>
+
                             )}                            
 
                             {slide.type === "question" && (

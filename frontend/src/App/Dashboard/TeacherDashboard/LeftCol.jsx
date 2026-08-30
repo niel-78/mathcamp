@@ -2405,6 +2405,19 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                 Uppgifter
                             </div>
 
+                            <div
+                                className="tree-file"
+                                onClick={() =>
+                                    openTab({
+                                        id: "archived-presentations",
+                                        title: "Presentationer",
+                                        type: "archived-presentations"
+                                    })
+                                }
+                            >
+                                Presentationer
+                            </div>
+
                         </div>
 
                     )}

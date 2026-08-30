@@ -84,5 +84,13 @@ export const formatMathText = (text) => {
         return renderLatex(`$${result}$`);
     }
 
+    /*
+    * Ta bort koefficienten 1 framför variabler
+    */
+    result = result.replace(
+        /\b1([a-zA-Z])/g,
+        "$1"
+    );
+
     return result;
 };

@@ -402,7 +402,7 @@ export default function BlockCard({
 
                 )}
 
-                {block.isOwner && (
+                {block.canEdit && (
 
                     <Button
                         variant="outline"

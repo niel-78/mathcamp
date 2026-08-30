@@ -184,13 +184,7 @@ export default function LessonSection({
 
                 </div>
 
-                <div
-                    className="
-                        flex
-                        items-center
-                        gap-2
-                    "
-                >
+                <div className="flex items-center gap-2">
 
                     <Button
                         size="sm"
@@ -198,7 +192,14 @@ export default function LessonSection({
                         onClick={openPresentation}
                     >
                         <Play size={14} />
-                        Starta
+
+                        <span className="ml-1">
+                            {
+                                section.presentation_id
+                                    ? "Starta"
+                                    : "Skapa"
+                            }
+                        </span>
                     </Button>
 
                     <Button
@@ -215,10 +216,9 @@ export default function LessonSection({
                             )
                         }
                     >
-                        {
-                            section.pinned
-                                ? <Pin size={14} />
-                                : <PinOff size={14} />
+                        {section.pinned
+                            ? <Pin size={14} />
+                            : <PinOff size={14} />
                         }
                     </Button>
 

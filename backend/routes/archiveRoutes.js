@@ -373,4 +373,66 @@ router.delete("/questions/:id", requireAuth,
     }
 );
 
+// GET /api/archive/presentations
+router.get("/presentations",
+    requireAuth,
+    async (req, res) => {
+
+        const [presentations] =
+            await db.query(
+                `
+                SELECT *
+                FROM presentations
+                WHERE created_by = ?
+                AND archived_at IS NOT NULL
+                ORDER BY title
+                `,
+                [req.user.id]
+            );
+
+        res.json(presentations);
+
+    }
+);
+
+// POST /api/archive/presentations/:id/restore
+router.post("/presentations/:id/restore",
+    requireAuth,
+    async (req, res) => {
+
+        await db.query(
+            `
+            UPDATE presentations
+            SET
+                archived_at = NULL,
+                section_id = NULL
+            WHERE id = ?
+            `,
+            [req.params.id]
+        );
+
+        res.sendStatus(204);
+
+    }
+);
+
+// DELETE /api/archive/presentations/:id
+router.delete("/presentations/:id",
+    requireAuth,
+    async (req, res) => {
+
+        await db.query(
+            `
+            UPDATE presentations
+            SET deleted_at = NOW()
+            WHERE id = ?
+            `,
+            [req.params.id]
+        );
+
+        res.sendStatus(204);
+
+    }
+);
+
 export default router

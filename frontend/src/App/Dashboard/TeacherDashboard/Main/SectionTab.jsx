@@ -131,6 +131,68 @@ export default function SectionTab({
 
         };
 
+    const resetPresentation =
+        async () => {
+
+            const response =
+                await fetch(
+                    `${API_URL}/api/books/sections/${sectionId}/open-presentation`,
+                    {
+                        method: "POST",
+                        headers: authHeaders()
+                    }
+                );
+
+            if (!response.ok) {
+
+                const error =
+                    await response.json();
+
+                console.error(error);
+
+                return;
+
+            }
+
+            const data =
+                await response.json();
+
+            const resetResponse =
+                await fetch(
+                    `${API_URL}/api/presentations/${data.presentation.id}/reset`,
+                    {
+                        method: "POST",
+                        headers: authHeaders()
+                    }
+                );
+
+            if (!resetResponse.ok) {
+
+                const error =
+                    await resetResponse.json();
+
+                console.error(error);
+
+                return;
+
+            }
+
+            const resetData =
+                await resetResponse.json();
+
+            openTab({
+                id:
+                    `presentation-${resetData.presentation.id}`,
+                title:
+                    resetData.presentation.title,
+                type:
+                    "presentation-editor",
+                presentation:
+                    resetData.presentation
+            });
+
+        };
+
     if (loading || !section) {
 
         return <LoadingOverlay />;
@@ -168,6 +230,12 @@ export default function SectionTab({
                             onClick={createPresentation}
                             >
                             Öppna presentation
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={resetPresentation}
+                        >
+                            Återställ presentation
                         </Button>
 
                     </div>
