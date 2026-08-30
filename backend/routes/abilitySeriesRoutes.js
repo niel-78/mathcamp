@@ -136,6 +136,9 @@ router.post("/", async (req, res) => {
             ]
         );
 
+    const seriesId =
+        result.insertId;
+
     await db.query(
         `
         INSERT INTO ability_series_permissions (
@@ -146,13 +149,32 @@ router.post("/", async (req, res) => {
         VALUES (?, ?, 'owner')
         `,
         [
-            result.insertId,
+            seriesId,
             userId
         ]
     );
 
+    await db.query(
+        `
+        INSERT INTO ability_series_levels (
+            series_id,
+            name,
+            sort_order
+        )
+        VALUES
+            (?, 'Repetition', 1),
+            (?, 'Grundläggande', 2),
+            (?, 'Påbyggnad', 3)
+        `,
+        [
+            seriesId,
+            seriesId,
+            seriesId
+        ]
+    );
+
     res.status(201).json({
-        id: result.insertId
+        id: seriesId
     });
 
 });

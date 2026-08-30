@@ -220,7 +220,6 @@ router.delete("/:assessmentId", async (req, res) => {
     }
 });
 
-
 // POST /api/assessments/:id/archive
 router.post("/:id/archive",
     async (req, res) => {
@@ -261,8 +260,6 @@ router.post("/:id/archive",
 
     }
 );
-
-
 
 // POST /api/teacher/:assessmentId/library-blocks
 router.post("/:assessmentId/library-blocks",

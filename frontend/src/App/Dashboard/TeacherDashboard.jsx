@@ -16,6 +16,7 @@ import AppHeader from "./TeacherDashboard/AppHeader";
 import Main from "./TeacherDashboard/Main";
 import { toast } from "sonner";
 import MoveSectionDialog from "@/components/ui/MoveSectionDialog";
+import ExamPage from "@/App/Dashboard/StudentDashboard/Main/ExamPage";
 
 export default function TeacherDashboard() {
 
@@ -25,6 +26,7 @@ export default function TeacherDashboard() {
     const [hoverTarget, setHoverTarget] = useState(null);
     const [blockRefreshKey, setBlockRefreshKey] = useState(0);
     const [moveSectionDialog,setMoveSectionDialog] = useState(null);
+    const [testAttemptId, setTestAttemptId] = useState(null);
 
     const [darkMode, setDarkMode] =
     useState(
@@ -664,6 +666,22 @@ export default function TeacherDashboard() {
 
     };
 
+    if (testAttemptId) {
+
+        return (
+            <ExamPage
+                attemptId={testAttemptId}
+                onExit={() => {
+                    setTestAttemptId(null);
+                }}
+                onLocked={() => {
+                    setTestAttemptId(null);
+                }}
+            />
+        );
+
+    }
+
     return (
         <>
             <DndContext
@@ -783,6 +801,7 @@ export default function TeacherDashboard() {
                                             setTabs={setLeftTabs}
                                             openTab={openTab}
                                             blockRefreshKey={blockRefreshKey}
+                                            startDiagnosticTest={setTestAttemptId}
                                         />
 
                                     ) : (
@@ -809,6 +828,7 @@ export default function TeacherDashboard() {
                                                     setTabs={setLeftTabs}
                                                     openTab={openTab}
                                                     blockRefreshKey={blockRefreshKey}
+                                                    startDiagnosticTest={setTestAttemptId}
                                                 />
 
                                             </ResizablePanel>

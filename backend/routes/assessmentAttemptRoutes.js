@@ -3,6 +3,7 @@ import db from "../db.js";
 import crypto from "crypto";
 import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
+import AssessmentEngine from "../services/AssessmentEngine.js";
 import { gradeAnswer } from "../utils/grading/gradeAnswer.js";
 import { buildExamSession } from "../utils/buildExamSession.js";
 
@@ -31,8 +32,21 @@ router.get("/:id", async (req, res) => {
                 ea.config,
                 ea.started_at,
                 ea.submitted_at,
-                ea.status
+                ea.status,
+
+                a.id AS assessment_id,
+                a.type AS assessment_type,
+                a.title AS assessment_title,
+                a.config AS assessment_config
+
             FROM assessment_attempts ea
+
+            INNER JOIN group_assessments ga
+                ON ga.id = ea.group_assessment_id
+
+            INNER JOIN assessments a
+                ON a.id = ga.assessment_id
+
             WHERE ea.id = ?
             `,
             [id]
@@ -115,7 +129,19 @@ router.get("/:id", async (req, res) => {
                 status: attempt.status,
                 started_at: attempt.started_at,
                 submitted_at: attempt.submitted_at,
-                config: attempt.config
+                config: attempt.config,
+
+                assessment: {
+                    id: attempt.assessment_id,
+                    type: attempt.assessment_type,
+                    title: attempt.assessment_title,
+                    config:
+                        typeof attempt.assessment_config === "string"
+                            ? JSON.parse(
+                                attempt.assessment_config
+                            )
+                            : attempt.assessment_config
+                }
             },
             questions: questionsWithOptions
         });
@@ -296,10 +322,115 @@ router.put("/:id", async (req, res) => {
             );
         }
 
+        let nextQuestion = null;
+        let evaluation = null;
+
+        const [[assessment]] =
+            await connection.query(
+                `
+                SELECT a.*
+                FROM assessments a
+
+                INNER JOIN group_assessments ga
+                    ON ga.assessment_id = a.id
+
+                WHERE ga.id = ?
+                `,
+                [attempt.group_assessment_id]
+            );
+
+        if (assessment.type === "diagnostic") {
+
+            evaluation =
+                await AssessmentEngine
+                    .evaluateAnswer(
+                        connection,
+                        attempt.id,
+                        question_id
+                    );
+
+            nextQuestion =
+                await AssessmentEngine
+                    .getNextQuestion(
+                        connection,
+                        attempt.id
+                    );
+
+            if (nextQuestion) {
+
+                const [[maxOrder]] =
+                    await connection.query(
+                        `
+                        SELECT
+                            MAX(sort_order) AS value
+                        FROM attempt_questions
+                        WHERE attempt_id = ?
+                        `,
+                        [attempt.id]
+                    );
+
+                const nextOrder =
+                    (maxOrder?.value || 0) + 1;
+
+                await connection.query(
+                    `
+                    INSERT INTO attempt_questions (
+                        attempt_id,
+                        question_id,
+                        sort_order
+                    )
+                    VALUES (?, ?, ?)
+                    `,
+                    [
+                        attempt.id,
+                        nextQuestion.id,
+                        nextOrder
+                    ]
+                );
+
+                const [options] =
+                    await connection.query(
+                        `
+                        SELECT *
+                        FROM options
+                        WHERE question_id = ?
+                        ORDER BY RAND()
+                        `,
+                        [nextQuestion.id]
+                    );
+
+                nextQuestion.options = options;
+
+                for (let i = 0; i < options.length; i++) {
+
+                    await connection.query(
+                        `
+                        INSERT INTO attempt_options (
+                            attempt_id,
+                            option_id,
+                            sort_order
+                        )
+                        VALUES (?, ?, ?)
+                        `,
+                        [
+                            attempt.id,
+                            options[i].id,
+                            i + 1
+                        ]
+                    );
+
+                }
+
+            }
+
+        }
+
         await connection.commit();
 
         res.json({
-            success: true
+            success: true,
+            correct: evaluation?.correct,
+            nextQuestion
         });
 
     } catch (error) {
@@ -345,7 +476,8 @@ router.post("/start", async (req, res) => {
                 id,
                 assessment_id,
                 group_id,
-                assessment_status,
+                status,
+                mode,
                 available_from,
                 available_until,
                 config
@@ -367,6 +499,9 @@ router.post("/start", async (req, res) => {
 
         const groupExam = groupExamRows[0];
 
+        const isTest =
+            groupExam.mode === "test";
+
         /*
          * Kontrollera att eleven tillhör gruppen
          */
@@ -383,15 +518,21 @@ router.post("/start", async (req, res) => {
             ]
         );
 
-        if (studentRows.length === 0) {
+        const isTeacher =
+            req.user.role === "teacher";
+
+        if (
+            studentRows.length === 0 &&
+            !isTeacher
+        ) {
 
             await connection.rollback();
 
             return res.status(403).json({
                 error: "Du tillhör inte gruppen."
             });
-        }
 
+        }
 
 
         /*
@@ -421,9 +562,10 @@ router.post("/start", async (req, res) => {
         const now = new Date();
 
         if (
-            groupExam.assessment_status !== "open" &&
+            !isTest &&
+            groupExam.status !== "open" &&
             !isAdmitted
-        ) {
+        ){
 
             await connection.rollback();
 
@@ -440,9 +582,10 @@ router.post("/start", async (req, res) => {
 
 
         if (
+            !isTest &&
             groupExam.available_from &&
             now < new Date(groupExam.available_from)
-        ) {
+        ){
 
             await connection.rollback();
 
@@ -452,6 +595,7 @@ router.post("/start", async (req, res) => {
         }
 
         if (
+            !isTest &&
             groupExam.available_until &&
             now > new Date(groupExam.available_until)
         ) {
@@ -626,12 +770,170 @@ router.post("/start", async (req, res) => {
             ]
         );
 
-        const session =
-            await buildExamSession(
-                connection,
-                groupExam.id
+        const [[assessment]] =
+            await connection.query(
+                `
+                SELECT *
+                FROM assessments
+                WHERE id = ?
+                `,
+                [groupExam.assessment_id]
             );
 
+        const config =
+            typeof assessment.config === "string"
+                ? JSON.parse(
+                    assessment.config
+                )
+                : assessment.config || {};
+
+        if (
+            assessment.type ===
+            "diagnostic"
+        ) {
+
+            const [[lessonLink]] =
+                await connection.query(
+                    `
+                    SELECT lesson_id
+                    FROM lesson_group_assessments
+                    WHERE group_assessment_id = ?
+                    `,
+                    [groupExam.id]
+                );
+
+            if (!lessonLink) {
+                throw new Error(
+                    "Diagnosen saknar lektion."
+                );
+            }
+
+            const seedQuestions =
+                await AssessmentEngine
+                    .getDiagnosticSeedQuestions(
+                        lessonLink.lesson_id,
+                        assessment.id
+                    );
+
+            for (let i = 0; i < seedQuestions.length; i++) {
+
+                const question =
+                    seedQuestions[i];
+
+                await connection.query(
+                    `
+                    INSERT INTO attempt_questions (
+                        attempt_id,
+                        question_id,
+                        sort_order
+                    )
+                    VALUES (?, ?, ?)
+                    `,
+                    [
+                        attemptId,
+                        question.id,
+                        i + 1
+                    ]
+                );
+
+                const [options] =
+                    await connection.query(
+                        `
+                        SELECT *
+                        FROM options
+                        WHERE question_id = ?
+                        ORDER BY RAND()
+                        `,
+                        [question.id]
+                    );
+
+                for (
+                    let j = 0;
+                    j < options.length;
+                    j++
+                ) {
+
+                    await connection.query(
+                        `
+                        INSERT INTO attempt_options (
+                            attempt_id,
+                            option_id,
+                            sort_order
+                        )
+                        VALUES (?, ?, ?)
+                        `,
+                        [
+                            attemptId,
+                            options[j].id,
+                            j + 1
+                        ]
+                    );
+
+                }
+
+            }
+
+        } else {
+
+            const session =
+                await buildExamSession(
+                    connection,
+                    groupExam.id
+                );
+
+
+            for (let i = 0; i < session.questions.length; i++) {
+
+                const question =
+                    session.questions[i];
+
+                await connection.query(
+                    `
+                    INSERT INTO attempt_questions (
+                        attempt_id,
+                        question_id,
+                        sort_order
+                    )
+                    VALUES (?, ?, ?)
+                    `,
+                    [
+                        attemptId,
+                        question.id,
+                        i + 1
+                    ]
+                );
+
+                for (
+                    let j = 0;
+                    j < question.options.length;
+                    j++
+                ) {
+
+                    const option =
+                        question.options[j];
+
+                    await connection.query(
+                        `
+                        INSERT INTO attempt_options (
+                            attempt_id,
+                            option_id,
+                            sort_order
+                        )
+                        VALUES (?, ?, ?)
+                        `,
+                        [
+                            attemptId,
+                            option.id,
+                            j + 1
+                        ]
+                    );
+
+                }
+
+            }
+
+        }
+        
         await connection.query(
             `
             DELETE
@@ -645,58 +947,6 @@ router.post("/start", async (req, res) => {
                 req.user.id
             ]
         );
-
-
-        for (let i = 0; i < session.questions.length; i++) {
-
-            const question =
-                session.questions[i];
-
-            await connection.query(
-                `
-                INSERT INTO attempt_questions (
-                    attempt_id,
-                    question_id,
-                    sort_order
-                )
-                VALUES (?, ?, ?)
-                `,
-                [
-                    attemptId,
-                    question.id,
-                    i + 1
-                ]
-            );
-
-            for (
-                let j = 0;
-                j < question.options.length;
-                j++
-            ) {
-
-                const option =
-                    question.options[j];
-
-                await connection.query(
-                    `
-                    INSERT INTO attempt_options (
-                        attempt_id,
-                        option_id,
-                        sort_order
-                    )
-                    VALUES (?, ?, ?)
-                    `,
-                    [
-                        attemptId,
-                        option.id,
-                        j + 1
-                    ]
-                );
-
-            }
-
-        }
-
 
         await connection.commit();
 
@@ -723,7 +973,6 @@ router.post("/start", async (req, res) => {
 
         }
 });
-
 
 // POST /api/assessment-attempts/:id/submit
 router.post("/:id/submit", async (req, res) => {
@@ -826,7 +1075,6 @@ router.post("/:id/submit", async (req, res) => {
         connection.release();
     }
 });
-
 
 // POST /api/assessment-attempts/:id/terminate
 router.post("/:id/terminate",
@@ -1098,5 +1346,104 @@ router.get("/:id/results", async (req, res) => {
     }
 });
 
+// POST /api/assessment-attempts/:id/next-question
+router.post("/:id/next-question",
+    async (req, res) => {
+
+        const connection =
+            await db.getConnection();
+
+        try {
+
+            const question =
+                await AssessmentEngine
+                    .getNextQuestion(
+                        connection,
+                        req.params.id
+                    );
+
+            if (!question) {
+
+                return res.json({
+                    question: null
+                });
+
+            }
+
+            const [[maxOrder]] =
+                await connection.query(
+                    `
+                    SELECT
+                        MAX(sort_order) AS value
+                    FROM attempt_questions
+                    WHERE attempt_id = ?
+                    `,
+                    [req.params.id]
+                );
+
+            const nextOrder =
+                (maxOrder?.value || 0) + 1;
+
+            await connection.query(
+                `
+                INSERT INTO attempt_questions (
+                    attempt_id,
+                    question_id,
+                    sort_order
+                )
+                VALUES (?, ?, ?)
+                `,
+                [
+                    req.params.id,
+                    question.id,
+                    nextOrder
+                ]
+            );
+
+            res.json({
+                question,
+                sort_order:
+                    nextOrder
+            });
+
+        } finally {
+
+            connection.release();
+
+        }
+
+    }
+);
+
+// GET /api/assessment-attempts/:id/status
+router.get("/:id/status", async (req, res) => {
+
+    const [[attempt]] =
+        await db.query(
+            `
+            SELECT
+                id,
+                status,
+                submitted_at
+            FROM assessment_attempts
+            WHERE id = ?
+            `,
+            [req.params.id]
+        );
+
+    if (!attempt) {
+
+        return res.status(404).json({
+            error: "Provförsöket hittades inte."
+        });
+
+    }
+
+    res.json({
+        status: attempt.status,
+        submitted_at: attempt.submitted_at
+    });
+
+});
 
 export default router

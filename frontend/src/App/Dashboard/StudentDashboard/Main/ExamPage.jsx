@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+
 import { useExamAttempt } from "@/hooks/useExamAttempt";
 import { usePreventBackButton } from "@/hooks/usePreventBackButton";
 import { useDisableContextMenu } from "@/hooks/useDisableContextMenu";
 import useExamActivityLogging from "@/hooks/useExamActivityLogging";
 
-import { logEvent } from "@/utils/logEvent";
+import { logEvent } from "@/utils/logEvent";
 
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
+
 import UserProfile from "@/components/ui/UserProfile";
 import ExamHeader from "./ExamHeader";
 import ExamTimer from "./ExamTimer";
@@ -27,8 +29,11 @@ export default function ExamPage({
     useDisableContextMenu();
     useExamActivityLogging(attemptId);
 
-
     const [index, setIndex] = useState(0);
+
+
+    const [dynamicQuestions, setDynamicQuestions] =
+        useState([]);
 
     const {
         attempt,
@@ -39,6 +44,14 @@ export default function ExamPage({
         loading,
         error
     } = useExamAttempt(attemptId);
+
+    useEffect(() => {
+
+        setDynamicQuestions(
+            questions || []
+        );
+
+    }, [questions]);
 
     useEffect(() => {
 
@@ -53,8 +66,8 @@ export default function ExamPage({
             );
 
             onLocked();
-
             return;
+
         }
 
         if (attempt.status === "submitted") {
@@ -81,176 +94,352 @@ export default function ExamPage({
         return <p>{error}</p>;
     }
 
-    if (!questions.length) {
+    if (!dynamicQuestions.length) {
         return <p>Inga frågor hittades.</p>;
     }
 
-    const current = questions[index];
-
-    const answerConfig =
-        typeof current.answer_config === "string"
-            ? JSON.parse(current.answer_config)
-            : current.answer_config;
+    const current =
+        dynamicQuestions[index];
 
     if (!current) {
         return <p>Ingen fråga hittades.</p>;
     }
 
-    const handleTextAnswer = async (questionId, value) => {
+    const answerConfig =
+        typeof current.answer_config === "string"
+            ? JSON.parse(current.answer_config)
+            : current.answer_config || {};
 
-        setAnswers(prev => ({
-            ...prev,
-            [questionId]: value,
-        }));
+    const attemptConfig =
+        typeof attempt?.config === "string"
+            ? JSON.parse(attempt.config)
+            : attempt?.config || {};
 
-        await saveAnswer(questionId, {
-            text_answer: value,
-        });
-    };
+    const isDiagnostic =
+        attempt?.assessment?.type ===
+        "diagnostic";
 
-    const handleSingleChoice = async (
-        questionId,
-        optionId
+    const isAdaptive =
+        attempt?.assessment?.config?.mode ===
+        "adaptive";
+
+
+    const appendNextQuestion = (
+        result
     ) => {
 
-        setAnswers(prev => {
-            const next = {
+        if (result?.nextQuestion) {
+
+            setDynamicQuestions(prev => {
+
+                const exists =
+                    prev.some(
+                        q =>
+                            q.id ===
+                            result.nextQuestion.id
+                    );
+
+                if (exists) {
+                    return prev;
+                }
+
+                return [
+                    ...prev,
+                    result.nextQuestion
+                ];
+
+            });
+
+        }
+
+        if (
+            typeof result?.correct ===
+            "boolean"
+        ) {
+
+            if (result.correct) {
+
+                toast.success(
+                    "Rätt!"
+                );
+
+            } else {
+
+                toast.error(
+                    "Fel"
+                );
+
+            }
+
+        }
+
+    };
+
+    const handleTextAnswer =
+        async (
+            questionId,
+            value
+        ) => {
+
+            setAnswers(prev => ({
                 ...prev,
-                [questionId]: optionId,
-            };
+                [questionId]: value
+            }));
 
-            return next;
-        });
+            const result =
+                await saveAnswer(
+                    questionId,
+                    {
+                        text_answer: value
+                    }
+                );
 
-        await saveAnswer(questionId, {
-            selected_option_ids: [optionId],
-        });
-    };
+            appendNextQuestion(result);
 
-    const handleMultiChoice = async (
-        questionId,
-        optionId
-    ) => {
-        const currentSelection =
-            assessment_answers[questionId] || [];
+            if (
+                isAdaptive &&
+                result?.nextQuestion
+            ) {
+                setIndex(current =>
+                    current + 1
+                );
+            }
 
-        const updated =
-            currentSelection.includes(optionId)
-                ? currentSelection.filter(
-                    id => id !== optionId
+        };
+
+    const handleSingleChoice =
+        async (
+            questionId,
+            optionId
+        ) => {
+
+            setAnswers(prev => ({
+                ...prev,
+                [questionId]: optionId
+            }));
+
+            const result =
+                await saveAnswer(
+                    questionId,
+                    {
+                        selected_option_ids: [
+                            optionId
+                        ]
+                    }
+                );
+
+            appendNextQuestion(result);
+
+            if (
+                isAdaptive &&
+                result?.nextQuestion
+            ) {
+                setIndex(current =>
+                    current + 1
+                );
+            }
+
+
+        };
+
+    const handleMultiChoice =
+        async (
+            questionId,
+            optionId
+        ) => {
+
+            const currentSelection =
+                assessment_answers[
+                    questionId
+                ] || [];
+
+            const updated =
+                currentSelection.includes(
+                    optionId
                 )
-                : [...currentSelection, optionId];
+                    ? currentSelection.filter(
+                        id =>
+                            id !== optionId
+                    )
+                    : [
+                        ...currentSelection,
+                        optionId
+                    ];
 
-        setAnswers(prev => ({
-            ...prev,
-            [questionId]: updated,
-        }));
+            setAnswers(prev => ({
+                ...prev,
+                [questionId]: updated
+            }));
 
-        await saveAnswer(questionId, {
-            selected_option_ids: updated,
-        });
-    };
+            const result =
+                await saveAnswer(
+                    questionId,
+                    {
+                        selected_option_ids:
+                            updated
+                    }
+                );
+
+            appendNextQuestion(result);
+
+            if (
+                isAdaptive &&
+                result?.nextQuestion
+            ) {
+                setIndex(current =>
+                    current + 1
+                );
+            }
+
+
+        };
 
     const next = () => {
 
-        if (index === questions.length - 1) {
-            onExit();
-            return;
+        if (
+            index <
+            dynamicQuestions.length - 1
+        ) {
+
+            setIndex(
+                current =>
+                    current + 1
+            );
+
         }
 
-        setIndex(i => i + 1);
     };
 
     const prev = () => {
-        setIndex(i => Math.max(0, i - 1));
+
+        setIndex(current =>
+            Math.max(
+                0,
+                current - 1
+            )
+        );
+
     };
 
-    const resetToDefault = async () => {
+    const resetToDefault =
+        async () => {
 
-        const defaultValue =
-            current.answer_config?.default_answer;
+            const defaultValue =
+                answerConfig.default_answer;
 
-        if (defaultValue === undefined) {
-            return;
-        }
-
-        setAnswers(prev => ({
-            ...prev,
-            [current.id]: defaultValue
-        }));
-
-        await saveAnswer(
-            current.id,
-            {
-                text_answer: defaultValue
+            if (
+                defaultValue ===
+                undefined
+            ) {
+                return;
             }
-        );
-    };
 
-    const submitExam = async () => {
+            setAnswers(prev => ({
+                ...prev,
+                [current.id]:
+                    defaultValue
+            }));
 
-        await logEvent(
-            attemptId,
-            "attempt_submitted"
-        );
+            await saveAnswer(
+                current.id,
+                {
+                    text_answer:
+                        defaultValue
+                }
+            );
 
-        await fetch(
-            `${API_URL}/api/assessment-attempts/${attemptId}/submit`,
-            {
-                method: "POST",
-                headers: authHeaders()
-            }
-        );
+        };
 
-        onExit();
-    };
+    const submitExam =
+        async () => {
+
+            await logEvent(
+                attemptId,
+                "attempt_submitted"
+            );
+
+            await fetch(
+                `${API_URL}/api/assessment-attempts/${attemptId}/submit`,
+                {
+                    method: "POST",
+                    headers:
+                        authHeaders()
+                }
+            );
+
+            onExit();
+
+        };
 
     return (
+        <div className="min-h-screen">
 
-    <div className="min-h-screen">
+            <div className="flex justify-center px-6 py-8">
 
-        <div className="flex justify-center px-6 py-8">
+                <Card className="w-full max-w-4xl">
 
-            <Card className="w-full max-w-4xl">
+                    <CardContent className="p-8 space-y-6">
 
-                <CardContent className="p-8 space-y-6">
+                        <UserProfile />
 
-                    <UserProfile />
+                        <ExamHeader
+                            attemptId={
+                                attemptId
+                            }
+                        />
 
-                    <ExamHeader
-                        attemptId={attemptId}
-                    />
+                        <ExamTimer
+                            attempt={attempt}
+                        />
 
-                    <ExamTimer
-                        attempt={attempt}
-                    />
+                        <QuestionView
+                            question={current}
+                            answer={
+                                assessment_answers[
+                                    current.id
+                                ]
+                            }
+                            onTextAnswer={
+                                handleTextAnswer
+                            }
+                            onSingleChoice={
+                                handleSingleChoice
+                            }
+                            onMultiChoice={
+                                handleMultiChoice
+                            }
+                        />
 
-                    <QuestionView
-                        question={current}
-                        answer={assessment_answers[current.id]}
-                        onTextAnswer={handleTextAnswer}
-                        onSingleChoice={handleSingleChoice}
-                        onMultiChoice={handleMultiChoice}
-                    />
+                        <ExamNavigation
+                            index={index}
+                            total={
+                                dynamicQuestions.length
+                            }
+                            allowPrevious={
+                                !isDiagnostic &&
+                                attempt?.allow_go_to_previous_question
+                            }
+                            showReset={
+                                answerConfig.default_answer !==
+                                undefined
+                            }
+                            onPrev={prev}
+                            onNext={next}
+                            onReset={
+                                resetToDefault
+                            }
+                            onSubmit={
+                                submitExam
+                            }
+                        />
 
-                    <ExamNavigation
-                        index={index}
-                        total={questions.length}
-                        allowPrevious={attempt?.allow_go_to_previous_question}
-                        //allowPrevious="true"
-                        showReset={answerConfig.default_answer !== undefined}
-                        onPrev={prev}
-                        onNext={next}
-                        onReset={resetToDefault}
-                        onSubmit={submitExam}
-                    />
+                    </CardContent>
 
-                </CardContent>
+                </Card>
 
-            </Card>
+            </div>
 
         </div>
+    );
 
-    </div>
-);
 }

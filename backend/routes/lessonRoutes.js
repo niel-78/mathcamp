@@ -2,6 +2,7 @@ import express from "express";
 import db from "../db.js";
 import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
+import AssessmentEngine from "../services/AssessmentEngine.js";
 
 const router = express.Router();
 
@@ -730,5 +731,219 @@ router.get("/teacher",
     }
 );
 
+// POST /api/lessons/:id/group-assessments
+router.post("/:id/group-assessments",
+    async (req, res) => {
+
+        const {
+            type,
+            mode = "normal"
+        } = req.body;
+
+        const connection =
+            await db.getConnection();
+
+        try {
+
+            await connection.beginTransaction();
+
+            const lessonId =
+                req.params.id;
+
+            let assessmentId =
+                req.body.assessment_id;
+
+            const [[lesson]] =
+                await connection.query(
+                    `
+                    SELECT
+                        group_id
+                    FROM lessons
+                    WHERE id = ?
+                    `,
+                    [lessonId]
+                );
+
+            if (!lesson) {
+
+                await connection.rollback();
+
+                return res.status(404).json({
+                    error: "Lektionen hittades inte."
+                });
+
+            }
+
+            if (type === "diagnostic") {
+
+                const [[assessment]] =
+                    await connection.query(
+                        `
+                        SELECT id
+                        FROM assessments
+                        WHERE type = 'diagnostic'
+                        AND subject_id = 1
+                        AND archived_at IS NULL
+                        AND deleted_at IS NULL
+                        LIMIT 1
+                        `
+                    );
+
+                if (!assessment) {
+
+                    throw new Error(
+                        "Ingen diagnostisk assessment hittades."
+                    );
+
+                }
+
+                assessmentId =
+                    assessment.id;
+
+            }
+
+            const [existing] =
+                await connection.query(
+                    `
+                    SELECT
+                        group_assessment_id
+                    FROM lesson_group_assessments
+                    WHERE lesson_id = ?
+                    LIMIT 1
+                    `,
+                    [lessonId]
+                );
+
+            if (
+                existing.length > 0 &&
+                mode !== "test"
+            ) {
+
+                await connection.rollback();
+
+                return res.status(409).json({
+                    error:
+                        "Lektionen har redan ett provtillfälle."
+                });
+
+            }
+
+            const [result] =
+                await connection.query(
+                    `
+                    INSERT INTO group_assessments (
+
+                        assessment_id,
+                        group_id,
+                        status,
+                        mode
+
+                    )
+                    VALUES (
+
+                        ?,
+                        ?,
+                        'waiting',
+                        ?
+
+                    )
+                    `,
+                    [
+                        assessmentId,
+                        lesson.group_id,
+                        mode
+                    ]
+                );
+
+            const groupAssessmentId =
+                result.insertId;
+
+            await connection.query(
+                `
+                INSERT INTO lesson_group_assessments (
+                    lesson_id,
+                    group_assessment_id
+                )
+                VALUES (?, ?)
+                `,
+                [
+                    lessonId,
+                    groupAssessmentId
+                ]
+            );
+
+            await connection.commit();
+
+            res.status(201).json({
+                lesson_id: lessonId,
+                group_assessment_id:
+                    groupAssessmentId
+            });
+
+
+        } catch (error) {
+
+            await connection.rollback();
+
+            console.error(error);
+
+            res.status(500).json({
+                error:
+                    error.message ||
+                    "Kunde inte skapa provtillfälle."
+            });
+
+        } finally {
+
+            connection.release();
+
+        }
+
+    }
+);
+
+// GET /api/lessons/:id/group-assessments
+router.get("/:id/group-assessments",
+    async (req, res) => {
+
+        const [rows] =
+            await db.query(
+                `
+                SELECT
+                    ga.*,
+                    a.title,
+                    a.type
+                FROM lesson_group_assessments lga
+
+                INNER JOIN group_assessments ga
+                    ON ga.id = lga.group_assessment_id
+
+                INNER JOIN assessments a
+                    ON a.id = ga.assessment_id
+
+                WHERE lga.lesson_id = ?
+                `,
+                [req.params.id]
+            );
+
+        res.json(rows);
+
+    }
+);
+
+// GET /api/lessons/:lessonId/diagnostic-preview
+router.get("/:lessonId/diagnostic-preview",
+    async (req, res) => {
+
+        const plan =
+            await AssessmentEngine
+                .getDiagnosticSeedPlan(
+                    req.params.lessonId
+                );
+
+        res.json(plan);
+
+    }
+);
 
 export default router

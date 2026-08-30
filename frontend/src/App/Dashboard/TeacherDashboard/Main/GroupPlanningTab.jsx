@@ -9,7 +9,8 @@ import DeleteLessonDialog from "@/components/ui/DeleteLessonDialog";
 
 export default function GroupPlanningTab({
     groupId,
-    openTab
+    openTab,
+    startDiagnosticTest
 }) {
 
     const [lessons, setLessons] = useState([]);
@@ -87,6 +88,7 @@ export default function GroupPlanningTab({
                 onEditLesson={setEditLesson}
                 onCancelLesson={setLessonStatusDialog}
                 onDeleteLesson={setDeleteLesson}
+                startDiagnosticTest={startDiagnosticTest}
             />
 
             </BaseTabLayout>

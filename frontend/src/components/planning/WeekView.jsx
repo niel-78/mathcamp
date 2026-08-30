@@ -20,6 +20,7 @@ export default function WeekView({
     onEditLesson,
     onCancelLesson,
     onDeleteLesson,
+    startDiagnosticTest,
     readOnly = false,
 }) {
 
@@ -176,6 +177,7 @@ export default function WeekView({
                                             onEditLesson={onEditLesson}
                                             onCancelLesson={onCancelLesson}
                                             onDeleteLesson={onDeleteLesson}
+                                            startDiagnosticTest={startDiagnosticTest}
                                         />
 
                                         )

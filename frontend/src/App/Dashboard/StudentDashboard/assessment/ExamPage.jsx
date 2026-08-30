@@ -27,6 +27,12 @@ export default function ExamPage({
     useDisableContextMenu();
     useExamActivityLogging(attemptId);
 
+    console.log("ExamPage", {
+        attemptId,
+        questions,
+        attempt
+    });
+
 
     const [index, setIndex] = useState(0);
 
@@ -86,6 +92,10 @@ export default function ExamPage({
     }
 
     const current = questions[index];
+
+    if (!current) {
+        return <p>Ingen fråga hittades.</p>;
+    }
 
     const answerConfig =
         typeof current.answer_config === "string"

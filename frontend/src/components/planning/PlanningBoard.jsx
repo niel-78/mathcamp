@@ -21,6 +21,7 @@ export default function PlanningBoard({
     onEditLesson,
     onCancelLesson,
     onDeleteLesson,
+    startDiagnosticTest,
     readOnly = false
 }) {
 
@@ -276,6 +277,7 @@ export default function PlanningBoard({
                     onEditLesson={onEditLesson}
                     onCancelLesson={onCancelLesson}
                     onDeleteLesson={onDeleteLesson}
+                    startDiagnosticTest={startDiagnosticTest}
                     readOnly={readOnly}
                 />
             )}

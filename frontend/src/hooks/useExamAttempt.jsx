@@ -73,9 +73,50 @@ export function useExamAttempt(attemptId) {
 
         loadAttempt();
 
+        const checkStatus = async () => {
+
+            try {
+
+                const response =
+                    await fetch(
+                        `${API_URL}/api/assessment-attempts/${attemptId}/status`,
+                        {
+                            headers: authHeaders()
+                        }
+                    );
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const data =
+                    await response.json();
+
+            setAttempt(prev => {
+
+                if (!prev) {
+                    return prev;
+                }
+
+                return {
+                    ...prev,
+                    status: data.status,
+                    submitted_at: data.submitted_at
+                };
+
+            });
+
+            } catch (error) {
+
+                console.error(error);
+
+            }
+
+        };
+
         const interval =
             setInterval(
-                loadAttempt,
+                checkStatus,
                 5000
             );
 
@@ -110,7 +151,8 @@ export function useExamAttempt(attemptId) {
                 }
             );
 
-            const data = await res.json();
+            const data =
+                await res.json();
 
             if (!res.ok) {
 
@@ -119,8 +161,11 @@ export function useExamAttempt(attemptId) {
                     "Kunde inte spara svar"
                 );
 
-                return;
+                return null;
+
             }
+
+            return data;
 
         } catch (err) {
 
@@ -129,9 +174,10 @@ export function useExamAttempt(attemptId) {
             toast.error(
                 "Nätverksfel vid sparning"
             );
-        }
 
-        toast.success("Sparar...");
+            return null;
+
+        }
 
     };
 

@@ -39,6 +39,7 @@ export default function Main({
     openTab,
     area,
     activeDragType,
+    startDiagnosticTest,
     hoverTarget
 }) {
     
@@ -298,6 +299,7 @@ export default function Main({
                         <GroupPlanningTab
                             groupId={currentTab.groupId}
                             openTab={openTab}
+                            startDiagnosticTest={startDiagnosticTest}
                         />
 
                     )}
