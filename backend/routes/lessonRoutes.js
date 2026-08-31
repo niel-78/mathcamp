@@ -922,6 +922,7 @@ router.get("/:id/group-assessments",
                     ON a.id = ga.assessment_id
 
                 WHERE lga.lesson_id = ?
+                    AND ga.mode = 'normal'
                 `,
                 [req.params.id]
             );

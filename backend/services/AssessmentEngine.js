@@ -124,9 +124,9 @@ export default class AssessmentEngine {
                 [attemptId]
             );
 
-        if (attempt?.mode === "test") {
-            return;
-        }
+        // if (attempt?.mode === "test") {
+        //     return;
+        // }
 
         const [abilities] =
             await connection.query(

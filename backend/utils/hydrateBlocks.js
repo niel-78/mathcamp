@@ -67,6 +67,27 @@ export default async function hydrateBlocks(blocks) {
 
         block.questions = questions;
 
+        const [levels] = await db.query(
+            `
+            SELECT DISTINCT
+                asl.*
+            FROM block_abilities ba
+
+            JOIN abilities a
+                ON a.id = ba.ability_id
+
+            JOIN ability_series_levels asl
+                ON asl.series_id = a.series_id
+
+            WHERE ba.block_id = ?
+
+            ORDER BY asl.sort_order
+            `,
+            [block.id]
+        );
+
+        block.levels = levels;
+
         const [points] = await db.query(
             `
             SELECT

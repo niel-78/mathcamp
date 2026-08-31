@@ -79,6 +79,42 @@ export default function BlockContent({
 
     };
 
+    const updateQuestionLevel =
+        async (
+            questionId,
+            seriesLevelId
+        ) => {
+
+            const response =
+                await fetch(
+                    `${API_URL}/api/questions/${questionId}/series-level`,
+                    {
+                        method: "PUT",
+                        headers: {
+                            ...authHeaders(),
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            series_level_id: Number(seriesLevelId)
+                        })
+                    }
+                );
+
+            if (!response.ok) {
+                toast.error(
+                    "Kunde inte ändra nivå"
+                );
+                return;
+            }
+
+            await loadBlock();
+
+            toast.success(
+                "Nivå uppdaterad"
+            );
+
+        };
+
     const duplicateQuestion =
         async (questionId) => {
 
@@ -98,6 +134,25 @@ export default function BlockContent({
             );
         };
 
+    const sortedQuestions =
+        [...(currentBlock?.questions || [])]
+            .sort((a, b) => {
+
+                const aLevel =
+                    a.series_level_sort_order || 999;
+
+                const bLevel =
+                    b.series_level_sort_order || 999;
+
+                if (aLevel !== bLevel) {
+                    return aLevel - bLevel;
+                }
+
+                return a.id - b.id;
+            });
+
+    console.log("currentBlock", currentBlock);
+    console.log("levels", currentBlock?.levels);
 
     return (
         <>
@@ -114,7 +169,7 @@ export default function BlockContent({
                 <div className="space-y-2">
 
 
-                    {currentBlock?.questions?.map(question => (
+                    {sortedQuestions.map(question => (
 
                         <div
                             key={question.id}
@@ -128,9 +183,32 @@ export default function BlockContent({
                             "
                         >
 
-                            <MathContent value={question.question} />
-
                             <div className="flex gap-2">
+
+                                <select
+                                    value={question.series_level_id || ""}
+                                    onChange={(e) =>
+                                        updateQuestionLevel(
+                                            question.id,
+                                            e.target.value
+                                        )
+                                    }
+                                    className="border rounded px-2 py-1"
+                                >
+                                    {currentBlock.levels?.map(level => (
+                                        <option
+                                            key={level.id}
+                                            value={level.id}
+                                        >
+                                            {level.sort_order}
+                                            {level.name
+                                                ? ` - ${level.name}`
+                                                : ""}
+                                        </option>
+                                    ))}
+                                </select>
+
+                                <MathContent value={question.question} />
 
                                 <Button
                                     size="sm"

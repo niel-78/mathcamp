@@ -28,11 +28,13 @@ router.get("/import-template", async (req, res) => {
             {
                 Fråga: "Beräkna $7 \\cdot 8$",
                 Frågetyp: "text",
+                Nivå: 1,
                 "Korrekta alternativ": "56"
             },
             {
                 Fråga: "Vilket uttryck är lika med $x^2$?",
                 Frågetyp: "single_choice",
+                Nivå: 2,
                 "Korrekta alternativ": "3",
                 "Alternativ 1": "$2x$",
                 "Alternativ 2": "$x+2$",
@@ -42,6 +44,7 @@ router.get("/import-template", async (req, res) => {
             {
                 Fråga: "Vilka av följande tal är lösningar till $x^2 = 25$?",
                 Frågetyp: "multiple_choice",
+                Nivå: 3,
                 "Korrekta alternativ": "2,4",
                 "Alternativ 1": "$0$",
                 "Alternativ 2": "$5$",
@@ -64,6 +67,14 @@ router.get("/import-template", async (req, res) => {
             ["text"],
             ["single_choice"],
             ["multiple_choice"],
+            [],
+            ["Nivå"],
+            ["Ange nivånummer i serien."],
+            ["1 = första svårighetsgraden"],
+            ["2 = andra svårighetsgraden"],
+            ["3 = tredje svårighetsgraden"],
+            ["4 = fjärde svårighetsgraden"],
+            ["osv."],
             [],
             ["LaTeX kan användas i frågor och alternativ."],
             ["Exempel:"],
@@ -1047,6 +1058,40 @@ router.post("/import",upload.single("file"),
                     row.questionType ||
                     "text";
 
+                const levelNumber =
+                    Number(
+                        row.Nivå ||
+                        row.Level ||
+                        row.level ||
+                        1
+                    );
+
+                const [[ability]] =
+                    await db.query(
+                        `
+                        SELECT a.series_id
+                        FROM abilities a
+                        INNER JOIN block_abilities ba
+                            ON ba.ability_id = a.id
+                        WHERE ba.block_id = ?
+                        `,
+                        [blockId]
+                    );
+
+                const [levels] =
+                    await db.query(
+                        `
+                        SELECT id
+                        FROM ability_series_levels
+                        WHERE series_id = ?
+                        ORDER BY sort_order
+                        `,
+                        [ability.series_id]
+                    );
+
+                const seriesLevelId =
+                    levels[levelNumber - 1]?.id || null;
+
                 const correctAnswers =
                     String(
                         row["Korrekta alternativ"] ||
@@ -1070,15 +1115,16 @@ router.post("/import",upload.single("file"),
                 const [questionResult] =
                     await db.query(
                         `
-                        INSERT INTO questions (
-                            block_id,
-                            question,
-                            question_type,
-                            created_by,
-                            updated_by,
-                            answer_config
-                        )
-                        VALUES (?, ?, ?, ?, ?, ?)
+                            INSERT INTO questions (
+                                block_id,
+                                question,
+                                question_type,
+                                series_level_id,
+                                created_by,
+                                updated_by,
+                                answer_config
+                            )
+                            VALUES (?, ?, ?, ?, ?, ?, ?)
                         `,
                         [
                             blockId,

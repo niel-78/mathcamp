@@ -739,10 +739,11 @@ router.post("/start", async (req, res) => {
                     started_at,
                     started_ip,
                     started_user_agent,
-                    status
+                    status,
+                    mode
                 )
                 VALUES (
-                    ?, ?, ?, ?, NOW(), ?, ?, 'in_progress'
+                    ?, ?, ?, ?, NOW(), ?, ?, 'in_progress', ?
                 )
             `,
             [
@@ -751,7 +752,8 @@ router.post("/start", async (req, res) => {
                 groupExam.id,
                 groupExam.config,
                 startedIp,
-                startedUserAgent
+                startedUserAgent,
+                groupExam.mode
             ]
         );
 

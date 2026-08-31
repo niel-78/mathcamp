@@ -134,6 +134,24 @@ router.put("/:id", async (req, res) => {
     res.sendStatus(204);
 });
 
+router.put("/:id/series-level", async (req, res) => {
+    const { series_level_id } = req.body;
+
+    await db.query(
+        `
+        UPDATE questions
+        SET series_level_id = ?
+        WHERE id = ?
+        `,
+        [
+            series_level_id,
+            req.params.id
+        ]
+    );
+
+    res.sendStatus(204);
+});
+
 // DELETE /api/questions/:id
 router.delete("/:id", async (req, res) => {
 
