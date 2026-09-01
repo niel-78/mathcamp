@@ -47,14 +47,19 @@ router.get("/", async (req, res) => {
         JOIN \`groups\` g
             ON g.id = ge.group_id
 
-        JOIN assessment_permissions ep
+        LEFT JOIN assessment_permissions ep
             ON ep.assessment_id = ge.assessment_id
+            AND ep.user_id = ?
 
-        WHERE ep.user_id = ?
+        WHERE ep.user_id IS NOT NULL
+            OR ? = 'super'
 
         ORDER BY ge.created_at DESC
         `,
-        [req.user.id]
+        [
+            req.user.id,
+            req.user.role
+        ]
     );
 
     res.json(rows);
@@ -232,15 +237,20 @@ router.get("/:id", async (req, res) => {
         JOIN \`groups\` g
             ON g.id = ge.group_id
 
-        JOIN assessment_permissions ep
+        LEFT JOIN assessment_permissions ep
             ON ep.assessment_id = ge.assessment_id
+            AND ep.user_id = ?
 
         WHERE ge.id = ?
-            AND ep.user_id = ?
+            AND (
+                ep.user_id IS NOT NULL
+                OR ? = 'super'
+            )
         `,
         [
+            req.user.id,
             req.params.id,
-            req.user.id
+            req.user.role
         ]
     );
 
