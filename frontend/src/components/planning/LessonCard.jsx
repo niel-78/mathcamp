@@ -301,6 +301,7 @@ export default function LessonCard({
 
                     <LessonAssessments
                         lessonId={lesson.id}
+                        openTab={openTab}
                     />
 
                     {lesson.cancelled_at && (

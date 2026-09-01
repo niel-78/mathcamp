@@ -119,6 +119,7 @@ export default function AbilityTab({
                     openTab={openTab}
                     onReload={loadBlocks}
                     onDelete={removeBlock}
+                    deleteLabel="Ta bort från förmåga"
                 />
 
             </BaseTabLayout>

@@ -92,6 +92,7 @@ export default function CentralContentTab({
                     openTab={openTab}
                     onReload={loadBlocks}
                     onDelete={removeBlock}
+                    deleteLabel="Ta bort från centralt innehåll"
                 />
 
             </BaseTabLayout>

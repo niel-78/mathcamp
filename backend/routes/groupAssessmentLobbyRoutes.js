@@ -27,7 +27,7 @@ router.get("/:id/status", async (req, res) => {
             await db.query(
                 `
                 SELECT
-                    assessment_status,
+                    status AS assessment_status,
                     waiting_room_open
                 FROM group_assessments
                 WHERE id = ?
@@ -112,10 +112,10 @@ router.post("/join", async (req, res) => {
             SELECT
                 id,
                 group_id,
-                assessment_status,
+                status AS assessment_status,
                 waiting_room_open
             FROM group_assessments
-            WHERE group_assessment_key = ?
+            WHERE access_key = ?
             `,
             [group_assessment_key]
         );
@@ -243,7 +243,7 @@ router.post("/find", async (req, res) => {
                 ge.group_id,
                 ge.assessment_id,
                 ge.waiting_room_open,
-                ge.assessment_status,
+                ge.status AS assessment_status,
                 ge.available_from,
                 ge.available_until,
 
@@ -258,7 +258,7 @@ router.post("/find", async (req, res) => {
             INNER JOIN \`groups\` g
                 ON g.id = ge.group_id
 
-            WHERE ge.group_assessment_key = ?
+            WHERE ge.access_key = ?
             `,
             [group_assessment_key]
         );

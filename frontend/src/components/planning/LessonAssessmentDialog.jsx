@@ -14,6 +14,8 @@ import {
     Button
 } from "@/components/ui/button";
 
+import MathContent from "@/components/ui/MathContent";
+
 import { toast } from "sonner";
 
 export default function LessonAssessmentDialog({
@@ -40,6 +42,46 @@ export default function LessonAssessmentDialog({
         diagnosticPlan,
         setDiagnosticPlan
     ] = useState(null);
+
+    const [
+        selectedBlockIds,
+        setSelectedBlockIds
+    ] = useState([]);
+
+    const availableBlocks =
+        diagnosticPlan?.sections?.flatMap(
+            section =>
+                (section.blocks || []).map(
+                    block => ({
+                        ...block,
+                        sectionId: section.id,
+                        sectionName: section.name
+                    })
+                )
+        ) ||
+        [];
+
+    const availableBlockIds =
+        availableBlocks
+            .map(block => Number(block.id))
+            .filter(Number.isFinite);
+
+    const allBlocksSelected =
+        availableBlockIds.length > 0 &&
+        availableBlockIds.every(
+            blockId =>
+                selectedBlockIds.includes(blockId)
+        );
+
+    const blockQuestionPreviews =
+        new Map(
+            (diagnosticPlan?.questions || [])
+                .filter(item => item.block_id != null)
+                .map(item => [
+                    Number(item.block_id),
+                    item.question?.question
+                ])
+        );
 
     useEffect(() => {
 
@@ -87,6 +129,16 @@ export default function LessonAssessmentDialog({
 
             setDiagnosticPlan(data);
 
+            const nextSelected =
+                Array.isArray(data.selected_block_ids)
+                    ? data.selected_block_ids
+                    : (data.sections || [])
+                        .flatMap(section => section.blocks || [])
+                        .map(block => Number(block.id))
+                        .filter(Number.isFinite);
+
+            setSelectedBlockIds(nextSelected);
+
         } catch (error) {
 
             console.error(error);
@@ -103,7 +155,34 @@ export default function LessonAssessmentDialog({
 
     }
 
+    function toggleBlock(blockId) {
+
+        setSelectedBlockIds(
+            previous => {
+
+                const next =
+                    previous.includes(blockId)
+                        ? previous.filter(id => id !== blockId)
+                        : [...previous, blockId];
+
+                return next;
+
+            }
+        );
+
+    }
+
     async function handleCreateDiagnostic() {
+
+        if (selectedBlockIds.length === 0) {
+
+            toast.error(
+                "Välj minst ett block att testa i diagnosen."
+            );
+
+            return;
+
+        }
 
         try {
 
@@ -121,7 +200,9 @@ export default function LessonAssessmentDialog({
                         },
                         body: JSON.stringify({
                             type: "diagnostic",
-                            mode: "normal"
+                            mode: "normal",
+                            selected_block_ids:
+                                selectedBlockIds
                         })
                     }
                 );
@@ -140,6 +221,12 @@ export default function LessonAssessmentDialog({
 
             toast.success(
                 "Diagnos skapad."
+            );
+
+            window.dispatchEvent(
+                new Event(
+                    "lesson-section-added"
+                )
             );
 
             onSaved?.();
@@ -162,6 +249,16 @@ export default function LessonAssessmentDialog({
 
     async function handleTestDiagnostic() {
 
+        if (selectedBlockIds.length === 0) {
+
+            toast.error(
+                "Välj minst ett block att testa i diagnosen."
+            );
+
+            return;
+
+        }
+
         try {
 
             setSaving(true);
@@ -178,7 +275,9 @@ export default function LessonAssessmentDialog({
                         },
                         body: JSON.stringify({
                             type: "diagnostic",
-                            mode: "test"
+                            mode: "test",
+                            selected_block_ids:
+                                selectedBlockIds
                         })
                     }
                 );
@@ -345,82 +444,142 @@ export default function LessonAssessmentDialog({
                             <div
                                 className="
                                     mb-2
-                                    font-medium
+                                    flex
+                                    items-center
+                                    justify-between
+                                    gap-3
                                 "
                             >
-                                Diagnosen
-                                kommer att
-                                börja med:
+                                <div className="font-medium">
+                                    Välj vilka block som ska ingå i diagnosen
+                                </div>
+
+                                {availableBlocks.length > 0 && (
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setSelectedBlockIds(availableBlockIds)}
+                                        >
+                                            {allBlocksSelected ? "Alla valda" : "Markera alla"}
+                                        </Button>
+
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setSelectedBlockIds([])}
+                                        >
+                                            Rensa
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
 
-                            <div
-                                className="
-                                    space-y-4
-                                "
-                            >
+                            {availableBlocks.length === 0 && (
+                                <div className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
+                                    Inga block hittades för den här lektionen. Lägg till block i sektioner först så att diagnosen kan byggas.
+                                </div>
+                            )}
 
-                                {diagnosticPlan.sections
-                                    ?.map(
-                                        section => (
+                            {availableBlocks.length > 0 && (
+                                <div
+                                    className="
+                                        space-y-4
+                                    "
+                                >
 
-                                            <div
-                                                key={
-                                                    section.id
-                                                }
-                                            >
+                                    {diagnosticPlan.sections
+                                        ?.map(
+                                            section => (
 
                                                 <div
-                                                    className="
-                                                        font-medium
-                                                    "
-                                                >
-                                                    {
-                                                        section.name
+                                                    key={
+                                                        section.id
                                                     }
+                                                >
+
+                                                    <div
+                                                        className="
+                                                            font-medium
+                                                        "
+                                                    >
+                                                        {
+                                                            section.name
+                                                        }
+                                                    </div>
+
+                                                    <div
+                                                        className="
+                                                            mt-2
+                                                            space-y-2
+                                                        "
+                                                    >
+                                                        {section.blocks?.map(
+                                                            block => {
+
+                                                                const blockId = Number(block.id);
+                                                                const isSelected = selectedBlockIds.includes(blockId);
+                                                                const previewQuestion = blockQuestionPreviews.get(blockId);
+
+                                                                return (
+                                                                    <label
+                                                                        key={`${section.id}-${block.id}`}
+                                                                        className="
+                                                                            flex
+                                                                            cursor-pointer
+                                                                            flex-col
+                                                                            gap-1
+                                                                            rounded-md
+                                                                            border
+                                                                            bg-background
+                                                                            px-2
+                                                                            py-1
+                                                                            text-sm
+                                                                            shadow-sm
+                                                                        "
+                                                                    >
+                                                                        <div
+                                                                            className="
+                                                                                flex
+                                                                                items-center
+                                                                                gap-2
+                                                                            "
+                                                                        >
+                                                                            <input
+                                                                                type="checkbox"
+                                                                                className="h-4 w-4 accent-primary"
+                                                                                style={{ appearance: "checkbox" }}
+                                                                                checked={isSelected}
+                                                                                onChange={() => toggleBlock(blockId)}
+                                                                            />
+                                                                            <MathContent value={block.name} />
+                                                                        </div>
+
+                                                                        {previewQuestion && (
+                                                                            <MathContent
+                                                                                value={previewQuestion}
+                                                                                className="
+                                                                                    pl-6
+                                                                                    text-xs
+                                                                                    text-muted-foreground
+                                                                                "
+                                                                            />
+                                                                        )}
+                                                                    </label>
+                                                                );
+                                                            }
+                                                        )}
+                                                    </div>
+
                                                 </div>
 
-                                                <ul
-                                                    className="
-                                                        ml-5
-                                                        list-disc
-                                                        text-sm
-                                                    "
-                                                >
+                                            )
+                                        )}
 
-                                                    {diagnosticPlan.questions
-                                                        ?.filter(
-                                                            q =>
-                                                                Number(
-                                                                    q.section_id
-                                                                ) ===
-                                                                Number(
-                                                                    section.id
-                                                                )
-                                                        )
-                                                        .map(
-                                                            q => (
-
-                                                                <li
-                                                                    key={
-                                                                        q.block_id
-                                                                    }
-                                                                >
-                                                                    {
-                                                                        q.block_name
-                                                                    }
-                                                                </li>
-
-                                                            )
-                                                        )}
-
-                                                </ul>
-
-                                            </div>
-
-                                        )
-                                    )}
-
-                            </div>
+                                </div>
+                            )}
 
                         </div>
 

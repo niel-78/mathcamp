@@ -17,6 +17,139 @@ const upload = multer({
 router.use(requireAuth);
 router.use(requireRole("teacher","super"));
 
+async function hydrateLightBlocks(blocks) {
+
+    if (!blocks.length) {
+        return [];
+    }
+
+    const blockIds = blocks.map(block => block.id);
+
+    const [questionRows] = await db.query(
+        `
+        SELECT block_id, question
+        FROM questions
+        WHERE block_id IN (?)
+        AND deleted_at IS NULL
+        AND archived_at IS NULL
+        ORDER BY block_id, id
+        `,
+        [blockIds]
+    );
+
+    const [questionCounts] = await db.query(
+        `
+        SELECT block_id, COUNT(*) AS question_count
+        FROM questions
+        WHERE block_id IN (?)
+        AND deleted_at IS NULL
+        AND archived_at IS NULL
+        GROUP BY block_id
+        `,
+        [blockIds]
+    );
+
+    const [pointRows] = await db.query(
+        `
+        SELECT block_id, id, points
+        FROM block_points
+        WHERE block_id IN (?)
+        `,
+        [blockIds]
+    );
+
+    const [abilityRows] = await db.query(
+        `
+        SELECT ba.block_id, a.id, a.name
+        FROM block_abilities ba
+        JOIN abilities a
+            ON a.id = ba.ability_id
+        WHERE ba.block_id IN (?)
+        ORDER BY ba.block_id, a.name
+        `,
+        [blockIds]
+    );
+
+    const [sectionRows] = await db.query(
+        `
+        SELECT bs.block_id, s.id, s.title
+        FROM block_sections bs
+        JOIN sections s
+            ON s.id = bs.section_id
+        WHERE bs.block_id IN (?)
+        ORDER BY bs.block_id, s.title
+        `,
+        [blockIds]
+    );
+
+    const firstQuestionByBlock = new Map();
+    for (const row of questionRows) {
+        if (!firstQuestionByBlock.has(row.block_id)) {
+            firstQuestionByBlock.set(row.block_id, row.question);
+        }
+    }
+
+    const questionCountByBlock = new Map();
+    for (const row of questionCounts) {
+        questionCountByBlock.set(Number(row.block_id), Number(row.question_count));
+    }
+
+    const pointCountByBlock = new Map();
+    const totalPointsByBlock = new Map();
+    for (const row of pointRows) {
+        const blockId = Number(row.block_id);
+        pointCountByBlock.set(blockId, (pointCountByBlock.get(blockId) || 0) + 1);
+        totalPointsByBlock.set(blockId, (totalPointsByBlock.get(blockId) || 0) + Number(row.points || 0));
+    }
+
+    const abilitiesByBlock = new Map();
+    for (const row of abilityRows) {
+        const blockId = Number(row.block_id);
+        if (!abilitiesByBlock.has(blockId)) {
+            abilitiesByBlock.set(blockId, []);
+        }
+        abilitiesByBlock.get(blockId).push({
+            id: row.id,
+            name: row.name
+        });
+    }
+
+    const sectionsByBlock = new Map();
+    for (const row of sectionRows) {
+        const blockId = Number(row.block_id);
+        if (!sectionsByBlock.has(blockId)) {
+            sectionsByBlock.set(blockId, []);
+        }
+        sectionsByBlock.get(blockId).push({
+            id: row.id,
+            title: row.title
+        });
+    }
+
+    for (const block of blocks) {
+        const blockId = Number(block.id);
+        const firstQuestion = firstQuestionByBlock.get(blockId);
+        const questionCount = questionCountByBlock.get(blockId) || 0;
+
+        block.questions = firstQuestion
+            ? [{ question: firstQuestion }]
+            : [];
+        block.question_count = questionCount;
+
+        const pointsCount = pointCountByBlock.get(blockId) || 0;
+        block.points = pointsCount
+            ? pointRows.filter(row => Number(row.block_id) === blockId)
+            : [];
+        block.point_count = pointsCount;
+        block.total_points = totalPointsByBlock.get(blockId) || 0;
+
+        block.abilities = abilitiesByBlock.get(blockId) || [];
+        block.bookSections = sectionsByBlock.get(blockId) || [];
+    }
+
+    return blocks;
+}
+
 // GET /api/blocks/import-template
 router.get("/import-template", async (req, res) => {
 
@@ -178,7 +311,7 @@ router.get("/sections/:sectionId",
             );
 
         const hydratedBlocks =
-            await hydrateBlocks(blocks);
+            await hydrateLightBlocks(blocks);
 
         for (const block of hydratedBlocks) {
 
@@ -358,7 +491,7 @@ router.get("/abilities/:abilityId", async (req, res) => {
         ]
     );
 
-    const hydratedBlocks = await hydrateBlocks(blocks);
+    const hydratedBlocks = await hydrateLightBlocks(blocks);
 
     for (const block of hydratedBlocks) {
         const isOwner =
@@ -572,7 +705,7 @@ router.get("/", async (req, res) => {
         }
 
     const hydratedBlocks =
-        await hydrateBlocks(
+        await hydrateLightBlocks(
             blocks
         );
 
@@ -650,21 +783,27 @@ router.post("/", async (req, res) => {
                 [req.user.id]
             );
 
+        const blockTitle = question
+            ? question.substring(0, 100)
+            : "Nytt block";
+
         const [blockResult] = await db.query(
             `
                 INSERT INTO blocks (
                     created_by,
                     updated_by,
                     school_id,
-                    visibility
+                    visibility,
+                    title
                 )
-                VALUES (?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?)
             `,
             [
                 req.user.id,
                 req.user.id,
                 school?.school_id || null,
-                visibility
+                visibility,
+                blockTitle
             ]
         );
 
@@ -972,14 +1111,16 @@ router.post("/import",upload.single("file"),
                     INSERT INTO blocks (
                         school_id,
                         created_by,
-                        updated_by
+                        updated_by,
+                        title
                     )
-                    VALUES (?, ?, ?)
+                    VALUES (?, ?, ?, ?)
                     `,
                     [
                         teacher.school_id,
                         req.user.id,
-                        req.user.id
+                        req.user.id,
+                        "Nytt block"
                     ]
                 );
 
@@ -1369,6 +1510,10 @@ router.post("/:id/copy",
 
             }
 
+            const blockTitle = questions?.[0]?.question
+                ? questions[0].question.substring(0, 100)
+                : "Importerat block";
+
             const [blockResult] =
                 await connection.query(
                     `
@@ -1379,16 +1524,18 @@ router.post("/:id/copy",
 
                         school_id,
 
-                        visibility
+                        visibility,
+                        title
 
                     )
-                    VALUES (?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?)
                     `,
                     [
                         req.user.id,
                         req.user.id,
                         schoolId,
-                        "private"
+                        "private",
+                        blockTitle
                     ]
                 );
 

@@ -152,27 +152,6 @@ export default function ExamPage({
 
         }
 
-        if (
-            typeof result?.correct ===
-            "boolean"
-        ) {
-
-            if (result.correct) {
-
-                toast.success(
-                    "Rätt!"
-                );
-
-            } else {
-
-                toast.error(
-                    "Fel"
-                );
-
-            }
-
-        }
-
     };
 
     const handleTextAnswer =

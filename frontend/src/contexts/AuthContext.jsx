@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { authHeaders } from "@/api/authHeaders";
 import { API_URL } from "@/config";
 import useAutoLogout from "@/hooks/useAutoLogout";
@@ -57,11 +57,18 @@ export function AuthProvider({ children }) {
 
     const token = localStorage.getItem("token");
 
-    const logout = async () => {
+    const logout = useCallback(async () => {
+
+        const currentToken = localStorage.getItem("token");
+
+        if (!currentToken) {
+            setUser(null);
+            return;
+        }
 
         try {
 
-            await fetch(
+            const response = await fetch(
                 `${API_URL}/api/auth/logout`,
                 {
                     method: "POST",
@@ -69,17 +76,22 @@ export function AuthProvider({ children }) {
                 }
             );
 
+            if (!response.ok && response.status !== 401) {
+                throw new Error("Logout failed");
+            }
+
         } catch (error) {
 
             console.error(error);
 
+        } finally {
+
+            localStorage.removeItem("token");
+            setUser(null);
+
         }
 
-        localStorage.removeItem("token");
-
-        setUser(null);
-
-    };
+    }, []);
 
     useAutoLogout(
         logout,

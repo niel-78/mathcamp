@@ -161,7 +161,7 @@ export default class AssessmentEngine {
                 );
 
             const masteryBefore =
-                current?.mastery_score ?? 50;
+                Number(current?.mastery_score ?? 50);
 
             const masteryAfter =
                 Math.max(
@@ -180,7 +180,7 @@ export default class AssessmentEngine {
                     user_id,
                     ability_id,
                     mastery_score,
-                    questions_answered,
+                    attempts,
                     correct_answers
 
                 )
@@ -196,8 +196,8 @@ export default class AssessmentEngine {
 
                 ON DUPLICATE KEY UPDATE
 
-                    questions_answered =
-                        questions_answered + 1,
+                    attempts =
+                        attempts + 1,
 
                     correct_answers =
                         correct_answers +
@@ -707,7 +707,8 @@ export default class AssessmentEngine {
             await db.query(
                 `
                 SELECT
-                    group_id
+                    group_id,
+                    starts_at
                 FROM lessons
                 WHERE id = ?
                 `,
@@ -741,6 +742,7 @@ export default class AssessmentEngine {
                 WHERE ga.group_id = ?
                     AND a.type = 'diagnostic'
                     AND aa.status = 'submitted'
+                    AND aa.mode != 'test'
 
                 ORDER BY aa.submitted_at DESC
 
@@ -762,6 +764,7 @@ export default class AssessmentEngine {
                 SELECT DISTINCT
 
                     b.id,
+                    b.title AS block_title,
 
                     a.id AS ability_id,
                     a.name AS block_name,
@@ -783,33 +786,52 @@ export default class AssessmentEngine {
                 INNER JOIN blocks b
                     ON b.id = bs.block_id
 
-                INNER JOIN block_abilities ba
+                LEFT JOIN block_abilities ba
                     ON ba.block_id = b.id
 
-                INNER JOIN abilities a
+                LEFT JOIN abilities a
                     ON a.id = ba.ability_id
 
                 WHERE l.group_id = ?
                 AND l.starts_at > ?
+                AND l.starts_at <= ?
+                AND b.deleted_at IS NULL
+                AND b.archived_at IS NULL
 
                 ORDER BY
                     s.title,
+                    b.id,
                     a.name
                 `,
                 [
                     lesson.group_id,
-                    lastDiagnosticDate
+                    lastDiagnosticDate,
+                    lesson.starts_at
                 ]
             );
 
-        console.log(
-            "Diagnostic preview blocks:",
-            blocks
-        );
-
         const questions = [];
 
+        // Deduplicate blocks and keep only those with abilities
+        const uniqueBlocks = [];
+        const seenBlockIds = new Set();
+        
         for (const block of blocks) {
+            // Skip blocks without abilities (NULL ability_id from LEFT JOIN)
+            if (!block.ability_id) {
+                continue;
+            }
+            
+            // Skip duplicate block entries (keep first one with each ability)
+            const key = `${block.id}-${block.ability_id}`;
+            if (seenBlockIds.has(key)) {
+                continue;
+            }
+            seenBlockIds.add(key);
+            uniqueBlocks.push(block);
+        }
+
+        for (const block of uniqueBlocks) {
 
             const [[ability]] =
                 await db.query(
@@ -901,23 +923,45 @@ export default class AssessmentEngine {
 
         }
 
-        const sections =
-            [
-                ...new Map(
-                    blocks.map(
-                        block => [
-                            block.section_id,
-                            {
-                                id:
-                                    block.section_id,
+        const sectionsMap = new Map();
 
-                                name:
-                                    block.section_name
-                            }
-                        ]
-                    )
-                ).values()
-            ];
+        for (const block of blocks) {
+
+            if (!sectionsMap.has(block.section_id)) {
+
+                sectionsMap.set(
+                    block.section_id,
+                    {
+                        id: block.section_id,
+                        name: block.section_name,
+                        blocks: []
+                    }
+                );
+
+            }
+
+            const section =
+                sectionsMap.get(block.section_id);
+
+            if (
+                !section.blocks.some(
+                    b => b.id === block.id
+                )
+            ) {
+
+                section.blocks.push({
+                    id: block.id,
+                    name:
+                        block.block_title ||
+                        block.block_name
+                });
+
+            }
+
+        }
+
+        const sections =
+            [...sectionsMap.values()];
 
         return {
 

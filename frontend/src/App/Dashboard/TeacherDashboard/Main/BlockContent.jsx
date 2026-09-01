@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import ArchiveQuestionDialog from "@/components/ui/ArchiveQuestionDialog";
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";    
 import MathContent from "@/components/ui/MathContent";
+import { checkOptionValues } from "@/utils/checkOptionValues";
 
 export default function BlockContent({
     block,

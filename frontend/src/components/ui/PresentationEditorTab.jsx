@@ -11,8 +11,6 @@ export default function PresentationEditorTab({
     openTab
 }) {
 
-    console.log(presentation);
-
     const data =
         useMemo(() => {
 

@@ -258,6 +258,7 @@ export default function SectionTab({
                     openTab={openTab}
                     onReload={loadBlocks}
                     onDelete={removeBlock}
+                    deleteLabel="Ta bort från sektion"
                 />
 
             </BaseTabLayout>

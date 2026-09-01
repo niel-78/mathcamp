@@ -31,6 +31,24 @@ export default function LessonAssessments({
 
     }, [lessonId]);
 
+    useEffect(() => {
+
+        const handler = () => loadAssessments();
+
+        window.addEventListener(
+            "lesson-section-added",
+            handler
+        );
+
+        return () => {
+            window.removeEventListener(
+                "lesson-section-added",
+                handler
+            );
+        };
+
+    }, [lessonId]);
+
     async function loadAssessments() {
 
         try {
@@ -138,10 +156,14 @@ export default function LessonAssessments({
                                 size="sm"
                                 variant="outline"
                                 onClick={() =>
-                                    openTab?.(
-                                        "group-assessment",
-                                        assessment.id
-                                    )
+                                    openTab?.({
+                                        id: `group-assessment-${assessment.id}`,
+                                        title:
+                                            assessment.title ||
+                                            `Provtillfälle #${assessment.id}`,
+                                        type: "group-assessment",
+                                        groupExamId: assessment.id
+                                    })
                                 }
                             >
                                 Öppna

@@ -3,6 +3,7 @@ import db from "../db.js";
 import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
 import AssessmentEngine from "../services/AssessmentEngine.js";
+import getAssessmentTypeSettings from "../utils/getAssessmentTypeSettings.js";
 
 const router = express.Router();
 
@@ -737,7 +738,8 @@ router.post("/:id/group-assessments",
 
         const {
             type,
-            mode = "normal"
+            mode = "normal",
+            selected_block_ids = []
         } = req.body;
 
         const connection =
@@ -774,6 +776,13 @@ router.post("/:id/group-assessments",
 
             }
 
+            const normalizedSelectedBlockIds =
+                Array.isArray(selected_block_ids)
+                    ? selected_block_ids
+                        .map(id => Number(id))
+                        .filter(id => Number.isFinite(id) && id > 0)
+                    : [];
+
             if (type === "diagnostic") {
 
                 const [[assessment]] =
@@ -797,6 +806,14 @@ router.post("/:id/group-assessments",
 
                 }
 
+                if (normalizedSelectedBlockIds.length === 0) {
+
+                    throw new Error(
+                        "Välj minst ett block för diagnosen."
+                    );
+
+                }
+
                 assessmentId =
                     assessment.id;
 
@@ -806,9 +823,12 @@ router.post("/:id/group-assessments",
                 await connection.query(
                     `
                     SELECT
-                        group_assessment_id
-                    FROM lesson_group_assessments
-                    WHERE lesson_id = ?
+                        lga.group_assessment_id
+                    FROM lesson_group_assessments lga
+                    INNER JOIN group_assessments ga
+                        ON ga.id = lga.group_assessment_id
+                    WHERE lga.lesson_id = ?
+                    AND ga.mode != 'test'
                     LIMIT 1
                     `,
                     [lessonId]
@@ -828,6 +848,11 @@ router.post("/:id/group-assessments",
 
             }
 
+            const typeSettings =
+                await getAssessmentTypeSettings(
+                    type
+                );
+
             const [result] =
                 await connection.query(
                     `
@@ -836,7 +861,8 @@ router.post("/:id/group-assessments",
                         assessment_id,
                         group_id,
                         status,
-                        mode
+                        mode,
+                        config
 
                     )
                     VALUES (
@@ -844,6 +870,7 @@ router.post("/:id/group-assessments",
                         ?,
                         ?,
                         'waiting',
+                        ?,
                         ?
 
                     )
@@ -851,7 +878,12 @@ router.post("/:id/group-assessments",
                     [
                         assessmentId,
                         lesson.group_id,
-                        mode
+                        mode,
+                        JSON.stringify({
+                            ...typeSettings,
+                            selected_block_ids:
+                                normalizedSelectedBlockIds
+                        })
                     ]
                 );
 
@@ -936,13 +968,28 @@ router.get("/:id/group-assessments",
 router.get("/:lessonId/diagnostic-preview",
     async (req, res) => {
 
-        const plan =
-            await AssessmentEngine
-                .getDiagnosticSeedPlan(
-                    req.params.lessonId
-                );
+        try {
 
-        res.json(plan);
+            const plan =
+                await AssessmentEngine
+                    .getDiagnosticSeedPlan(
+                        req.params.lessonId
+                    );
+
+            res.json(plan);
+
+        } catch (err) {
+
+            console.error(
+                "diagnostic-preview error:",
+                err
+            );
+
+            res.status(500).json({
+                error: err.message
+            });
+
+        }
 
     }
 );

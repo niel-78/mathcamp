@@ -49,9 +49,9 @@ export default function TabBar({
                 </span>
             )}
 
-            {tabs.map(tab => (
+            {tabs.map((tab, index) => (
                 <DraggableTab
-                    key={tab.id}
+                    key={`${tab.id ?? "tab"}-${index}`}
                     tab={tab}
                     activeTab={activeTab}
                     setActiveTab={setActiveTab}

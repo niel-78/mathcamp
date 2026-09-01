@@ -7,7 +7,6 @@ export default function WaitingRoomCard({
     onAdmit
 }) {
 
-    console.log(student);
     return (
 
         <CardSection

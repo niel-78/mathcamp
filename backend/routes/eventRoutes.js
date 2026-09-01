@@ -54,9 +54,9 @@ router.post("/", async (req, res) => {
     if (attempt) {
 
         const config =
-            JSON.parse(
-                attempt.config || "{}"
-            );
+            typeof attempt.config === "string"
+                ? JSON.parse(attempt.config || "{}")
+                : attempt.config || {};
 
         const eventLockMap = {
 

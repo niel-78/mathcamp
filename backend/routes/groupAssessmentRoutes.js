@@ -5,6 +5,7 @@ import formatDateTime from "../utils/formatDateTime.js";
 import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
 import { buildExamSession } from "../utils/buildExamSession.js";
+import getAssessmentTypeSettings from "../utils/getAssessmentTypeSettings.js";
 
 const router = express.Router();
 
@@ -104,7 +105,7 @@ router.post("/", async (req, res) => {
         const [[assessment]] =
         await db.query(
             `
-            SELECT config
+            SELECT type, config
             FROM assessments
             WHERE id = ?
             `,
@@ -134,7 +135,7 @@ router.post("/", async (req, res) => {
                             `
                             SELECT id
                             FROM group_assessments
-                            WHERE group_assessment_key = ?
+                            WHERE access_key = ?
                             `,
                             [key]
                         );
@@ -150,13 +151,23 @@ router.post("/", async (req, res) => {
         const groupExamKey =
             await generateUniqueGroupExamKey();
 
+        const typeSettings =
+            await getAssessmentTypeSettings(
+                assessment.type
+            );
+
+        const assessmentConfig =
+            typeof assessment.config === "string"
+                ? JSON.parse(assessment.config || "{}")
+                : assessment.config || {};
+
         const [result] =
             await db.query(
                 `
                 INSERT INTO group_assessments (
                     group_id,
                     assessment_id,
-                    group_assessment_key,
+                    access_key,
                     config
                 )
                 VALUES (?, ?, ?, ?)
@@ -165,7 +176,10 @@ router.post("/", async (req, res) => {
                     group_id,
                     assessment_id,
                     groupExamKey,
-                    assessment.config
+                    JSON.stringify({
+                        ...typeSettings,
+                        ...assessmentConfig
+                    })
                 ]
             );
 
@@ -205,6 +219,8 @@ router.get("/:id", async (req, res) => {
         `
         SELECT
             ge.*,
+            ge.status AS assessment_status,
+            ge.access_key AS group_assessment_key,
             e.title AS assessment_title,
             g.name AS group_name,
             ep.role
@@ -601,7 +617,7 @@ router.post("/:id/close", async (req, res) => {
         await db.query(
             `
             UPDATE group_assessments
-            SET assessment_status = 'closed'
+            SET status = 'closed'
             WHERE id = ?
             `,
             [req.params.id]
@@ -659,7 +675,7 @@ router.post("/:id/admit-all", async (req, res) => {
     await db.query(
         `
         UPDATE group_assessments
-        SET assessment_status = 'open'
+        SET status = 'open'
         WHERE id = ?
         `,
         [req.params.id]

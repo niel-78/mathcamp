@@ -12,7 +12,8 @@ export default function BlockLibrary({
     openTab,
     onDelete,
     onReload,
-    dragPrefix
+    dragPrefix,
+    deleteLabel = "Ta bort block"
 }) {
 
 
@@ -110,6 +111,7 @@ export default function BlockLibrary({
                     block={block}
                     openTab={openTab}
                     onDelete={onDelete}
+                    deleteLabel={deleteLabel}
                     onRemoveSection={removeSection}
                     onRemoveCentralContent={removeCentralContent}
                     onCopy={copyBlock}

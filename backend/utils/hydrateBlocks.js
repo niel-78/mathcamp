@@ -167,6 +167,31 @@ export default async function hydrateBlocks(blocks) {
 
         block.abilities = abilities;
 
+        const seriesIds =
+            [...new Set(
+                abilities
+                    .map(a => a.series_id)
+                    .filter(Boolean)
+            )];
+
+        let seriesLevels = [];
+
+        if (seriesIds.length) {
+
+            [seriesLevels] = await db.query(
+                `
+                SELECT *
+                FROM ability_series_levels
+                WHERE series_id IN (?)
+                ORDER BY sort_order
+                `,
+                [seriesIds]
+            );
+
+        }
+
+        block.seriesLevels = seriesLevels;
+
         const [books] = await db.query(
             `
             SELECT DISTINCT

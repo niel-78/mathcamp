@@ -12,6 +12,7 @@ export default function BlockCard({
     dragPrefix = "block",
     openTab,
     onDelete,
+    deleteLabel = "Ta bort block",
     onCopy,
     onArchive,
     onRemoveCentralContent,
@@ -65,18 +66,21 @@ export default function BlockCard({
 
     const [showReferences, setShowReferences] = useState(false);
     const [showPoints, setShowPoints] = useState(false);
-    const pointsCount = block.points?.length ?? 0;
+    const questionCount = block.question_count ?? block.questions?.length ?? 0;
+    const pointsCount = block.point_count ?? block.points?.length ?? 0;
 
     const referenceCount =
         (block.bookSections?.length ?? 0) +
         (block.abilities?.length ?? 0);
 
     const totalPoints =
-        block.points?.reduce(
+        Number(block.total_points ?? block.points?.reduce(
             (sum, point) =>
                 sum + Number(point.points),
             0
-        ) ?? 0;
+        ) ?? 0);
+
+    const firstQuestion = block.questions?.[0]?.question;
 
     return (
 
@@ -147,10 +151,10 @@ export default function BlockCard({
 
                 </div>
             
-                {block.questions?.length > 0 && (
+                {firstQuestion && (
 
                     <MathContent
-                        value={block.questions[0].question}
+                        value={firstQuestion}
                         className="p-2"
                     />
 
@@ -158,9 +162,9 @@ export default function BlockCard({
 
                 <p className="mt-2 text-sm text-muted-foreground">
 
-                    {block.questions?.length ?? 0}
+                    {questionCount}
                     {" "}
-                    {block.questions?.length === 1
+                    {questionCount === 1
                         ? "fråga"
                         : "frågor"}
 
@@ -415,10 +419,10 @@ export default function BlockCard({
 
                 )}
 
-                {onDelete && canRemoveFromExam && (
+                {(onDelete && (canRemoveFromExam || deleteLabel !== "Ta bort block")) && (
 
                     <Button
-                        variant="destructive"
+                        variant={deleteLabel === "Ta bort block" ? "destructive" : "outline"}
                         onPointerDown={(e) => {
                             e.stopPropagation();
                         }}
@@ -426,7 +430,7 @@ export default function BlockCard({
                             onDelete(block.id)
                         }
                     >
-                        Ta bort
+                        {deleteLabel}
                     </Button>
 
                 )}

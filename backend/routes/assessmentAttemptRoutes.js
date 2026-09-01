@@ -247,22 +247,18 @@ router.put("/:id", async (req, res) => {
         await connection.query(
             `
             INSERT INTO assessment_answers (
-                user_id,
-                assessment_id,
+                attempt_id,
                 question_id,
-                text_answer,
-                attempt_id
+                text_answer
             )
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (?, ?, ?)
             ON DUPLICATE KEY UPDATE
                 text_answer = VALUES(text_answer)
             `,
             [
-                req.user.id,
-                attempt.assessment_id,
+                id,
                 question_id,
-                text_answer || null,
-                id
+                text_answer || null
             ]
         );
 
@@ -750,7 +746,7 @@ router.post("/start", async (req, res) => {
                 attemptId,
                 req.user.id,
                 groupExam.id,
-                groupExam.config,
+                JSON.stringify(groupExam.config || {}),
                 startedIp,
                 startedUserAgent,
                 groupExam.mode
@@ -814,7 +810,8 @@ router.post("/start", async (req, res) => {
                 await AssessmentEngine
                     .getDiagnosticSeedQuestions(
                         lessonLink.lesson_id,
-                        assessment.id
+                        assessment.id,
+                        groupExam.id
                     );
 
             for (let i = 0; i < seedQuestions.length; i++) {
