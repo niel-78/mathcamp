@@ -240,6 +240,20 @@ export default class AssessmentEngine {
                 ]
             );
 
+            if (correct) {
+                await this.promoteLevel(
+                    connection,
+                    userId,
+                    ability.ability_id
+                );
+            } else {
+                await this.demoteLevel(
+                    connection,
+                    userId,
+                    ability.ability_id
+                );
+            }
+
         }
 
     }

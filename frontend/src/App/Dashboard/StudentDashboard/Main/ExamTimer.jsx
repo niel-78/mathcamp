@@ -1,13 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function ExamTimer({
-    attempt
+    attempt,
+    onExpire
 }) {
 
     const [secondsLeft, setSecondsLeft] =
         useState(0);
 
+    const hasExpiredRef = useRef(false);
+
     useEffect(() => {
+
+        hasExpiredRef.current = false;
 
         if (!attempt?.expires_at) {
             return;
@@ -30,6 +35,17 @@ export default function ExamTimer({
             );
 
             setSecondsLeft(diff);
+
+            if (
+                diff <= 0 &&
+                !hasExpiredRef.current
+            ) {
+
+                hasExpiredRef.current = true;
+
+                onExpire?.();
+
+            }
         };
 
         updateTimer();
@@ -42,7 +58,7 @@ export default function ExamTimer({
         return () =>
             clearInterval(interval);
 
-    }, [attempt]);
+    }, [attempt, onExpire]);
 
     const hours =
         Math.floor(secondsLeft / 3600);

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useExamAttempt } from "@/hooks/useExamAttempt";
@@ -30,6 +30,9 @@ export default function ExamPage({
     useExamActivityLogging(attemptId);
 
     const [index, setIndex] = useState(0);
+    const [timeExpired, setTimeExpired] =
+        useState(false);
+    const isSubmittingRef = useRef(false);
 
 
     const [dynamicQuestions, setDynamicQuestions] =
@@ -154,6 +157,33 @@ export default function ExamPage({
 
     };
 
+    const submitExam =
+        async () => {
+
+            if (isSubmittingRef.current) {
+                return;
+            }
+
+            isSubmittingRef.current = true;
+
+            await logEvent(
+                attemptId,
+                "attempt_submitted"
+            );
+
+            await fetch(
+                `${API_URL}/api/assessment-attempts/${attemptId}/submit`,
+                {
+                    method: "POST",
+                    headers:
+                        authHeaders()
+                }
+            );
+
+            onExit();
+
+        };
+
     const handleTextAnswer =
         async (
             questionId,
@@ -174,6 +204,11 @@ export default function ExamPage({
                 );
 
             appendNextQuestion(result);
+
+            if (timeExpired) {
+                await submitExam();
+                return;
+            }
 
             if (
                 isAdaptive &&
@@ -208,6 +243,11 @@ export default function ExamPage({
                 );
 
             appendNextQuestion(result);
+
+            if (timeExpired) {
+                await submitExam();
+                return;
+            }
 
             if (
                 isAdaptive &&
@@ -260,6 +300,11 @@ export default function ExamPage({
                 );
 
             appendNextQuestion(result);
+
+            if (timeExpired) {
+                await submitExam();
+                return;
+            }
 
             if (
                 isAdaptive &&
@@ -329,27 +374,6 @@ export default function ExamPage({
 
         };
 
-    const submitExam =
-        async () => {
-
-            await logEvent(
-                attemptId,
-                "attempt_submitted"
-            );
-
-            await fetch(
-                `${API_URL}/api/assessment-attempts/${attemptId}/submit`,
-                {
-                    method: "POST",
-                    headers:
-                        authHeaders()
-                }
-            );
-
-            onExit();
-
-        };
-
     return (
         <div className="min-h-screen">
 
@@ -369,6 +393,9 @@ export default function ExamPage({
 
                         <ExamTimer
                             attempt={attempt}
+                            onExpire={() =>
+                                setTimeExpired(true)
+                            }
                         />
 
                         <QuestionView
@@ -402,6 +429,7 @@ export default function ExamPage({
                                 answerConfig.default_answer !==
                                 undefined
                             }
+                            timeExpired={timeExpired}
                             onPrev={prev}
                             onNext={next}
                             onReset={

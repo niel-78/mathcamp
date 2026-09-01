@@ -5,6 +5,7 @@ export default function ExamNavigation({
     total,
     allowPrevious,
     showReset,
+    timeExpired,
     onPrev,
     onNext,
     onReset,
@@ -13,6 +14,10 @@ export default function ExamNavigation({
 
     const isFirst = index === 0;
     const isLast = index === total - 1;
+
+    if (timeExpired) {
+        return null;
+    }
 
     return (
         <div className="flex items-center justify-between mt-6">

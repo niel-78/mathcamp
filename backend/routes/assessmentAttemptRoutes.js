@@ -1218,9 +1218,32 @@ router.get("/:id/results", async (req, res) => {
         const attempt = attemptRows[0];
 
         if (attempt.user_id !== req.user.id) {
-            return res.status(403).json({
-                error: "Saknar behörighet."
-            });
+
+            const [teacherAccess] =
+                await connection.query(
+                    `
+                    SELECT 1
+                    FROM group_assessments ga
+                    INNER JOIN group_permissions gp
+                        ON gp.group_id = ga.group_id
+                    WHERE ga.id = (
+                        SELECT group_assessment_id
+                        FROM assessment_attempts
+                        WHERE id = ?
+                    )
+                        AND gp.user_id = ?
+                    `,
+                    [id, req.user.id]
+                );
+
+            if (
+                req.user.role !== "teacher" ||
+                teacherAccess.length === 0
+            ) {
+                return res.status(403).json({
+                    error: "Saknar behörighet."
+                });
+            }
         }
 
         const [questions] =
@@ -1231,6 +1254,33 @@ router.get("/:id/results", async (req, res) => {
                     q.question,
                     q.question_type,
                     q.answer_config,
+                    COALESCE(
+                        series_level.name,
+                        ql.name,
+                        assessment_level.name
+                    ) AS level_name,
+                    (
+                        SELECT GROUP_CONCAT(
+                            s.title
+                            ORDER BY s.title
+                            SEPARATOR ', '
+                        )
+                        FROM block_sections bs
+                        INNER JOIN sections s
+                            ON s.id = bs.section_id
+                        WHERE bs.block_id = q.block_id
+                    ) AS section_names,
+                    (
+                        SELECT GROUP_CONCAT(
+                            ab.name
+                            ORDER BY ab.name
+                            SEPARATOR ', '
+                        )
+                        FROM block_abilities ba
+                        INNER JOIN abilities ab
+                            ON ab.id = ba.ability_id
+                        WHERE ba.block_id = q.block_id
+                    ) AS ability_names,
                     a.id AS answer_id,
                     a.text_answer
                 FROM assessment_answers a
@@ -1239,6 +1289,18 @@ router.get("/:id/results", async (req, res) => {
                 INNER JOIN attempt_questions aq
                     ON aq.question_id = q.id
                     AND aq.attempt_id = a.attempt_id
+                INNER JOIN assessment_attempts ea
+                    ON ea.id = a.attempt_id
+                INNER JOIN group_assessments ga
+                    ON ga.id = ea.group_assessment_id
+                INNER JOIN assessments assessment
+                    ON assessment.id = ga.assessment_id
+                LEFT JOIN question_levels ql
+                    ON ql.id = q.level_id
+                LEFT JOIN ability_series_levels series_level
+                    ON series_level.id = q.series_level_id
+                LEFT JOIN levels assessment_level
+                    ON assessment_level.id = assessment.level_id
                 WHERE a.attempt_id = ?
                 ORDER BY aq.sort_order
                 `,
@@ -1318,6 +1380,9 @@ router.get("/:id/results", async (req, res) => {
                 question_id: question.id,
                 question: question.question,
                 question_type: question.question_type,
+                section_names: question.section_names,
+                level_name: question.level_name,
+                ability_names: question.ability_names,
                 text_answer: question.text_answer,
                 selected_options: selectedOptions,
                 correct_options: correctOptions,

@@ -141,6 +141,33 @@ router.put("/:studentId/password",
 );
 
 // GET /api/students/:id/attempts
+router.get("/:studentId/attempts", async (req, res) => {
+
+    const [rows] = await db.query(
+        `
+        SELECT
+            ea.id,
+            ea.submitted_at,
+            a.title
+        FROM assessment_attempts ea
+        INNER JOIN group_assessments ga
+            ON ga.id = ea.group_assessment_id
+        INNER JOIN assessments a
+            ON a.id = ga.assessment_id
+        INNER JOIN group_permissions gp
+            ON gp.group_id = ga.group_id
+        WHERE ea.user_id = ?
+            AND ea.status = 'submitted'
+            AND gp.user_id = ?
+        ORDER BY ea.submitted_at DESC
+        `,
+        [req.params.studentId, req.user.id]
+    );
+
+    res.json(rows);
+
+});
+
 // GET /api/students/:id/results
 
 // GET /api/students/:id/events

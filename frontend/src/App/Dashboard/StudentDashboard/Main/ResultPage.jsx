@@ -112,6 +112,37 @@ export default function ResultPage({
 
                             </div>
 
+                            <dl className="mb-4 grid gap-1 text-sm sm:grid-cols-3">
+
+                                <div>
+                                    <dt className="font-semibold">
+                                        Sektion
+                                    </dt>
+                                    <dd>
+                                        {result.section_names || "-"}
+                                    </dd>
+                                </div>
+
+                                <div>
+                                    <dt className="font-semibold">
+                                        Nivå
+                                    </dt>
+                                    <dd>
+                                        {result.level_name || "-"}
+                                    </dd>
+                                </div>
+
+                                <div>
+                                    <dt className="font-semibold">
+                                        Förmåga
+                                    </dt>
+                                    <dd>
+                                        {result.ability_names || "-"}
+                                    </dd>
+                                </div>
+
+                            </dl>
+
                             <MathContent
                                 value={
                                     result.question

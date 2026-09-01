@@ -28,6 +28,7 @@ import ClassroomLayoutTab from "./Main/ClassroomLayoutTab";
 import GroupLayoutTab from "./Main/GroupLayoutTab";
 import TeacherCalendarTab from "@/components/tabs/TeacherCalenderTab";
 import ArchivedPresentationsTab from "./Main/ArchivedPresentationsTab";
+import StudentTab from "./Main/StudentTab";
 
 
 export default function Main({
@@ -131,6 +132,14 @@ export default function Main({
                             openTab={(tab) =>
                                 openTab(tab, area)
                             }
+                        />
+
+                    )}
+
+                    {currentTab?.type === "student" && (
+
+                        <StudentTab
+                            studentId={currentTab.studentId}
                         />
 
                     )}
