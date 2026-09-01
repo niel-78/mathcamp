@@ -1,27 +1,19 @@
 export default function generatePassword() {
 
-    const words = [
-        "Tiger",
-        "Planet",
-        "Skola",
-        "Banan",
-        "Sommar",
-        "Vinter",
-        "Komet",
-        "Fjader",
-        "Ocean",
-        "Skog"
-    ];
+    // Avoid visually ambiguous characters (0/O, 1/I/l)
+    const chars =
+        "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
-    const word =
-        words[Math.floor(
-            Math.random() * words.length
-        )];
+    let password = "";
 
-    const number =
-        Math.floor(
-            100 + Math.random() * 900
-        );
+    for (let i = 0; i < 6; i++) {
 
-    return `${word}${number}`;
+        password +=
+            chars[Math.floor(
+                Math.random() * chars.length
+            )];
+
+    }
+
+    return password;
 }

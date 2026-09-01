@@ -6,6 +6,7 @@ import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
 import { buildExamSession } from "../utils/buildExamSession.js";
 import getAssessmentTypeSettings from "../utils/getAssessmentTypeSettings.js";
+import generateUniqueGroupExamKey from "../utils/generateUniqueGroupExamKey.js";
 
 const router = express.Router();
 
@@ -124,34 +125,6 @@ router.post("/", async (req, res) => {
             });
 
         }
-
-        const generateUniqueGroupExamKey =
-            async () => {
-
-                while (true) {
-
-                    const key = Math.floor(
-                        100000 +
-                        Math.random() * 900000
-                    ).toString();
-
-                    const [[existing]] =
-                        await db.query(
-                            `
-                            SELECT id
-                            FROM group_assessments
-                            WHERE access_key = ?
-                            `,
-                            [key]
-                        );
-
-                    if (!existing) {
-                        return key;
-                    }
-
-                }
-
-            };
 
         const groupExamKey =
             await generateUniqueGroupExamKey();
@@ -313,6 +286,30 @@ router.put("/:id", async (req, res) => {
 
 });
 
+
+// POST /api/group-assessments/:id/regenerate-key
+router.post("/:id/regenerate-key", async (req, res) => {
+
+    const newKey =
+        await generateUniqueGroupExamKey();
+
+    await db.query(
+        `
+        UPDATE group_assessments
+        SET access_key = ?
+        WHERE id = ?
+        `,
+        [
+            newKey,
+            req.params.id
+        ]
+    );
+
+    res.json({
+        access_key: newKey
+    });
+
+});
 
 // DELETE /api/group-assessments/:id
 router.delete("/:id", async (req, res) => {

@@ -27,6 +27,9 @@ export default function GroupExamTab({
     const [saving, setSaving] =
         useState(false);
 
+    const [generatingKey, setGeneratingKey] =
+        useState(false);
+
     const [waitingCount, setWaitingCount] =
         useState(0);
 
@@ -168,6 +171,44 @@ export default function GroupExamTab({
         );
 
         await loadGroupExam();
+    };
+
+    const regenerateKey = async () => {
+
+        setGeneratingKey(true);
+
+        try {
+
+            const response = await fetch(
+                `${API_URL}/api/group-assessments/${groupExamId}/regenerate-key`,
+                {
+                    method: "POST",
+                    headers: authHeaders()
+                }
+            );
+
+            if (!response.ok) {
+
+                toast.error(
+                    "Kunde inte generera nyckel"
+                );
+
+                return;
+
+            }
+
+            await loadGroupExam();
+
+            toast.success(
+                "Nyckel genererad"
+            );
+
+        } finally {
+
+            setGeneratingKey(false);
+
+        }
+
     };
 
     const save = async () => {
@@ -343,9 +384,24 @@ export default function GroupExamTab({
                                     {" "}
                                     {
                                         groupExam.group_assessment_key
+                                        || "Ingen nyckel"
                                     }
 
                                 </div>
+                                <Button
+                                    className="w-full"
+                                    variant="outline"
+                                    disabled={generatingKey}
+                                    onClick={regenerateKey}
+                                >
+                                    {
+                                        generatingKey
+                                            ? "Genererar..."
+                                            : groupExam.group_assessment_key
+                                                ? "Generera ny nyckel"
+                                                : "Generera nyckel"
+                                    }
+                                </Button>
                                 <Button
                                     className="w-full"
                                     onClick={() =>
