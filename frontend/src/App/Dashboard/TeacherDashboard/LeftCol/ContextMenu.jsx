@@ -55,6 +55,15 @@ export default function ContextMenu(props) {
 
                             setContextMenu(null);
                         }}
+                        onSetAbilitySeries={() => {
+                            props.onSetGroupAbilitySeries?.(
+                                contextMenu.groupId,
+                                contextMenu.groupName,
+                                contextMenu.groupAbilitySeriesId
+                            );
+
+                            setContextMenu(null);
+                        }}
                         onArchive={() => {
                             props.onArchiveGroup?.(
                                 contextMenu.groupId,

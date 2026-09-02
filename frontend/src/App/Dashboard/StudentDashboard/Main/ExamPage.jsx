@@ -126,6 +126,10 @@ export default function ExamPage({
         attempt?.assessment?.config?.mode ===
         "adaptive";
 
+    const countdownMode =
+        attemptConfig?.attempt?.countdownMode ||
+        "visible_lock";
+
 
     const appendNextQuestion = (
         result
@@ -203,12 +207,12 @@ export default function ExamPage({
                     }
                 );
 
-            appendNextQuestion(result);
-
             if (timeExpired) {
                 await submitExam();
                 return;
             }
+
+            appendNextQuestion(result);
 
             if (
                 isAdaptive &&
@@ -242,12 +246,12 @@ export default function ExamPage({
                     }
                 );
 
-            appendNextQuestion(result);
-
             if (timeExpired) {
                 await submitExam();
                 return;
             }
+
+            appendNextQuestion(result);
 
             if (
                 isAdaptive &&
@@ -299,12 +303,12 @@ export default function ExamPage({
                     }
                 );
 
-            appendNextQuestion(result);
-
             if (timeExpired) {
                 await submitExam();
                 return;
             }
+
+            appendNextQuestion(result);
 
             if (
                 isAdaptive &&
@@ -391,12 +395,42 @@ export default function ExamPage({
                             }
                         />
 
-                        <ExamTimer
-                            attempt={attempt}
-                            onExpire={() =>
-                                setTimeExpired(true)
-                            }
-                        />
+                        {countdownMode !== "none" && (
+
+                            <ExamTimer
+                                attempt={attempt}
+                                onExpire={() => {
+
+                                    if (
+                                        countdownMode ===
+                                        "visible_lock"
+                                    ) {
+                                        setTimeExpired(true);
+                                    }
+
+                                }}
+                            />
+
+                        )}
+
+                        {isDiagnostic &&
+                            current.selection_reason && (
+
+                            <div
+                                className="
+                                    rounded-md
+                                    border
+                                    border-dashed
+                                    bg-muted/30
+                                    p-3
+                                    text-sm
+                                    text-muted-foreground
+                                "
+                            >
+                                {current.selection_reason}
+                            </div>
+
+                        )}
 
                         <QuestionView
                             question={current}

@@ -72,6 +72,23 @@ export default function BlockLibrary({
 
     };
 
+    const removeAbility = async (
+        blockId,
+        abilityId
+    ) => {
+
+        await fetch(
+            `${API_URL}/api/blocks/${blockId}/abilities/${abilityId}`,
+            {
+                method: "DELETE",
+                headers: authHeaders()
+            }
+        );
+
+        onReload();
+
+    };
+
     const [pointDialog, setPointDialog] = useState(null);
     const [blockToArchive, setBlockToArchive] = useState(null);
 
@@ -113,6 +130,7 @@ export default function BlockLibrary({
                     onDelete={onDelete}
                     deleteLabel={deleteLabel}
                     onRemoveSection={removeSection}
+                    onRemoveAbility={removeAbility}
                     onRemoveCentralContent={removeCentralContent}
                     onCopy={copyBlock}
                     onArchive={setBlockToArchive}

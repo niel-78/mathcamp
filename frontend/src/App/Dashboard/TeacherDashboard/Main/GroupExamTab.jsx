@@ -12,7 +12,8 @@ import { toast } from "sonner";
 
 export default function GroupExamTab({
     groupExamId,
-    openTab
+    openTab,
+    startTestAttempt
 }) {
 
     const [groupExam, setGroupExam] =
@@ -35,6 +36,9 @@ export default function GroupExamTab({
 
     const [monitorCount, setMonitorCount] =
         useState(0);
+
+    const [testing, setTesting] =
+        useState(false);
 
     useEffect(() => {
 
@@ -171,6 +175,78 @@ export default function GroupExamTab({
         );
 
         await loadGroupExam();
+    };
+
+    const testExam = async () => {
+
+        try {
+
+            setTesting(true);
+
+            const testResponse = await fetch(
+                `${API_URL}/api/group-assessments/${groupExamId}/test`,
+                {
+                    method: "POST",
+                    headers: authHeaders()
+                }
+            );
+
+            const testData =
+                await testResponse.json();
+
+            if (!testResponse.ok) {
+
+                throw new Error(
+                    testData.error ||
+                    "Kunde inte skapa testprov."
+                );
+
+            }
+
+            const startResponse = await fetch(
+                `${API_URL}/api/assessment-attempts/start`,
+                {
+                    method: "POST",
+                    headers: {
+                        ...authHeaders(),
+                        "Content-Type":
+                            "application/json"
+                    },
+                    body: JSON.stringify({
+                        group_assessment_id:
+                            testData.group_assessment_id
+                    })
+                }
+            );
+
+            const startData =
+                await startResponse.json();
+
+            if (!startResponse.ok) {
+
+                throw new Error(
+                    startData.error ||
+                    "Kunde inte starta testprovet."
+                );
+
+            }
+
+            startTestAttempt?.(
+                startData.attempt_id
+            );
+
+        } catch (error) {
+
+            toast.error(
+                error.message
+            );
+
+        } finally {
+
+            setTesting(false);
+
+        }
+
     };
 
     const regenerateKey = async () => {
@@ -484,6 +560,17 @@ export default function GroupExamTab({
                                     Stäng dörren för nya insläpp
                                 </Button>
 
+                                <Button
+                                    className="w-full"
+                                    variant="outline"
+                                    disabled={testing}
+                                    onClick={testExam}
+                                >
+                                    {testing
+                                        ? "Startar..."
+                                        : "Testa provet"}
+                                </Button>
+
                             </div>
 
                         </CardSection>
@@ -514,16 +601,43 @@ export default function GroupExamTab({
                             <Input
                                 type="number"
                                 value={
-                                    groupExam.config?.assessment?.defaultTimeLimitMinutes ?? ""
+                                    groupExam.config?.attempt?.defaultTimeLimitMinutes ?? ""
                                 }
                                 onChange={(e) =>
                                     updateConfig(
-                                        "assessment",
+                                        "attempt",
                                         "defaultTimeLimitMinutes",
                                         Number(e.target.value)
                                     )
                                 }
                                                             />
+                        </Field>
+
+                        <Field label="Nedräkning">
+                            <select
+                                className="input-standard"
+                                value={
+                                    groupExam.config?.attempt?.countdownMode ??
+                                    "visible_lock"
+                                }
+                                onChange={(e) =>
+                                    updateConfig(
+                                        "attempt",
+                                        "countdownMode",
+                                        e.target.value
+                                    )
+                                }
+                            >
+                                <option value="none">
+                                    Utan nedräkning
+                                </option>
+                                <option value="visible">
+                                    Visa nedräkning
+                                </option>
+                                <option value="visible_lock">
+                                    Visa nedräkning och stäng ner
+                                </option>
+                            </select>
                         </Field>
 
                         <Field label="Max försök">

@@ -278,6 +278,9 @@ export default function Main({
                             openTab={(tab) =>
                                 openTab(tab, area)
                             }
+                            startTestAttempt={
+                                startDiagnosticTest
+                            }
                         />
 
                     )}

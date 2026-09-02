@@ -17,6 +17,8 @@ CREATE TABLE `groups`(
 
     book_id INT NULL,
 
+    ability_series_id INT NULL,
+
     pages_per_lesson INT NULL DEFAULT 4,
 
     archived_at DATETIME NULL,
@@ -33,7 +35,10 @@ CREATE TABLE `groups`(
         REFERENCES levels(id),
 
     FOREIGN KEY (book_id)
-        REFERENCES books(id)
+        REFERENCES books(id),
+
+    FOREIGN KEY (ability_series_id)
+        REFERENCES ability_series(id)
 );
 
 /* =====================================================

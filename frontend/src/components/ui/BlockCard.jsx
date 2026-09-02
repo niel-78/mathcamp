@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import MathContent from "@/components/ui/MathContent";
 import FormatDateTimeShort from "@/utils/formatDateTimeShort";
 import BlockPoints from "@/components/ui/BlockPoints";
+import ExportBlockDialog from "@/components/ui/ExportBlockDialog";
 
 export default function BlockCard({
     block,
@@ -66,6 +67,7 @@ export default function BlockCard({
 
     const [showReferences, setShowReferences] = useState(false);
     const [showPoints, setShowPoints] = useState(false);
+    const [showExport, setShowExport] = useState(false);
     const questionCount = block.question_count ?? block.questions?.length ?? 0;
     const pointsCount = block.point_count ?? block.points?.length ?? 0;
 
@@ -405,6 +407,22 @@ export default function BlockCard({
                     </Button>
 
                 )}
+
+                <Button
+                    variant="outline"
+                    onClick={() =>
+                        setShowExport(true)
+                    }
+                >
+                    Exportera
+                </Button>
+
+                <ExportBlockDialog
+                    open={showExport}
+                    onOpenChange={setShowExport}
+                    blockId={block.id}
+                    block={block}
+                />
 
                 {block.canEdit && (
 

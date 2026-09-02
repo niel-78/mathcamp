@@ -76,6 +76,9 @@ router.get("/:id", async (req, res) => {
             `
             SELECT
                 aq.sort_order,
+                aq.selection_reason,
+                aq.served_at,
+                aq.answered_at,
                 q.*
             FROM attempt_questions aq
             INNER JOIN questions q
@@ -123,6 +126,29 @@ router.get("/:id", async (req, res) => {
             )
         }));
 
+        const parsedAttemptConfig =
+            typeof attempt.config === "string"
+                ? JSON.parse(attempt.config || "{}")
+                : attempt.config || {};
+
+        const timeLimitMinutes =
+            Number(
+                parsedAttemptConfig?.attempt
+                    ?.defaultTimeLimitMinutes
+            );
+
+        const expiresAt =
+            attempt.started_at &&
+            Number.isFinite(timeLimitMinutes) &&
+            timeLimitMinutes > 0
+
+                ? new Date(
+                    new Date(attempt.started_at).getTime() +
+                    timeLimitMinutes * 60000
+                )
+
+                : null;
+
         res.json({
             attempt: {
                 id: attempt.id,
@@ -130,6 +156,7 @@ router.get("/:id", async (req, res) => {
                 started_at: attempt.started_at,
                 submitted_at: attempt.submitted_at,
                 config: attempt.config,
+                expires_at: expiresAt,
 
                 assessment: {
                     id: attempt.assessment_id,
@@ -263,6 +290,22 @@ router.put("/:id", async (req, res) => {
         );
 
         /*
+         * Registrera hur lång tid frågan tog
+         */
+        await connection.query(
+            `
+            UPDATE attempt_questions
+            SET answered_at = NOW()
+            WHERE attempt_id = ?
+                AND question_id = ?
+            `,
+            [
+                id,
+                question_id
+            ]
+        );
+
+        /*
          * Hämta answer-id
          */
         const [answerRows] = await connection.query(
@@ -373,14 +416,16 @@ router.put("/:id", async (req, res) => {
                     INSERT INTO attempt_questions (
                         attempt_id,
                         question_id,
-                        sort_order
+                        sort_order,
+                        selection_reason
                     )
-                    VALUES (?, ?, ?)
+                    VALUES (?, ?, ?, ?)
                     `,
                     [
                         attempt.id,
                         nextQuestion.id,
-                        nextOrder
+                        nextOrder,
+                        nextQuestion.selection_reason || null
                     ]
                 );
 
@@ -824,14 +869,16 @@ router.post("/start", async (req, res) => {
                     INSERT INTO attempt_questions (
                         attempt_id,
                         question_id,
-                        sort_order
+                        sort_order,
+                        selection_reason
                     )
-                    VALUES (?, ?, ?)
+                    VALUES (?, ?, ?, ?)
                     `,
                     [
                         attemptId,
                         question.id,
-                        i + 1
+                        i + 1,
+                        question.selection_reason || null
                     ]
                 );
 
@@ -1282,7 +1329,15 @@ router.get("/:id/results", async (req, res) => {
                         WHERE ba.block_id = q.block_id
                     ) AS ability_names,
                     a.id AS answer_id,
-                    a.text_answer
+                    a.text_answer,
+                    aq.selection_reason,
+                    aq.served_at,
+                    aq.answered_at,
+                    TIMESTAMPDIFF(
+                        SECOND,
+                        aq.served_at,
+                        aq.answered_at
+                    ) AS duration_seconds
                 FROM assessment_answers a
                 INNER JOIN questions q
                     ON q.id = a.question_id
@@ -1386,6 +1441,8 @@ router.get("/:id/results", async (req, res) => {
                 text_answer: question.text_answer,
                 selected_options: selectedOptions,
                 correct_options: correctOptions,
+                selection_reason: question.selection_reason,
+                duration_seconds: question.duration_seconds,
                 correct
             });
         }
@@ -1453,14 +1510,16 @@ router.post("/:id/next-question",
                 INSERT INTO attempt_questions (
                     attempt_id,
                     question_id,
-                    sort_order
+                    sort_order,
+                    selection_reason
                 )
-                VALUES (?, ?, ?)
+                VALUES (?, ?, ?, ?)
                 `,
                 [
                     req.params.id,
                     question.id,
-                    nextOrder
+                    nextOrder,
+                    question.selection_reason || null
                 ]
             );
 

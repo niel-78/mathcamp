@@ -59,22 +59,6 @@ export default function AbilityTab({
 
     };
 
-    const removeBlock = async (
-        blockId
-    ) => {
-
-        await fetch(
-            `${API_URL}/api/blocks/${blockId}/abilities/${abilityId}`,
-            {
-                method: "DELETE",
-                headers: authHeaders()
-            }
-        );
-
-        loadBlocks();
-
-    };
-
     if (!ability) {
 
         return (
@@ -118,8 +102,6 @@ export default function AbilityTab({
                     dragPrefix="ability"
                     openTab={openTab}
                     onReload={loadBlocks}
-                    onDelete={removeBlock}
-                    deleteLabel="Ta bort från förmåga"
                 />
 
             </BaseTabLayout>

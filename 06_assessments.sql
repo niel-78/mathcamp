@@ -147,6 +147,8 @@ CREATE TABLE group_assessments (
     created_at DATETIME NOT NULL
         DEFAULT CURRENT_TIMESTAMP,
 
+    deleted_at DATETIME NULL,
+
     FOREIGN KEY (group_id)
         REFERENCES `groups`(id)
         ON DELETE CASCADE,
@@ -327,6 +329,13 @@ CREATE TABLE attempt_questions (
     question_id INT NOT NULL,
 
     sort_order INT,
+
+    selection_reason TEXT NULL,
+
+    served_at DATETIME NULL
+        DEFAULT CURRENT_TIMESTAMP,
+
+    answered_at DATETIME NULL,
 
     PRIMARY KEY (
         attempt_id,

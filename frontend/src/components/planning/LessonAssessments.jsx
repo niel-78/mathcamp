@@ -10,6 +10,8 @@ import {
     CardContent
 } from "@/components/ui/card";
 
+import { toast } from "sonner";
+
 export default function LessonAssessments({
     lessonId,
     openTab
@@ -24,6 +26,11 @@ export default function LessonAssessments({
         loading,
         setLoading
     ] = useState(true);
+
+    const [
+        deletingId,
+        setDeletingId
+    ] = useState(null);
 
     useEffect(() => {
 
@@ -80,6 +87,60 @@ export default function LessonAssessments({
         } finally {
 
             setLoading(false);
+
+        }
+
+    }
+
+    async function handleDelete(assessmentId) {
+
+        if (
+            !window.confirm(
+                "Ta bort den här lektionshändelsen?"
+            )
+        ) {
+            return;
+        }
+
+        try {
+
+            setDeletingId(assessmentId);
+
+            const response =
+                await fetch(
+                    `${API_URL}/api/group-assessments/${assessmentId}`,
+                    {
+                        method: "DELETE",
+                        headers:
+                            authHeaders()
+                    }
+                );
+
+            if (!response.ok) {
+                throw new Error(
+                    "Kunde inte ta bort lektionshändelsen."
+                );
+            }
+
+            setAssessments(
+                previous =>
+                    previous.filter(
+                        assessment =>
+                            assessment.id !== assessmentId
+                    )
+            );
+
+        } catch (error) {
+
+            console.error(error);
+
+            toast.error(
+                error.message
+            );
+
+        } finally {
+
+            setDeletingId(null);
 
         }
 
@@ -152,22 +213,37 @@ export default function LessonAssessments({
 
                             </div>
 
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() =>
-                                    openTab?.({
-                                        id: `group-assessment-${assessment.id}`,
-                                        title:
-                                            assessment.title ||
-                                            `Provtillfälle #${assessment.id}`,
-                                        type: "group-assessment",
-                                        groupExamId: assessment.id
-                                    })
-                                }
-                            >
-                                Öppna
-                            </Button>
+                            <div className="flex items-center gap-2">
+
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                        openTab?.({
+                                            id: `group-assessment-${assessment.id}`,
+                                            title:
+                                                assessment.title ||
+                                                `Provtillfälle #${assessment.id}`,
+                                            type: "group-assessment",
+                                            groupExamId: assessment.id
+                                        })
+                                    }
+                                >
+                                    Öppna
+                                </Button>
+
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    disabled={deletingId === assessment.id}
+                                    onClick={() =>
+                                        handleDelete(assessment.id)
+                                    }
+                                >
+                                    Ta bort
+                                </Button>
+
+                            </div>
 
                         </CardContent>
 

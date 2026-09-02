@@ -11,7 +11,7 @@ router.put("/:id", requireAuth,
 
         const {
             central_content_id,
-            grading_ability_level_id,
+            competency_descriptor_id,
             points,
             comment
         } = req.body;
@@ -29,14 +29,14 @@ router.put("/:id", requireAuth,
             UPDATE block_points
             SET
                 central_content_id = ?,
-                grading_ability_level_id = ?,
+                competency_descriptor_id = ?,
                 points = ?,
                 comment = ?
             WHERE id = ?
             `,
             [
                 central_content_id,
-                grading_ability_level_id,
+                competency_descriptor_id,
                 points,
                 comment,
                 req.params.id

@@ -53,20 +53,6 @@ export default function SectionTab({
 
     };
 
-    const removeBlock = async (blockId) => {
-
-        await fetch(
-            `${API_URL}/api/blocks/${blockId}/book-sections/${sectionId}`,
-            {
-                method: "DELETE",
-                headers: authHeaders()
-            }
-        );
-
-        loadBlocks();
-
-    };
-
     const loadBlocks = async () => {
 
         const response = await fetch(
@@ -257,8 +243,6 @@ export default function SectionTab({
                     dragPrefix="section"
                     openTab={openTab}
                     onReload={loadBlocks}
-                    onDelete={removeBlock}
-                    deleteLabel="Ta bort från sektion"
                 />
 
             </BaseTabLayout>

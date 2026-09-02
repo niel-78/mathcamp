@@ -21,6 +21,8 @@ GET    /api/group-assessments/:id
 PUT    /api/group-assessments/:id
 DELETE /api/group-assessments/:id
 
+POST   /api/group-assessments/:id/test
+
 GET    /api/group-assessments/:id/blocks
 
 GET    /api/group-assessments/:id/attempts
@@ -52,8 +54,11 @@ router.get("/", async (req, res) => {
             ON ep.assessment_id = ge.assessment_id
             AND ep.user_id = ?
 
-        WHERE ep.user_id IS NOT NULL
-            OR ? = 'super'
+        WHERE ge.deleted_at IS NULL
+            AND (
+                ep.user_id IS NOT NULL
+                OR ? = 'super'
+            )
 
         ORDER BY ge.created_at DESC
         `,
@@ -215,6 +220,7 @@ router.get("/:id", async (req, res) => {
             AND ep.user_id = ?
 
         WHERE ge.id = ?
+            AND ge.deleted_at IS NULL
             AND (
                 ep.user_id IS NOT NULL
                 OR ? = 'super'
@@ -311,12 +317,119 @@ router.post("/:id/regenerate-key", async (req, res) => {
 
 });
 
+// POST /api/group-assessments/:id/test
+router.post("/:id/test", async (req, res) => {
+
+    const [[groupExam]] =
+        await db.query(
+            `
+            SELECT
+                ge.group_id,
+                ge.assessment_id,
+                ge.config,
+                a.type AS assessment_type
+            FROM group_assessments ge
+            INNER JOIN assessments a
+                ON a.id = ge.assessment_id
+            WHERE ge.id = ?
+                AND ge.deleted_at IS NULL
+            `,
+            [req.params.id]
+        );
+
+    if (!groupExam) {
+
+        return res.status(404).json({
+            error: "Provtillfället hittades inte."
+        });
+
+    }
+
+    let lessonId = null;
+
+    if (groupExam.assessment_type === "diagnostic") {
+
+        const [[lessonLink]] =
+            await db.query(
+                `
+                SELECT lesson_id
+                FROM lesson_group_assessments
+                WHERE group_assessment_id = ?
+                `,
+                [req.params.id]
+            );
+
+        if (!lessonLink) {
+
+            return res.status(400).json({
+                error: "Diagnosen saknar lektion."
+            });
+
+        }
+
+        lessonId = lessonLink.lesson_id;
+
+    }
+
+    const groupExamKey =
+        await generateUniqueGroupExamKey();
+
+    const [result] =
+        await db.query(
+            `
+            INSERT INTO group_assessments (
+                group_id,
+                assessment_id,
+                access_key,
+                status,
+                mode,
+                config
+            )
+            VALUES (?, ?, ?, 'open', 'test', ?)
+            `,
+            [
+                groupExam.group_id,
+                groupExam.assessment_id,
+                groupExamKey,
+                JSON.stringify(
+                    typeof groupExam.config === "string"
+                        ? JSON.parse(groupExam.config || "{}")
+                        : groupExam.config || {}
+                )
+            ]
+        );
+
+    if (lessonId) {
+
+        await db.query(
+            `
+            INSERT INTO lesson_group_assessments (
+                lesson_id,
+                group_assessment_id
+            )
+            VALUES (?, ?)
+            `,
+            [
+                lessonId,
+                result.insertId
+            ]
+        );
+
+    }
+
+    res.status(201).json({
+        group_assessment_id: result.insertId
+    });
+
+});
+
 // DELETE /api/group-assessments/:id
 router.delete("/:id", async (req, res) => {
 
     await db.query(
         `
-        DELETE FROM group_assessments
+        UPDATE group_assessments
+        SET deleted_at = NOW()
         WHERE id = ?
         `,
         [req.params.id]

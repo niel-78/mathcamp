@@ -44,44 +44,40 @@ export default function LessonAssessmentDialog({
     ] = useState(null);
 
     const [
-        selectedBlockIds,
-        setSelectedBlockIds
+        selectedSectionIds,
+        setSelectedSectionIds
     ] = useState([]);
 
-    const availableBlocks =
-        diagnosticPlan?.sections?.flatMap(
-            section =>
-                (section.blocks || []).map(
-                    block => ({
-                        ...block,
-                        sectionId: section.id,
-                        sectionName: section.name
-                    })
-                )
-        ) ||
+    const availableSections =
+        diagnosticPlan?.sections ||
         [];
 
-    const availableBlockIds =
-        availableBlocks
-            .map(block => Number(block.id))
+    const availableSectionIds =
+        availableSections
+            .map(section => Number(section.id))
             .filter(Number.isFinite);
 
-    const allBlocksSelected =
-        availableBlockIds.length > 0 &&
-        availableBlockIds.every(
-            blockId =>
-                selectedBlockIds.includes(blockId)
+    const allSectionsSelected =
+        availableSectionIds.length > 0 &&
+        availableSectionIds.every(
+            sectionId =>
+                selectedSectionIds.includes(sectionId)
         );
 
-    const blockQuestionPreviews =
-        new Map(
-            (diagnosticPlan?.questions || [])
-                .filter(item => item.block_id != null)
-                .map(item => [
-                    Number(item.block_id),
-                    item.question?.question
-                ])
-        );
+    const selectedBlockIds =
+        availableSections
+            .filter(
+                section =>
+                    selectedSectionIds.includes(
+                        Number(section.id)
+                    )
+            )
+            .flatMap(
+                section =>
+                    (section.blocks || [])
+                        .map(block => Number(block.id))
+            )
+            .filter(Number.isFinite);
 
     useEffect(() => {
 
@@ -129,15 +125,26 @@ export default function LessonAssessmentDialog({
 
             setDiagnosticPlan(data);
 
-            const nextSelected =
+            const preselectedBlockIds =
                 Array.isArray(data.selected_block_ids)
-                    ? data.selected_block_ids
-                    : (data.sections || [])
-                        .flatMap(section => section.blocks || [])
-                        .map(block => Number(block.id))
-                        .filter(Number.isFinite);
+                    ? data.selected_block_ids.map(Number)
+                    : null;
 
-            setSelectedBlockIds(nextSelected);
+            const nextSelected =
+                (data.sections || [])
+                    .filter(section =>
+                        !preselectedBlockIds ||
+                        (section.blocks || []).every(
+                            block =>
+                                preselectedBlockIds.includes(
+                                    Number(block.id)
+                                )
+                        )
+                    )
+                    .map(section => Number(section.id))
+                    .filter(Number.isFinite);
+
+            setSelectedSectionIds(nextSelected);
 
         } catch (error) {
 
@@ -155,15 +162,15 @@ export default function LessonAssessmentDialog({
 
     }
 
-    function toggleBlock(blockId) {
+    function toggleSection(sectionId) {
 
-        setSelectedBlockIds(
+        setSelectedSectionIds(
             previous => {
 
                 const next =
-                    previous.includes(blockId)
-                        ? previous.filter(id => id !== blockId)
-                        : [...previous, blockId];
+                    previous.includes(sectionId)
+                        ? previous.filter(id => id !== sectionId)
+                        : [...previous, sectionId];
 
                 return next;
 
@@ -451,25 +458,25 @@ export default function LessonAssessmentDialog({
                                 "
                             >
                                 <div className="font-medium">
-                                    Välj vilka block som ska ingå i diagnosen
+                                    Välj vilka sektioner som ska ingå i diagnosen
                                 </div>
 
-                                {availableBlocks.length > 0 && (
+                                {availableSections.length > 0 && (
                                     <div className="flex items-center gap-2">
                                         <Button
                                             type="button"
                                             variant="ghost"
                                             size="sm"
-                                            onClick={() => setSelectedBlockIds(availableBlockIds)}
+                                            onClick={() => setSelectedSectionIds(availableSectionIds)}
                                         >
-                                            {allBlocksSelected ? "Alla valda" : "Markera alla"}
+                                            {allSectionsSelected ? "Alla valda" : "Markera alla"}
                                         </Button>
 
                                         <Button
                                             type="button"
                                             variant="ghost"
                                             size="sm"
-                                            onClick={() => setSelectedBlockIds([])}
+                                            onClick={() => setSelectedSectionIds([])}
                                         >
                                             Rensa
                                         </Button>
@@ -477,106 +484,70 @@ export default function LessonAssessmentDialog({
                                 )}
                             </div>
 
-                            {availableBlocks.length === 0 && (
+                            {availableSections.length === 0 && (
                                 <div className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
-                                    Inga block hittades för den här lektionen. Lägg till block i sektioner först så att diagnosen kan byggas.
+                                    Inga sektioner hittades i planeringen för lektioner fram till och med den här lektionen. Lägg till block i sektioner först så att diagnosen kan byggas.
                                 </div>
                             )}
 
-                            {availableBlocks.length > 0 && (
+                            {availableSections.length > 0 && (
                                 <div
                                     className="
-                                        space-y-4
+                                        space-y-2
                                     "
                                 >
 
-                                    {diagnosticPlan.sections
-                                        ?.map(
-                                            section => (
+                                    {availableSections.map(
+                                        section => {
 
-                                                <div
-                                                    key={
-                                                        section.id
-                                                    }
+                                            const sectionId = Number(section.id);
+                                            const isSelected = selectedSectionIds.includes(sectionId);
+
+                                            return (
+                                                <label
+                                                    key={section.id}
+                                                    className="
+                                                        flex
+                                                        cursor-pointer
+                                                        items-center
+                                                        justify-between
+                                                        gap-2
+                                                        rounded-md
+                                                        border
+                                                        bg-background
+                                                        px-2
+                                                        py-1
+                                                        text-sm
+                                                        shadow-sm
+                                                    "
                                                 >
-
                                                     <div
                                                         className="
-                                                            font-medium
+                                                            flex
+                                                            items-center
+                                                            gap-2
                                                         "
                                                     >
-                                                        {
-                                                            section.name
-                                                        }
+                                                        <input
+                                                            type="checkbox"
+                                                            className="h-4 w-4 accent-primary"
+                                                            style={{ appearance: "checkbox" }}
+                                                            checked={isSelected}
+                                                            onChange={() => toggleSection(sectionId)}
+                                                        />
+                                                        <MathContent value={section.name} />
                                                     </div>
 
-                                                    <div
-                                                        className="
-                                                            mt-2
-                                                            space-y-2
-                                                        "
-                                                    >
-                                                        {section.blocks?.map(
-                                                            block => {
+                                                    {section.pageNumber != null && (
+                                                        <span className="text-xs text-muted-foreground">
+                                                            Sid {section.pageNumber}
+                                                        </span>
+                                                    )}
+                                                </label>
+                                            );
 
-                                                                const blockId = Number(block.id);
-                                                                const isSelected = selectedBlockIds.includes(blockId);
-                                                                const previewQuestion = blockQuestionPreviews.get(blockId);
-
-                                                                return (
-                                                                    <label
-                                                                        key={`${section.id}-${block.id}`}
-                                                                        className="
-                                                                            flex
-                                                                            cursor-pointer
-                                                                            flex-col
-                                                                            gap-1
-                                                                            rounded-md
-                                                                            border
-                                                                            bg-background
-                                                                            px-2
-                                                                            py-1
-                                                                            text-sm
-                                                                            shadow-sm
-                                                                        "
-                                                                    >
-                                                                        <div
-                                                                            className="
-                                                                                flex
-                                                                                items-center
-                                                                                gap-2
-                                                                            "
-                                                                        >
-                                                                            <input
-                                                                                type="checkbox"
-                                                                                className="h-4 w-4 accent-primary"
-                                                                                style={{ appearance: "checkbox" }}
-                                                                                checked={isSelected}
-                                                                                onChange={() => toggleBlock(blockId)}
-                                                                            />
-                                                                            <MathContent value={block.name} />
-                                                                        </div>
-
-                                                                        {previewQuestion && (
-                                                                            <MathContent
-                                                                                value={previewQuestion}
-                                                                                className="
-                                                                                    pl-6
-                                                                                    text-xs
-                                                                                    text-muted-foreground
-                                                                                "
-                                                                            />
-                                                                        )}
-                                                                    </label>
-                                                                );
-                                                            }
-                                                        )}
-                                                    </div>
-
-                                                </div>
-
-                                            )
-                                        )}
+                                        }
+                                    )}
 
                                 </div>
                             )}

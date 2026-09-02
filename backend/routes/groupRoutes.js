@@ -390,6 +390,39 @@ router.put("/:id", async (req, res) => {
 
 });
 
+// PUT /api/groups/:id/ability-series
+router.put("/:id/ability-series", async (req, res) => {
+
+    try {
+
+        const { ability_series_id } = req.body;
+
+        await db.query(
+            `
+            UPDATE \`groups\`
+            SET ability_series_id = ?
+            WHERE id = ?
+            `,
+            [
+                ability_series_id || null,
+                req.params.id
+            ]
+        );
+
+        res.sendStatus(204);
+
+    } catch (err) {
+
+        console.error(err);
+
+        res.status(500).json({
+            error: "Kunde inte uppdatera f\u00f6rm\u00e5gaserien."
+        });
+
+    }
+
+});
+
 
 // GET /api/groups/:id/students
 router.get("/:id/students", async (req, res) => {

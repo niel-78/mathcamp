@@ -7,6 +7,7 @@ import UserProfile from "@/components/ui/UserProfile";
 import SharePlanningDialog from "./LeftCol/SharePlanningDialog";
 import CreateGroupDialog from "./LeftCol/CreateGroupDialog";
 import RenameGroupDialog from "./LeftCol/RenameGroupDialog";
+import GroupAbilitySeriesDialog from "./LeftCol/GroupAbilitySeriesDialog";
 import ArchiveGroupDialog from "./LeftCol/ArchiveGroupDialog";
 import CreateStudentDialog from "./LeftCol/CreateStudentDialog";
 import EditStudentDialog from "./LeftCol/EditStudentDialog";
@@ -64,6 +65,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [contextMenu, setContextMenu] = useState(null);
     const [showCreateGroupDialog,setShowCreateGroupDialog] = useState(false);
     const [renameDialog, setRenameDialog] = useState(null);
+    const [abilitySeriesDialog, setAbilitySeriesDialog] = useState(null);
     const [archiveDialog, setArchiveDialog] = useState(null);
     const [groupStudents, setGroupStudents] = useState({});
     const [expandedStudents, setExpandedStudents] = useState({});
@@ -794,6 +796,14 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                     });
                 }}
 
+                onSetGroupAbilitySeries={(groupId, groupName, abilitySeriesId) => {
+                    setAbilitySeriesDialog({
+                        id: groupId,
+                        name: groupName,
+                        abilitySeriesId
+                    });
+                }}
+
                 onSharePlanning={(groupId, groupName) => {
                     setSharePlanningDialog({
                         groupId,
@@ -1078,6 +1088,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                             type: "group",
                                             groupId: group.id,
                                             groupName: group.name,
+                                            groupAbilitySeriesId: group.ability_series_id,
                                             x: e.clientX,
                                             y: e.clientY
                                         });
@@ -2453,6 +2464,14 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                     setRenameDialog(null)
                 }
                 onRenamed={loadGroups}
+            />
+            <GroupAbilitySeriesDialog
+                group={abilitySeriesDialog}
+                open={!!abilitySeriesDialog}
+                onOpenChange={() =>
+                    setAbilitySeriesDialog(null)
+                }
+                onSaved={loadGroups}
             />
             <CreateStudentDialog
                 group={createStudentDialog}

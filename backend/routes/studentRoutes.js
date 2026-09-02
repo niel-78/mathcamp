@@ -24,6 +24,7 @@ DELETE /api/students/:id
 
 GET    /api/students/:id/attempts
 GET    /api/students/:id/results
+GET    /api/students/:id/abilities
 
 PUT    /api/students/:id/password
 */
@@ -163,6 +164,125 @@ router.get("/:studentId/attempts", async (req, res) => {
         `,
         [req.params.studentId, req.user.id]
     );
+
+    res.json(rows);
+
+});
+
+// GET /api/students/:id/abilities
+router.get("/:studentId/abilities", async (req, res) => {
+
+    const [rows] = await db.query(
+        `
+        SELECT DISTINCT
+            a.id,
+            a.name,
+            a.sort_order,
+            asr.name AS series_name,
+            COALESCE(sam.mastery_score, 50) AS mastery_score
+        FROM group_students gs
+        INNER JOIN \`groups\` g
+            ON g.id = gs.group_id
+        INNER JOIN ability_series asr
+            ON asr.id = g.ability_series_id
+        INNER JOIN abilities a
+            ON a.series_id = asr.id
+        LEFT JOIN student_ability_mastery sam
+            ON sam.ability_id = a.id
+            AND sam.user_id = ?
+        WHERE gs.user_id = ?
+            AND gs.deleted_at IS NULL
+            AND a.deleted_at IS NULL
+        ORDER BY
+            asr.name,
+            a.sort_order,
+            a.name
+        `,
+        [req.params.studentId, req.params.studentId]
+    );
+
+    const [[lastDiagnosticAttempt]] =
+        await db.query(
+            `
+            SELECT aa.id
+            FROM assessment_attempts aa
+            INNER JOIN group_assessments ga
+                ON ga.id = aa.group_assessment_id
+            INNER JOIN assessments a
+                ON a.id = ga.assessment_id
+            WHERE aa.user_id = ?
+                AND a.type = 'diagnostic'
+                AND aa.status = 'submitted'
+                AND aa.mode != 'test'
+            ORDER BY aa.submitted_at DESC
+            LIMIT 1
+            `,
+            [req.params.studentId]
+        );
+
+    const previousMasteryByAbility = new Map();
+
+    if (lastDiagnosticAttempt) {
+
+        const [historyRows] =
+            await db.query(
+                `
+                SELECT
+                    ability_id,
+                    mastery_before
+                FROM student_ability_history
+                WHERE assessment_attempt_id = ?
+                ORDER BY created_at ASC
+                `,
+                [lastDiagnosticAttempt.id]
+            );
+
+        for (const row of historyRows) {
+
+            if (
+                !previousMasteryByAbility.has(
+                    row.ability_id
+                )
+            ) {
+
+                previousMasteryByAbility.set(
+                    row.ability_id,
+                    Number(row.mastery_before)
+                );
+
+            }
+
+        }
+
+    }
+
+    for (const ability of rows) {
+
+        const previousScore =
+            previousMasteryByAbility.get(
+                ability.id
+            );
+
+        ability.previous_mastery_score =
+            previousScore ?? null;
+
+        ability.mastery_trend =
+
+            previousScore == null
+
+                ? "unchanged"
+
+                : Number(ability.mastery_score) >
+                    previousScore
+                    ? "up"
+
+                    : Number(ability.mastery_score) <
+                        previousScore
+                        ? "down"
+
+                        : "unchanged";
+
+    }
 
     res.json(rows);
 

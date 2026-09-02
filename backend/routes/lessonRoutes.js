@@ -829,6 +829,7 @@ router.post("/:id/group-assessments",
                         ON ga.id = lga.group_assessment_id
                     WHERE lga.lesson_id = ?
                     AND ga.mode != 'test'
+                    AND ga.deleted_at IS NULL
                     LIMIT 1
                     `,
                     [lessonId]
@@ -955,6 +956,7 @@ router.get("/:id/group-assessments",
 
                 WHERE lga.lesson_id = ?
                     AND ga.mode = 'normal'
+                    AND ga.deleted_at IS NULL
                 `,
                 [req.params.id]
             );

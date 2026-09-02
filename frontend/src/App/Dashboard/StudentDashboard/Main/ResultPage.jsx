@@ -112,7 +112,7 @@ export default function ResultPage({
 
                             </div>
 
-                            <dl className="mb-4 grid gap-1 text-sm sm:grid-cols-3">
+                            <dl className="mb-4 grid gap-1 text-sm sm:grid-cols-4">
 
                                 <div>
                                     <dt className="font-semibold">
@@ -141,7 +141,32 @@ export default function ResultPage({
                                     </dd>
                                 </div>
 
+                                <div>
+                                    <dt className="font-semibold">
+                                        Tid
+                                    </dt>
+                                    <dd>
+                                        {result.duration_seconds != null
+                                            ? `${result.duration_seconds} s`
+                                            : "-"}
+                                    </dd>
+                                </div>
+
                             </dl>
+
+                            {result.selection_reason && (
+
+                                <p
+                                    className="
+                                        mb-4
+                                        text-sm
+                                        text-muted-foreground
+                                    "
+                                >
+                                    {result.selection_reason}
+                                </p>
+
+                            )}
 
                             <MathContent
                                 value={

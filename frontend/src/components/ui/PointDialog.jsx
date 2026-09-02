@@ -21,9 +21,9 @@ export default function PointDialog({
 }) {
 
     const [centralContent, setCentralContent] = useState([]);
-    const [gradingAbilityLevels, setGradingAbilityLevels] = useState([]);
+    const [competencyDescriptors, setCompetencyDescriptors] = useState([]);
     const [centralContentId, setCentralContentId] = useState("");
-    const [gradingAbilityLevelId, setGradingAbilityLevelId] = useState("");
+    const [competencyDescriptorId, setCompetencyDescriptorId] = useState("");
     const [points, setPoints] = useState(1);
     const [comment, setComment] = useState("");
 
@@ -42,7 +42,7 @@ export default function PointDialog({
         if (!point) {
 
             setCentralContentId("");
-            setGradingAbilityLevelId("");
+            setCompetencyDescriptorId("");
             setPoints(1);
             setComment("");
 
@@ -54,8 +54,8 @@ export default function PointDialog({
             String(point.central_content_id)
         );
 
-        setGradingAbilityLevelId(
-            String(point.grading_ability_level_id)
+        setCompetencyDescriptorId(
+            String(point.competency_descriptor_id)
         );
 
         setPoints(
@@ -85,8 +85,8 @@ export default function PointDialog({
             data.centralContent
         );
 
-        setGradingAbilityLevels(
-            data.gradingAbilityLevels
+        setCompetencyDescriptors(
+            data.competencyDescriptors
         );
 
     };
@@ -116,8 +116,8 @@ export default function PointDialog({
                     body: JSON.stringify({
                         central_content_id:
                             centralContentId,
-                        grading_ability_level_id:
-                            gradingAbilityLevelId,
+                        competency_descriptor_id:
+                            competencyDescriptorId,
                         points,
                         comment
                     })
@@ -227,10 +227,10 @@ export default function PointDialog({
 
                 <select
                     value={
-                        gradingAbilityLevelId
+                        competencyDescriptorId
                     }
                     onChange={e =>
-                        setGradingAbilityLevelId(
+                        setCompetencyDescriptorId(
                             e.target.value
                         )
                     }
@@ -246,16 +246,16 @@ export default function PointDialog({
                         Välj
                     </option>
 
-                    {gradingAbilityLevels.map(
+                    {competencyDescriptors.map(
                         item => (
 
                             <option
                                 key={item.id}
                                 value={String(item.id)}
                             >
-                                {item.name}
+                                {item.competency_name}
                                 {" "}
-                                ({item.level})
+                                (åk {item.grade}, {item.level_name})
                             </option>
 
                         )

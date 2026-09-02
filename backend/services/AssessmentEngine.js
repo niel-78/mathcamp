@@ -5,6 +5,32 @@ import { gradeAnswer } from "../utils/grading/gradeAnswer.js";
 
 export default class AssessmentEngine {
 
+    static buildSelectionReason({
+        sectionName,
+        abilityName,
+        levelName
+    }) {
+
+        const parts = [
+            "Väljer uppgift"
+        ];
+
+        if (sectionName) {
+            parts.push(`från sektion "${sectionName}"`);
+        }
+
+        if (abilityName) {
+            parts.push(`med förmåga "${abilityName}"`);
+        }
+
+        if (levelName) {
+            parts.push(`på nivå ${levelName}`);
+        }
+
+        return parts.join(" ");
+
+    }
+
     static async getNextQuestion(
         connection,
         attemptId
@@ -95,6 +121,47 @@ export default class AssessmentEngine {
                         question.id
                     ]
                 );
+
+                const [[abilityInfo]] =
+                    await connection.query(
+                        `
+                        SELECT name
+                        FROM abilities
+                        WHERE id = ?
+                        `,
+                        [ability.ability_id]
+                    );
+
+                const [[levelInfo]] =
+                    await connection.query(
+                        `
+                        SELECT name
+                        FROM ability_series_levels
+                        WHERE id = ?
+                        `,
+                        [currentLevelId]
+                    );
+
+                const [[sectionInfo]] =
+                    await connection.query(
+                        `
+                        SELECT s.title
+                        FROM block_sections bs
+                        INNER JOIN sections s
+                            ON s.id = bs.section_id
+                        WHERE bs.block_id = ?
+                        ORDER BY s.title
+                        LIMIT 1
+                        `,
+                        [question.block_id]
+                    );
+
+                question.selection_reason =
+                    this.buildSelectionReason({
+                        sectionName: sectionInfo?.title,
+                        abilityName: abilityInfo?.name,
+                        levelName: levelInfo?.name
+                    });
 
                 return question;
 
@@ -757,6 +824,7 @@ export default class AssessmentEngine {
                     AND a.type = 'diagnostic'
                     AND aa.status = 'submitted'
                     AND aa.mode != 'test'
+                    AND ga.deleted_at IS NULL
 
                 ORDER BY aa.submitted_at DESC
 
@@ -784,7 +852,8 @@ export default class AssessmentEngine {
                     a.name AS block_name,
 
                     s.id AS section_id,
-                    s.title AS section_name
+                    s.title AS section_name,
+                    s.page_number AS section_page_number
 
                 FROM lessons l
 
@@ -807,7 +876,6 @@ export default class AssessmentEngine {
                     ON a.id = ba.ability_id
 
                 WHERE l.group_id = ?
-                AND l.starts_at > ?
                 AND l.starts_at <= ?
                 AND b.deleted_at IS NULL
                 AND b.archived_at IS NULL
@@ -819,7 +887,6 @@ export default class AssessmentEngine {
                 `,
                 [
                     lesson.group_id,
-                    lastDiagnosticDate,
                     lesson.starts_at
                 ]
             );
@@ -918,6 +985,13 @@ export default class AssessmentEngine {
 
             if (question) {
 
+                question.selection_reason =
+                    this.buildSelectionReason({
+                        sectionName: block.section_name,
+                        abilityName: block.block_name,
+                        levelName: firstLevel.name
+                    });
+
                 questions.push({
                     section_id: block.section_id,
                     section_name: block.section_name,
@@ -948,6 +1022,7 @@ export default class AssessmentEngine {
                     {
                         id: block.section_id,
                         name: block.section_name,
+                        pageNumber: block.section_page_number,
                         blocks: []
                     }
                 );

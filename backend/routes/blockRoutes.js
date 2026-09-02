@@ -869,7 +869,7 @@ router.post("/", async (req, res) => {
                 INSERT INTO block_points (
                     block_id,
                     central_content_id,
-                    grading_ability_level_id,
+                    competency_descriptor_id,
                     points
                 )
                 VALUES (?, ?, ?, ?)
@@ -877,7 +877,7 @@ router.post("/", async (req, res) => {
                 [
                     blockId,
                     pointRow.centralContentId,
-                    pointRow.gradingAbilityLevelId,
+                    pointRow.competencyDescriptorId,
                     pointRow.points
                 ]
             );
@@ -1046,7 +1046,7 @@ router.post("/:blockId/points", requireAuth,
 
         const {
             central_content_id,
-            grading_ability_level_id,
+            competency_descriptor_id,
             points
         } = req.body;
 
@@ -1063,7 +1063,7 @@ router.post("/:blockId/points", requireAuth,
             INSERT INTO block_points (
                 block_id,
                 central_content_id,
-                grading_ability_level_id,
+                competency_descriptor_id,
                 points
             )
             VALUES (?, ?, ?, ?)
@@ -1071,7 +1071,7 @@ router.post("/:blockId/points", requireAuth,
             [
                 req.params.blockId,
                 central_content_id,
-                grading_ability_level_id,
+                competency_descriptor_id,
                 points
             ]
         );
@@ -1439,28 +1439,6 @@ router.post("/:id/copy",
             const schoolId =
                 teacher?.school_id;
 
-            const [[settings]] =
-                await connection.query(
-                    `
-                    SELECT
-                        enable_block_copying
-                    FROM school_settings
-                    WHERE school_id = ?
-                    `,
-                    [schoolId]
-                );
-
-            if (
-                !settings?.enable_block_copying
-            ) {
-
-                return res.status(403).json({
-                    error:
-                        "Skolan tillåter inte kopiering."
-                });
-
-            }
-
             const [[block]] =
                 await connection.query(
                     `
@@ -1481,10 +1459,39 @@ router.post("/:id/copy",
 
             }
 
+            const isOwner =
+                block.created_by ===
+                req.user.id;
+
+            if (!isOwner) {
+
+                const [[settings]] =
+                    await connection.query(
+                        `
+                        SELECT
+                            enable_block_copying
+                        FROM school_settings
+                        WHERE school_id = ?
+                        `,
+                        [schoolId]
+                    );
+
+                if (
+                    !settings?.enable_block_copying
+                ) {
+
+                    return res.status(403).json({
+                        error:
+                            "Skolan tillåter inte kopiering."
+                    });
+
+                }
+
+            }
+
             const canAccess =
 
-                block.created_by ===
-                req.user.id
+                isOwner
 
                 ||
 
@@ -1510,9 +1517,7 @@ router.post("/:id/copy",
 
             }
 
-            const blockTitle = questions?.[0]?.question
-                ? questions[0].question.substring(0, 100)
-                : "Importerat block";
+            const blockTitle = block.title;
 
             const [blockResult] =
                 await connection.query(
@@ -1550,13 +1555,13 @@ router.post("/:id/copy",
                 INSERT INTO block_points (
                     block_id,
                     central_content_id,
-                    grading_ability_level_id,
+                    competency_descriptor_id,
                     points
                 )
                 SELECT
                     ?,
                     central_content_id,
-                    grading_ability_level_id,
+                    competency_descriptor_id,
                     points
                 FROM block_points
                 WHERE block_id = ?
@@ -1634,6 +1639,7 @@ router.post("/:id/copy",
                             block_id,
                             question_type,
                             level_id,
+                            series_level_id,
 
                             created_by,
                             updated_by,
@@ -1641,18 +1647,21 @@ router.post("/:id/copy",
                             answer_config
 
                         )
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                         `,
                         [
                             question.question,
                             newBlockId,
                             question.question_type,
                             question.level_id,
+                            question.series_level_id,
 
                             req.user.id,
                             req.user.id,
 
-                            question.answer_config
+                            typeof question.answer_config === "string"
+                                ? question.answer_config
+                                : JSON.stringify(question.answer_config)
                         ]
                     );
 
@@ -1763,6 +1772,371 @@ router.post("/:id/copy",
                 connection.release();
             
             }
+
+    }
+);
+
+// POST   /api/blocks/:id/export
+router.post("/:id/export",
+    async (req, res) => {
+
+        const connection = await db.getConnection();
+
+        try {
+
+            await connection.beginTransaction();
+
+            const { id } = req.params;
+
+            const {
+                section_id,
+                ability_id
+            } = req.body;
+
+            if (!section_id || !ability_id) {
+
+                await connection.rollback();
+
+                return res.status(400).json({
+                    error:
+                        "Välj både avsnitt och förmåga."
+                });
+
+            }
+
+            const [[teacher]] =
+                await connection.query(
+                    `
+                    SELECT school_id
+                    FROM school_teachers
+                    WHERE teacher_id = ?
+                    `,
+                    [req.user.id]
+                );
+
+            const schoolId =
+                teacher?.school_id;
+
+            const [[block]] =
+                await connection.query(
+                    `
+                    SELECT *
+                    FROM blocks
+                    WHERE id = ?
+                        AND deleted_at IS NULL
+                    `,
+                    [id]
+                );
+
+            if (!block) {
+
+                await connection.rollback();
+
+                return res.status(404).json({
+                    error:
+                        "Blocket hittades inte."
+                });
+
+            }
+
+            const isOwner =
+                block.created_by ===
+                req.user.id;
+
+            if (!isOwner) {
+
+                const [[settings]] =
+                    await connection.query(
+                        `
+                        SELECT
+                            enable_block_copying
+                        FROM school_settings
+                        WHERE school_id = ?
+                        `,
+                        [schoolId]
+                    );
+
+                if (
+                    !settings?.enable_block_copying
+                ) {
+
+                    await connection.rollback();
+
+                    return res.status(403).json({
+                        error:
+                            "Skolan tillåter inte kopiering."
+                    });
+
+                }
+
+            }
+
+            const canAccess =
+
+                isOwner
+
+                ||
+
+                (
+                    block.visibility ===
+                        "school"
+                    &&
+                    block.school_id ===
+                        schoolId
+                )
+
+                ||
+
+                block.visibility ===
+                    "global";
+
+            if (!canAccess) {
+
+                await connection.rollback();
+
+                return res.status(403).json({
+                    error:
+                        "Du saknar behörighet."
+                });
+
+            }
+
+            const [blockResult] =
+                await connection.query(
+                    `
+                    INSERT INTO blocks (
+
+                        created_by,
+                        updated_by,
+
+                        school_id,
+
+                        visibility,
+                        title
+
+                    )
+                    VALUES (?, ?, ?, ?, ?)
+                    `,
+                    [
+                        req.user.id,
+                        req.user.id,
+                        schoolId,
+                        "private",
+                        block.title
+                    ]
+                );
+
+            const newBlockId =
+                blockResult.insertId;
+
+            /*
+            * Kopiera poängkopplingar
+            */
+            await connection.query(
+                `
+                INSERT INTO block_points (
+                    block_id,
+                    central_content_id,
+                    competency_descriptor_id,
+                    points
+                )
+                SELECT
+                    ?,
+                    central_content_id,
+                    competency_descriptor_id,
+                    points
+                FROM block_points
+                WHERE block_id = ?
+                `,
+                [
+                    newBlockId,
+                    block.id
+                ]
+            );
+
+            /*
+             * Koppla till vald sektion och förmåga
+             */
+            await connection.query(
+                `
+                INSERT INTO block_sections (
+                    block_id,
+                    section_id
+                )
+                VALUES (?, ?)
+                `,
+                [
+                    newBlockId,
+                    section_id
+                ]
+            );
+
+            await connection.query(
+                `
+                INSERT INTO block_abilities (
+                    block_id,
+                    ability_id
+                )
+                VALUES (?, ?)
+                `,
+                [
+                    newBlockId,
+                    ability_id
+                ]
+            );
+
+            const [questions] =
+                await connection.query(
+                    `
+                    SELECT *
+                    FROM questions
+                    WHERE block_id = ?
+                        AND deleted_at IS NULL
+                    `,
+                    [block.id]
+                );
+
+            for (const question of questions) {
+
+                const [questionResult] =
+                    await connection.query(
+                        `
+                        INSERT INTO questions (
+
+                            question,
+                            block_id,
+                            question_type,
+                            level_id,
+                            series_level_id,
+
+                            created_by,
+                            updated_by,
+
+                            answer_config
+
+                        )
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        `,
+                        [
+                            question.question,
+                            newBlockId,
+                            question.question_type,
+                            question.level_id,
+                            question.series_level_id,
+
+                            req.user.id,
+                            req.user.id,
+
+                            typeof question.answer_config === "string"
+                                ? question.answer_config
+                                : JSON.stringify(question.answer_config)
+                        ]
+                    );
+
+                const newQuestionId =
+                    questionResult.insertId;
+
+                const [options] =
+                    await connection.query(
+                        `
+                        SELECT *
+                        FROM options
+                        WHERE question_id = ?
+                            AND deleted_at IS NULL
+                        `,
+                        [question.id]
+                    );
+
+                for (const option of options) {
+
+                    await connection.query(
+                        `
+                        INSERT INTO options (
+
+                            question_id,
+
+                            text,
+                            is_correct,
+
+                            created_by,
+                            updated_by
+
+                        )
+                        VALUES (?, ?, ?, ?, ?)
+                        `,
+                        [
+                            newQuestionId,
+
+                            option.text,
+                            option.is_correct,
+
+                            req.user.id,
+                            req.user.id
+                        ]
+                    );
+
+                }
+
+                const [media] =
+                    await connection.query(
+                        `
+                        SELECT *
+                        FROM question_media
+                        WHERE question_id = ?
+                        ORDER BY sort_order
+                        `,
+                        [question.id]
+                    );
+
+                for (const mediaItem of media) {
+
+                    await connection.query(
+                        `
+                        INSERT INTO question_media (
+
+                            question_id,
+
+                            media_type,
+                            media_url,
+                            sort_order
+
+                        )
+                        VALUES (?, ?, ?, ?)
+                        `,
+                        [
+                            newQuestionId,
+
+                            mediaItem.media_type,
+                            mediaItem.media_url,
+                            mediaItem.sort_order
+                        ]
+                    );
+
+                }
+
+            }
+
+            await connection.commit();
+
+            res.status(201).json({
+                id: newBlockId
+            });
+
+        } catch (error) {
+
+            await connection.rollback();
+
+            console.error(error);
+
+            res.status(500).json({
+                error: error.message
+            });
+
+        } finally {
+
+            connection.release();
+
+        }
 
     }
 );
@@ -2130,7 +2504,7 @@ router.post("/:id/points",
 
         const {
             central_content_id,
-            grading_ability_level_id,
+            competency_descriptor_id,
             points
         } = req.body;
 
@@ -2139,7 +2513,7 @@ router.post("/:id/points",
             INSERT INTO block_points (
                 block_id,
                 central_content_id,
-                grading_ability_level_id,
+                competency_descriptor_id,
                 points
             )
             VALUES (?, ?, ?, ?)
@@ -2147,7 +2521,7 @@ router.post("/:id/points",
             [
                 req.params.id,
                 central_content_id,
-                grading_ability_level_id,
+                competency_descriptor_id,
                 points
             ]
         );

@@ -22,7 +22,7 @@ router.get("/", async (req, res) => {
         `
         SELECT *
         FROM abilities
-        WHERE delete_at IS NULL
+        WHERE deleted_at IS NULL
         ORDER BY name
         `
     );
