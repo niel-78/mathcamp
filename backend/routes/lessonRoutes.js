@@ -38,6 +38,7 @@ router.get("/",
 
                         g.name AS group_name,
                         g.school_id,
+                        g.book_id,
 
                         c.name AS classroom_name,
 
@@ -136,6 +137,118 @@ router.get("/",
     }
 );
 
+// GET /api/lessons/:id/next-section
+router.get("/:id/next-section", async (req, res) => {
+
+    try {
+        const [[lesson]] = await db.query(
+            `
+            SELECT
+                l.id,
+                l.group_id,
+                l.starts_at,
+                g.book_id
+            FROM lessons l
+            INNER JOIN \`groups\` g
+                ON g.id = l.group_id
+            WHERE l.id = ?
+            `,
+            [req.params.id]
+        );
+
+        if (!lesson) {
+            return res.status(404).json({
+                error: "Lektionen hittades inte."
+            });
+        }
+
+        const [[lastSection]] = await db.query(
+            `
+            SELECT
+                s.id,
+                s.title,
+                s.page_number,
+                l.starts_at,
+                c.sort_order AS chapter_sort_order,
+                sc.sort_order AS subchapter_sort_order,
+                s.sort_order AS section_sort_order,
+                gps.sort_order AS queue_sort_order
+            FROM lesson_sections ls
+            INNER JOIN lessons l
+                ON l.id = ls.lesson_id
+            INNER JOIN sections s
+                ON s.id = ls.section_id
+            INNER JOIN subchapters sc
+                ON sc.id = s.subchapter_id
+            INNER JOIN chapters c
+                ON c.id = sc.chapter_id
+            INNER JOIN group_planning_sections gps
+                ON gps.group_id = l.group_id
+                AND gps.section_id = s.id
+            WHERE l.group_id = ?
+                AND c.book_id = ?
+                AND l.starts_at <= ?
+                AND l.cancelled_at IS NULL
+                AND l.deleted_at IS NULL
+            ORDER BY
+                l.starts_at DESC,
+                gps.sort_order DESC,
+                s.page_number DESC
+            LIMIT 1
+            `,
+            [lesson.group_id, lesson.book_id, lesson.starts_at]
+        );
+
+        const [nextSections] = await db.query(
+            `
+            SELECT
+                s.id,
+                s.title,
+                s.page_number,
+                c.title AS chapter_title,
+                sc.title AS subchapter_title
+            FROM sections s
+            INNER JOIN subchapters sc
+                ON sc.id = s.subchapter_id
+            INNER JOIN chapters c
+                ON c.id = sc.chapter_id
+            INNER JOIN group_planning_sections gps
+                ON gps.section_id = s.id
+                AND gps.group_id = ?
+            WHERE c.book_id = ?
+                AND gps.sort_order > ?
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM lesson_sections used_ls
+                    INNER JOIN lessons used_l
+                        ON used_l.id = used_ls.lesson_id
+                    WHERE used_ls.section_id = s.id
+                        AND used_l.group_id = ?
+                )
+            ORDER BY gps.sort_order
+            LIMIT 1
+            `,
+            [
+                lesson.group_id,
+                lesson.book_id,
+                lastSection?.queue_sort_order ?? -1,
+                lesson.group_id
+            ]
+        );
+
+        res.json({
+            last_section: lastSection || null,
+            next_section: nextSections[0] || null
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            error: "Kunde inte hitta nästa sektion."
+        });
+    }
+});
+
 // PUT /api/lessons/:id
 router.put("/:id", requireAuth,
     async (req, res) => {
@@ -220,6 +333,28 @@ router.post("/lesson-sections", requireAuth,
         res.sendStatus(201);
 
 
+    }
+);
+
+// DELETE /api/lessons/lesson-sections/:id
+router.delete("/lesson-sections/:id", requireAuth,
+    async (req, res) => {
+
+        const [result] = await db.query(
+            `
+            DELETE FROM lesson_sections
+            WHERE id = ?
+            `,
+            [req.params.id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                error: "Lektionssektionen hittades inte."
+            });
+        }
+
+        res.sendStatus(204);
     }
 );
 

@@ -33,6 +33,8 @@ router.get("/:id", async (req, res) => {
                 ea.started_at,
                 ea.submitted_at,
                 ea.status,
+                ea.mode,
+                ea.teacher_end_mode,
 
                 a.id AS assessment_id,
                 a.type AS assessment_type,
@@ -153,6 +155,8 @@ router.get("/:id", async (req, res) => {
             attempt: {
                 id: attempt.id,
                 status: attempt.status,
+                mode: attempt.mode,
+                teacher_end_mode: attempt.teacher_end_mode,
                 started_at: attempt.started_at,
                 submitted_at: attempt.submitted_at,
                 config: attempt.config,
@@ -1129,15 +1133,22 @@ router.post("/:id/terminate",
         const attemptId =
             req.params.id;
 
+        const endMode =
+            req.body?.mode === "soft"
+                ? "soft"
+                : "hard";
+
         await db.query(
             `
             UPDATE assessment_attempts
             SET
-                status = 'submitted',
-                submitted_at = NOW()
+                teacher_end_mode = ?
+                ${endMode === "hard"
+                    ? ", status = 'submitted', submitted_at = NOW()"
+                    : ""}
             WHERE id = ?
             `,
-            [attemptId]
+            [endMode, attemptId]
         );
 
         const [check] = await db.query(
@@ -1145,7 +1156,8 @@ router.post("/:id/terminate",
             SELECT
                 id,
                 status,
-                submitted_at
+                submitted_at,
+                teacher_end_mode
             FROM assessment_attempts
             WHERE id = ?
             `,
@@ -1547,7 +1559,8 @@ router.get("/:id/status", async (req, res) => {
             SELECT
                 id,
                 status,
-                submitted_at
+                submitted_at,
+                teacher_end_mode
             FROM assessment_attempts
             WHERE id = ?
             `,
@@ -1564,7 +1577,8 @@ router.get("/:id/status", async (req, res) => {
 
     res.json({
         status: attempt.status,
-        submitted_at: attempt.submitted_at
+        submitted_at: attempt.submitted_at,
+        teacher_end_mode: attempt.teacher_end_mode
     });
 
 });

@@ -1,13 +1,24 @@
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 import { useDraggable } from "@dnd-kit/core";
-import { GripVertical } from "lucide-react";
+import { GripVertical, Trash2 } from "lucide-react";
 import { Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     Pin,
     PinOff
 } from "lucide-react";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger
+} from "@/components/ui/alert-dialog";
 
 export default function LessonSection({
     section,
@@ -15,6 +26,8 @@ export default function LessonSection({
     openTab,
     readOnly = false
 }) {
+
+    const [removing, setRemoving] = useState(false);
 
     const {
         attributes,
@@ -93,6 +106,30 @@ export default function LessonSection({
                 data.presentation.id
         });
 
+    };
+
+    const removeFromLesson = async () => {
+        setRemoving(true);
+
+        try {
+            const response = await fetch(
+                `${API_URL}/api/lessons/lesson-sections/${section.lesson_section_id}`,
+                {
+                    method: "DELETE",
+                    headers: authHeaders()
+                }
+            );
+
+            if (!response.ok) {
+                return;
+            }
+
+            window.dispatchEvent(
+                new Event("lesson-section-added")
+            );
+        } finally {
+            setRemoving(false);
+        }
     };
 
     const style = {
@@ -221,6 +258,48 @@ export default function LessonSection({
                             : <PinOff size={14} />
                         }
                     </Button>
+
+                    <AlertDialog>
+                        <AlertDialogTrigger
+                            render={
+                                <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    disabled={readOnly}
+                                    title="Ta bort sektion från lektionen"
+                                />
+                            }
+                        >
+                            <Trash2 size={14} />
+                        </AlertDialogTrigger>
+
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                    Ta bort sektion från lektionen?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Sektionen tas bort från den här lektionen,
+                                    men finns kvar i boken.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>
+                                    Avbryt
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                    variant="destructive"
+                                    onClick={removeFromLesson}
+                                    disabled={removing}
+                                >
+                                    {removing
+                                        ? "Tar bort..."
+                                        : "Ta bort"}
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
 
                 </div>
 

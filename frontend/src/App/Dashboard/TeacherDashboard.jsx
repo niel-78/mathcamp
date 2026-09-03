@@ -28,6 +28,9 @@ export default function TeacherDashboard() {
     const [moveSectionDialog,setMoveSectionDialog] = useState(null);
     const [testAttemptId, setTestAttemptId] = useState(null);
 
+    const bumpBlockRefresh = () =>
+        setBlockRefreshKey(prev => prev + 1);
+
     const [darkMode, setDarkMode] =
     useState(
         document.documentElement
@@ -801,6 +804,7 @@ export default function TeacherDashboard() {
                                             setTabs={setLeftTabs}
                                             openTab={openTab}
                                             blockRefreshKey={blockRefreshKey}
+                                            onBlockChanged={bumpBlockRefresh}
                                             startDiagnosticTest={setTestAttemptId}
                                         />
 
@@ -828,6 +832,7 @@ export default function TeacherDashboard() {
                                                     setTabs={setLeftTabs}
                                                     openTab={openTab}
                                                     blockRefreshKey={blockRefreshKey}
+                                                    onBlockChanged={bumpBlockRefresh}
                                                     startDiagnosticTest={setTestAttemptId}
                                                 />
 
@@ -849,6 +854,7 @@ export default function TeacherDashboard() {
                                                     setTabs={setRightTabs}
                                                     openTab={openTab}
                                                     blockRefreshKey={blockRefreshKey}
+                                                    onBlockChanged={bumpBlockRefresh}
                                                 />
 
                                             </ResizablePanel>

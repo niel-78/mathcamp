@@ -3,7 +3,8 @@ import { useDroppable } from "@dnd-kit/core";
 export default function DropZone({
     id,
     text,
-    className = ""
+    className = "",
+    onClick
 }) {
     const {
         setNodeRef,
@@ -15,6 +16,7 @@ export default function DropZone({
     return (
         <div
             ref={setNodeRef}
+            onClick={onClick}
             className={`
                 border-2
                 border-dashed
@@ -24,6 +26,7 @@ export default function DropZone({
                 justify-center
                 text-sm
                 text-muted-foreground
+                ${onClick ? "cursor-pointer hover:bg-accent/50" : ""}
                 ${isOver ? "bg-accent" : ""}
                 ${className}
             `}

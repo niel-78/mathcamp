@@ -63,6 +63,14 @@ router.post("/", async (req, res) => {
         seriesId
     } = req.body;
 
+    if (!seriesId || !name?.trim()) {
+
+        return res.status(400).json({
+            error: "Serie och namn krävs"
+        });
+
+    }
+
     const [result] =
         await db.query(
             `

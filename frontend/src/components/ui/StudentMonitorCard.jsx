@@ -30,10 +30,11 @@ export default function StudentMonitorCard({
 }) {
 
     const [open, setOpen] = useState(false);
+    const [endMode, setEndMode] = useState("hard");
 
-    const handleTerminate = async () => {
+    const handleTerminate = async (mode = endMode) => {
 
-        await onTerminate();
+        await onTerminate(mode);
 
         setOpen(false);
 
@@ -114,12 +115,13 @@ export default function StudentMonitorCard({
 
                                 <AlertDialogDescription>
 
-                                    Detta kommer att avsluta provet för{" "}
+                                    Välj hur provet ska avslutas för{" "}
                                     <strong>
                                         {student.first_name}{" "}
                                         {student.last_name}
                                     </strong>.
-                                    Åtgärden kan inte ångras.
+                                    Mjuk avslutning låter eleven svara klart på
+                                    aktuell fråga. Hård avslutning lämnar in direkt.
 
                                 </AlertDialogDescription>
 
@@ -132,10 +134,17 @@ export default function StudentMonitorCard({
                                 </AlertDialogCancel>
 
                                 <AlertDialogAction
+                                    variant="outline"
+                                    onClick={() => handleTerminate("soft")}
+                                >
+                                    Mjuk avslutning
+                                </AlertDialogAction>
+
+                                <AlertDialogAction
                                     variant="destructive"
                                     onClick={handleTerminate}
                                 >
-                                    Avsluta prov
+                                    Hård avslutning
                                 </AlertDialogAction>
 
                             </AlertDialogFooter>

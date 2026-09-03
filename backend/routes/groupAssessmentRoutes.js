@@ -814,6 +814,11 @@ router.post("/:id/terminate-all",
         const groupExamId =
             req.params.id;
 
+        const endMode =
+            req.body?.mode === "soft"
+                ? "soft"
+                : "hard";
+
         const [attempts] =
             await db.query(
                 `
@@ -830,13 +835,15 @@ router.post("/:id/terminate-all",
             `
             UPDATE assessment_attempts
             SET
-                status = 'submitted',
-                submitted_at = NOW()
+                teacher_end_mode = ?
+                ${endMode === "hard"
+                    ? ", status = 'submitted', submitted_at = NOW()"
+                    : ""}
             WHERE
                 group_assessment_id = ?
                 AND status = 'in_progress'
             `,
-            [groupExamId]
+            [endMode, groupExamId]
         );
 
         for (const attempt of attempts) {
@@ -851,7 +858,9 @@ router.post("/:id/terminate-all",
                 `,
                 [
                     attempt.id,
-                    "terminated_all_by_teacher"
+                    endMode === "soft"
+                        ? "soft_terminated_all_by_teacher"
+                        : "terminated_all_by_teacher"
                 ]
             );
 

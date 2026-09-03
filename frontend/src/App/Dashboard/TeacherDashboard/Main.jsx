@@ -37,6 +37,7 @@ export default function Main({
     setActiveTab,
     setTabs,
     blockRefreshKey,
+    onBlockChanged,
     openTab,
     area,
     activeDragType,
@@ -189,6 +190,7 @@ export default function Main({
                             area={area}
                             openTab={openTab}
                             closeTab={closeTab}
+                            blockRefreshKey={blockRefreshKey}
                         />
 
                     )}
@@ -201,6 +203,7 @@ export default function Main({
                             }
                             tabId={currentTab.id}
                             closeTab={closeTab}
+                            onQuestionChanged={onBlockChanged}
                         />
 
                     )}

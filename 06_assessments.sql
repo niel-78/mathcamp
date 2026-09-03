@@ -228,6 +228,16 @@ CREATE TABLE assessment_attempts (
         'locked'
     ) DEFAULT 'not_started',
 
+    mode ENUM(
+        'normal',
+        'test'
+    ) NOT NULL DEFAULT 'normal',
+
+    teacher_end_mode ENUM(
+        'soft',
+        'hard'
+    ) NULL,
+
     UNIQUE (
         group_assessment_id,
         user_id

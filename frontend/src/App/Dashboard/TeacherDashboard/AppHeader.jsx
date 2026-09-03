@@ -68,9 +68,7 @@ export default function AppHeader({
             "
         >
 
-            <h1>
-                Exam Studio
-            </h1>
+            <h1>m a t h c a m p - o n e</h1>
 
             <div className="flex gap-2">
 

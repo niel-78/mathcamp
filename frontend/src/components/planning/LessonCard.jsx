@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { toast } from "sonner";
+import { API_URL } from "@/config";
+import { authHeaders } from "@/api/authHeaders";
 import CardSection from "@/components/layouts/CardSection";
 import DropZone from "@/components/ui/DropZone";
 import FormatDateTimeShort from "@/utils/formatDateTimeShort";
@@ -36,6 +39,56 @@ export default function LessonCard({
         assessmentType,
         setAssessmentType
     ] = useState(null);
+
+    const addNextSection = async () => {
+        try {
+            const nextResponse = await fetch(
+                `${API_URL}/api/lessons/${lesson.id}/next-section`,
+                { headers: authHeaders() }
+            );
+
+            const nextData = await nextResponse.json();
+
+            if (!nextResponse.ok || !nextData.next_section) {
+                toast.error(
+                    "Det finns ingen nästa sektion i kön att lägga till."
+                );
+                return;
+            }
+
+            const response = await fetch(
+                `${API_URL}/api/lessons/lesson-sections`,
+                {
+                    method: "POST",
+                    headers: {
+                        ...authHeaders(),
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        lesson_id: lesson.id,
+                        section_id: nextData.next_section.id
+                    })
+                }
+            );
+
+            if (response.status === 409) {
+                toast.error("Sektionen finns redan i lektionen.");
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error("Kunde inte lägga till sektionen.");
+            }
+
+            toast.success(
+                `Sektionen "${nextData.next_section.title}" lades till.`
+            );
+            window.dispatchEvent(new Event("lesson-section-added"));
+
+        } catch (error) {
+            toast.error(error.message);
+        }
+    };
 
     if (lesson.cancelled_by_exception) {
 
@@ -399,6 +452,7 @@ export default function LessonCard({
                             readOnly={readOnly}
                             text="Släpp sektion här"
                             className="min-h-[100px]"
+                            onClick={addNextSection}
                         />
                     )}    
 

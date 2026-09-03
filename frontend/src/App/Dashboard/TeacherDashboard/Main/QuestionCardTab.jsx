@@ -9,7 +9,8 @@ import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 export default function QuestionCardTab({
     questionId,
     tabId,
-    closeTab
+    closeTab,
+    onQuestionChanged
 }) {
 
     const [question,
@@ -65,7 +66,10 @@ export default function QuestionCardTab({
 
             <QuestionCard
                 question={question}
-                onChanged={loadQuestion}
+                onChanged={async () => {
+                    await loadQuestion();
+                    onQuestionChanged?.();
+                }}
             />
 
         </BaseTabLayout>

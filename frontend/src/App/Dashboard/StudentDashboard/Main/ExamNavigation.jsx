@@ -9,55 +9,68 @@ export default function ExamNavigation({
     onPrev,
     onNext,
     onReset,
-    onSubmit
+    onSubmit,
+    canSubmitAnytime,
+    submitLabel = "Lämna in prov"
 }) {
 
     const isFirst = index === 0;
     const isLast = index === total - 1;
 
-    if (timeExpired) {
-        return null;
-    }
-
     return (
-        <div className="flex items-center justify-between mt-6">
+        <div className="mt-6">
 
-            <div>
-                {allowPrevious && (
+            {canSubmitAnytime && (
+                <div className="flex justify-end mb-4">
                     <Button
-                        onClick={onPrev}
-                        disabled={isFirst}
+                        onClick={onSubmit}
                         variant="outline"
                     >
-                        ← Föregående
+                        {submitLabel}
                     </Button>
-                )}
-            </div>
+                </div>
+            )}
 
-            <div>
-                {showReset && (
+            <div className="flex items-center justify-between">
+
+                <div>
+                    {allowPrevious && (
+                        <Button
+                            onClick={onPrev}
+                            disabled={isFirst}
+                            variant="outline"
+                        >
+                            ← Föregående
+                        </Button>
+                    )}
+                </div>
+
+                <div>
+                    {showReset && (
+                        <Button
+                            onClick={onReset}
+                            variant="secondary"
+                        >
+                            ↺ Återställ
+                        </Button>
+                    )}
+                </div>
+
+                <div>
                     <Button
-                        onClick={onReset}
-                        variant="secondary"
+                        onClick={
+                            isLast || timeExpired
+                                ? onSubmit
+                                : onNext
+                        }
                     >
-                        ↺ Återställ
+                        {isLast || timeExpired
+                            ? submitLabel
+                            : "Nästa →"}
                     </Button>
-                )}
+                </div>
             </div>
 
-            <div>
-                <Button
-                    onClick={
-                        isLast
-                            ? onSubmit
-                            : onNext
-                    }
-                >
-                    {isLast
-                        ? "Lämna in prov"
-                        : "Nästa →"}
-                </Button>
-            </div>
         </div>
     );
 }

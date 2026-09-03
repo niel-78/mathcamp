@@ -93,7 +93,7 @@ export default function GroupExamMonitorTab({
     const handleTerminateAll =
         async () => {
 
-            await terminateAll();
+            await terminateAll("hard");
 
             setTerminateAllOpen(false);
 
@@ -181,13 +181,17 @@ export default function GroupExamMonitorTab({
     };
 
     const terminateAttempt =
-        async (attemptId) => {
+        async (attemptId, mode) => {
 
             await fetch(
                 `${API_URL}/api/assessment-attempts/${attemptId}/terminate`,
                 {
                     method: "POST",
-                    headers: authHeaders()
+                    headers: {
+                        ...authHeaders(),
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ mode })
                 }
             );
 
@@ -226,13 +230,17 @@ export default function GroupExamMonitorTab({
 
         };
     
-    const terminateAll = async () => {
+    const terminateAll = async (mode) => {
 
         await fetch(
             `${API_URL}/api/group-assessments/${groupExamId}/terminate-all`,
             {
                 method: "POST",
-                headers: authHeaders()
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ mode })
             }
         );
 
@@ -325,9 +333,8 @@ return (
                             </AlertDialogTitle>
 
                             <AlertDialogDescription>
-                                Samtliga pågående prov kommer att
-                                avslutas och lämnas in omedelbart.
-                                Åtgärden kan inte ångras.
+                                Välj om eleverna ska få svara klart på
+                                aktuell fråga eller lämnas in direkt.
                             </AlertDialogDescription>
 
                         </AlertDialogHeader>
@@ -339,10 +346,20 @@ return (
                             </AlertDialogCancel>
 
                             <AlertDialogAction
+                                variant="outline"
+                                onClick={() => {
+                                    terminateAll("soft");
+                                    setTerminateAllOpen(false);
+                                }}
+                            >
+                                Mjuk avslutning
+                            </AlertDialogAction>
+
+                            <AlertDialogAction
                                 variant="destructive"
                                 onClick={handleTerminateAll}
                             >
-                                Avsluta alla
+                                Hård avslutning
                             </AlertDialogAction>
 
                         </AlertDialogFooter>
@@ -557,11 +574,12 @@ return (
                             );
 
                         }}
-                        onTerminate={() => {
-                                terminateAttempt(
-                                    student.attempt_id
-                                )
-                            }
+                        onTerminate={(mode) => {
+                            terminateAttempt(
+                                student.attempt_id,
+                                mode
+                            );
+                        }
                         }
                         onResume={() =>
                             resumeAttempt(

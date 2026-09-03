@@ -122,6 +122,12 @@ export default function ExamPage({
         attempt?.assessment?.type ===
         "diagnostic";
 
+    const isTeacherTest =
+        attempt?.mode === "test";
+
+    const isSoftEnded =
+        attempt?.teacher_end_mode === "soft";
+
     const isAdaptive =
         attempt?.assessment?.config?.mode ===
         "adaptive";
@@ -212,6 +218,10 @@ export default function ExamPage({
                 return;
             }
 
+            if (isSoftEnded) {
+                return;
+            }
+
             appendNextQuestion(result);
 
             if (
@@ -248,6 +258,10 @@ export default function ExamPage({
 
             if (timeExpired) {
                 await submitExam();
+                return;
+            }
+
+            if (isSoftEnded) {
                 return;
             }
 
@@ -305,6 +319,10 @@ export default function ExamPage({
 
             if (timeExpired) {
                 await submitExam();
+                return;
+            }
+
+            if (isSoftEnded) {
                 return;
             }
 
@@ -471,6 +489,15 @@ export default function ExamPage({
                             }
                             onSubmit={
                                 submitExam
+                            }
+                            canSubmitAnytime={
+                                isTeacherTest ||
+                                isSoftEnded
+                            }
+                            submitLabel={
+                                isTeacherTest
+                                    ? "Avsluta test"
+                                    : "Lämna in prov"
                             }
                         />
 

@@ -302,7 +302,7 @@ export default function CreateBlockFromExcelDialog({
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    onClick={createAbility}
+                                    onClick={() => createAbility()}
                                     disabled={!newAbilityName.trim()}
                                 >
                                     Skapa

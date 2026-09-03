@@ -11,7 +11,8 @@ import { checkOptionValues } from "@/utils/checkOptionValues";
 export default function BlockContent({
     block,
     area,
-    openTab
+    openTab,
+    blockRefreshKey
 }) {
 
     const [currentBlock, setCurrentBlock] = useState(block);    
@@ -24,7 +25,7 @@ export default function BlockContent({
 
     useEffect(() => {
         loadBlock();
-    }, [block.id]);
+    }, [block.id, blockRefreshKey]);
 
     const loadBlock = async () => {
 

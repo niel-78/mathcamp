@@ -101,7 +101,8 @@ export function useExamAttempt(attemptId) {
                 return {
                     ...prev,
                     status: data.status,
-                    submitted_at: data.submitted_at
+                    submitted_at: data.submitted_at,
+                    teacher_end_mode: data.teacher_end_mode
                 };
 
             });
