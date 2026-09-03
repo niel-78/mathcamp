@@ -470,6 +470,7 @@ router.get("/abilities/:abilityId", async (req, res) => {
         WHERE
             ba.ability_id = ?
             AND b.deleted_at IS NULL
+            AND b.archived_at IS NULL
 
             AND (
                 b.created_by = ?
@@ -1105,6 +1106,32 @@ router.post("/import",upload.single("file"),
                     [req.user.id]
                 );
 
+            if (!teacher?.school_id) {
+                return res.status(403).json({
+                    error: "Användaren är inte kopplad till en skola"
+                });
+            }
+
+            let ability;
+
+            if (req.body.abilityId) {
+                [[ability]] = await db.query(
+                    `
+                    SELECT id, series_id
+                    FROM abilities
+                    WHERE id = ?
+                    AND deleted_at IS NULL
+                    `,
+                    [req.body.abilityId]
+                );
+
+                if (!ability) {
+                    return res.status(400).json({
+                        error: "Förmågan hittades inte"
+                    });
+                }
+            }
+
             const [blockResult] =
                 await db.query(
                     `
@@ -1127,7 +1154,7 @@ router.post("/import",upload.single("file"),
             const blockId =
                 blockResult.insertId;
 
-            if (req.body.abilityId) {
+            if (ability) {
 
                 await db.query(
                     `
@@ -1139,7 +1166,7 @@ router.post("/import",upload.single("file"),
                     `,
                     [
                         blockId,
-                        req.body.abilityId
+                        ability.id
                     ]
                 );
 
@@ -1207,18 +1234,6 @@ router.post("/import",upload.single("file"),
                         1
                     );
 
-                const [[ability]] =
-                    await db.query(
-                        `
-                        SELECT a.series_id
-                        FROM abilities a
-                        INNER JOIN block_abilities ba
-                            ON ba.ability_id = a.id
-                        WHERE ba.block_id = ?
-                        `,
-                        [blockId]
-                    );
-
                 const [levels] =
                     await db.query(
                         `
@@ -1227,7 +1242,7 @@ router.post("/import",upload.single("file"),
                         WHERE series_id = ?
                         ORDER BY sort_order
                         `,
-                        [ability.series_id]
+                        [ability?.series_id]
                     );
 
                 const seriesLevelId =
@@ -1271,6 +1286,7 @@ router.post("/import",upload.single("file"),
                             blockId,
                             question,
                             questionType,
+                            seriesLevelId,
                             req.user.id,
                             req.user.id,
                             JSON.stringify(answerConfig)

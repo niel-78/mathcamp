@@ -152,9 +152,6 @@ export default function BlockContent({
                 return a.id - b.id;
             });
 
-    console.log("currentBlock", currentBlock);
-    console.log("levels", currentBlock?.levels);
-
     return (
         <>
             <BaseTabLayout
@@ -180,11 +177,64 @@ export default function BlockContent({
                                 rounded
                                 flex
                                 justify-between
-                                items-center
+                                items-start
                             "
                         >
 
-                            <div className="flex gap-2">
+                            <div className="flex min-w-0 flex-1 flex-col gap-3">
+
+                                <div className="flex items-center gap-2">
+
+                                    <MathContent value={question.question} />
+
+                                    {question.options?.length > 1 && (() => {
+                                        const optionCheck = checkOptionValues(
+                                            question.options
+                                        );
+
+                                        if (optionCheck.valid) {
+                                            return null;
+                                        }
+
+                                        return (
+                                            <span
+                                                className="text-sm text-red-600"
+                                                title={optionCheck.issues.join("\n")}
+                                            >
+                                                Fel i svarsalternativ
+                                            </span>
+                                        );
+                                    })()}
+
+                                </div>
+
+                                {question.options?.length > 0 && (
+                                    <div className="grid gap-1 pl-2">
+                                        {question.options.map(option => (
+                                            <div
+                                                key={option.id}
+                                                className="flex items-center gap-2 text-sm"
+                                            >
+                                                <MathContent value={option.text} />
+                                                <span
+                                                    className={
+                                                        option.is_correct
+                                                            ? "text-green-600"
+                                                            : "text-muted-foreground"
+                                                    }
+                                                >
+                                                    {option.is_correct
+                                                        ? "Rätt svar"
+                                                        : "Felaktigt"}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                            </div>
+
+                            <div className="flex shrink-0 items-center gap-2">
 
                                 <select
                                     value={question.series_level_id || ""}
@@ -208,8 +258,6 @@ export default function BlockContent({
                                         </option>
                                     ))}
                                 </select>
-
-                                <MathContent value={question.question} />
 
                                 <Button
                                     size="sm"

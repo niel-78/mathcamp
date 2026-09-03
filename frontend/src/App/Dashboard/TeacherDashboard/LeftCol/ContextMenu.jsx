@@ -374,11 +374,6 @@ export default function ContextMenu(props) {
                 );
 
             case "ability":
-
-                if (user?.role !== "super") {
-                    return null;
-                }
-
                 return (
                     <AbilityMenu
                         onRename={() => {
