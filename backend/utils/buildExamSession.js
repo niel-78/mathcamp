@@ -35,6 +35,14 @@ export async function buildExamSession(
     const groupExam =
         groupExamRows[0];
 
+    const config =
+        typeof groupExam.config === "string"
+            ? JSON.parse(groupExam.config || "{}")
+            : groupExam.config || {};
+
+    const questionSelection =
+        config.question_selection || {};
+
     /*
      * Hämta alla block som ingår i provet
      */
@@ -93,7 +101,7 @@ export async function buildExamSession(
          * En fråga per block
          */
         if (
-            groupExam.use_different_questions_in_block
+            questionSelection.useDifferentQuestionsInBlock
         ) {
 
             const randomQuestion =
@@ -125,7 +133,7 @@ export async function buildExamSession(
      * Slumpa uppgiftsordning
      */
     const orderedQuestions =
-        groupExam.shuffle_order_questions
+        questionSelection.shuffleQuestions
 
             ? [...questions].sort(
                 () =>
@@ -157,7 +165,7 @@ export async function buildExamSession(
             );
 
         question.options =
-            groupExam.shuffle_order_options
+            questionSelection.shuffleOptions
 
                 ? [...options].sort(
                     () =>
@@ -185,13 +193,13 @@ export async function buildExamSession(
             groupExam.config,
 
         shuffle_order_questions:
-            !!groupExam.shuffle_order_questions,
+            !!questionSelection.shuffleQuestions,
 
         shuffle_order_options:
-            !!groupExam.shuffle_order_options,
+            !!questionSelection.shuffleOptions,
 
         use_different_questions_in_block:
-            !!groupExam.use_different_questions_in_block,
+            !!questionSelection.useDifferentQuestionsInBlock,
 
         questions:
             orderedQuestions

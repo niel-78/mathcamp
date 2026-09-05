@@ -14,7 +14,7 @@ const upload = multer({
 });
 
 router.use(requireAuth);
-router.use(requireRole("student", "teacher"));
+router.use(requireRole("student", "teacher", "super"));
 
 // GET /api/group-schedules
 router.get("/",

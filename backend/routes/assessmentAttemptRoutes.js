@@ -157,6 +157,10 @@ router.get("/:id", async (req, res) => {
                 status: attempt.status,
                 mode: attempt.mode,
                 teacher_end_mode: attempt.teacher_end_mode,
+                allow_go_to_previous_question:
+                    !!parsedAttemptConfig
+                        ?.navigation
+                        ?.allowGoToPreviousQuestion,
                 started_at: attempt.started_at,
                 submitted_at: attempt.submitted_at,
                 config: attempt.config,

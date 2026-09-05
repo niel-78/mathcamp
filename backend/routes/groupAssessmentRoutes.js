@@ -40,6 +40,7 @@ router.get("/", async (req, res) => {
         SELECT
             ge.*,
             e.title AS assessment_title,
+            e.type AS assessment_type,
             g.name AS group_name,
             ep.role
         FROM group_assessments ge
@@ -205,6 +206,7 @@ router.get("/:id", async (req, res) => {
             ge.status AS assessment_status,
             ge.access_key AS group_assessment_key,
             e.title AS assessment_title,
+            e.type AS assessment_type,
             g.name AS group_name,
             ep.role
         FROM group_assessments ge
@@ -249,7 +251,6 @@ router.put("/:id", async (req, res) => {
         config,
 
         waiting_room_open,
-        max_attempts,
 
         available_from,
         available_until
@@ -262,7 +263,6 @@ router.put("/:id", async (req, res) => {
             config = ?,
 
             waiting_room_open = ?,
-            max_attempts = ?,
 
             available_from = ?,
             available_until = ?
@@ -275,7 +275,6 @@ router.put("/:id", async (req, res) => {
             ),
 
             waiting_room_open,
-            max_attempts,
 
             formatDateTime(
                 available_from

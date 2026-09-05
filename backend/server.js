@@ -29,6 +29,7 @@ import questionRoutes from "./routes/questionRoutes.js";
 import questionLevelRoutes from "./routes/questionLevelRoutes.js";
 
 import assessmentRoutes from "./routes/assessmentRoutes.js";
+import assessmentTypeSettingsRoutes from "./routes/assessmentTypeSettingsRoutes.js";
 import groupAssessmentRoutes from "./routes/groupAssessmentRoutes.js";
 import assessmentAttemptRoutes from "./routes/assessmentAttemptRoutes.js";
 
@@ -121,6 +122,7 @@ app.use("/api/questions", questionRoutes);
 app.use("/api/question-levels", questionLevelRoutes);
 
 app.use("/api/assessments", assessmentRoutes);
+app.use("/api/assessment-type-settings", assessmentTypeSettingsRoutes);
 app.use("/api/group-assessments", groupAssessmentRoutes);
 app.use("/api/assessment-attempts", assessmentAttemptRoutes);
 
