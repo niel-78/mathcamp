@@ -17,6 +17,12 @@ export default function ResultPage({
 
     useEffect(() => {
 
+        if (!attemptId) {
+            setResults([]);
+            setLoading(false);
+            return;
+        }
+
         const loadResults = async () => {
 
             try {
@@ -45,9 +51,7 @@ export default function ResultPage({
             }
         };
 
-        if (attemptId) {
-            loadResults();
-        }
+        loadResults();
 
     }, [attemptId]);
 

@@ -22,8 +22,19 @@ export default function ResetPasswordDialog({
 
     const resetPassword = async () => {
 
+        const studentId =
+            student?.userId ??
+            student?.id;
+
+        if (!studentId) {
+            toast.error(
+                "Elev saknas. Öppna eleven igen."
+            );
+            return;
+        }
+
         const response = await fetch(
-            `${API_URL}/api/students/${student.id}/password`,
+            `${API_URL}/api/students/${studentId}/password`,
             {
                 method: "PUT",
                 headers: {

@@ -225,7 +225,8 @@ export default function LessonAssessments({
                                                 assessment.title ||
                                                 `Provtillfälle #${assessment.id}`,
                                             type: "group-assessment",
-                                            groupExamId: assessment.id
+                                            groupExamId: assessment.id,
+                                            assessmentType: assessment.type
                                         })
                                     }
                                 >

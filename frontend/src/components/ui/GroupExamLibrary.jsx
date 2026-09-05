@@ -57,7 +57,9 @@ export default function GroupExamLibrary({
                                             `${groupExam.assessment_title} (${groupExam.group_name})`,
                                         type: "group-assessment",
                                         groupExamId:
-                                            groupExam.id
+                                            groupExam.id,
+                                        assessmentType:
+                                            groupExam.assessment_type
                                     })
                                 }
                             >

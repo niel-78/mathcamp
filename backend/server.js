@@ -51,6 +51,9 @@ import classroomSeatRoutes from "./routes/classroomSeatRoutes.js";
 
 import groupSeatAssignmentRoutes from "./routes/groupSeatAssignmentRoutes.js";
 
+import competitionRoutes from "./routes/competitionRoutes.js";
+import marketRoutes from "./routes/marketRoutes.js";
+
 import eventRoutes from "./routes/eventRoutes.js";
 
 import cors from "cors";
@@ -133,8 +136,10 @@ app.use("/api/books", bookRoutes);
 app.use("/api/sections", sectionRoutes);
 
 app.use("/api/group-assessment-lobby", groupAssessmentLobbyRoutes);
-
 app.use("/api/presentations", presentationRoutes);
+app.use("/api/market", marketRoutes);
+app.use("/api/presentations", presentationRoutes);
+app.use("/api/competitions", competitionRoutes);
 
 app.use("/api/classrooms", classroomRoutes);
 app.use("/api/classroom-layouts", classroomLayoutRoutes);

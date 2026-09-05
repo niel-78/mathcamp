@@ -12,6 +12,7 @@ import { toast } from "sonner";
 
 export default function GroupExamTab({
     groupExamId,
+    initialAssessmentType,
     openTab,
     startTestAttempt
 }) {
@@ -39,6 +40,43 @@ export default function GroupExamTab({
 
     const [testing, setTesting] =
         useState(false);
+
+    const isDiagnostic =
+        (
+            groupExam?.assessment_type ||
+            initialAssessmentType
+        ) ===
+        "diagnostic";
+
+    const applyDiagnosticDefaults = (data) => {
+
+        const assessmentType =
+            data.assessment_type ||
+            initialAssessmentType;
+
+        if (assessmentType !== "diagnostic") {
+            return data;
+        }
+
+        return {
+            ...data,
+            assessment_type: assessmentType,
+            config: {
+                ...data.config,
+                question_selection: {
+                    ...data.config?.question_selection,
+                    shuffleQuestions: true,
+                    shuffleOptions: true,
+                    useDifferentQuestionsInBlock: true
+                },
+                navigation: {
+                    ...data.config?.navigation,
+                    allowGoToPreviousQuestion: false
+                }
+            }
+        };
+
+    };
 
     useEffect(() => {
 
@@ -79,8 +117,11 @@ export default function GroupExamTab({
                 ? JSON.parse(data.config)
                 : (data.config || {});
 
-        setGroupExam(data);
-        setSavedGroupExam(data);
+        const normalizedData =
+            applyDiagnosticDefaults(data);
+
+        setGroupExam(normalizedData);
+        setSavedGroupExam(normalizedData);
 
     };
 
@@ -303,11 +344,6 @@ export default function GroupExamTab({
                             "application/json"
                     },
                     body: JSON.stringify({
-
-                        max_attempts:
-                            Number(
-                                groupExam.max_attempts
-                            ),
 
                         waiting_room_open:
                             groupExam.waiting_room_open,
@@ -640,22 +676,6 @@ export default function GroupExamTab({
                             </select>
                         </Field>
 
-                        <Field label="Max försök">
-                            <Input
-                                type="number"
-                                value={
-                                    groupExam.max_attempts ?? ""
-                                }
-                                onChange={(e) =>
-                                    setGroupExam({
-                                        ...groupExam,
-                                        max_attempts:
-                                            e.target.value
-                                    })
-                                }
-                            />
-                        </Field>
-
                     </div>
 
                 </CardSection>
@@ -730,8 +750,10 @@ export default function GroupExamTab({
 
                             <Switch
                                 checked={
+                                    isDiagnostic ||
                                     !!groupExam.config?.question_selection?.shuffleQuestions
                                 }
+                                disabled={isDiagnostic}
                                 onCheckedChange={(checked) =>
                                     updateConfig(
                                         "question_selection",
@@ -747,8 +769,10 @@ export default function GroupExamTab({
 
                             <Switch
                                 checked={
+                                    isDiagnostic ||
                                     !!groupExam.config?.question_selection?.shuffleOptions
                                 }
+                                disabled={isDiagnostic}
                                 onCheckedChange={(checked) =>
                                     updateConfig(
                                         "question_selection",
@@ -764,8 +788,10 @@ export default function GroupExamTab({
 
                             <Switch
                                 checked={
+                                    isDiagnostic ||
                                     !!groupExam.config?.question_selection?.useDifferentQuestionsInBlock
                                 }
+                                disabled={isDiagnostic}
                                 onCheckedChange={(checked) =>
                                     updateConfig(
                                         "question_selection",
@@ -777,29 +803,14 @@ export default function GroupExamTab({
 
                         </Field>
 
-                        <Field label="Upprepa aldrig fråga">
-
-                            <Switch
-                                checked={
-                                    !!groupExam.config?.question_selection?.neverRepeatQuestion
-                                }
-                                onCheckedChange={(checked) =>
-                                    updateConfig(
-                                        "question_selection",
-                                        "neverRepeatQuestion",
-                                        checked
-                                    )
-                                }
-                            />
-
-                        </Field>
-
                         <Field label="Tillåt att gå tillbaka">
 
                             <Switch
                                 checked={
+                                    !isDiagnostic &&
                                     !!groupExam.config?.navigation?.allowGoToPreviousQuestion
                                 }
+                                disabled={isDiagnostic}
                                 onCheckedChange={(checked) =>
                                     updateConfig(
                                         "navigation",
@@ -902,67 +913,6 @@ export default function GroupExamTab({
                                         checked
                                     )
                                 }
-                            />
-
-                        </Field>
-
-                    </div>
-
-                </CardSection>
-
-                <CardSection
-                    title="Hjälpmedel"
-                >
-
-                    <div className="space-y-4">
-
-                        <Field label="Visa miniräknare">
-
-                            <Switch
-                                checked={
-                                    groupExam.config?.presentation?.allowCalculator
-                                }
-                                onCheckedChange={(checked) =>
-                                    updateConfig(
-                                        "presentation",
-                                        "allowCalculator",
-                                        checked
-                                    )
-                                }
-                            />
-
-                        </Field>
-
-                        <Field label="Visa formelblad">
-
-                            <Switch
-                                checked={
-                                    groupExam.config?.presentation?.allowFormulaSheet
-                                }
-                                onCheckedChange={(checked) =>
-                                    updateConfig(
-                                        "presentation",
-                                        "allowFormulaSheet",
-                                        checked
-                                    )
-                                }
-                            />
-
-                        </Field>
-
-                        <Field label="Visa resultat direkt">
-
-                            <Switch
-                            checked={
-                                !!groupExam.config?.presentation?.showResultImmediately
-                            }
-                            onCheckedChange={(checked) =>
-                                updateConfig(
-                                    "presentation",
-                                    "showResultImmediately",
-                                    checked
-                                )
-                            }
                             />
 
                         </Field>

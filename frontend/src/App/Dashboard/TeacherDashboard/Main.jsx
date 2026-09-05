@@ -29,6 +29,9 @@ import GroupLayoutTab from "./Main/GroupLayoutTab";
 import TeacherCalendarTab from "@/components/tabs/TeacherCalenderTab";
 import ArchivedPresentationsTab from "./Main/ArchivedPresentationsTab";
 import StudentTab from "./Main/StudentTab";
+import AssessmentSettingsTab from "./Main/AssessmentSettingsTab";
+import GroupAddonsTab from "@/components/addons/GroupAddonsTab";
+import CompetitionTab from "@/components/addons/CompetitionTab";
 
 
 export default function Main({
@@ -278,6 +281,9 @@ export default function Main({
                             groupExamId={
                                 currentTab.groupExamId
                             }
+                            initialAssessmentType={
+                                currentTab.assessmentType
+                            }
                             openTab={(tab) =>
                                 openTab(tab, area)
                             }
@@ -368,6 +374,15 @@ export default function Main({
                             openTab={openTab}
                         />
                     )}
+                    {currentTab?.type === "assessment-settings" && (
+
+                        <AssessmentSettingsTab
+                            initialAssessmentType={
+                                currentTab.assessmentType
+                            }
+                        />
+
+                    )}
                     {currentTab?.type === "presentations" && (
 
                         <PresentationsTab 
@@ -412,6 +427,23 @@ export default function Main({
                             }
                         />
 
+                    )}
+
+                    {currentTab.type === "group-addons" && (
+
+                        <GroupAddonsTab 
+                            groupId={currentTab.groupId} 
+                            openTab={openTab}
+                        />
+
+                    )}
+
+                    {currentTab.type === "competition" && (
+
+                            <CompetitionTab
+                                competitionId={currentTab.competitionId}
+                                title={currentTab.title}
+                            />
                     )}
 
                 </div>

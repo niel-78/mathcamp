@@ -85,6 +85,8 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [renameAbilityDialog, setRenameAbilityDialog] = useState(null);
     const [deleteAbilityDialog, setDeleteAbilityDialog] = useState(null);
     const [archiveOpen, setArchiveOpen] = useState(false);
+    const [settingsOpen, setSettingsOpen] = useState(false);
+    const [assessmentSettingsOpen, setAssessmentSettingsOpen] = useState(false);
     const [createLessonSeriesDialog, setCreateLessonSeriesDialog] = useState(null);
     const [expandedBookSections, setExpandedBookSections] = useState({});
     const [expandedBookAbilities, setExpandedBookAbilities] = useState({});
@@ -1379,7 +1381,23 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                                             </div>
                                             
-                                        )}    
+                                        )}
+
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="w-full justify-start text-sm"
+                                            onClick={() => {
+                                            openTab({
+                                                id: `group-addons-${group.id}`,
+                                                type: "group-addons",
+                                                title: `${group.name} - Tillval`,
+                                                groupId: group.id
+                                            });
+                                            }}
+                                        >
+                                            Tillval
+                                        </Button>    
 
 
                                         {/* <div className="tree-file">
@@ -2358,7 +2376,6 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                         type: "archived-groups",
                                         title: "Grupper"
                                     })
-
                                 }
                             >
                                 Grupper
@@ -2376,19 +2393,6 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                             >
                                 Elever
                             </div>
-
-                            {/* <div
-                                className="tree-file"
-                                onClick={() =>
-                                    openTab({
-                                        id: "archived-assessments",
-                                        type: "archived-assessments",
-                                        title: "Prov"
-                                    })
-                                }
-                            >
-                                Prov
-                            </div> */}
 
                             <div
                                 className="tree-file"
@@ -2430,6 +2434,60 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                             </div>
 
                         </div>
+
+                    )}
+
+                    {user?.role === "super" && (
+
+                        <>
+                            <div
+                                className="tree-folder mt-2"
+                                onClick={() =>
+                                    setSettingsOpen(
+                                        previous => !previous
+                                    )
+                                }
+                            >
+                                {settingsOpen ? "▼" : "▶"}
+                                {" "}
+                                Inställningar
+                            </div>
+
+                            {settingsOpen && (
+                                <div className="ml-6">
+                                    <div
+                                        className="tree-folder"
+                                        onClick={() =>
+                                            setAssessmentSettingsOpen(
+                                                previous => !previous
+                                            )
+                                        }
+                                    >
+                                        {assessmentSettingsOpen ? "▼" : "▶"}
+                                        {" "}
+                                        Assessments
+                                    </div>
+
+                                    {assessmentSettingsOpen && (
+                                        <div className="ml-4">
+                                            <div
+                                                className="tree-file"
+                                                onClick={() =>
+                                                    openTab({
+                                                        id: "assessment-settings-diagnostic",
+                                                        title: "Assessments - Diagnos",
+                                                        type: "assessment-settings",
+                                                        assessmentType: "diagnostic"
+                                                    })
+                                                }
+                                            >
+                                                Diagnos
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </>
 
                     )}
 
