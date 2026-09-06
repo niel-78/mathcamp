@@ -17,6 +17,7 @@ import ClassroomMenu from "./menus/ClassroomMenu";
 import ClassroomLayoutMenu from "./menus/ClassroomLayoutMenu";
 import ScheduleExceptionsMenu from "./menus/ScheduleExceptionsMenu";
 import ScheduleExceptionMenu from "./menus/ScheduleExceptionMenu";
+import StaffMenu from "./menus/StaffMenu";
 
 export default function ContextMenu(props) {
 
@@ -518,6 +519,20 @@ export default function ContextMenu(props) {
 
                             }}
 
+                        />
+                    );
+
+                case "staff":
+                    return (
+                        <StaffMenu
+                            onCreateStaff={() => {
+                                props.onCreateStaff?.(
+                                    contextMenu.schoolId,
+                                    contextMenu.schoolName
+                                );
+
+                                setContextMenu(null);
+                            }}
                         />
                     );
 

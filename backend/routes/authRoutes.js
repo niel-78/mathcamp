@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 import db from "../db.js";
 import express from "express";
+import { sendEmail } from "../utils/sendEmail.js";
 
 const router = express.Router();
 
@@ -110,8 +111,7 @@ router.post("/login", async (req, res) => {
 });
 
 //POST /api/auth/logout
-router.post(
-    "/logout",
+router.post("/logout",
     requireAuth,
     async (req, res) => {
 
@@ -198,6 +198,75 @@ router.get("/sessions", requireAuth,
 
     }
 );
+
+// POST /api/auth/forgot-password
+router.post("/forgot-password", async (req, res) => {
+    try {
+        const { username } = req.body || {};
+
+        if (!username) {
+            return res.status(400).json({
+                error: "Ange ett användarnamn"
+            });
+        }
+
+        const [rows] = await db.query(
+            `
+            SELECT *
+            FROM users
+            WHERE username = ?
+            `,
+            [username]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({
+                error: "Användaren hittades inte"
+            });
+        }
+
+        const user = rows[0];
+
+        if (!user.email) {
+            return res.status(400).json({
+                error: "Ingen e-postadress är registrerad på detta konto"
+            });
+        }
+
+        // Generera ett nytt tillfälligt slumpmässigt lösenord (t.ex. 8 tecken)
+        const newPassword = crypto.randomBytes(4).toString("hex");
+        const password_hash = await bcrypt.hash(newPassword, 10);
+
+        // Uppdatera lösenordet i databasen
+        await db.query(
+            `
+            UPDATE users
+            SET password_hash = ?
+            WHERE id = ?
+            `,
+            [password_hash, user.id]
+        );
+
+        await sendEmail(
+            user.email, 
+            "Ditt nya tillfälliga lösenord", 
+            `Hej ${user.first_name},\n\nDitt nya tillfälliga lösenord är: ${newPassword}\n\nLogga in och byt det i din profil.`
+        );
+
+        // För utveckling kan du skriva ut det i konsolen på servern så länge
+        console.log(`Nytt lösenord för ${username}: ${newPassword}`);
+
+        res.json({
+            success: true,
+            message: "Ett nytt lösenord har skickats till din e-post."
+        });
+
+    } catch (err) {
+        return res.status(500).json({
+            error: err.message
+        });
+    }
+});
 
 
 export default router;

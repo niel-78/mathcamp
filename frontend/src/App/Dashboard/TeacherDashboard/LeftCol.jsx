@@ -14,6 +14,7 @@ import EditStudentDialog from "./LeftCol/EditStudentDialog";
 import ResetPasswordDialog from "./LeftCol/ResetPasswordDialog";
 import ArchiveStudentDialog from "./LeftCol/ArchiveStudentDialog";
 import ImportStudentsDialog from "./LeftCol/ImportStudentsDialog";
+import CreateStaffDialog from "./LeftCol/CreateStaffDialog";
 import SectionTreeItem from "@/components/ui/SectionTreeItem";
 import CreateAbilityDialog from "./LeftCol/CreateAbilityDialog";
 import CentralContentTreeItem from "@/components/ui/CentralContentTreeItem";
@@ -124,6 +125,10 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [createClassroomDialogOpen, setCreateClassroomDialogOpen] = useState(false);
     const [sharePlanningDialog, setSharePlanningDialog] = useState(null);
     const [printLoginsGroup, setPrintLoginsGroup] = useState(null);
+    const [schoolStaff, setSchoolStaff] = useState({});
+    const [expandedSchoolStaff, setExpandedSchoolStaff] = useState({});
+    const [createStaffOpen, setCreateStaffOpen] = useState(false);
+    const [selectedSchoolForStaff, setSelectedSchoolForStaff] = useState(null);
 
     const [showSchools, setShowSchools] =
         useState(false);
@@ -136,6 +141,28 @@ export default function LeftCol( {openTab, hoverTarget} ) {
         setExpandedSchoolClassrooms
     ] = useState({});
 
+    const canManageSchool = (school) => {
+
+        const valueIsTrue = (value) =>
+            value === true ||
+            value === 1 ||
+            value === "1";
+
+        if (user?.role === "super") {
+            return true;
+        }
+
+        if (valueIsTrue(school?.is_admin)) {
+            return true;
+        }
+
+        return (
+            valueIsTrue(user?.school?.is_admin) &&
+            Number(user?.school?.id) === Number(school?.id)
+        );
+
+    };
+
     useEffect(() => {
         loadGroups();
         loadSubjects();
@@ -143,6 +170,17 @@ export default function LeftCol( {openTab, hoverTarget} ) {
         loadSchools();
         loadAbilitySeries();
         loadClassrooms();
+    }, []);
+
+    // Lyssna efter när personal skapas för att uppdatera listan automatiskt
+    useEffect(() => {
+        const handleStaffCreated = (e) => {
+            const { schoolId } = e.detail;
+            loadSchoolStaff(schoolId);
+        };
+
+        window.addEventListener("staff-created", handleStaffCreated);
+        return () => window.removeEventListener("staff-created", handleStaffCreated);
     }, []);
 
     useEffect(() => {
@@ -304,9 +342,32 @@ export default function LeftCol( {openTab, hoverTarget} ) {
             return;
         }
 
-        setSchools(
-            await response.json()
-        );
+        const data = await response.json();
+
+        if (
+            canManageSchool(user?.school) &&
+            user?.school?.id &&
+            !data.some(
+                school =>
+                    Number(school.id) ===
+                    Number(user.school.id)
+            )
+        ) {
+
+            setSchools([
+                {
+                    id: user.school.id,
+                    name: user.school.name,
+                    is_admin: user.school.is_admin
+                },
+                ...data
+            ]);
+
+            return;
+
+        }
+
+        setSchools(data);
 
     };
 
@@ -354,6 +415,35 @@ export default function LeftCol( {openTab, hoverTarget} ) {
             [groupId]: data
         }));
 
+    };
+
+    const loadSchoolStaff = async (schoolId) => {
+        const response = await fetch(
+            `${API_URL}/api/schools/${schoolId}/staff`,
+            {
+                headers: authHeaders()
+            }
+        );
+
+        if (!response.ok) {
+            return;
+        }
+
+        const data = await response.json();
+        setSchoolStaff(prev => ({
+            ...prev,
+            [schoolId]: data
+        }));
+    };
+
+    const toggleSchoolStaff = async (schoolId) => {
+        if (!schoolStaff[schoolId]) {
+            await loadSchoolStaff(schoolId);
+        }
+        setExpandedSchoolStaff(prev => ({
+            ...prev,
+            [schoolId]: !prev[schoolId]
+        }));
     };
 
     const selectLayout = async (
@@ -1024,6 +1114,10 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                     setSelectedSchoolId(schoolId);
                     setCreateClassroomDialogOpen(true);
                 }}
+                onCreateStaff={(schoolId, schoolName) => {
+                        setSelectedSchoolForStaff({ schoolId, schoolName });
+                        setCreateStaffOpen(true);
+                    }}
 
                 setRenameDialog={setRenameDialog}
                 setArchiveDialog={setArchiveDialog}
@@ -2114,10 +2208,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                             }
                                             onContextMenu={(e) => {
 
-                                                if (
-                                                    !school.is_admin &&
-                                                    user?.role !== "super"
-                                                ) {
+                                                if (!canManageSchool(school)) {
                                                     return;
                                                 }
 
@@ -2142,7 +2233,52 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                                             Klassrum
                                         </div>
+                                        
+                                        {/* NYTT: Personal-lista */}
+                                        {canManageSchool(school) && (
+                                            <div>
+                                                <div
+                                                    className="tree-folder"
+                                                    onClick={() => toggleSchoolStaff(school.id)}
+                                                    onContextMenu={(e) => {
+                                                        e.preventDefault();
+                                                        setContextMenu({
+                                                            type: "staff",
+                                                            schoolId: school.id,
+                                                            schoolName: school.name,
+                                                            x: e.clientX,
+                                                            y: e.clientY
+                                                        });
+                                                    }}
+                                                >
+                                                    {expandedSchoolStaff[school.id] ? "▼" : "▶"} Personal
+                                                </div>
 
+                                                {expandedSchoolStaff[school.id] && (
+                                                    <div className="ml-4">
+
+                                                        {(schoolStaff[school.id] || []).map(staffMember => (
+                                                            <div
+                                                                key={staffMember.id}
+                                                                className="tree-file cursor-pointer"
+                                                                onContextMenu={(e) => {
+                                                                    e.preventDefault();
+                                                                    setContextMenu({
+                                                                        type: "staff-member",
+                                                                        staffId: staffMember.id,
+                                                                        staffName: `${staffMember.first_name} ${staffMember.last_name}`,
+                                                                        x: e.clientX,
+                                                                        y: e.clientY
+                                                                    });
+                                                                }}
+                                                            >
+                                                                {staffMember.first_name} {staffMember.last_name}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
 
                                         {expandedSchoolClassrooms[
                                             school.id
@@ -2339,12 +2475,6 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                     </div>
                 )}
                     
-
-
-
-
-
-
 
                 <div className="mt-6 border-t pt-2">
 
@@ -2812,7 +2942,18 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                     setPrintLoginsGroup(null)
                 }
             />
+            <CreateStaffDialog
+                school={selectedSchoolForStaff}
+                open={createStaffOpen}
+                onOpenChange={setCreateStaffOpen}
+                onCreated={() => {
+                    if (selectedSchoolForStaff?.schoolId) {
+                        loadSchoolStaff(
+                            selectedSchoolForStaff.schoolId
+                        );
+                    }
+                }}
+            />
         </>
-
     )
 }

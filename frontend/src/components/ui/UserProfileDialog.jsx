@@ -33,18 +33,22 @@ export default function UserProfileDialog({
     const [sessions, setSessions] = useState([]);
 
     const [currentPassword, setCurrentPassword] = useState("");
-
     const [newPassword, setNewPassword] = useState("");
-
     const [confirmPassword, setConfirmPassword] = useState("");
-
     const [savingPassword, setSavingPassword] = useState(false);
+
+    // NYTT: State för e-post
+    const [email, setEmail] = useState("");
+    const [savingEmail, setSavingEmail] = useState(false);
         
     useEffect(() => {
 
         if (!open || !user) {
             return;
         }
+
+        // Sätt e-post från användaren när dialogen öppnas
+        setEmail(user.email || "");
 
         fetch(
             `${API_URL}/api/auth/sessions`,
@@ -61,19 +65,20 @@ export default function UserProfileDialog({
         return null;
     }
 
-    const isTeacher = user.schools?.length > 0;
+    const changeEmail = async () => {
 
-    const handleSchoolChange =
-        async (event) => {
+        if (!email) {
+            toast.error("Ange en e-postadress");
+            return;
+        }
 
-            const schoolId =
-                Number(
-                    event.target.value
-                );
+        setSavingEmail(true);
+
+        try {
 
             const response =
                 await fetch(
-                    `${API_URL}/api/users/active-school`,
+                    `${API_URL}/api/users/change-email`,
                     {
                         method: "PUT",
                         headers: {
@@ -82,45 +87,42 @@ export default function UserProfileDialog({
                                 "application/json"
                         },
                         body: JSON.stringify({
-                            school_id: schoolId
+                            email
                         })
                     }
                 );
 
+            const data =
+                await response.json();
+
             if (!response.ok) {
 
                 toast.error(
-                    "Kunde inte byta skola."
+                    data.error ||
+                    "Kunde inte uppdatera e-post"
                 );
 
                 return;
 
             }
 
-            const activeSchool =
-                user.schools.find(
-                    school =>
-                        school.id ===
-                        schoolId
-                );
-
+            // Uppdatera användaren i AuthContext
             setUser({
-
                 ...user,
-
-                active_school_id:
-                    schoolId,
-
-                active_school:
-                    activeSchool
-
+                email: email
             });
 
             toast.success(
-                "Aktiv skola uppdaterad."
+                "E-postadressen har uppdaterats"
             );
 
-        };
+        } finally {
+
+            setSavingEmail(false);
+
+        }
+
+    };
 
     const changePassword = async () => {
 
@@ -214,7 +216,7 @@ export default function UserProfileDialog({
             }
         >
 
-            <DialogContent>
+            <DialogContent className="max-h-[90vh] overflow-y-auto">
 
                 <DialogHeader>
 
@@ -260,6 +262,38 @@ export default function UserProfileDialog({
                     )}
 
                 </div>
+
+                {/* NYTT: Sektion för att hantera e-post */}
+                <CardSection title="E-postadress">
+
+                    <div className="space-y-3">
+
+                        <Input
+                            type="email"
+                            placeholder="Din e-postadress"
+                            value={email}
+                            onChange={e =>
+                                setEmail(
+                                    e.target.value
+                                )
+                            }
+                        />
+
+                        <Button
+                            className="w-full"
+                            onClick={changeEmail}
+                            disabled={savingEmail}
+                        >
+
+                            {savingEmail
+                                ? "Sparar..."
+                                : "Uppdatera e-post"}
+
+                        </Button>
+
+                    </div>
+
+                </CardSection>
 
                 <CardSection title="Byt lösenord">
 

@@ -127,5 +127,24 @@ router.put("/change-password",
     }
 );
 
+router.put("/change-email", requireAuth, async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ error: "E-post saknas" });
+        }
+
+        await db.query(
+            `UPDATE users SET email = ? WHERE id = ?`,
+            [email, req.user.id]
+        );
+
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 
 export default router;
