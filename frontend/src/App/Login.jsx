@@ -124,7 +124,7 @@ export default function Login() {
                 Logga in
             </Button>
 
-            <Button
+            {/* <Button
                 type="button"
                 variant="ghost"
                 disabled={loading}
@@ -132,7 +132,7 @@ export default function Login() {
                 className="text-xs text-muted-foreground hover:text-foreground mt-2"
             >
                 {loading ? "Skickar..." : "Glömt lösenord? Skicka nytt på mail"}
-            </Button>
+            </Button> */}
         </form>
     );
 }
