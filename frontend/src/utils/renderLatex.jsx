@@ -21,6 +21,7 @@ export const renderLatex = (text) => {
     try {
       result += katex.renderToString(match[1], {
         throwOnError: false,
+        strict: "ignore",
       });
     } catch {
       result += match[0];

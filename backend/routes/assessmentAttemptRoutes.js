@@ -13,6 +13,96 @@ const router = express.Router();
 router.use(requireAuth);
 router.use(requireRole("student", "teacher"));
 
+router.post("/:id/question-reports", async (req, res) => {
+
+    const { id: attemptId } = req.params;
+    const { question_id: questionId, comment } = req.body;
+
+    if (!Number.isInteger(questionId)) {
+        return res.status(400).json({
+            error: "En fråga måste anges."
+        });
+    }
+
+    if (
+        typeof comment !== "undefined" &&
+        typeof comment !== "string"
+    ) {
+        return res.status(400).json({
+            error: "Kommentaren måste vara text."
+        });
+    }
+
+    try {
+        const [[attempt]] = await db.query(
+            `
+            SELECT id
+            FROM assessment_attempts
+            WHERE id = ?
+            AND user_id = ?
+            `,
+            [attemptId, req.user.id]
+        );
+
+        if (!attempt) {
+            return res.status(403).json({
+                error: "Åtkomst nekad."
+            });
+        }
+
+        const [[attemptQuestion]] = await db.query(
+            `
+            SELECT question_id
+            FROM attempt_questions
+            WHERE attempt_id = ?
+            AND question_id = ?
+            `,
+            [attemptId, questionId]
+        );
+
+        if (!attemptQuestion) {
+            return res.status(400).json({
+                error: "Frågan ingår inte i provet."
+            });
+        }
+
+        await db.query(
+            `
+            INSERT INTO question_reports (
+                attempt_id,
+                question_id,
+                user_id,
+                report_type,
+                comment
+            )
+            VALUES (?, ?, ?, 'missing_correct_option', ?)
+            `,
+            [
+                attemptId,
+                questionId,
+                req.user.id,
+                comment?.trim() || null
+            ]
+        );
+
+        res.status(201).json({
+            success: true
+        });
+
+    } catch (error) {
+        if (error.code === "ER_DUP_ENTRY") {
+            return res.status(409).json({
+                error: "Du har redan anmält den här frågan."
+            });
+        }
+
+        console.error(error);
+        res.status(500).json({
+            error: "Kunde inte skicka felanmälan."
+        });
+    }
+});
+
 router.get("/:id", async (req, res) => {
 
     const connection = await db.getConnection();
@@ -396,12 +486,39 @@ router.put("/:id", async (req, res) => {
                         question_id
                     );
 
-            nextQuestion =
-                await AssessmentEngine
-                    .getNextQuestion(
-                        connection,
-                        attempt.id
-                    );
+            const attemptConfig =
+                typeof attempt.config === "string"
+                    ? JSON.parse(attempt.config || "{}")
+                    : attempt.config || {};
+
+            const configuredMaxQuestionCount =
+                Number(
+                    attemptConfig?.attempt?.maxQuestionCount
+                );
+
+            const [[questionCount]] =
+                await connection.query(
+                    `
+                    SELECT COUNT(*) AS value
+                    FROM attempt_questions
+                    WHERE attempt_id = ?
+                    `,
+                    [attempt.id]
+                );
+
+            if (
+                !Number.isInteger(configuredMaxQuestionCount) ||
+                configuredMaxQuestionCount < 1 ||
+                Number(questionCount.value) <
+                configuredMaxQuestionCount
+            ) {
+                nextQuestion =
+                    await AssessmentEngine
+                        .getNextQuestion(
+                            connection,
+                            attempt.id
+                        );
+            }
 
             if (nextQuestion) {
 
@@ -547,6 +664,22 @@ router.post("/start", async (req, res) => {
         }
 
         const groupExam = groupExamRows[0];
+
+        const groupExamConfig =
+            typeof groupExam.config === "string"
+                ? JSON.parse(groupExam.config || "{}")
+                : groupExam.config || {};
+
+        const configuredMaxQuestionCount =
+            Number(
+                groupExamConfig?.attempt?.maxQuestionCount
+            );
+
+        const maxQuestionCount =
+            Number.isInteger(configuredMaxQuestionCount) &&
+            configuredMaxQuestionCount > 0
+                ? configuredMaxQuestionCount
+                : null;
 
         const isTest =
             groupExam.mode === "test";
@@ -862,9 +995,10 @@ router.post("/start", async (req, res) => {
             const seedQuestions =
                 await AssessmentEngine
                     .getDiagnosticSeedQuestions(
+                        connection,
                         lessonLink.lesson_id,
-                        assessment.id,
-                        groupExam.id
+                        attemptId,
+                        maxQuestionCount
                     );
 
             for (let i = 0; i < seedQuestions.length; i++) {
@@ -1043,12 +1177,21 @@ router.post("/:id/submit", async (req, res) => {
             await connection.query(
                 `
                 SELECT
-                    id,
-                    user_id,
-                    group_assessment_id,
-                    status
-                FROM assessment_attempts
-                WHERE id = ?
+                    ea.id,
+                    ea.user_id,
+                    ea.group_assessment_id,
+                    ea.status,
+                    ea.mode,
+                    ea.config,
+                    ea.started_at,
+                    ea.teacher_end_mode,
+                    assessment.type AS assessment_type
+                FROM assessment_attempts ea
+                INNER JOIN group_assessments ga
+                    ON ga.id = ea.group_assessment_id
+                INNER JOIN assessments assessment
+                    ON assessment.id = ga.assessment_id
+                WHERE ea.id = ?
                 `,
                 [id]
             );
@@ -1080,6 +1223,76 @@ router.post("/:id/submit", async (req, res) => {
             return res.status(409).json({
                 error: "Provet är redan inlämnat."
             });
+        }
+
+        if (
+            attempt.assessment_type === "diagnostic" &&
+            attempt.mode !== "test"
+        ) {
+            const attemptConfig =
+                typeof attempt.config === "string"
+                    ? JSON.parse(attempt.config || "{}")
+                    : attempt.config || {};
+
+            const timeLimitMinutes =
+                Number(
+                    attemptConfig?.attempt
+                        ?.defaultTimeLimitMinutes
+                );
+
+            const timeExpired =
+                Number.isFinite(timeLimitMinutes) &&
+                timeLimitMinutes > 0 &&
+                Date.now() >=
+                new Date(attempt.started_at).getTime() +
+                timeLimitMinutes * 60000;
+
+            const configuredMaxQuestionCount =
+                Number(
+                    attemptConfig?.attempt?.maxQuestionCount
+                );
+
+            const [[questionCount]] =
+                await connection.query(
+                    `
+                    SELECT COUNT(*) AS value
+                    FROM attempt_questions
+                    WHERE attempt_id = ?
+                    `,
+                    [attempt.id]
+                );
+
+            const maxQuestionCountReached =
+                Number.isInteger(configuredMaxQuestionCount) &&
+                configuredMaxQuestionCount > 0 &&
+                Number(questionCount.value) >=
+                configuredMaxQuestionCount;
+
+            const nextQuestion =
+                maxQuestionCountReached
+                    ? null
+                    : await AssessmentEngine.getNextQuestion(
+                        connection,
+                        attempt.id,
+                        false
+                    );
+
+            const questionsExhausted =
+                !nextQuestion;
+
+            if (
+                !attempt.teacher_end_mode &&
+                !timeExpired &&
+                !maxQuestionCountReached &&
+                !questionsExhausted
+            ) {
+                await connection.rollback();
+
+                return res.status(400).json({
+                    error:
+                        "Diagnosen kan inte lämnas in ännu."
+                });
+            }
         }
 
         await connection.query(
@@ -1264,10 +1477,16 @@ router.get("/:id/results", async (req, res) => {
             await connection.query(
                 `
                 SELECT
-                    id,
-                    user_id
-                FROM assessment_attempts
-                WHERE id = ?
+                    ea.id,
+                    ea.user_id,
+                    ea.config,
+                    assessment.type AS assessment_type
+                FROM assessment_attempts ea
+                INNER JOIN group_assessments ga
+                    ON ga.id = ea.group_assessment_id
+                INNER JOIN assessments assessment
+                    ON assessment.id = ga.assessment_id
+                WHERE ea.id = ?
                 `,
                 [id]
             );
@@ -1373,6 +1592,14 @@ router.get("/:id/results", async (req, res) => {
                 LEFT JOIN levels assessment_level
                     ON assessment_level.id = assessment.level_id
                 WHERE a.attempt_id = ?
+                    AND q.excluded_from_assessments = 0
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM question_reports qr
+                        WHERE qr.attempt_id = a.attempt_id
+                        AND qr.question_id = q.id
+                        AND qr.report_type = 'missing_correct_option'
+                    )
                 ORDER BY aq.sort_order
                 `,
                 [id]
@@ -1463,8 +1690,31 @@ router.get("/:id/results", async (req, res) => {
             });
         }
 
+        const attemptConfig =
+            typeof attempt.config === "string"
+                ? JSON.parse(attempt.config || "{}")
+                : attempt.config || {};
+
+        const configuredMinQuestionCount =
+            Number(
+                attemptConfig?.attempt?.minQuestionCount
+            );
+
+        const minimumQuestionCount =
+            Number.isInteger(configuredMinQuestionCount) &&
+            configuredMinQuestionCount > 0
+                ? configuredMinQuestionCount
+                : 1;
+
+        const diagnosticComplete =
+            attempt.assessment_type !== "diagnostic" ||
+            results.length >= minimumQuestionCount;
+
         res.json({
-            results
+            results,
+            diagnostic_complete: diagnosticComplete,
+            minimum_question_count: minimumQuestionCount,
+            answered_question_count: results.length
         });
 
     } catch (error) {

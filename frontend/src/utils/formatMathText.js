@@ -70,6 +70,9 @@ export const formatMathText = (text) => {
     const hasLatexCommands =
         /\\[a-zA-Z]+/.test(result);
 
+    const firstLatexCommandIndex =
+        result.search(/\\[a-zA-Z]+/);
+
     /*
      * Matematiska mönster
      */
@@ -78,9 +81,21 @@ export const formatMathText = (text) => {
         /\d+\/\d+/.test(result);
 
     if (
-        hasLatexCommands ||
-        looksLikeMath
+        hasLatexCommands &&
+        firstLatexCommandIndex > 0
     ) {
+        const instruction =
+            result.slice(0, firstLatexCommandIndex);
+
+        const expression =
+            result.slice(firstLatexCommandIndex);
+
+        return renderLatex(
+            `${instruction}$${expression}$`
+        );
+    }
+
+    if (hasLatexCommands || looksLikeMath) {
         return renderLatex(`$${result}$`);
     }
 

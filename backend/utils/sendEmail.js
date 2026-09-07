@@ -1,31 +1,50 @@
+import "dotenv/config";
 import nodemailer from "nodemailer";
 
-// Skapa en transporter med One.coms SMTP-inställningar
-const transporter = nodemailer.createTransport({
-    host: "mailout.one.com",
-    port: 587, // eller 465 för SSL/TLS
-    secure: false, // true om port 465 används, false vid port 587 (använder STARTTLS)
-    auth: {
-        user: "beep-beep@mathcamp.one", // Måste vara en riktig e-post hos One.com
-        pass: "vBRDLw,4Kp87tMV"       // Lösenordet till den e-postadressen
-    }
-});
+const getSmtpConfig = () => {
+    const host = process.env.SMTP_HOST;
+    const port = Number(process.env.SMTP_PORT || 587);
+    const user = process.env.SMTP_USER;
+    const pass = process.env.SMTP_PASS;
+    const from = process.env.EMAIL_FROM;
 
-// Funktion för att skicka mail
+    if (!host || !user || !pass || !from) {
+        throw new Error(
+            "SMTP-konfiguration saknas. Ange SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS och EMAIL_FROM i miljön."
+        );
+    }
+
+    return {
+        host,
+        port,
+        secure: port === 465,
+        auth: { user, pass },
+        from
+    };
+};
+
 export const sendEmail = async (to, subject, textHtmlContent) => {
     try {
-        console.log(`Försöker skicka mail till: ${to} via mailout.one.com...`);
-        const info = await transporter.sendMail({
-            from: '"mathcamp" <beep-beep@mathcamp.one>', // Måste matcha din domän/user
-            to: to,
-            subject: subject,
-            text: textHtmlContent, // Alternativt HTML om du föredrar det
+        const { host, port, secure, auth, from } = getSmtpConfig();
+        const transporter = nodemailer.createTransport({
+            host,
+            port,
+            secure,
+            auth
         });
+
+        console.log(`Försöker skicka mail till: ${to} via ${host}:${port}...`);
+        const info = await transporter.sendMail({
+            from,
+            to,
+            subject,
+            text: textHtmlContent
+        });
+
         console.log("E-post skickad framgångsrikt! MessageId:", info.messageId);
-        console.log("E-post skickad: %s", info.messageId);
-        return { success: true };
+        return { success: true, messageId: info.messageId };
     } catch (error) {
         console.error("Fel vid skickande av e-post:", error);
-        return { success: false, error: error.message };
+        throw error;
     }
 };

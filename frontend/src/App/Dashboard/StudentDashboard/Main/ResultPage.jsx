@@ -15,10 +15,14 @@ export default function ResultPage({
     const [loading, setLoading] =
         useState(true);
 
+    const [diagnosticStatus, setDiagnosticStatus] =
+        useState(null);
+
     useEffect(() => {
 
         if (!attemptId) {
             setResults([]);
+            setDiagnosticStatus(null);
             setLoading(false);
             return;
         }
@@ -40,6 +44,14 @@ export default function ResultPage({
                 setResults(
                     data.results || []
                 );
+
+                setDiagnosticStatus({
+                    complete: data.diagnostic_complete,
+                    minimumQuestionCount:
+                        data.minimum_question_count,
+                    answeredQuestionCount:
+                        data.answered_question_count
+                });
 
             } catch (error) {
 
@@ -71,6 +83,12 @@ export default function ResultPage({
             <h1 className="text-3xl font-bold mb-6">
                 Resultat
             </h1>
+
+            {diagnosticStatus?.complete === false && (
+                <div className="mb-6 border border-amber-500 bg-amber-50 p-4 text-amber-900">
+                    Diagnosen är inte klar. Eleven har besvarat {diagnosticStatus.answeredQuestionCount} av minst {diagnosticStatus.minimumQuestionCount} frågor.
+                </div>
+            )}
 
             <div className="rounded-lg border p-4 mb-6">
 

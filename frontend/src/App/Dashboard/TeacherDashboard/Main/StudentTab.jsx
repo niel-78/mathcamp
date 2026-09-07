@@ -4,6 +4,8 @@ import { ArrowUp, ArrowDown, Minus } from "lucide-react";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 import ResultPage from "@/App/Dashboard/StudentDashboard/Main/ResultPage";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 
 export default function StudentTab({
     studentId
@@ -15,6 +17,7 @@ export default function StudentTab({
     const [loading, setLoading] = useState(true);
 
     const [abilities, setAbilities] = useState([]);
+    const [resultTab, setResultTab] = useState("results");
 
     useEffect(() => {
 
@@ -91,132 +94,124 @@ export default function StudentTab({
     }
 
     return (
-        <div className="h-full overflow-y-auto bg-white">
+        <div className="h-full overflow-y-auto bg-slate-50 p-6">
+            <div className="w-full max-w-4xl mx-auto space-y-4">
 
-            {abilities.length > 0 && (
+                <div className="flex gap-2 rounded-xl border bg-white p-2 shadow-sm">
+                    <Button
+                        variant={
+                            resultTab === "results"
+                                ? "default"
+                                : "ghost"
+                        }
+                        onClick={() => setResultTab("results")}
+                    >
+                        Resultat
+                    </Button>
 
-                <div className="max-w-4xl mx-auto px-6 pt-6">
-
-                    <h2 className="text-lg font-semibold mb-2">
+                    <Button
+                        variant={
+                            resultTab === "abilities"
+                                ? "default"
+                                : "ghost"
+                        }
+                        onClick={() => setResultTab("abilities")}
+                    >
                         Förmågor
-                    </h2>
-
-                    <div className="space-y-2">
-
-                        {abilities.map(ability => (
-
-                            <div
-                                key={ability.id}
-                                className="
-                                    flex
-                                    items-center
-                                    justify-between
-                                    gap-4
-                                    rounded-md
-                                    border
-                                    px-3
-                                    py-2
-                                    text-sm
-                                "
-                            >
-
-                                <div>
-                                    <div className="font-medium">
-                                        {ability.name}
-                                    </div>
-                                    <div className="text-xs text-muted-foreground">
-                                        {ability.series_name}
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-1 font-semibold">
-
-                                    {ability.mastery_trend === "up" && (
-                                        <ArrowUp
-                                            size={16}
-                                            className="text-green-600"
-                                        />
-                                    )}
-
-                                    {ability.mastery_trend === "down" && (
-                                        <ArrowDown
-                                            size={16}
-                                            className="text-red-600"
-                                        />
-                                    )}
-
-                                    {ability.mastery_trend === "unchanged" && (
-                                        <Minus
-                                            size={16}
-                                            className="text-muted-foreground"
-                                        />
-                                    )}
-
-                                    {Math.round(ability.mastery_score)}
-
-                                </div>
-
-                            </div>
-
-                        ))}
-
-                    </div>
-
+                    </Button>
                 </div>
 
-            )}
+                {resultTab === "results" && !attempts.length && (
+                    <p className="rounded-xl border bg-white p-6 shadow-sm">
+                        Eleven har inga inlämnade prov.
+                    </p>
+                )}
 
-            {!attempts.length && (
+                {resultTab === "results" && attempts.length > 0 && (
+                    <>
+                        <div className="rounded-xl border bg-white p-4 shadow-sm space-y-2">
+                            <Label htmlFor="student-attempt">
+                                Resultat
+                            </Label>
 
-                <p className="p-6">
-                    Eleven har inga inlämnade prov.
-                </p>
+                            <select
+                                className="input-standard w-full"
+                                id="student-attempt"
+                                value={selectedAttemptId || ""}
+                                onChange={event =>
+                                    setSelectedAttemptId(event.target.value)
+                                }
+                            >
+                                {attempts.map(attempt => (
+                                    <option
+                                        key={attempt.id}
+                                        value={attempt.id}
+                                    >
+                                        {attempt.title || "Namnlöst prov"}
+                                        {" - "}
+                                        {new Date(
+                                            attempt.submitted_at
+                                        ).toLocaleString("sv-SE")}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
 
-            )}
+                        <ResultPage attemptId={selectedAttemptId} />
+                    </>
+                )}
 
-            {attempts.length > 0 && (
+                {resultTab === "abilities" && (
+                    <div className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
+                        <h2 className="text-2xl font-bold">
+                            Förmågor
+                        </h2>
 
-                <>
+                        {abilities.length === 0 && (
+                            <p className="text-sm text-muted-foreground">
+                                Inga förmågor hittades för eleven.
+                            </p>
+                        )}
 
-                    <div className="max-w-4xl mx-auto px-6 pt-6">
-
-                        <label
-                            className="block text-sm font-medium mb-2"
-                            htmlFor="student-attempt"
-                        >
-                            Prov
-                        </label>
-
-                        <select
-                            className="w-full max-w-md rounded-md border bg-background px-3 py-2"
-                            id="student-attempt"
-                            value={selectedAttemptId || ""}
-                            onChange={event =>
-                                setSelectedAttemptId(event.target.value)
-                            }
-                        >
-                            {attempts.map(attempt => (
-                                <option
-                                    key={attempt.id}
-                                    value={attempt.id}
+                        <div className="space-y-2">
+                            {abilities.map(ability => (
+                                <div
+                                    key={ability.id}
+                                    className="flex items-center justify-between gap-4 rounded-lg border px-4 py-3"
                                 >
-                                    {attempt.title || "Namnlöst prov"}
-                                    {" - "}
-                                    {new Date(
-                                        attempt.submitted_at
-                                    ).toLocaleString("sv-SE")}
-                                </option>
+                                    <div>
+                                        <div className="font-medium">
+                                            {ability.name}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">
+                                            {ability.series_name}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 font-semibold">
+                                        {ability.mastery_trend === "up" && (
+                                            <ArrowUp className="h-4 w-4 text-green-600" />
+                                        )}
+
+                                        {ability.mastery_trend === "down" && (
+                                            <ArrowDown className="h-4 w-4 text-red-600" />
+                                        )}
+
+                                        {ability.mastery_trend === "unchanged" && (
+                                            <Minus className="h-4 w-4 text-muted-foreground" />
+                                        )}
+
+                                        {Math.round(
+                                            Number(ability.mastery_score)
+                                        )}
+                                    </div>
+                                </div>
                             ))}
-                        </select>
-
+                        </div>
                     </div>
+                )}
 
-                    <ResultPage attemptId={selectedAttemptId} />
-
-                </>
-
-            )}
-
+            </div>
         </div>
     );
 }

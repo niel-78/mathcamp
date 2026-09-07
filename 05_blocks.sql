@@ -94,6 +94,9 @@ CREATE TABLE questions (
     archived_at DATETIME NULL,
     deleted_at DATETIME NULL,
 
+    excluded_from_assessments TINYINT(1) NOT NULL
+        DEFAULT 0,
+
     answer_config JSON,
 
     FOREIGN KEY (block_id)

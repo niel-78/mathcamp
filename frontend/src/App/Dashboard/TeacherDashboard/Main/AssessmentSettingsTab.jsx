@@ -11,7 +11,9 @@ import { toast } from "sonner";
 const diagnosticDefaults = {
     attempt: {
         defaultTimeLimitMinutes: 60,
-        countdownMode: "visible_lock"
+        countdownMode: "visible_lock",
+        minQuestionCount: 5,
+        maxQuestionCount: 15
     },
     question_selection: {
         shuffleQuestions: true,
@@ -53,7 +55,17 @@ function normalizeDiagnosticConfig(config = {}) {
                 countdownMode ||
                 diagnosticDefaults
                     .attempt
-                    .countdownMode
+                    .countdownMode,
+            minQuestionCount:
+                config.attempt?.minQuestionCount ??
+                diagnosticDefaults
+                    .attempt
+                    .minQuestionCount,
+            maxQuestionCount:
+                config.attempt?.maxQuestionCount ??
+                diagnosticDefaults
+                    .attempt
+                    .maxQuestionCount
         },
         question_selection: {
             shuffleQuestions: true,
@@ -320,6 +332,42 @@ export default function AssessmentSettingsTab({
                                     Visa nedräkning och stäng ner
                                 </option>
                             </select>
+                        </Field>
+
+                        <Field label="Minsta antal frågor">
+                            <Input
+                                className="w-32"
+                                type="number"
+                                min="1"
+                                value={
+                                    config.attempt?.minQuestionCount ?? ""
+                                }
+                                onChange={(event) =>
+                                    updateConfig(
+                                        "attempt",
+                                        "minQuestionCount",
+                                        Number(event.target.value)
+                                    )
+                                }
+                            />
+                        </Field>
+
+                        <Field label="Högsta antal frågor">
+                            <Input
+                                className="w-32"
+                                type="number"
+                                min="1"
+                                value={
+                                    config.attempt?.maxQuestionCount ?? ""
+                                }
+                                onChange={(event) =>
+                                    updateConfig(
+                                        "attempt",
+                                        "maxQuestionCount",
+                                        Number(event.target.value)
+                                    )
+                                }
+                            />
                         </Field>
 
                     </div>

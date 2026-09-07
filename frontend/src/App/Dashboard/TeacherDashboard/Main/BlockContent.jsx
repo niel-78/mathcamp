@@ -136,6 +136,56 @@ export default function BlockContent({
             );
         };
 
+    const setQuestionAssessmentExclusion =
+        async (question, excluded) => {
+
+            const response = await fetch(
+                `${API_URL}/api/questions/${question.id}/exclude-from-assessments`,
+                {
+                    method: "PUT",
+                    headers: {
+                        ...authHeaders(),
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        excluded_from_assessments: excluded
+                    })
+                }
+            );
+
+            if (!response.ok) {
+                toast.error("Kunde inte uppdatera uppgiften");
+                return;
+            }
+
+            await loadBlock();
+            toast.success(
+                excluded
+                    ? "Uppgiften tas inte med i prov eller resultat"
+                    : "Uppgiften tas med i framtida prov igen"
+            );
+        };
+
+    const deleteQuestionReports =
+        async (questionId) => {
+
+            const response = await fetch(
+                `${API_URL}/api/questions/${questionId}/question-reports`,
+                {
+                    method: "DELETE",
+                    headers: authHeaders()
+                }
+            );
+
+            if (!response.ok) {
+                toast.error("Kunde inte ta bort felanmälningarna");
+                return;
+            }
+
+            await loadBlock();
+            toast.success("Felanmälningarna togs bort");
+        };
+
     const sortedQuestions =
         [...(currentBlock?.questions || [])]
             .sort((a, b) => {
@@ -168,10 +218,13 @@ export default function BlockContent({
                 <div className="space-y-2">
 
 
-                    {sortedQuestions.map(question => (
+                    {sortedQuestions.map((question, index) => (
 
                         <div
-                            key={question.id}
+                            key={
+                                question.id ??
+                                `loading-question-${index}`
+                            }
                             className="
                                 border
                                 p-2
@@ -206,6 +259,20 @@ export default function BlockContent({
                                             </span>
                                         );
                                     })()}
+
+                                    {Number(question.report_count) > 0 && (
+                                        <span className="text-sm text-amber-700">
+                                            {question.report_count} {Number(question.report_count) > 1
+                                                ? "felanmälningar"
+                                                : "felanmälan"}
+                                        </span>
+                                    )}
+
+                                    {question.excluded_from_assessments === 1 && (
+                                        <span className="text-sm text-red-600">
+                                            Exkluderad från prov och resultat
+                                        </span>
+                                    )}
 
                                 </div>
 
@@ -288,6 +355,41 @@ export default function BlockContent({
                                 >
                                     Duplicera
                                 </Button>
+
+                                {(Number(question.report_count) > 0 ||
+                                    question.excluded_from_assessments === 1) && (
+                                    <div
+                                        key={`report-actions-${question.id}`}
+                                        className="flex items-center gap-2"
+                                    >
+                                        <Button
+                                            size="sm"
+                                            variant="destructive"
+                                            onClick={() =>
+                                                setQuestionAssessmentExclusion(
+                                                    question,
+                                                    !question.excluded_from_assessments
+                                                )
+                                            }
+                                        >
+                                            {question.excluded_from_assessments
+                                                ? "Återställ i prov"
+                                                : "Ta bort från prov/resultat"}
+                                        </Button>
+
+                                        {Number(question.report_count) > 0 && (
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() =>
+                                                    deleteQuestionReports(question.id)
+                                                }
+                                            >
+                                                Ta bort felanmälan
+                                            </Button>
+                                        )}
+                                    </div>
+                                )}
 
                                 {currentBlock.isOwner && (
 

@@ -63,6 +63,7 @@ DROP TABLE IF EXISTS schedule_exception_groups;
    ASSESSMENTS
    ===================================================== */
 
+DROP TABLE IF EXISTS question_reports;
 DROP TABLE IF EXISTS attempt_options;
 DROP TABLE IF EXISTS attempt_questions;
 DROP TABLE IF EXISTS answer_options;
@@ -97,6 +98,7 @@ DROP TABLE IF EXISTS group_planning_sections;
    ASSESSMENTS
    ===================================================== */
 
+DROP TABLE IF EXISTS question_reports;
 DROP TABLE IF EXISTS attempt_options;
 DROP TABLE IF EXISTS attempt_questions;
 DROP TABLE IF EXISTS answer_options;

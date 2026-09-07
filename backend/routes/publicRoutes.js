@@ -72,6 +72,48 @@ router.get("/planning/:shareId",
                     [groupId]
                 );
 
+            const lessonIds = lessons.map(lesson => lesson.id);
+            const sectionsByLessonId = new Map();
+
+            if (lessonIds.length > 0) {
+                const sectionPlaceholders =
+                    lessonIds.map(() => "?").join(",");
+
+                const [lessonSections] = await db.query(
+                    `
+                    SELECT
+                        ls.lesson_id,
+                        s.*,
+                        ls.id AS lesson_section_id,
+                        ls.pinned
+
+                    FROM lesson_sections ls
+
+                    JOIN sections s
+                        ON s.id = ls.section_id
+
+                    WHERE ls.lesson_id IN (${sectionPlaceholders})
+
+                    ORDER BY
+                        ls.lesson_id,
+                        ls.pinned DESC,
+                        s.page_number
+                    `,
+                    lessonIds
+                );
+
+                for (const section of lessonSections) {
+                    const sections =
+                        sectionsByLessonId.get(section.lesson_id) || [];
+
+                    sections.push(section);
+                    sectionsByLessonId.set(
+                        section.lesson_id,
+                        sections
+                    );
+                }
+            }
+
             for (const lesson of lessons) {
 
                 lesson.cancelled_by_exception =
@@ -87,26 +129,8 @@ router.get("/planning/:shareId",
 
                 }
 
-                const [sections] =
-                    await db.query(
-                        `
-                        SELECT
-                            s.*,
-                            ls.id AS lesson_section_id,
-                            ls.pinned
-
-                        FROM lesson_sections ls
-
-                        JOIN sections s
-                            ON s.id = ls.section_id
-
-                        WHERE ls.lesson_id = ?
-                        `,
-                        [lesson.id]
-                    );
-
                 lesson.sections =
-                    sections;
+                    sectionsByLessonId.get(lesson.id) || [];
 
             }
 

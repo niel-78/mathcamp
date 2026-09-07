@@ -12,12 +12,23 @@ import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 
 import UserProfile from "@/components/ui/UserProfile";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import ExamHeader from "./ExamHeader";
 import ExamTimer from "./ExamTimer";
 import QuestionView from "./QuestionView.jsx";
 import ExamNavigation from "./ExamNavigation";
 
 import { Card, CardContent } from "@/components/ui/card";
+import { MessageSquareWarning } from "lucide-react";
 
 export default function ExamPage({
     attemptId,
@@ -32,6 +43,14 @@ export default function ExamPage({
     const [index, setIndex] = useState(0);
     const [timeExpired, setTimeExpired] =
         useState(false);
+    const [reportDialogOpen, setReportDialogOpen] =
+        useState(false);
+    const [reportComment, setReportComment] =
+        useState("");
+    const [reportSubmitting, setReportSubmitting] =
+        useState(false);
+    const [reportedQuestionIds, setReportedQuestionIds] =
+        useState(new Set());
     const isSubmittingRef = useRef(false);
 
 
@@ -396,6 +415,54 @@ export default function ExamPage({
 
         };
 
+    const submitQuestionReport =
+        async () => {
+
+            setReportSubmitting(true);
+
+            try {
+                const response = await fetch(
+                    `${API_URL}/api/assessment-attempts/${attemptId}/question-reports`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            ...authHeaders()
+                        },
+                        body: JSON.stringify({
+                            question_id: current.id,
+                            comment: reportComment
+                        })
+                    }
+                );
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(
+                        data.error ||
+                        "Kunde inte skicka felanmälan."
+                    );
+                }
+
+                setReportedQuestionIds(previous =>
+                    new Set([
+                        ...previous,
+                        current.id
+                    ])
+                );
+                setReportComment("");
+                setReportDialogOpen(false);
+                toast.success("Felanmälan skickad.");
+
+            } catch (error) {
+                toast.error(error.message);
+            } finally {
+                setReportSubmitting(false);
+            }
+
+        };
+
     return (
         <div className="min-h-screen">
 
@@ -468,6 +535,28 @@ export default function ExamPage({
                             }
                         />
 
+                        <div className="flex justify-end">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                disabled={
+                                    reportedQuestionIds.has(
+                                        current.id
+                                    )
+                                }
+                                onClick={() => {
+                                    setReportComment("");
+                                    setReportDialogOpen(true);
+                                }}
+                            >
+                                <MessageSquareWarning />
+                                {reportedQuestionIds.has(current.id)
+                                    ? "Fel anmält"
+                                    : "Anmäl fel"}
+                            </Button>
+                        </div>
+
                         <ExamNavigation
                             index={index}
                             total={
@@ -491,8 +580,8 @@ export default function ExamPage({
                                 submitExam
                             }
                             canSubmitAnytime={
-                                isTeacherTest ||
-                                isSoftEnded
+                                isSoftEnded ||
+                                isTeacherTest
                             }
                             submitLabel={
                                 isTeacherTest
@@ -506,6 +595,47 @@ export default function ExamPage({
                 </Card>
 
             </div>
+
+            <Dialog
+                open={reportDialogOpen}
+                onOpenChange={setReportDialogOpen}
+            >
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Anmäl fel i fråga</DialogTitle>
+                        <DialogDescription>
+                            Anmäl om det rätta svaret saknas bland alternativen.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <Textarea
+                        value={reportComment}
+                        onChange={event =>
+                            setReportComment(event.target.value)
+                        }
+                        placeholder="Beskriv gärna felet"
+                    />
+
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() =>
+                                setReportDialogOpen(false)
+                            }
+                        >
+                            Avbryt
+                        </Button>
+                        <Button
+                            type="button"
+                            disabled={reportSubmitting}
+                            onClick={submitQuestionReport}
+                        >
+                            Skicka anmälan
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
         </div>
     );

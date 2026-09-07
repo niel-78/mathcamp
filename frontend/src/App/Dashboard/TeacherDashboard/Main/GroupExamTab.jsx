@@ -72,6 +72,13 @@ export default function GroupExamTab({
                 navigation: {
                     ...data.config?.navigation,
                     allowGoToPreviousQuestion: false
+                },
+                attempt: {
+                    ...data.config?.attempt,
+                    minQuestionCount:
+                        data.config?.attempt?.minQuestionCount ?? 5,
+                    maxQuestionCount:
+                        data.config?.attempt?.maxQuestionCount ?? 15
                 }
             }
         };
@@ -329,6 +336,25 @@ export default function GroupExamTab({
     };
 
     const save = async () => {
+
+        const minQuestionCount =
+            Number(groupExam.config?.attempt?.minQuestionCount);
+
+        const maxQuestionCount =
+            Number(groupExam.config?.attempt?.maxQuestionCount);
+
+        if (
+            isDiagnostic &&
+            (!Number.isInteger(minQuestionCount) ||
+                minQuestionCount < 1 ||
+                !Number.isInteger(maxQuestionCount) ||
+                maxQuestionCount < minQuestionCount)
+        ) {
+            toast.error(
+                "Minsta antal frågor måste vara minst 1 och högst lika med högsta antal frågor."
+            );
+            return;
+        }
 
         setSaving(true);
 
@@ -675,6 +701,46 @@ export default function GroupExamTab({
                                 </option>
                             </select>
                         </Field>
+
+                        {isDiagnostic && (
+                            <>
+                                <Field label="Minsta antal frågor">
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        value={
+                                            groupExam.config?.attempt
+                                                ?.minQuestionCount ?? ""
+                                        }
+                                        onChange={(event) =>
+                                            updateConfig(
+                                                "attempt",
+                                                "minQuestionCount",
+                                                Number(event.target.value)
+                                            )
+                                        }
+                                    />
+                                </Field>
+
+                                <Field label="Högsta antal frågor">
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        value={
+                                            groupExam.config?.attempt
+                                                ?.maxQuestionCount ?? ""
+                                        }
+                                        onChange={(event) =>
+                                            updateConfig(
+                                                "attempt",
+                                                "maxQuestionCount",
+                                                Number(event.target.value)
+                                            )
+                                        }
+                                    />
+                                </Field>
+                            </>
+                        )}
 
                     </div>
 

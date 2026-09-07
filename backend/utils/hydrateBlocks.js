@@ -10,10 +10,23 @@ export default async function hydrateBlocks(blocks) {
                 q.*,
                 ql.name AS level_name,
                 ql.description AS level_description,
-                ql.sort_order AS level_sort_order
+                ql.sort_order AS level_sort_order,
+                COALESCE(
+                    report_counts.report_count,
+                    0
+                ) AS report_count
             FROM questions q
             LEFT JOIN question_levels ql
                 ON ql.id = q.level_id
+            LEFT JOIN (
+                SELECT
+                    question_id,
+                    COUNT(*) AS report_count
+                FROM question_reports
+                WHERE report_type = 'missing_correct_option'
+                GROUP BY question_id
+            ) report_counts
+                ON report_counts.question_id = q.id
             WHERE q.block_id = ?
             AND q.deleted_at IS NULL
             AND q.archived_at IS NULL
@@ -36,32 +49,63 @@ export default async function hydrateBlocks(blocks) {
 
         block.owner = owner;
 
+        const questionIds =
+            questions.map(question => question.id);
 
-        for (const question of questions) {
+        const optionsByQuestionId = new Map();
+        const mediaByQuestionId = new Map();
 
+        if (questionIds.length > 0) {
             const [options] = await db.query(
                 `
                 SELECT *
                 FROM options
-                WHERE question_id = ?
+                WHERE question_id IN (?)
                 AND deleted_at IS NULL
                 `,
-                [question.id]
+                [questionIds]
             );
 
-            question.options = options;
+            for (const option of options) {
+                const questionOptions =
+                    optionsByQuestionId.get(option.question_id) || [];
 
-            const [media] = await db.query(
+                questionOptions.push(option);
+                optionsByQuestionId.set(
+                    option.question_id,
+                    questionOptions
+                );
+            }
+
+            const [mediaItems] = await db.query(
                 `
                 SELECT *
                 FROM question_media
-                WHERE question_id = ?
-                ORDER BY sort_order
+                WHERE question_id IN (?)
+                ORDER BY question_id, sort_order
                 `,
-                [question.id]
+                [questionIds]
             );
 
-            question.media = media;
+            for (const mediaItem of mediaItems) {
+                const questionMedia =
+                    mediaByQuestionId.get(mediaItem.question_id) || [];
+
+                questionMedia.push(mediaItem);
+                mediaByQuestionId.set(
+                    mediaItem.question_id,
+                    questionMedia
+                );
+            }
+        }
+
+        for (const question of questions) {
+
+            question.options =
+                optionsByQuestionId.get(question.id) || [];
+
+            question.media =
+                mediaByQuestionId.get(question.id) || [];
 
         }
 

@@ -152,6 +152,49 @@ router.put("/:id/series-level", async (req, res) => {
     res.sendStatus(204);
 });
 
+router.put("/:id/exclude-from-assessments", async (req, res) => {
+    const { excluded_from_assessments: excluded } = req.body;
+
+    if (typeof excluded !== "boolean") {
+        return res.status(400).json({
+            error: "Exkludering måste anges som sant eller falskt."
+        });
+    }
+
+    const [result] = await db.query(
+        `
+        UPDATE questions
+        SET
+            excluded_from_assessments = ?,
+            updated_by = ?
+        WHERE id = ?
+        AND deleted_at IS NULL
+        `,
+        [excluded ? 1 : 0, req.user.id, req.params.id]
+    );
+
+    if (result.affectedRows === 0) {
+        return res.status(404).json({
+            error: "Frågan hittades inte."
+        });
+    }
+
+    res.sendStatus(204);
+});
+
+router.delete("/:id/question-reports", async (req, res) => {
+    await db.query(
+        `
+        DELETE FROM question_reports
+        WHERE question_id = ?
+        AND report_type = 'missing_correct_option'
+        `,
+        [req.params.id]
+    );
+
+    res.sendStatus(204);
+});
+
 // DELETE /api/questions/:id
 router.delete("/:id", async (req, res) => {
 

@@ -87,6 +87,7 @@ export async function buildExamSession(
                 WHERE block_id = ?
                     AND deleted_at IS NULL
                     AND archived_at IS NULL
+                    AND excluded_from_assessments = 0
                 `,
                 [block.id]
             );

@@ -33,7 +33,8 @@ export default class AssessmentEngine {
 
     static async getNextQuestion(
         connection,
-        attemptId
+        attemptId,
+        reserveQuestion = true
     ) {
 
         const [[attempt]] =
@@ -84,6 +85,7 @@ export default class AssessmentEngine {
 
                     AND q.archived_at IS NULL
                     AND q.deleted_at IS NULL
+                    AND q.excluded_from_assessments = 0
 
                     AND NOT EXISTS (
 
@@ -107,20 +109,22 @@ export default class AssessmentEngine {
 
             if (question) {
 
-                await connection.query(
-                    `
-                    INSERT IGNORE INTO
-                    student_question_history (
-                        user_id,
-                        question_id
-                    )
-                    VALUES (?, ?)
-                    `,
-                    [
-                        userId,
-                        question.id
-                    ]
-                );
+                if (reserveQuestion) {
+                    await connection.query(
+                        `
+                        INSERT IGNORE INTO
+                        student_question_history (
+                            user_id,
+                            question_id
+                        )
+                        VALUES (?, ?)
+                        `,
+                        [
+                            userId,
+                            question.id
+                        ]
+                    );
+                }
 
                 const [[abilityInfo]] =
                     await connection.query(
@@ -326,14 +330,32 @@ export default class AssessmentEngine {
     }
 
     static async getDiagnosticSeedQuestions(
+        connection,
         lessonId,
-        assessmentId
+        attemptId,
+        maxQuestionCount = null
     ) {
+
+        const [[attempt]] =
+            await connection.query(
+                `
+                SELECT user_id
+                FROM assessment_attempts
+                WHERE id = ?
+                `,
+                [attemptId]
+            );
+
+        if (!attempt) {
+            throw new Error(
+                "Attempt not found"
+            );
+        }
 
         const plan =
             await this.getDiagnosticSeedPlan(
                 lessonId,
-                assessmentId
+                attempt.user_id
             );
 
         const questions =
@@ -341,7 +363,30 @@ export default class AssessmentEngine {
                 item => item.question
             );
 
-        return questions;
+        const limitedQuestions =
+            Number.isInteger(maxQuestionCount) &&
+            maxQuestionCount > 0
+                ? questions.slice(0, maxQuestionCount)
+                : questions;
+
+        for (const question of limitedQuestions) {
+            await connection.query(
+                `
+                INSERT IGNORE INTO
+                student_question_history (
+                    user_id,
+                    question_id
+                )
+                VALUES (?, ?)
+                `,
+                [
+                    attempt.user_id,
+                    question.id
+                ]
+            );
+        }
+
+        return limitedQuestions;
 
     }
 
@@ -781,7 +826,8 @@ export default class AssessmentEngine {
     }
 
     static async getDiagnosticSeedPlan(
-        lessonId
+        lessonId,
+        userId = null
     ) {
 
         const [[lesson]] =
@@ -972,6 +1018,17 @@ export default class AssessmentEngine {
 
                     AND q.archived_at IS NULL
                     AND q.deleted_at IS NULL
+                    AND q.excluded_from_assessments = 0
+
+                    AND (
+                        ? IS NULL
+                        OR NOT EXISTS (
+                            SELECT 1
+                            FROM student_question_history h
+                            WHERE h.user_id = ?
+                            AND h.question_id = q.id
+                        )
+                    )
 
                     ORDER BY RAND()
 
@@ -979,7 +1036,9 @@ export default class AssessmentEngine {
                     `,
                     [
                         block.id,
-                        firstLevel.id
+                        firstLevel.id,
+                        userId,
+                        userId
                     ]
                 );
 

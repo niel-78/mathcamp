@@ -248,12 +248,11 @@ router.post("/forgot-password", async (req, res) => {
         );
 
         await sendEmail(
-            user.email, 
-            "Ditt nya tillfälliga lösenord", 
+            user.email,
+            "Ditt nya tillfälliga lösenord",
             `Hej ${user.first_name},\n\nDitt nya tillfälliga lösenord är: ${newPassword}\n\nLogga in och byt det i din profil.`
         );
 
-        // För utveckling kan du skriva ut det i konsolen på servern så länge
         console.log(`Nytt lösenord för ${username}: ${newPassword}`);
 
         res.json({

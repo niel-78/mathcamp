@@ -32,63 +32,108 @@ router.get("/", async (req, res) => {
         `
     );
 
-    for (const book of books) {
+    if (books.length === 0) {
+        return res.json([]);
+    }
 
-        const [chapters] = await db.query(
+    const bookIds = books.map(book => book.id);
+
+    const [chapters] = await db.query(
+        `
+        SELECT *
+        FROM chapters
+        WHERE book_id IN (?)
+        ORDER BY book_id, sort_order
+        `,
+        [bookIds]
+    );
+
+    const chapterIds = chapters.map(chapter => chapter.id);
+
+    const subchapters = chapterIds.length > 0
+        ? (await db.query(
             `
             SELECT *
-            FROM chapters
-            WHERE book_id = ?
-            ORDER BY sort_order
+            FROM subchapters
+            WHERE chapter_id IN (?)
+            ORDER BY chapter_id, sort_order
             `,
-            [book.id]
+            [chapterIds]
+        ))[0]
+        : [];
+
+    const subchapterIds =
+        subchapters.map(subchapter => subchapter.id);
+
+    const sections = subchapterIds.length > 0
+        ? (await db.query(
+            `
+            SELECT *
+            FROM sections
+            WHERE subchapter_id IN (?)
+            ORDER BY subchapter_id, sort_order
+            `,
+            [subchapterIds]
+        ))[0]
+        : [];
+
+    const sectionsBySubchapterId = new Map();
+
+    for (const section of sections) {
+        const subchapterSections =
+            sectionsBySubchapterId.get(section.subchapter_id) || [];
+
+        subchapterSections.push(section);
+        sectionsBySubchapterId.set(
+            section.subchapter_id,
+            subchapterSections
         );
+    }
 
-        for (const chapter of chapters) {
+    const subchaptersByChapterId = new Map();
 
-            const [subchapters] = await db.query(
-                `
-                SELECT *
-                FROM subchapters
-                WHERE chapter_id = ?
-                ORDER BY sort_order
-                `,
-                [chapter.id]
-            );
+    for (const subchapter of subchapters) {
+        const subchapterSections =
+            sectionsBySubchapterId.get(subchapter.id) || [];
 
-            for (const subchapter of subchapters) {
-
-                const [sections] = await db.query(
-                    `
-                    SELECT *
-                    FROM sections
-                    WHERE subchapter_id = ?
-                    ORDER BY sort_order
-                    `,
-                    [subchapter.id]
-                );
-
-                for (let i = 0; i < sections.length; i++) {
-
-                    sections[i].end_page =
-
-                        i < sections.length - 1
-
-                            ? sections[i + 1].page_number - 1
-
-                            : sections[i].page_number;
-
-                }
-
-                subchapter.sections = sections;
-
-            }
-
-            chapter.subchapters = subchapters;
-
+        for (let index = 0; index < subchapterSections.length; index++) {
+            subchapterSections[index].end_page =
+                index < subchapterSections.length - 1
+                    ? subchapterSections[index + 1].page_number - 1
+                    : subchapterSections[index].page_number;
         }
 
-        book.chapters = chapters;
+        subchapter.sections = subchapterSections;
+
+        const chapterSubchapters =
+            subchaptersByChapterId.get(subchapter.chapter_id) || [];
+
+        chapterSubchapters.push(subchapter);
+        subchaptersByChapterId.set(
+            subchapter.chapter_id,
+            chapterSubchapters
+        );
+    }
+
+    const chaptersByBookId = new Map();
+
+    for (const chapter of chapters) {
+        chapter.subchapters =
+            subchaptersByChapterId.get(chapter.id) || [];
+
+        const bookChapters =
+            chaptersByBookId.get(chapter.book_id) || [];
+
+        bookChapters.push(chapter);
+        chaptersByBookId.set(
+            chapter.book_id,
+            bookChapters
+        );
+    }
+
+    for (const book of books) {
+        book.chapters =
+            chaptersByBookId.get(book.id) || [];
 
     }
 

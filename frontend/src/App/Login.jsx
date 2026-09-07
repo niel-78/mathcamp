@@ -34,7 +34,9 @@ export default function Login() {
     };
 
     const handleForgotPassword = async () => {
-        if (!username) {
+        const trimmedUsername = username.trim();
+
+        if (!trimmedUsername) {
             toast.error("Fyll i ditt användarnamn ovan först.");
             return;
         }
@@ -46,7 +48,7 @@ export default function Login() {
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ username })
+                body: JSON.stringify({ username: trimmedUsername })
             });
 
             const data = await res.json();
