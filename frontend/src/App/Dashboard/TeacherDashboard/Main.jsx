@@ -14,6 +14,7 @@ import GroupExamWaitingRoomTab from "./Main/GroupExamWaitingRoomTab";
 import GroupExamMonitorTab from "./Main/GroupExamMonitorTab";
 import AbilityTab from "./Main/AbilityTab";
 import GroupPlanningTab from "./Main/GroupPlanningTab";
+import GroupInfoTab from "./Main/GroupInfoTab";
 import ArchivedGroupsTab from "./Main/ArchivedGroupsTab";
 import ArchivedStudentsTab from "./Main/ArchivedStudentsTab";
 import ArchivedExamsTab from "./Main/ArchivedExamsTab";
@@ -324,6 +325,15 @@ export default function Main({
                         />
 
                     )}
+
+                    {currentTab?.type === "group-info" && (
+
+                        <GroupInfoTab
+                            groupId={currentTab.groupId}
+                        />
+
+                    )}
+
                     {currentTab?.type === "group-schedules" && (
 
                         <GroupSchedulesTab
@@ -429,7 +439,7 @@ export default function Main({
 
                     )}
 
-                    {currentTab.type === "group-addons" && (
+                    {currentTab?.type === "group-addons" && (
 
                         <GroupAddonsTab 
                             groupId={currentTab.groupId} 
@@ -438,7 +448,7 @@ export default function Main({
 
                     )}
 
-                    {currentTab.type === "competition" && (
+                    {currentTab?.type === "competition" && (
 
                             <CompetitionTab
                                 competitionId={currentTab.competitionId}

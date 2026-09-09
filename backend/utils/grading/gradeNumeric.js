@@ -1,14 +1,32 @@
-export const gradeNumeric = (
+// Accepts both "." and "," as decimal separator (e.g. "3,5" and "3.5" are equivalent)
+export const parseNumericAnswer = (value) => {
+
+    if (
+        typeof value !== "string" &&
+        typeof value !== "number"
+    ) {
+        return NaN;
+    }
+
+    const normalized =
+        String(value)
+            .trim()
+            .replace(",", ".");
+
+    return Number(normalized);
+};
+
+export const compareNumeric = (
     studentAnswer,
     correctAnswer,
     config = {}
 ) => {
 
     const student =
-        Number(studentAnswer);
+        parseNumericAnswer(studentAnswer);
 
     const correct =
-        Number(correctAnswer);
+        parseNumericAnswer(correctAnswer);
 
     if (
         Number.isNaN(student) ||
@@ -72,3 +90,9 @@ export const gradeNumeric = (
 
     return student === correct;
 };
+
+export const gradeNumeric = (
+    studentAnswer,
+    correctAnswer,
+    config = {}
+) => compareNumeric(studentAnswer, correctAnswer, config);

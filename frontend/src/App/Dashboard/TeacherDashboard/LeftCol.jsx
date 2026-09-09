@@ -8,6 +8,7 @@ import SharePlanningDialog from "./LeftCol/SharePlanningDialog";
 import CreateGroupDialog from "./LeftCol/CreateGroupDialog";
 import RenameGroupDialog from "./LeftCol/RenameGroupDialog";
 import GroupAbilitySeriesDialog from "./LeftCol/GroupAbilitySeriesDialog";
+import GroupBookDialog from "./LeftCol/GroupBookDialog";
 import ArchiveGroupDialog from "./LeftCol/ArchiveGroupDialog";
 import CreateStudentDialog from "./LeftCol/CreateStudentDialog";
 import EditStudentDialog from "./LeftCol/EditStudentDialog";
@@ -67,6 +68,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [showCreateGroupDialog,setShowCreateGroupDialog] = useState(false);
     const [renameDialog, setRenameDialog] = useState(null);
     const [abilitySeriesDialog, setAbilitySeriesDialog] = useState(null);
+    const [groupBookDialog, setGroupBookDialog] = useState(null);
     const [archiveDialog, setArchiveDialog] = useState(null);
     const [groupStudents, setGroupStudents] = useState({});
     const [expandedStudents, setExpandedStudents] = useState({});
@@ -252,6 +254,31 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
     }, []);
 
+    useEffect(() => {
+
+        const handlePlanningQueueSaved =
+            async () => {
+
+                await loadGroups();
+
+            };
+
+        window.addEventListener(
+            "planning-queue-saved",
+            handlePlanningQueueSaved
+        );
+
+        return () => {
+
+            window.removeEventListener(
+                "planning-queue-saved",
+                handlePlanningQueueSaved
+            );
+
+        };
+
+    }, []);
+
     const loadGroups = async () => {
 
         const response = await fetch(
@@ -409,7 +436,6 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
         const data =
             await response.json();
-        console.log(data);
         setGroupClassrooms(prev => ({
             ...prev,
             [groupId]: data
@@ -896,6 +922,14 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                     });
                 }}
 
+                onSetGroupBook={(groupId, groupName, bookId) => {
+                    setGroupBookDialog({
+                        id: groupId,
+                        name: groupName,
+                        bookId
+                    });
+                }}
+
                 onSharePlanning={(groupId, groupName) => {
                     setSharePlanningDialog({
                         groupId,
@@ -1173,9 +1207,15 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                 <Button
                                     className="tree-node ml-4"
                                     variant="ghost"
-                                    onClick={() =>
-                                        toggleFolder(group.id)
-                                    }
+                                    onClick={() => {
+                                        toggleFolder(group.id);
+                                        openTab({
+                                            id: `group-info-${group.id}`,
+                                            type: "group-info",
+                                            title: group.name,
+                                            groupId: group.id
+                                        });
+                                    }}
                                     onContextMenu={(e) => {
 
                                         e.preventDefault();
@@ -1184,6 +1224,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                             type: "group",
                                             groupId: group.id,
                                             groupName: group.name,
+                                            groupBookId: group.book_id,
                                             groupAbilitySeriesId: group.ability_series_id,
                                             x: e.clientX,
                                             y: e.clientY
@@ -1263,6 +1304,10 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                                 section={section}
                                                                 openTab={openTab}
                                                                 hoverTarget={hoverTarget}
+                                                                inPlanningQueue={
+                                                                    (group.planningSectionIds || [])
+                                                                        .includes(section.id)
+                                                                }
                                                             />
 
                                                         ))}
@@ -2659,6 +2704,13 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                 onOpenChange={() =>
                     setAbilitySeriesDialog(null)
                 }
+                onSaved={loadGroups}
+            />
+            <GroupBookDialog
+                group={groupBookDialog}
+                books={books}
+                open={!!groupBookDialog}
+                onOpenChange={() => setGroupBookDialog(null)}
                 onSaved={loadGroups}
             />
             <CreateStudentDialog

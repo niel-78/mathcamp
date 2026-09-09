@@ -332,18 +332,22 @@ router.post("/:id/duplicate",
                     answer_config,
                     created_by,
                     updated_by,
-                    level_id
+                    level_id,
+                    series_level_id
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 `,
                 [
                     question.block_id,
                     question.question,
                     question.question_type,
-                    question.answer_config,
+                    JSON.stringify(
+                        question.answer_config
+                    ),
                     req.user.id,
                     req.user.id,
-                    question.level_id
+                    question.level_id,
+                    question.series_level_id
                 ]
             );
 

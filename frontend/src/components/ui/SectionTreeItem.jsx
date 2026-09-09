@@ -9,7 +9,8 @@ import {
 export default function SectionTreeItem({
     section,
     hoverTarget,
-    openTab
+    openTab,
+    inPlanningQueue = true
 }) {
 
     const {
@@ -42,6 +43,8 @@ export default function SectionTreeItem({
         hoverTarget ===
         `section-${section.id}`;
 
+    const dimmed = !inPlanningQueue;
+
     return (
 
         <div
@@ -62,7 +65,14 @@ export default function SectionTreeItem({
         >
 
             <div
-                className="flex-1"
+                className={`
+                    flex-1
+                    ${
+                        dimmed
+                            ? "text-slate-400"
+                            : ""
+                    }
+                `}
                 onClick={() =>
                     openTab({
                         id: `book-section-${section.id}`,
@@ -76,18 +86,39 @@ export default function SectionTreeItem({
                 {section.title}
 
                 <span
-                    className="
-                        text-slate-500
+                    className={`
                         ml-2
-                    "
+                        ${
+                            dimmed
+                                ? "text-slate-400"
+                                : "text-slate-500"
+                        }
+                    `}
                 >
                     ({section.page_number}
-                    {section.end_page >
-                    section.page_number
-                        ? `-${section.end_page}`
-                        : ""}
-                    )
+                    -
+                    {section.end_page ?? section.page_number})
                 </span>
+
+                {section.block_count > 0 && (
+                    <span
+                        className={`
+                            ml-2
+                            text-xs
+                            rounded-full
+                            px-1.5
+                            py-0.5
+                            ${
+                                dimmed
+                                    ? "bg-slate-100 text-slate-400"
+                                    : "bg-slate-200 text-slate-600"
+                            }
+                        `}
+                        title="Antal kopplade block"
+                    >
+                        {section.block_count}
+                    </span>
+                )}
 
             </div>
 

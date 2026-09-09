@@ -10,8 +10,15 @@ export const QUESTION_TYPES = {
     MULTIPLE_CHOICE: {
         value: "multiple_choice",
         label: "Flerval"
+    },
+    NUMERIC_INPUT: {
+        value: "numeric_input",
+        label: "Numerisk(a) svarsruta(or)"
     }
 };
+
+// Marker used in the question text to place an answer input box, e.g. "x = {{input}}"
+export const NUMERIC_INPUT_MARKER = "{{input}}";
 
 export const GRADING_MODES = {
     TEXT: {

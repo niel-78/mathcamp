@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
+import { toast } from "sonner";
 
 import {
     Card,
@@ -32,9 +33,37 @@ import AnswerConfigEditor
 import DeleteMediaDialog
     from "@/components/ui/DeleteMediaDialog";
 
+import QuestionView
+    from "@/App/Dashboard/StudentDashboard/Main/QuestionView";
+
 import {
-    getQuestionTypeLabel
+    QUESTION_TYPES
 } from "@/constants/assessmentConstants";
+
+function getNumericDefaultAnswer(question) {
+
+    const answerConfig =
+        typeof question.answer_config === "string"
+            ? (() => {
+                try {
+                    return JSON.parse(question.answer_config);
+                } catch {
+                    return {};
+                }
+            })()
+            : question.answer_config;
+
+    if (
+        question.question_type !== "numeric_input" ||
+        question.options?.length > 0 ||
+        answerConfig?.default_answer === undefined ||
+        answerConfig.default_answer === ""
+    ) {
+        return null;
+    }
+
+    return answerConfig.default_answer;
+}
 
 export default function QuestionCard({
     question,
@@ -57,6 +86,10 @@ export default function QuestionCard({
         setEditingQuestion] =
         useState(false);
 
+    const [savingQuestion,
+        setSavingQuestion] =
+        useState(false);
+
     const [levels, setLevels] =
         useState([]);
 
@@ -65,6 +98,119 @@ export default function QuestionCard({
         useState(
             question.level_id ?? 2
         );
+
+    const [previewAnswer,
+        setPreviewAnswer] =
+        useState(
+            question.question_type === "multiple_choice"
+                ? []
+                : ""
+        );
+
+    const handlePreviewTextAnswer =
+        (_questionId, value) =>
+            setPreviewAnswer(value);
+
+    const handlePreviewSingleChoice =
+        (_questionId, optionId) =>
+            setPreviewAnswer(optionId);
+
+    const handlePreviewMultiChoice =
+        (_questionId, optionId) =>
+            setPreviewAnswer(previous => {
+
+                const current = previous || [];
+
+                return current.includes(optionId)
+                    ? current.filter(id => id !== optionId)
+                    : [...current, optionId];
+
+            });
+
+    const saveQuestion =
+        async (overrides = {}) => {
+
+            setSavingQuestion(true);
+
+            try {
+
+                const response = await fetch(
+                    `${API_URL}/api/questions/${question.id}`,
+                    {
+                        method: "PUT",
+                        headers: {
+                            ...authHeaders(),
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            question: questionText,
+                            question_type: question.question_type,
+                            answer_config: question.answer_config,
+                            level_id: question.level_id,
+                            ...overrides
+                        })
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error(
+                        "Kunde inte spara frågan."
+                    );
+                }
+
+                await onChanged?.();
+
+                return true;
+
+            } catch (error) {
+
+                toast.error(error.message);
+
+                return false;
+
+            } finally {
+
+                setSavingQuestion(false);
+
+            }
+
+        };
+
+    const saveQuestionText =
+        async () => {
+
+            const saved =
+                await saveQuestion();
+
+            if (saved) {
+
+                setEditingQuestion(false);
+
+                toast.success(
+                    "Frågetext sparad"
+                );
+
+            }
+
+        };
+
+    const changeQuestionType =
+        async (newType) => {
+
+            const saved =
+                await saveQuestion({
+                    question_type: newType
+                });
+
+            if (saved) {
+
+                toast.success(
+                    "Frågetyp ändrad"
+                );
+
+            }
+
+        };
 
     useEffect(() => {
 
@@ -97,6 +243,16 @@ export default function QuestionCard({
         );
 
     }, [question.question]);
+
+    useEffect(() => {
+
+        setPreviewAnswer(
+            question.question_type === "multiple_choice"
+                ? []
+                : ""
+        );
+
+    }, [question.id, question.question_type]);
 
     return (
 
@@ -134,15 +290,37 @@ export default function QuestionCard({
 
                                 <div>
 
-                                    <Badge
-                                        variant="secondary"
-                                    >
-                                        {
-                                            getQuestionTypeLabel(
-                                                question.question_type
+                                    <select
+                                        className="
+                                            border
+                                            rounded
+                                            px-2
+                                            py-1
+                                            text-sm
+                                        "
+                                        value={
+                                            question.question_type
+                                        }
+                                        disabled={savingQuestion}
+                                        onChange={(e) =>
+                                            changeQuestionType(
+                                                e.target.value
                                             )
                                         }
-                                    </Badge>
+                                    >
+
+                                        {Object.values(QUESTION_TYPES).map(
+                                            type => (
+                                                <option
+                                                    key={type.value}
+                                                    value={type.value}
+                                                >
+                                                    {type.label}
+                                                </option>
+                                            )
+                                        )}
+
+                                    </select>
 
                                 </div>
 
@@ -265,17 +443,24 @@ export default function QuestionCard({
                                         "
                                     >
 
-                                        <Button>
+                                        <Button
+                                            disabled={savingQuestion}
+                                            onClick={saveQuestionText}
+                                        >
                                             Spara
                                         </Button>
 
                                         <Button
                                             variant="outline"
-                                            onClick={() =>
+                                            disabled={savingQuestion}
+                                            onClick={() => {
+                                                setQuestionText(
+                                                    question.question
+                                                );
                                                 setEditingQuestion(
                                                     false
-                                                )
-                                            }
+                                                );
+                                            }}
                                         >
                                             Avbryt
                                         </Button>
@@ -363,6 +548,35 @@ export default function QuestionCard({
 
                         <CardContent>
 
+                            {question.question_type ===
+                                "numeric_input" && (
+
+                                <p
+                                    className="
+                                        text-sm
+                                        text-muted-foreground
+                                        mb-3
+                                    "
+                                >
+                                    Lägg till ett alternativ per svarsruta
+                                    (markerat som korrekt), i samma ordning
+                                    som {"{{input}}"}-markeringarna i
+                                    frågetexten.
+                                </p>
+
+                            )}
+
+                            {getNumericDefaultAnswer(question) !== null && (
+                                <div className="flex items-center gap-2 text-sm mb-3">
+                                    <MathContent
+                                        value={getNumericDefaultAnswer(question)}
+                                    />
+                                    <span className="text-green-600">
+                                        Rätt svar
+                                    </span>
+                                </div>
+                            )}
+
                             <OptionList
                                 questionId={
                                     question.id
@@ -394,6 +608,42 @@ export default function QuestionCard({
                             <QuestionTester
                                 question={question}
                             />
+
+                        </CardContent>
+
+                    </Card>
+
+                    <Card>
+
+                        <CardHeader>
+
+                            <CardTitle>
+                                Förhandsgranska som elev
+                            </CardTitle>
+
+                        </CardHeader>
+
+                        <CardContent>
+
+                            <div
+                                className="
+                                    rounded-lg
+                                    border
+                                    bg-background
+                                    p-6
+                                    space-y-4
+                                "
+                            >
+
+                                <QuestionView
+                                    question={question}
+                                    answer={previewAnswer}
+                                    onTextAnswer={handlePreviewTextAnswer}
+                                    onSingleChoice={handlePreviewSingleChoice}
+                                    onMultiChoice={handlePreviewMultiChoice}
+                                />
+
+                            </div>
 
                         </CardContent>
 

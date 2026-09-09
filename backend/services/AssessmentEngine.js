@@ -333,7 +333,9 @@ export default class AssessmentEngine {
         connection,
         lessonId,
         attemptId,
-        maxQuestionCount = null
+        maxQuestionCount = null,
+        selectedBlockIds = null,
+        seedQuestionCount = null
     ) {
 
         const [[attempt]] =
@@ -355,7 +357,8 @@ export default class AssessmentEngine {
         const plan =
             await this.getDiagnosticSeedPlan(
                 lessonId,
-                attempt.user_id
+                attempt.user_id,
+                selectedBlockIds
             );
 
         const questions =
@@ -363,10 +366,16 @@ export default class AssessmentEngine {
                 item => item.question
             );
 
+        const configuredSeedQuestionCount =
+            Number.isInteger(seedQuestionCount) &&
+            seedQuestionCount > 0
+                ? seedQuestionCount
+                : maxQuestionCount;
+
         const limitedQuestions =
-            Number.isInteger(maxQuestionCount) &&
-            maxQuestionCount > 0
-                ? questions.slice(0, maxQuestionCount)
+            Number.isInteger(configuredSeedQuestionCount) &&
+            configuredSeedQuestionCount > 0
+                ? questions.slice(0, configuredSeedQuestionCount)
                 : questions;
 
         for (const question of limitedQuestions) {
@@ -467,6 +476,40 @@ export default class AssessmentEngine {
                 correctAnswer:
                     correctOption?.text,
                 config
+            });
+
+        } else if (
+            question.question_type === "numeric_input"
+        ) {
+
+            const [correctOptions] =
+                await connection.query(
+                    `
+                    SELECT text
+                    FROM options
+                    WHERE question_id = ?
+                    AND is_correct = 1
+                    ORDER BY id
+                    `,
+                    [questionId]
+                );
+
+            const config =
+                typeof question.answer_config === "string"
+                    ? JSON.parse(
+                        question.answer_config
+                    )
+                    : question.answer_config;
+
+            correct = gradeAnswer({
+                studentAnswer:
+                    answer.text_answer,
+                correctAnswer:
+                    correctOptions.map(o => o.text),
+                config: {
+                    ...config,
+                    grading_mode: "numeric_input"
+                }
             });
 
         } else {
@@ -827,8 +870,17 @@ export default class AssessmentEngine {
 
     static async getDiagnosticSeedPlan(
         lessonId,
-        userId = null
+        userId = null,
+        selectedBlockIds = null
     ) {
+
+        const selectedBlockIdSet =
+            Array.isArray(selectedBlockIds) &&
+            selectedBlockIds.length > 0
+                ? new Set(
+                    selectedBlockIds.map(Number)
+                )
+                : null;
 
         const [[lesson]] =
             await db.query(
@@ -958,7 +1010,32 @@ export default class AssessmentEngine {
             uniqueBlocks.push(block);
         }
 
+        // Selected areas (blocks) must always be tested first, so their
+        // questions aren't cut off by the maxQuestionCount slice later on.
+        if (selectedBlockIdSet) {
+
+            uniqueBlocks.sort((a, b) => {
+
+                const aSelected =
+                    selectedBlockIdSet.has(a.id) ? 0 : 1;
+
+                const bSelected =
+                    selectedBlockIdSet.has(b.id) ? 0 : 1;
+
+                return aSelected - bSelected;
+
+            });
+
+        }
+
         for (const block of uniqueBlocks) {
+
+            if (
+                selectedBlockIdSet &&
+                !selectedBlockIdSet.has(block.id)
+            ) {
+                continue;
+            }
 
             const [[ability]] =
                 await db.query(
@@ -1014,7 +1091,6 @@ export default class AssessmentEngine {
                     FROM questions q
 
                     WHERE q.block_id = ?
-                    AND q.series_level_id = ?
 
                     AND q.archived_at IS NULL
                     AND q.deleted_at IS NULL
@@ -1036,7 +1112,6 @@ export default class AssessmentEngine {
                     `,
                     [
                         block.id,
-                        firstLevel.id,
                         userId,
                         userId
                     ]

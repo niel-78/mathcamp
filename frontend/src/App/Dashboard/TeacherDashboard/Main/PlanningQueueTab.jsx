@@ -89,6 +89,15 @@ export default function PlanningQueueTab({
             "Planeringskön har sparats"
         );
 
+        window.dispatchEvent(
+            new CustomEvent(
+                "planning-queue-saved",
+                {
+                    detail: {groupId}
+                }
+            )
+        );
+
     };
 
     const fillPlanning = async () => {

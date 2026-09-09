@@ -7,6 +7,7 @@ import crypto from "crypto";
 import generatePassword from "../utils/generatePassword.js";
 import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
+import { gradeAnswer } from "../utils/grading/gradeAnswer.js";
 
 const router = express.Router();
 
@@ -161,6 +162,69 @@ router.get("/", async (req, res) => {
             [bookIds]
         );
 
+        const sectionsBySubchapter = {};
+
+        sections.forEach(section => {
+
+            if (!sectionsBySubchapter[section.subchapter_id]) {
+                sectionsBySubchapter[section.subchapter_id] = [];
+            }
+
+            sectionsBySubchapter[section.subchapter_id].push(section);
+
+        });
+
+        Object.values(sectionsBySubchapter).forEach(
+            subchapterSections => {
+
+                for (
+                    let i = 0;
+                    i < subchapterSections.length;
+                    i++
+                ) {
+
+                    subchapterSections[i].end_page =
+                        i < subchapterSections.length - 1
+                            ? subchapterSections[i + 1].page_number - 1
+                            : subchapterSections[i].page_number;
+
+                }
+
+            }
+        );
+
+        const sectionIds =
+            sections.map(section => section.id);
+
+        const [blockCounts] = sectionIds.length > 0
+            ? await db.query(
+                `
+                SELECT
+                    section_id,
+                    COUNT(*) AS block_count
+                FROM block_sections
+                INNER JOIN blocks b
+                    ON b.id = block_sections.block_id
+                WHERE section_id IN (?)
+                AND b.archived_at IS NULL
+                AND b.deleted_at IS NULL
+                GROUP BY section_id
+                `,
+                [sectionIds]
+            )
+            : [[]];
+
+        const blockCountBySection = {};
+
+        blockCounts.forEach(row => {
+            blockCountBySection[row.section_id] = row.block_count;
+        });
+
+        sections.forEach(section => {
+            section.block_count =
+                blockCountBySection[section.id] || 0;
+        });
+
         const sectionsByBook = {};
 
         sections.forEach(section => {
@@ -224,6 +288,33 @@ router.get("/", async (req, res) => {
 
         });
 
+        const groupIds = groups.map(group => group.id);
+
+        const [planningSections] = await db.query(
+            `
+            SELECT
+                group_id,
+                section_id
+            FROM group_planning_sections
+            WHERE group_id IN (?)
+            `,
+            [groupIds.length > 0 ? groupIds : [0]]
+        );
+
+        const planningSectionIdsByGroup = {};
+
+        planningSections.forEach(row => {
+
+            if (!planningSectionIdsByGroup[row.group_id]) {
+                planningSectionIdsByGroup[row.group_id] = [];
+            }
+
+            planningSectionIdsByGroup[row.group_id].push(
+                row.section_id
+            );
+
+        });
+
         groups.forEach(group => {
 
             group.sections =
@@ -232,11 +323,194 @@ router.get("/", async (req, res) => {
             group.abilities =
                 abilitiesByLevel[group.level_id] || [];
 
+            group.planningSectionIds =
+                planningSectionIdsByGroup[group.id] || [];
+
         });
 
     }
 
     res.json(groups);
+
+});
+
+// GET /api/groups/:id/results
+router.get("/:id/results", async (req, res) => {
+
+    try {
+
+        const [[group]] = await db.query(
+            `
+            SELECT g.id
+            FROM \`groups\` g
+            INNER JOIN group_permissions gp
+                ON gp.group_id = g.id
+            WHERE g.id = ?
+                AND gp.user_id = ?
+            `,
+            [req.params.id, req.user.id]
+        );
+
+        if (!group) {
+            return res.status(404).json({
+                error: "Group not found"
+            });
+        }
+
+        const [students] = await db.query(
+            `
+            SELECT
+                u.id,
+                u.first_name,
+                u.last_name,
+                u.display_name,
+                u.username
+            FROM group_students gs
+            INNER JOIN users u
+                ON u.id = gs.user_id
+            WHERE gs.group_id = ?
+                AND gs.deleted_at IS NULL
+                AND u.deleted_at IS NULL
+            ORDER BY u.last_name, u.first_name
+            `,
+            [req.params.id]
+        );
+
+        const results = [];
+
+        for (const student of students) {
+
+            const [answers] = await db.query(
+                `
+                SELECT
+                    aq.question_id,
+                    q.question_type,
+                    q.answer_config,
+                    aa.text_answer,
+                    (
+                        SELECT GROUP_CONCAT(o.id ORDER BY o.id)
+                        FROM options o
+                        WHERE o.question_id = q.id
+                            AND o.is_correct = 1
+                    ) AS correct_option_ids,
+                    (
+                        SELECT GROUP_CONCAT(o.text ORDER BY o.id SEPARATOR '||')
+                        FROM options o
+                        WHERE o.question_id = q.id
+                            AND o.is_correct = 1
+                    ) AS correct_text,
+                    GROUP_CONCAT(
+                        DISTINCT ao.option_id
+                        ORDER BY ao.option_id
+                    ) AS selected_option_ids
+                FROM assessment_attempts at
+                INNER JOIN group_assessments ga
+                    ON ga.id = at.group_assessment_id
+                INNER JOIN attempt_questions aq
+                    ON aq.attempt_id = at.id
+                INNER JOIN questions q
+                    ON q.id = aq.question_id
+                INNER JOIN assessment_answers aa
+                    ON aa.attempt_id = aq.attempt_id
+                    AND aa.question_id = aq.question_id
+                LEFT JOIN answer_options ao
+                    ON ao.answer_id = aa.id
+                WHERE ga.group_id = ?
+                    AND at.user_id = ?
+                    AND aq.answered_at IS NOT NULL
+                    AND q.excluded_from_assessments = 0
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM question_reports qr
+                        WHERE qr.attempt_id = at.id
+                            AND qr.question_id = aq.question_id
+                            AND qr.report_type = 'missing_correct_option'
+                    )
+                GROUP BY
+                    aq.attempt_id,
+                    aq.question_id,
+                    q.question_type,
+                    q.answer_config,
+                    aa.text_answer
+                `,
+                [req.params.id, student.id]
+            );
+
+            let correctCount = 0;
+
+            for (const answer of answers) {
+
+                const config = typeof answer.answer_config === "string"
+                    ? JSON.parse(answer.answer_config || "{}")
+                    : answer.answer_config || {};
+
+                if (answer.question_type === "text") {
+                    const correctText = answer.correct_text
+                        ?.split("||")[0];
+
+                    if (gradeAnswer({
+                        studentAnswer: answer.text_answer,
+                        correctAnswer: correctText,
+                        config
+                    })) {
+                        correctCount += 1;
+                    }
+                    continue;
+                }
+
+                if (answer.question_type === "numeric_input") {
+                    const correctValues = (answer.correct_text || "")
+                        .split("||")
+                        .filter(Boolean);
+
+                    if (gradeAnswer({
+                        studentAnswer: answer.text_answer,
+                        correctAnswer: correctValues,
+                        config: {
+                            ...config,
+                            grading_mode: "numeric_input"
+                        }
+                    })) {
+                        correctCount += 1;
+                    }
+                    continue;
+                }
+
+                const selectedIds = (answer.selected_option_ids || "")
+                    .split(",")
+                    .filter(Boolean)
+                    .map(Number);
+                const correctIds = (answer.correct_option_ids || "")
+                    .split(",")
+                    .filter(Boolean)
+                    .map(Number);
+
+                if (JSON.stringify(selectedIds) === JSON.stringify(correctIds)) {
+                    correctCount += 1;
+                }
+            }
+
+            results.push({
+                id: student.id,
+                name: student.display_name ||
+                    `${student.first_name} ${student.last_name}`,
+                username: student.username,
+                answered_question_count: answers.length,
+                correct_answer_count: correctCount,
+                correct_percentage: answers.length
+                    ? Math.round((correctCount / answers.length) * 100)
+                    : null
+            });
+        }
+
+        res.json(results);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            error: "Kunde inte läsa gruppens resultat."
+        });
+    }
 
 });
 
@@ -300,11 +574,19 @@ router.get("/:id", async (req, res) => {
         `
         SELECT
             g.*,
-            gp.role
+            gp.role,
+            b.title AS book_title,
+            a.name AS ability_series_name
         FROM \`groups\` g
 
         INNER JOIN group_permissions gp
             ON gp.group_id = g.id
+
+        LEFT JOIN books b
+            ON b.id = g.book_id
+
+        LEFT JOIN ability_series a
+            ON a.id = g.ability_series_id
 
         WHERE g.id = ?
         AND gp.user_id = ?
@@ -331,13 +613,25 @@ router.get("/:id", async (req, res) => {
             u.last_name,
             u.display_name,
             u.username,
-            u.user_key
+            u.user_key,
+            (
+                SELECT MAX(us.logged_in_at)
+                FROM user_sessions us
+                WHERE us.user_id = u.id
+            ) AS last_login,
+            (
+                SELECT COUNT(*)
+                FROM user_sessions us
+                WHERE us.user_id = u.id
+            ) AS login_count
         FROM group_students gs
 
         INNER JOIN users u
             ON u.id = gs.user_id
 
         WHERE gs.group_id = ?
+            AND gs.deleted_at IS NULL
+            AND u.deleted_at IS NULL
 
         ORDER BY
             u.last_name,
@@ -417,6 +711,56 @@ router.put("/:id/ability-series", async (req, res) => {
 
         res.status(500).json({
             error: "Kunde inte uppdatera f\u00f6rm\u00e5gaserien."
+        });
+
+    }
+
+
+});
+
+// PUT /api/groups/:id/book
+router.put("/:id/book", async (req, res) => {
+
+    try {
+
+        const bookId = Number(req.body.book_id);
+
+        if (!Number.isInteger(bookId) || bookId <= 0) {
+            return res.status(400).json({
+                error: "Ogiltigt bok-id."
+            });
+        }
+
+        const [[book]] = await db.query(
+            "SELECT id FROM books WHERE id = ?",
+            [bookId]
+        );
+
+        if (!book) {
+            return res.status(404).json({
+                error: "Boken hittades inte."
+            });
+        }
+
+        const [result] = await db.query(
+            "UPDATE `groups` SET book_id = ? WHERE id = ?",
+            [bookId, req.params.id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                error: "Gruppen hittades inte."
+            });
+        }
+
+        res.sendStatus(204);
+
+    } catch (err) {
+
+        console.error(err);
+
+        res.status(500).json({
+            error: "Kunde inte byta bok för gruppen."
         });
 
     }

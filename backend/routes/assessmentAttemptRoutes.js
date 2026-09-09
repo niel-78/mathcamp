@@ -681,6 +681,17 @@ router.post("/start", async (req, res) => {
                 ? configuredMaxQuestionCount
                 : null;
 
+        const configuredSeedQuestionCount =
+            Number(
+                groupExamConfig?.attempt?.seedQuestionCount
+            );
+
+        const seedQuestionCount =
+            Number.isInteger(configuredSeedQuestionCount) &&
+            configuredSeedQuestionCount > 0
+                ? configuredSeedQuestionCount
+                : null;
+
         const isTest =
             groupExam.mode === "test";
 
@@ -998,7 +1009,9 @@ router.post("/start", async (req, res) => {
                         connection,
                         lessonLink.lesson_id,
                         attemptId,
-                        maxQuestionCount
+                        maxQuestionCount,
+                        groupExamConfig?.selected_block_ids,
+                        seedQuestionCount
                     );
 
             for (let i = 0; i < seedQuestions.length; i++) {
@@ -1655,6 +1668,20 @@ router.get("/:id/results", async (req, res) => {
                             correctOptions[0]?.text,
                         config:
                             question.answer_config
+                    });
+
+            } else if (question.question_type === "numeric_input") {
+
+                correct =
+                    gradeAnswer({
+                        studentAnswer:
+                            question.text_answer,
+                        correctAnswer:
+                            correctOptions.map(o => o.text),
+                        config: {
+                            ...question.answer_config,
+                            grading_mode: "numeric_input"
+                        }
                     });
 
             } else {

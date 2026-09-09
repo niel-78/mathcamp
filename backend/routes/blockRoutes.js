@@ -27,7 +27,7 @@ async function hydrateLightBlocks(blocks) {
 
     const [questionRows] = await db.query(
         `
-        SELECT block_id, question
+        SELECT block_id, id, question
         FROM questions
         WHERE block_id IN (?)
         AND deleted_at IS NULL
@@ -85,7 +85,10 @@ async function hydrateLightBlocks(blocks) {
     const firstQuestionByBlock = new Map();
     for (const row of questionRows) {
         if (!firstQuestionByBlock.has(row.block_id)) {
-            firstQuestionByBlock.set(row.block_id, row.question);
+            firstQuestionByBlock.set(row.block_id, {
+                id: row.id,
+                question: row.question
+            });
         }
     }
 
@@ -132,7 +135,7 @@ async function hydrateLightBlocks(blocks) {
         const questionCount = questionCountByBlock.get(blockId) || 0;
 
         block.questions = firstQuestion
-            ? [{ question: firstQuestion }]
+            ? [firstQuestion]
             : [];
         block.question_count = questionCount;
 
@@ -183,6 +186,12 @@ router.get("/import-template", async (req, res) => {
                 "Alternativ 2": "$5$",
                 "Alternativ 3": "$10$",
                 "Alternativ 4": "$-5$"
+            },
+            {
+                Fråga: "Lös ekvationen $2x + 4 = 10$. Svar: $x = {{input}}$",
+                Frågetyp: "numeric_input",
+                Nivå: 1,
+                "Korrekta alternativ": "3"
             }
         ]);
 
@@ -200,6 +209,7 @@ router.get("/import-template", async (req, res) => {
             ["text"],
             ["single_choice"],
             ["multiple_choice"],
+            ["numeric_input"],
             [],
             ["Nivå"],
             ["Ange nivånummer i serien."],
@@ -218,7 +228,9 @@ router.get("/import-template", async (req, res) => {
             [],
             ["text → skriv rätt svar i kolumnen 'Rätta svar'"],
             ["single_choice → skriv numret på rätt alternativ, t.ex. 2"],
-            ["multiple_choice → skriv flera nummer, t.ex. 1,3,4"]
+            ["multiple_choice → skriv flera nummer, t.ex. 1,3,4"],
+            ["numeric_input → skriv {{input}} där svarsrutan ska visas och ange rätt svar, t.ex. 3"],
+            ["numeric_input använder numerisk rättning och kan ha flera svarsrutor"]
         ]);
 
     XLSX.utils.book_append_sheet(
@@ -1268,6 +1280,16 @@ router.post("/import",upload.single("file"),
 
                 }
 
+                if (questionType === "numeric_input") {
+
+                    answerConfig = {
+                        grading_mode: "numeric_input",
+                        default_answer:
+                            correctAnswers[0] || ""
+                    };
+
+                }
+
                 const [questionResult] =
                     await db.query(
                         `
@@ -1334,6 +1356,33 @@ router.post("/import",upload.single("file"),
                                 questionId,
                                 optionText,
                                 isCorrect ? 1 : 0,
+                                req.user.id,
+                                req.user.id
+                            ]
+                        );
+
+                    }
+
+                }
+
+                if (questionType === "numeric_input") {
+
+                    for (const correctAnswer of correctAnswers) {
+
+                        await db.query(
+                            `
+                            INSERT INTO options (
+                                question_id,
+                                text,
+                                is_correct,
+                                created_by,
+                                updated_by
+                            )
+                            VALUES (?, ?, 1, ?, ?)
+                            `,
+                            [
+                                questionId,
+                                correctAnswer,
                                 req.user.id,
                                 req.user.id
                             ]

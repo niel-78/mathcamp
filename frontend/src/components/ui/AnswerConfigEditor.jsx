@@ -279,9 +279,9 @@ export default function AnswerConfigEditor({
 
                 )}
 
-                {modeConfig?.settings.includes(
+                {(modeConfig?.settings.includes(
                     "round_to"
-                ) && (
+                ) || questionType === QUESTION_TYPES.NUMERIC_INPUT.value) && (
 
                     <Field
                         label="Avrunda till"
@@ -435,9 +435,9 @@ export default function AnswerConfigEditor({
 
                 )}
 
-                {modeConfig?.settings.includes(
+                {(modeConfig?.settings.includes(
                     "tolerance"
-                ) && (
+                ) || questionType === QUESTION_TYPES.NUMERIC_INPUT.value) && (
 
                     <Field
                         label="Tolerans"
@@ -488,9 +488,9 @@ export default function AnswerConfigEditor({
 
                 )}
 
-                {modeConfig?.settings.includes(
+                {(modeConfig?.settings.includes(
                     "decimals"
-                ) && (
+                ) || questionType === QUESTION_TYPES.NUMERIC_INPUT.value) && (
 
                     <Field
                         label="Decimaler"
@@ -590,6 +590,10 @@ export default function AnswerConfigEditor({
 
                     )}
 
+                    {questionType ===
+                        QUESTION_TYPES.NUMERIC_INPUT.value &&
+                        renderSettings()}
+
                     <div
                         className="
                             flex
@@ -683,6 +687,26 @@ export default function AnswerConfigEditor({
                                 </select>
 
                             </Field>
+
+                            {renderSettings()}
+
+                        </>
+
+                    )}
+
+                    {questionType ===
+                        QUESTION_TYPES.NUMERIC_INPUT.value && (
+
+                        <>
+
+                            <p className="text-sm text-muted-foreground">
+                                Skriv <code>{'{{input}}'}</code> i frågetexten
+                                där en svarsruta ska visas (en per fält).
+                                Lägg till facit under "Svarsalternativ" i
+                                samma ordning som svarsrutorna, markerade som
+                                korrekta. Alla rutor måste stämma för att
+                                frågan ska räknas som rätt.
+                            </p>
 
                             {renderSettings()}
 

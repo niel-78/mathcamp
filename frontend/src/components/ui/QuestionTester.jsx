@@ -56,17 +56,35 @@ export default function QuestionTester({
                 question.answer_config || {}
             );
 
+    const isNumericInput =
+        question.question_type === "numeric_input";
+
     const correctAnswer =
-        question.options?.find(
-            option =>
-                option.is_correct
-        )?.text ?? "";
+        isNumericInput
+            ? [
+                question.options?.find(
+                    option => option.is_correct
+                )?.text ?? answerConfig.default_answer ?? ""
+            ]
+            : question.options?.find(
+                option => option.is_correct
+            )?.text ?? "";
+
+    const displayedCorrectAnswer =
+        isNumericInput
+            ? correctAnswer[0]
+            : correctAnswer;
+
+    const answerForGrading =
+        isNumericInput
+            ? JSON.stringify([studentAnswer])
+            : studentAnswer;
 
     const isCorrect =
         useMemo(() => {
 
             return gradeAnswer({
-                studentAnswer,
+                studentAnswer: answerForGrading,
                 correctAnswer,
                 config: answerConfig
             });
@@ -74,6 +92,7 @@ export default function QuestionTester({
         }, [
             studentAnswer,
             correctAnswer,
+            answerForGrading,
             answerConfig
         ]);
 
@@ -100,7 +119,7 @@ export default function QuestionTester({
                 >
 
                     <MathContent
-                        value={correctAnswer}
+                        value={displayedCorrectAnswer}
                     />
 
                 </div>

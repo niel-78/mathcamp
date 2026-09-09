@@ -73,7 +73,8 @@ CREATE TABLE questions (
     question_type ENUM(
         'text',
         'single_choice',
-        'multiple_choice'
+        'multiple_choice',
+        'numeric_input'
     ),
 
     level_id INT NULL,

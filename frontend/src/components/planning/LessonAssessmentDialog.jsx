@@ -14,6 +14,10 @@ import {
     Button
 } from "@/components/ui/button";
 
+import {
+    Input
+} from "@/components/ui/input";
+
 import MathContent from "@/components/ui/MathContent";
 
 import { toast } from "sonner";
@@ -47,6 +51,11 @@ export default function LessonAssessmentDialog({
         selectedSectionIds,
         setSelectedSectionIds
     ] = useState([]);
+
+    const [
+        seedQuestionCount,
+        setSeedQuestionCount
+    ] = useState(5);
 
     const availableSections =
         diagnosticPlan?.sections ||
@@ -191,6 +200,21 @@ export default function LessonAssessmentDialog({
 
         }
 
+        const normalizedSeedQuestionCount =
+            Number(seedQuestionCount);
+
+        if (
+            !Number.isInteger(normalizedSeedQuestionCount) ||
+            normalizedSeedQuestionCount < 1
+        ) {
+            toast.error(
+                "Ange minst en uppgift före den adaptiva delen."
+            );
+
+            return;
+
+        }
+
         try {
 
             setSaving(true);
@@ -209,7 +233,9 @@ export default function LessonAssessmentDialog({
                             type: "diagnostic",
                             mode: "normal",
                             selected_block_ids:
-                                selectedBlockIds
+                                selectedBlockIds,
+                            seed_question_count:
+                                normalizedSeedQuestionCount
                         })
                     }
                 );
@@ -266,6 +292,21 @@ export default function LessonAssessmentDialog({
 
         }
 
+        const normalizedSeedQuestionCount =
+            Number(seedQuestionCount);
+
+        if (
+            !Number.isInteger(normalizedSeedQuestionCount) ||
+            normalizedSeedQuestionCount < 1
+        ) {
+            toast.error(
+                "Ange minst en uppgift före den adaptiva delen."
+            );
+
+            return;
+
+        }
+
         try {
 
             setSaving(true);
@@ -284,7 +325,9 @@ export default function LessonAssessmentDialog({
                             type: "diagnostic",
                             mode: "test",
                             selected_block_ids:
-                                selectedBlockIds
+                                selectedBlockIds,
+                            seed_question_count:
+                                normalizedSeedQuestionCount
                         })
                     }
                 );
@@ -552,6 +595,37 @@ export default function LessonAssessmentDialog({
                                 </div>
                             )}
 
+                        </div>
+
+                        <div
+                            className="
+                                space-y-2
+                            "
+                        >
+                            <label
+                                htmlFor="diagnostic-seed-question-count"
+                                className="font-medium"
+                            >
+                                Antal uppgifter före den adaptiva delen
+                            </label>
+
+                            <Input
+                                id="diagnostic-seed-question-count"
+                                type="number"
+                                min="1"
+                                step="1"
+                                value={seedQuestionCount}
+                                onChange={event =>
+                                    setSeedQuestionCount(
+                                        event.target.value
+                                    )
+                                }
+                                className="max-w-32"
+                            />
+
+                            <div className="text-sm text-muted-foreground">
+                                Uppgifterna väljs från de valda sektionerna.
+                            </div>
                         </div>
 
                         <div

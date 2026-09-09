@@ -102,6 +102,16 @@ export default async function importQuestionsToBlock({
 
         }
 
+        if (questionType === "numeric_input") {
+
+            answerConfig = {
+                grading_mode: "numeric_input",
+                default_answer:
+                    correctAnswers[0] || ""
+            };
+
+        }
+
         const [questionResult] =
             await db.query(
                 `
@@ -164,6 +174,33 @@ export default async function importQuestionsToBlock({
                         questionId,
                         optionText,
                         isCorrect ? 1 : 0,
+                        userId,
+                        userId
+                    ]
+                );
+
+            }
+
+        }
+
+        if (questionType === "numeric_input") {
+
+            for (const correctAnswer of correctAnswers) {
+
+                await db.query(
+                    `
+                    INSERT INTO options (
+                        question_id,
+                        text,
+                        is_correct,
+                        created_by,
+                        updated_by
+                    )
+                    VALUES (?, ?, 1, ?, ?)
+                    `,
+                    [
+                        questionId,
+                        correctAnswer,
                         userId,
                         userId
                     ]

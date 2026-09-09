@@ -77,6 +77,38 @@ router.get("/", async (req, res) => {
         ))[0]
         : [];
 
+    const sectionIds =
+        sections.map(section => section.id);
+
+    const [blockCounts] = sectionIds.length > 0
+        ? await db.query(
+            `
+            SELECT
+                section_id,
+                COUNT(*) AS block_count
+            FROM block_sections
+                INNER JOIN blocks b
+                    ON b.id = block_sections.block_id
+            WHERE section_id IN (?)
+                AND b.archived_at IS NULL
+                AND b.deleted_at IS NULL
+            GROUP BY section_id
+            `,
+            [sectionIds]
+        )
+        : [[]];
+
+    const blockCountBySection = new Map();
+
+    blockCounts.forEach(row => {
+        blockCountBySection.set(row.section_id, row.block_count);
+    });
+
+    for (const section of sections) {
+        section.block_count =
+            blockCountBySection.get(section.id) || 0;
+    }
+
     const sectionsBySubchapterId = new Map();
 
     for (const section of sections) {

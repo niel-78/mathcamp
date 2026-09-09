@@ -894,7 +894,8 @@ router.post("/:id/group-assessments",
         const {
             type,
             mode = "normal",
-            selected_block_ids = []
+            selected_block_ids = [],
+            seed_question_count = null
         } = req.body;
 
         const connection =
@@ -937,6 +938,9 @@ router.post("/:id/group-assessments",
                         .map(id => Number(id))
                         .filter(id => Number.isFinite(id) && id > 0)
                     : [];
+
+            const normalizedSeedQuestionCount =
+                Number(seed_question_count);
 
             if (type === "diagnostic") {
 
@@ -1037,6 +1041,16 @@ router.post("/:id/group-assessments",
                         mode,
                         JSON.stringify({
                             ...typeSettings,
+                            attempt: {
+                                ...(typeSettings.attempt || {}),
+                                ...(Number.isInteger(normalizedSeedQuestionCount) &&
+                                normalizedSeedQuestionCount > 0
+                                    ? {
+                                        seedQuestionCount:
+                                            normalizedSeedQuestionCount
+                                    }
+                                    : {})
+                            },
                             selected_block_ids:
                                 normalizedSelectedBlockIds
                         })

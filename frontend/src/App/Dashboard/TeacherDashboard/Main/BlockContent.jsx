@@ -8,6 +8,29 @@ import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 import MathContent from "@/components/ui/MathContent";
 import { checkOptionValues } from "@/utils/checkOptionValues";
 
+function getDisplayedOptions(question) {
+
+    if (question.options?.length > 0) {
+        return question.options;
+    }
+
+    if (
+        question.question_type === "numeric_input" &&
+        question.answer_config?.default_answer !== undefined &&
+        question.answer_config?.default_answer !== ""
+    ) {
+        return [
+            {
+                id: `numeric-answer-${question.id}`,
+                text: question.answer_config.default_answer,
+                is_correct: 1
+            }
+        ];
+    }
+
+    return [];
+}
+
 export default function BlockContent({
     block,
     area,
@@ -120,14 +143,22 @@ export default function BlockContent({
     const duplicateQuestion =
         async (questionId) => {
 
-            await fetch(
-                `${API_URL}/api/questions/${questionId}/duplicate`,
-                {
-                    method: "POST",
-                    headers:
-                        authHeaders()
-                }
-            );
+            const response =
+                await fetch(
+                    `${API_URL}/api/questions/${questionId}/duplicate`,
+                    {
+                        method: "POST",
+                        headers:
+                            authHeaders()
+                    }
+                );
+
+            if (!response.ok) {
+                toast.error(
+                    "Kunde inte duplicera uppgiften"
+                );
+                return;
+            }
 
             await loadBlock();
 
@@ -276,9 +307,9 @@ export default function BlockContent({
 
                                 </div>
 
-                                {question.options?.length > 0 && (
+                                {getDisplayedOptions(question).length > 0 && (
                                     <div className="grid gap-1 pl-2">
-                                        {question.options.map(option => (
+                                        {getDisplayedOptions(question).map(option => (
                                             <div
                                                 key={option.id}
                                                 className="flex items-center gap-2 text-sm"
@@ -329,6 +360,7 @@ export default function BlockContent({
 
                                 <Button
                                     size="sm"
+                                    disabled={!question.id}
                                     onClick={() =>
                                         openTab(
                                             {

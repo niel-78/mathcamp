@@ -56,6 +56,15 @@ export default function ContextMenu(props) {
 
                             setContextMenu(null);
                         }}
+                        onSetBook={() => {
+                            props.onSetGroupBook?.(
+                                contextMenu.groupId,
+                                contextMenu.groupName,
+                                contextMenu.groupBookId
+                            );
+
+                            setContextMenu(null);
+                        }}
                         onSetAbilitySeries={() => {
                             props.onSetGroupAbilitySeries?.(
                                 contextMenu.groupId,

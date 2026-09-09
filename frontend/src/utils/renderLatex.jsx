@@ -1,6 +1,16 @@
 import katex from "katex";
 import "katex/dist/katex.min.css";
 
+const escapeHtml = (str) =>
+  str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+// bevara radbrytningar i vanlig text (utanför math-uttryck)
+const toHtmlText = (str) =>
+  escapeHtml(str).replace(/\n/g, "<br>");
+
 export const renderLatex = (text) => {
   if (!text) return "";
 
@@ -16,7 +26,7 @@ export const renderLatex = (text) => {
 
   while ((match = regex.exec(safe)) !== null) {
     // text före math
-    result += safe.slice(lastIndex, match.index);
+    result += toHtmlText(safe.slice(lastIndex, match.index));
 
     try {
       result += katex.renderToString(match[1], {
@@ -24,14 +34,14 @@ export const renderLatex = (text) => {
         strict: "ignore",
       });
     } catch {
-      result += match[0];
+      result += toHtmlText(match[0]);
     }
 
     lastIndex = match.index + match[0].length;
   }
 
   // resten av texten
-  result += safe.slice(lastIndex);
+  result += toHtmlText(safe.slice(lastIndex));
 
   return result;
 };

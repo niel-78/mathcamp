@@ -107,5 +107,9 @@ export const formatMathText = (text) => {
         "$1"
     );
 
-    return result;
+    return result
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\n/g, "<br>");
 };

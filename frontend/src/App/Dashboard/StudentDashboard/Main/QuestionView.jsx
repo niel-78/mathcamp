@@ -1,6 +1,7 @@
 import TextQuestion from "./TextQuestion";
 import SingleChoiceQuestion from "./SingleChoiceQuestion";
 import MultiChoiceQuestion from "./MultiChoiceQuestion";
+import NumericInputQuestion from "./NumericInputQuestion";
 
 export default function QuestionView({
     question,
@@ -15,6 +16,20 @@ export default function QuestionView({
         case 'text':
             return (
                 <TextQuestion
+                    question={question}
+                    value={answer}
+                    onBlur={value =>
+                        onTextAnswer(
+                            question.id,
+                            value
+                        )
+                    }
+                />
+            );
+
+        case 'numeric_input':
+            return (
+                <NumericInputQuestion
                     question={question}
                     value={answer}
                     onBlur={value =>

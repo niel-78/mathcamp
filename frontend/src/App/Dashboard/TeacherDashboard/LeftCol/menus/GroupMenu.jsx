@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 
 export default function GroupMenu({
     onRename,
+    onSetBook,
     onSetAbilitySeries,
     onArchive
 }) {
@@ -14,6 +15,14 @@ export default function GroupMenu({
                 onClick={onRename}
             >
                 Byt namn
+            </Button>
+
+            <Button
+                className="context-menu-button"
+                variant="inline"
+                onClick={onSetBook}
+            >
+                Byt bok
             </Button>
 
             <Button
