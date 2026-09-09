@@ -1,10 +1,18 @@
 import express from "express";
+import crypto from "node:crypto";
 import db from "../db.js";
 import multer from "multer";
 import XLSX from "xlsx";
 import hydrateBlocks from "../utils/hydrateBlocks.js";
 import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
+import { normalizeImportRows } from "../helpers/normalizeImportRows.js";
+import {
+    createImportJob,
+    getImportJob,
+    updateImportJob,
+    removeImportJob
+} from "../helpers/importJobStore.js";
 
 import { getAppSettings } from "../utils/getAppSettings.js";
 
@@ -16,6 +24,279 @@ const upload = multer({
 
 router.use(requireAuth);
 router.use(requireRole("teacher","super"));
+
+async function processBlockImportJob({
+    jobId,
+    fileBuffer,
+    userId,
+    abilityId,
+    sectionId,
+    centralContentId
+}) {
+    const job = getImportJob(jobId);
+
+    if (!job) {
+        return;
+    }
+
+    try {
+        updateImportJob(jobId, {
+            status: "processing",
+            message: "Kontrollerar Excel-fil...",
+            progress: 5
+        });
+
+        const [[teacher]] = await db.query(
+            `
+            SELECT school_id
+            FROM school_teachers
+            WHERE teacher_id = ?
+            `,
+            [userId]
+        );
+
+        if (!teacher?.school_id) {
+            throw new Error("Användaren är inte kopplad till en skola");
+        }
+
+        let ability = null;
+
+        if (abilityId) {
+            [[ability]] = await db.query(
+                `
+                SELECT id, series_id
+                FROM abilities
+                WHERE id = ?
+                AND deleted_at IS NULL
+                `,
+                [abilityId]
+            );
+
+            if (!ability) {
+                throw new Error("Förmågan hittades inte");
+            }
+        }
+
+        const [blockResult] = await db.query(
+            `
+            INSERT INTO blocks (
+                school_id,
+                created_by,
+                updated_by,
+                title
+            )
+            VALUES (?, ?, ?, ?)
+            `,
+            [
+                teacher.school_id,
+                userId,
+                userId,
+                "Nytt block"
+            ]
+        );
+
+        const blockId = blockResult.insertId;
+
+        updateImportJob(jobId, {
+            blockId,
+            message: "Sparar blockinställningar..."
+        });
+
+        if (ability) {
+            await db.query(
+                `
+                INSERT INTO block_abilities (
+                    block_id,
+                    ability_id
+                )
+                VALUES (?, ?)
+                `,
+                [blockId, ability.id]
+            );
+        }
+
+        if (sectionId) {
+            await db.query(
+                `
+                INSERT INTO block_sections (
+                    block_id,
+                    section_id
+                )
+                VALUES (?, ?)
+                `,
+                [blockId, sectionId]
+            );
+        }
+
+        const workbook = XLSX.read(fileBuffer);
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet);
+
+        const [levels] = ability?.series_id
+            ? await db.query(
+                `
+                SELECT id
+                FROM ability_series_levels
+                WHERE series_id = ?
+                ORDER BY sort_order
+                `,
+                [ability.series_id]
+            )
+            : [[]];
+
+        const { questions } = normalizeImportRows({
+            rows,
+            blockId,
+            userId,
+            abilityLevels: levels
+        });
+
+        updateImportJob(jobId, {
+            totalRows: Math.max(rows.length, 1),
+            processedRows: 0,
+            questionCount: questions.length,
+            message: `Bearbetar ${questions.length} frågor...`
+        });
+
+        if (questions.length === 0) {
+            updateImportJob(jobId, {
+                status: "completed",
+                progress: 100,
+                message: "Importen klar. Inga frågor hittades.",
+                questionCount: 0,
+                blockId
+            });
+            return;
+        }
+
+        const connection = await db.getConnection();
+
+        try {
+            await connection.beginTransaction();
+
+            const questionInsertValues = questions.map(question => [
+                question.blockId,
+                question.question,
+                question.questionType,
+                question.seriesLevelId,
+                question.userId,
+                question.userId,
+                JSON.stringify(question.answerConfig)
+            ]);
+
+            await connection.query(
+                `
+                INSERT INTO questions (
+                    block_id,
+                    question,
+                    question_type,
+                    series_level_id,
+                    created_by,
+                    updated_by,
+                    answer_config
+                )
+                VALUES ?
+                `,
+                [questionInsertValues]
+            );
+
+            const [insertedQuestionIds] = await connection.query(
+                `
+                SELECT id
+                FROM questions
+                WHERE block_id = ?
+                AND created_by = ?
+                AND deleted_at IS NULL
+                AND archived_at IS NULL
+                ORDER BY id DESC
+                LIMIT ?
+                `,
+                [blockId, userId, questions.length]
+            );
+
+            const questionIds = [...insertedQuestionIds]
+                .map(row => Number(row.id))
+                .reverse();
+
+            const optionRows = [];
+            for (let i = 0; i < questions.length; i++) {
+                const questionId = questionIds[i];
+                if (!questionId) {
+                    continue;
+                }
+
+                for (const option of questions[i].options) {
+                    optionRows.push([
+                        questionId,
+                        option.text,
+                        option.isCorrect,
+                        userId,
+                        userId
+                    ]);
+                }
+
+                updateImportJob(jobId, {
+                    processedRows: i + 1,
+                    message: `Sparar fråga ${i + 1} av ${questions.length}`
+                });
+            }
+
+            if (optionRows.length > 0) {
+                await connection.query(
+                    `
+                    INSERT INTO options (
+                        question_id,
+                        text,
+                        is_correct,
+                        created_by,
+                        updated_by
+                    )
+                    VALUES ?
+                    `,
+                    [optionRows]
+                );
+            }
+
+            await connection.commit();
+
+            const [blocks] = await db.query(
+                `
+                SELECT *
+                FROM blocks
+                WHERE id = ?
+                `,
+                [blockId]
+            );
+
+            const [block] = await hydrateBlocks(blocks);
+
+            updateImportJob(jobId, {
+                status: "completed",
+                progress: 100,
+                processedRows: rows.length,
+                message: "Importen klar.",
+                questionCount: questions.length,
+                blockId,
+                block
+            });
+
+            removeImportJob(jobId);
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        console.error("BLOCK IMPORT JOB FAILED", error);
+        updateImportJob(jobId, {
+            status: "failed",
+            progress: 0,
+            message: error.message || "Importen misslyckades.",
+            error: error.message || "Importen misslyckades."
+        });
+    }
+}
 
 async function hydrateLightBlocks(blocks) {
 
@@ -1097,336 +1378,66 @@ router.post("/:blockId/points", requireAuth,
 );
 
 // POST /api/blocks/import
-router.post("/import",upload.single("file"),
-    async (req, res) => {
-
-        try {
-
-            if (!req.file) {
-                return res.status(400).json({
-                    error: "Ingen fil uppladdad"
-                });
-            }
-
-            const [[teacher]] =
-                await db.query(
-                    `
-                    SELECT school_id
-                    FROM school_teachers
-                    WHERE teacher_id = ?
-                    `,
-                    [req.user.id]
-                );
-
-            if (!teacher?.school_id) {
-                return res.status(403).json({
-                    error: "Användaren är inte kopplad till en skola"
-                });
-            }
-
-            let ability;
-
-            if (req.body.abilityId) {
-                [[ability]] = await db.query(
-                    `
-                    SELECT id, series_id
-                    FROM abilities
-                    WHERE id = ?
-                    AND deleted_at IS NULL
-                    `,
-                    [req.body.abilityId]
-                );
-
-                if (!ability) {
-                    return res.status(400).json({
-                        error: "Förmågan hittades inte"
-                    });
-                }
-            }
-
-            const [blockResult] =
-                await db.query(
-                    `
-                    INSERT INTO blocks (
-                        school_id,
-                        created_by,
-                        updated_by,
-                        title
-                    )
-                    VALUES (?, ?, ?, ?)
-                    `,
-                    [
-                        teacher.school_id,
-                        req.user.id,
-                        req.user.id,
-                        "Nytt block"
-                    ]
-                );
-
-            const blockId =
-                blockResult.insertId;
-
-            if (ability) {
-
-                await db.query(
-                    `
-                    INSERT INTO block_abilities (
-                        block_id,
-                        ability_id
-                    )
-                    VALUES (?, ?)
-                    `,
-                    [
-                        blockId,
-                        ability.id
-                    ]
-                );
-
-            }
-
-            if (req.body.sectionId) {
-
-                await db.query(
-                    `
-                    INSERT INTO block_sections (
-                        block_id,
-                        section_id
-                    )
-                    VALUES (?, ?)
-                    `,
-                    [
-                        blockId,
-                        req.body.sectionId
-                    ]
-                );
-
-            }
-
-            const workbook =
-                XLSX.read(
-                    req.file.buffer
-                );
-
-            const sheet =
-                workbook.Sheets[
-                    workbook.SheetNames[0]
-                ];
-
-            const rows =
-                XLSX.utils.sheet_to_json(
-                    sheet
-                );
-
-            let importedCount = 0;
-
-            for (const row of rows) {
-
-                const question =
-                    row.Fråga ||
-                    row.fråga ||
-                    row.Question ||
-                    row.question;
-
-                if (!question) {
-                    continue;
-                }
-
-                const questionType =
-                    row.Frågetyp ||
-                    row.frågetyp ||
-                    row.QuestionType ||
-                    row.questionType ||
-                    "text";
-
-                const levelNumber =
-                    Number(
-                        row.Nivå ||
-                        row.Level ||
-                        row.level ||
-                        1
-                    );
-
-                const [levels] =
-                    await db.query(
-                        `
-                        SELECT id
-                        FROM ability_series_levels
-                        WHERE series_id = ?
-                        ORDER BY sort_order
-                        `,
-                        [ability?.series_id]
-                    );
-
-                const seriesLevelId =
-                    levels[levelNumber - 1]?.id || null;
-
-                const correctAnswers =
-                    String(
-                        row["Korrekta alternativ"] ||
-                        row["Rätta svar"] ||
-                        ""
-                    )
-                        .split(",")
-                        .map(value => value.trim())
-                        .filter(Boolean);
-
-                let answerConfig = {};
-
-                if (questionType === "text") {
-
-                    answerConfig = {
-                        correctAnswers
-                    };
-
-                }
-
-                if (questionType === "numeric_input") {
-
-                    answerConfig = {
-                        grading_mode: "numeric_input",
-                        default_answer:
-                            correctAnswers[0] || ""
-                    };
-
-                }
-
-                const [questionResult] =
-                    await db.query(
-                        `
-                            INSERT INTO questions (
-                                block_id,
-                                question,
-                                question_type,
-                                series_level_id,
-                                created_by,
-                                updated_by,
-                                answer_config
-                            )
-                            VALUES (?, ?, ?, ?, ?, ?, ?)
-                        `,
-                        [
-                            blockId,
-                            question,
-                            questionType,
-                            seriesLevelId,
-                            req.user.id,
-                            req.user.id,
-                            JSON.stringify(answerConfig)
-                        ]
-                    );
-
-                const questionId =
-                    questionResult.insertId;
-
-                if (
-                    questionType === "single_choice" ||
-                    questionType === "multiple_choice"
-                ) {
-
-                    for (
-                        let i = 1;
-                        i <= 20;
-                        i++
-                    ) {
-
-                        const optionText =
-                            row[`Alternativ ${i}`];
-
-                        if (!optionText) {
-                            continue;
-                        }
-
-                        const isCorrect =
-                            correctAnswers.includes(
-                                String(i)
-                            );
-
-                        await db.query(
-                            `
-                            INSERT INTO options (
-                                question_id,
-                                text,
-                                is_correct,
-                                created_by,
-                                updated_by
-                            )
-                            VALUES (?, ?, ?, ?, ?)
-                            `,
-                            [
-                                questionId,
-                                optionText,
-                                isCorrect ? 1 : 0,
-                                req.user.id,
-                                req.user.id
-                            ]
-                        );
-
-                    }
-
-                }
-
-                if (questionType === "numeric_input") {
-
-                    for (const correctAnswer of correctAnswers) {
-
-                        await db.query(
-                            `
-                            INSERT INTO options (
-                                question_id,
-                                text,
-                                is_correct,
-                                created_by,
-                                updated_by
-                            )
-                            VALUES (?, ?, 1, ?, ?)
-                            `,
-                            [
-                                questionId,
-                                correctAnswer,
-                                req.user.id,
-                                req.user.id
-                            ]
-                        );
-
-                    }
-
-                }
-
-                importedCount++;
-
-            }
-
-            const [blocks] = await db.query(
-                `
-                SELECT *
-                FROM blocks
-                WHERE id = ?
-                `,
-                [blockId]
-            );
-
-            const [block] =
-                await hydrateBlocks(blocks);
-
-            res.json({
-                success: true,
-                blockId,
-                questionCount: importedCount,
-                block
+router.post("/import", upload.single("file"), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                error: "Ingen fil uppladdad"
             });
-
-        } catch (error) {
-
-            console.error(error);
-
-            res.status(500).json({
-                error: "Import failed"
-            });
-
         }
 
+        const jobId = crypto.randomUUID();
+
+        createImportJob({
+            jobId,
+            fileName: req.file.originalname,
+            userId: req.user.id
+        });
+
+        void processBlockImportJob({
+            jobId,
+            fileBuffer: req.file.buffer,
+            userId: req.user.id,
+            abilityId: req.body.abilityId || null,
+            sectionId: req.body.sectionId || null,
+            centralContentId: req.body.centralContentId || null
+        });
+
+        res.status(202).json({
+            success: true,
+            jobId,
+            status: "queued"
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            error: "Import failed"
+        });
     }
-);
+});
+
+router.get("/import/jobs/:jobId", async (req, res) => {
+    const job = getImportJob(req.params.jobId);
+
+    if (!job) {
+        return res.status(404).json({
+            error: "Jobb hittades inte"
+        });
+    }
+
+    res.json({
+        id: job.id,
+        status: job.status,
+        progress: job.progress,
+        message: job.message,
+        totalRows: job.totalRows,
+        processedRows: job.processedRows,
+        questionCount: job.questionCount,
+        blockId: job.blockId,
+        block: job.block || null,
+        error: job.error || null
+    });
+});
 
 // GET /api/blocks/:id/point-metadata
 router.get("/:id/point-metadata",

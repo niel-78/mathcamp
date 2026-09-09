@@ -23,6 +23,10 @@ export default function CreateBlockFromExcelDialog({
     const [file, setFile] = useState(null);
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [importProgress, setImportProgress] = useState({
+        percent: 0,
+        message: ""
+    });
     const [abilitySeries, setAbilitySeries] = useState([]);
     const [selectedSeriesId, setSelectedSeriesId] = useState("");
     const [selectedAbilityId, setSelectedAbilityId] = useState(
@@ -171,8 +175,8 @@ export default function CreateBlockFromExcelDialog({
 
     const createBlock = async () => {
         try {
-
             setLoading(true);
+            setImportProgress({ percent: 0, message: "Förbereder import..." });
 
             const defaultSeriesId = selectedSeriesId || abilitySeries[0]?.id;
             const resolvedAbilityId =
@@ -181,6 +185,7 @@ export default function CreateBlockFromExcelDialog({
                 (newAbilityName.trim() ? await createAbility(defaultSeriesId) : null);
 
             if (!resolvedAbilityId) {
+                setLoading(false);
                 return;
             }
 
@@ -190,17 +195,11 @@ export default function CreateBlockFromExcelDialog({
             formData.append("abilityId", String(resolvedAbilityId));
 
             if (sectionId) {
-                formData.append(
-                    "sectionId",
-                    sectionId
-                );
+                formData.append("sectionId", sectionId);
             }
 
             if (centralContentId) {
-                formData.append(
-                    "centralContentId",
-                    centralContentId
-                );
+                formData.append("centralContentId", centralContentId);
             }
 
             const response = await fetch(
@@ -218,20 +217,55 @@ export default function CreateBlockFromExcelDialog({
             }
 
             const data = await response.json();
-            setResult({
-                blockId: data.blockId,
-                questionCount: data.questionCount
-            });
-            onCreated?.(data.block);
-            onOpenChange(false);
+            const jobId = data.jobId;
+
+            const poll = async () => {
+                const statusResponse = await fetch(
+                    `${API_URL}/api/blocks/import/jobs/${jobId}`,
+                    {
+                        headers: authHeaders()
+                    }
+                );
+
+                if (!statusResponse.ok) {
+                    throw new Error("Kunde inte hämta importstatus.");
+                }
+
+                const status = await statusResponse.json();
+                setImportProgress({
+                    percent: Number(status.progress || 0),
+                    message: status.message || "Bearbetar frågor..."
+                });
+
+                if (status.status === "completed") {
+                    setLoading(false);
+                    setResult({
+                        blockId: status.blockId,
+                        questionCount: status.questionCount
+                    });
+                    onCreated?.(status.block);
+                    onOpenChange(false);
+                    return;
+                }
+
+                if (status.status === "failed") {
+                    setLoading(false);
+                    setResult({
+                        error: status.error || "Importen misslyckades."
+                    });
+                    return;
+                }
+
+                setTimeout(poll, 400);
+            };
+
+            await poll();
 
         } catch (error) {
             console.error(error);
-            setResult({ error: error.message || "Kunde inte skapa blocket." });
-        } finally {
-
             setLoading(false);
-
+            setImportProgress({ percent: 0, message: "Import misslyckades" });
+            setResult({ error: error.message || "Kunde inte skapa blocket." });
         }
     };
 
@@ -330,6 +364,21 @@ export default function CreateBlockFromExcelDialog({
                         ? "Skapar block..."
                         : "Skapa block"}
                 </Button>
+
+                {loading && (
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between text-sm text-muted-foreground">
+                            <span>{importProgress.message || "Bearbetar import..."}</span>
+                            <span>{importProgress.percent}%</span>
+                        </div>
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
+                            <div
+                                className="h-full rounded-full bg-blue-600 transition-all duration-300"
+                                style={{ width: `${importProgress.percent}%` }}
+                            />
+                        </div>
+                    </div>
+                )}
 
                 {result && (
                     <div

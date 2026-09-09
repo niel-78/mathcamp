@@ -7,6 +7,14 @@ import ArchiveQuestionDialog from "@/components/ui/ArchiveQuestionDialog";
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";    
 import MathContent from "@/components/ui/MathContent";
 import { checkOptionValues } from "@/utils/checkOptionValues";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle
+} from "@/components/ui/dialog";
 
 function getDisplayedOptions(question) {
 
@@ -41,6 +49,8 @@ export default function BlockContent({
     const [currentBlock, setCurrentBlock] = useState(block);    
 
     const [questionToArchive, setQuestionToArchive] = useState(null);
+
+    const [operationsDialogOpen, setOperationsDialogOpen] = useState(false);
 
     useEffect(() => {
         setCurrentBlock(block);
@@ -217,6 +227,116 @@ export default function BlockContent({
             toast.success("Felanmälningarna togs bort");
         };
 
+    // Bulk-marks every question in the block as an equation: numeric_input question
+    // type with one answer box per root (unlabeled "x = " for a single root, subscripted
+    // "x_1 = " / "x_2 = " ... for two or more), and order-independent grading (so a
+    // double root only needs to be entered once, and root order doesn't matter).
+    const applyEquationsPreset = async () => {
+
+        const questions = currentBlock?.questions || [];
+
+        const confirmed = window.confirm(
+            `Markera alla ${questions.length} uppgifter i blocket som ekvationer? \n\n` +
+            "Detta sätter frågetyp till numeriska svarsrutor och lägger till en svarsruta per rätt " +
+            "svarsalternativ som saknas i frågetexten (\"x = {{input}}\" vid en rot, \"x_1 = {{input}}\", " +
+            "\"x_2 = {{input}}\" osv vid flera), samt aktiverar \"Svarsordning saknar betydelse\"."
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        for (const question of questions) {
+
+            const config =
+                typeof question.answer_config === "string"
+                    ? JSON.parse(question.answer_config || "{}")
+                    : question.answer_config || {};
+
+            const correctAnswerCount =
+                (question.options || [])
+                    .filter(o => o.is_correct).length;
+
+            const currentInputCount =
+                (
+                    (question.question || "")
+                        .match(/{{input}}/g) || []
+                ).length;
+
+            const missingInputCount =
+                Math.max(
+                    correctAnswerCount - currentInputCount,
+                    0
+                );
+
+            // If this now needs 2+ roots, relabel a lone unlabeled "x = {{input}}"
+            // (from an earlier single-root version of the question) to "x_1 = {{input}}"
+            // so it doesn't end up mismatched with the newly appended "x_2 = {{input}}" etc.
+            let questionText = question.question || "";
+
+            if (correctAnswerCount >= 2) {
+                questionText = questionText.replace(
+                    /x\s*=\s*\{\{input\}\}/,
+                    "x_1 = {{input}}"
+                );
+            }
+
+            const additionalLines = [];
+
+            for (let i = 0; i < missingInputCount; i++) {
+
+                const rootNumber = currentInputCount + i + 1;
+
+                const label =
+                    correctAnswerCount === 1
+                        ? "x"
+                        : `x_${rootNumber}`;
+
+                additionalLines.push(
+                    `${label} = {{input}}`
+                );
+
+            }
+
+            const updatedQuestionText =
+                additionalLines.length === 0
+                    ? questionText
+                    : `${questionText}\n${additionalLines.join("\n")}`.trim();
+
+            const response = await fetch(
+                `${API_URL}/api/questions/${question.id}`,
+                {
+                    method: "PUT",
+                    headers: {
+                        ...authHeaders(),
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        question: updatedQuestionText,
+                        question_type: "numeric_input",
+                        level_id: question.level_id,
+                        answer_config: {
+                            ...config,
+                            order_independent: true
+                        }
+                    })
+                }
+            );
+
+            if (!response.ok) {
+                toast.error(`Kunde inte uppdatera uppgift #${question.id}`);
+            }
+
+        }
+
+        await loadBlock();
+
+        toast.success("Uppgifterna är nu markerade som ekvationer");
+
+        setOperationsDialogOpen(false);
+
+    };
+
     const sortedQuestions =
         [...(currentBlock?.questions || [])]
             .sort((a, b) => {
@@ -239,11 +359,22 @@ export default function BlockContent({
             <BaseTabLayout
                 title={`Block #${currentBlock.id}`}
                 actions={
-                    <Button
-                        onClick={createQuestion}
-                    >
-                        Ny uppgift
-                    </Button>
+                    <div className="flex gap-2">
+
+                        <Button
+                            variant="outline"
+                            onClick={() => setOperationsDialogOpen(true)}
+                        >
+                            Operationer
+                        </Button>
+
+                        <Button
+                            onClick={createQuestion}
+                        >
+                            Ny uppgift
+                        </Button>
+
+                    </div>
                 }
             >
                 <div className="space-y-2">
@@ -466,6 +597,47 @@ export default function BlockContent({
 
                 }}
             />
+
+            <Dialog
+                open={operationsDialogOpen}
+                onOpenChange={setOperationsDialogOpen}
+            >
+
+                <DialogContent>
+
+                    <DialogHeader>
+
+                        <DialogTitle>
+                            Operationer
+                        </DialogTitle>
+
+                        <DialogDescription>
+                            Massåtgärder som appliceras på alla uppgifter i blocket.
+                        </DialogDescription>
+
+                    </DialogHeader>
+
+                    <Button
+                        variant="outline"
+                        onClick={applyEquationsPreset}
+                    >
+                        Är ekvationer
+                    </Button>
+
+                    <DialogFooter>
+
+                        <Button
+                            variant="outline"
+                            onClick={() => setOperationsDialogOpen(false)}
+                        >
+                            Stäng
+                        </Button>
+
+                    </DialogFooter>
+
+                </DialogContent>
+
+            </Dialog>
 
 
         </>    

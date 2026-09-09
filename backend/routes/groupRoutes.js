@@ -8,6 +8,7 @@ import generatePassword from "../utils/generatePassword.js";
 import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
 import { gradeAnswer } from "../utils/grading/gradeAnswer.js";
+import { scoreNumericInput } from "../utils/grading/gradeNumericInput.js";
 
 const router = express.Router();
 
@@ -463,16 +464,13 @@ router.get("/:id/results", async (req, res) => {
                         .split("||")
                         .filter(Boolean);
 
-                    if (gradeAnswer({
-                        studentAnswer: answer.text_answer,
-                        correctAnswer: correctValues,
-                        config: {
-                            ...config,
-                            grading_mode: "numeric_input"
-                        }
-                    })) {
-                        correctCount += 1;
-                    }
+                    const score = scoreNumericInput(
+                        answer.text_answer,
+                        correctValues,
+                        config
+                    );
+
+                    correctCount += score.pointsFraction;
                     continue;
                 }
 
@@ -496,7 +494,7 @@ router.get("/:id/results", async (req, res) => {
                     `${student.first_name} ${student.last_name}`,
                 username: student.username,
                 answered_question_count: answers.length,
-                correct_answer_count: correctCount,
+                correct_answer_count: Math.round(correctCount * 100) / 100,
                 correct_percentage: answers.length
                     ? Math.round((correctCount / answers.length) * 100)
                     : null

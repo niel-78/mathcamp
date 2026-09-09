@@ -77,6 +77,13 @@ export default function AnswerConfigEditor({
         config.allow_decimal ?? false
     );
 
+    const [
+        orderIndependent,
+        setOrderIndependent
+    ] = useState(
+        config.order_independent ?? false
+    );
+
     const modeConfig =
         Object.values(GRADING_MODES)
             .find(
@@ -117,7 +124,9 @@ export default function AnswerConfigEditor({
                     require_simplified:
                         requireSimplified,
                     allow_decimal:
-                        allowDecimal
+                        allowDecimal,
+                    order_independent:
+                        orderIndependent
                 }
             }
         );
@@ -594,6 +603,25 @@ export default function AnswerConfigEditor({
                         QUESTION_TYPES.NUMERIC_INPUT.value &&
                         renderSettings()}
 
+                    {questionType ===
+                        QUESTION_TYPES.NUMERIC_INPUT.value && (
+
+                        <Field label="">
+                            <div>
+                                <strong>
+                                    Ordning spelar ingen roll:
+                                </strong>
+                                {" "}
+                                {
+                                    orderIndependent
+                                        ? "Ja"
+                                        : "Nej"
+                                }
+                            </div>
+                        </Field>
+
+                    )}
+
                     <div
                         className="
                             flex
@@ -709,6 +737,35 @@ export default function AnswerConfigEditor({
                             </p>
 
                             {renderSettings()}
+
+                            <Field label="">
+
+                                <label
+                                    className="
+                                        flex
+                                        items-center
+                                        gap-2
+                                    "
+                                >
+
+                                    <input
+                                        type="checkbox"
+                                        checked={
+                                            orderIndependent
+                                        }
+                                        onChange={(e) =>
+                                            setOrderIndependent(
+                                                e.target.checked
+                                            )
+                                        }
+                                    />
+
+                                    Ordning spelar ingen roll (t.ex. vid
+                                    dubbelrot räcker det att en rot anges)
+
+                                </label>
+
+                            </Field>
 
                         </>
 

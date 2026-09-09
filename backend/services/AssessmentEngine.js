@@ -2,6 +2,7 @@
 
 import db from "../db.js";
 import { gradeAnswer } from "../utils/grading/gradeAnswer.js";
+import { scoreNumericInput } from "../utils/grading/gradeNumericInput.js";
 
 export default class AssessmentEngine {
 
@@ -182,8 +183,12 @@ export default class AssessmentEngine {
         attemptId,
         userId,
         questionId,
-        correct
+        correct,
+        masteryMultiplier = null
     ) {
+
+        const multiplier =
+            masteryMultiplier ?? (correct ? 1 : -1);
 
         const [[attempt]] =
             await connection.query(
@@ -240,7 +245,7 @@ export default class AssessmentEngine {
                     Math.min(
                         100,
                         masteryBefore +
-                        (correct ? 5 : -5)
+                        multiplier * 5
                     )
                 );
 
@@ -446,6 +451,8 @@ export default class AssessmentEngine {
         }
 
         let correct = false;
+        let pointsFraction = 0;
+        let masteryMultiplier = null;
 
         if (
             question.question_type === "text"
@@ -478,6 +485,8 @@ export default class AssessmentEngine {
                 config
             });
 
+            pointsFraction = correct ? 1 : 0;
+
         } else if (
             question.question_type === "numeric_input"
         ) {
@@ -501,16 +510,15 @@ export default class AssessmentEngine {
                     )
                     : question.answer_config;
 
-            correct = gradeAnswer({
-                studentAnswer:
-                    answer.text_answer,
-                correctAnswer:
-                    correctOptions.map(o => o.text),
-                config: {
-                    ...config,
-                    grading_mode: "numeric_input"
-                }
-            });
+            const score = scoreNumericInput(
+                answer.text_answer,
+                correctOptions.map(o => o.text),
+                config
+            );
+
+            correct = score.correct;
+            pointsFraction = score.pointsFraction;
+            masteryMultiplier = score.masteryMultiplier;
 
         } else {
 
@@ -553,6 +561,8 @@ export default class AssessmentEngine {
                     correctIds
                 );
 
+            pointsFraction = correct ? 1 : 0;
+
         }
 
         const [[attempt]] =
@@ -570,11 +580,13 @@ export default class AssessmentEngine {
             attemptId,
             attempt.user_id,
             questionId,
-            correct
+            correct,
+            masteryMultiplier
         );
 
         return {
-            correct
+            correct,
+            pointsFraction
         };
 
     }

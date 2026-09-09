@@ -24,8 +24,8 @@ import MathContent
 import OptionList
     from "@/components/ui/OptionList";
 
-import QuestionTester
-    from "@/components/ui/QuestionTester";
+import { gradeAnswer } from "@/utils/grading/gradeAnswer";
+import { scoreNumericInput } from "@/utils/grading/gradeNumericInput";
 
 import AnswerConfigEditor
     from "@/components/ui/AnswerConfigEditor";
@@ -126,6 +126,78 @@ export default function QuestionCard({
                     : [...current, optionId];
 
             });
+
+    const correctOptions =
+        question.options?.filter(option => option.is_correct) || [];
+
+    const hasPreviewAnswer =
+        question.question_type === "multiple_choice"
+            ? Array.isArray(previewAnswer) && previewAnswer.length > 0
+            : question.question_type === "numeric_input"
+                ? (() => {
+
+                    try {
+                        return (JSON.parse(previewAnswer || "[]") || [])
+                            .some(value => (value ?? "").toString().trim() !== "");
+                    } catch (error) {
+                        return false;
+                    }
+
+                })()
+                : previewAnswer !== "" && previewAnswer != null;
+
+    const previewResult = (() => {
+
+        if (!hasPreviewAnswer) {
+            return null;
+        }
+
+        const config =
+            typeof question.answer_config === "string"
+                ? JSON.parse(question.answer_config || "{}")
+                : question.answer_config || {};
+
+        if (question.question_type === "numeric_input") {
+
+            const score = scoreNumericInput(
+                previewAnswer,
+                correctOptions.map(option => option.text),
+                config
+            );
+
+            return {
+                correct: score.correct,
+                pointsFraction: score.pointsFraction
+            };
+
+        }
+
+        if (question.question_type === "text") {
+
+            const correct = gradeAnswer({
+                studentAnswer: previewAnswer,
+                correctAnswer: correctOptions[0]?.text,
+                config
+            });
+
+            return { correct, pointsFraction: correct ? 1 : 0 };
+
+        }
+
+        const selectedIds =
+            Array.isArray(previewAnswer)
+                ? [...previewAnswer].sort()
+                : [previewAnswer];
+
+        const correctIds =
+            correctOptions.map(option => option.id).sort();
+
+        const correct =
+            JSON.stringify(selectedIds) === JSON.stringify(correctIds);
+
+        return { correct, pointsFraction: correct ? 1 : 0 };
+
+    })();
 
     const saveQuestion =
         async (overrides = {}) => {
@@ -598,32 +670,14 @@ export default function QuestionCard({
                         <CardHeader>
 
                             <CardTitle>
-                                Testa uppgiften
-                            </CardTitle>
-
-                        </CardHeader>
-
-                        <CardContent>
-
-                            <QuestionTester
-                                question={question}
-                            />
-
-                        </CardContent>
-
-                    </Card>
-
-                    <Card>
-
-                        <CardHeader>
-
-                            <CardTitle>
                                 Förhandsgranska som elev
                             </CardTitle>
 
                         </CardHeader>
 
-                        <CardContent>
+                        <CardContent
+                            className="space-y-3"
+                        >
 
                             <div
                                 className="
@@ -644,6 +698,33 @@ export default function QuestionCard({
                                 />
 
                             </div>
+
+                            {previewResult && (
+
+                                <div
+                                    className={`
+                                        font-medium
+                                        ${
+                                            previewResult.correct
+                                                ? "text-green-600"
+                                                : previewResult.pointsFraction > 0
+                                                    ? "text-amber-600"
+                                                    : "text-red-600"
+                                        }
+                                    `}
+                                >
+
+                                    {
+                                        previewResult.correct
+                                            ? "✓ Rätt"
+                                            : previewResult.pointsFraction > 0
+                                                ? `◐ Delvis rätt (${Math.round(previewResult.pointsFraction * 100) / 100} p)`
+                                                : "✗ Fel"
+                                    }
+
+                                </div>
+
+                            )}
 
                         </CardContent>
 

@@ -5,6 +5,7 @@ import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
 import AssessmentEngine from "../services/AssessmentEngine.js";
 import { gradeAnswer } from "../utils/grading/gradeAnswer.js";
+import { scoreNumericInput } from "../utils/grading/gradeNumericInput.js";
 import { buildExamSession } from "../utils/buildExamSession.js";
 
 
@@ -1657,7 +1658,8 @@ router.get("/:id/results", async (req, res) => {
                 );
 
             let correct = false;
-    
+            let points = 0;
+
             if (question.question_type === "text") {
 
                 correct =
@@ -1670,19 +1672,19 @@ router.get("/:id/results", async (req, res) => {
                             question.answer_config
                     });
 
+                points = correct ? 1 : 0;
+
             } else if (question.question_type === "numeric_input") {
 
-                correct =
-                    gradeAnswer({
-                        studentAnswer:
-                            question.text_answer,
-                        correctAnswer:
-                            correctOptions.map(o => o.text),
-                        config: {
-                            ...question.answer_config,
-                            grading_mode: "numeric_input"
-                        }
-                    });
+                const score =
+                    scoreNumericInput(
+                        question.text_answer,
+                        correctOptions.map(o => o.text),
+                        question.answer_config || {}
+                    );
+
+                correct = score.correct;
+                points = score.pointsFraction;
 
             } else {
 
@@ -1699,12 +1701,15 @@ router.get("/:id/results", async (req, res) => {
                 correct =
                     JSON.stringify(selectedIds) ===
                     JSON.stringify(correctIds);
+
+                points = correct ? 1 : 0;
             }
 
             results.push({
                 question_id: question.id,
                 question: question.question,
                 question_type: question.question_type,
+                answer_config: question.answer_config,
                 section_names: question.section_names,
                 level_name: question.level_name,
                 ability_names: question.ability_names,
@@ -1713,7 +1718,8 @@ router.get("/:id/results", async (req, res) => {
                 correct_options: correctOptions,
                 selection_reason: question.selection_reason,
                 duration_seconds: question.duration_seconds,
-                correct
+                correct,
+                points
             });
         }
 

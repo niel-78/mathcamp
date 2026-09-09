@@ -4,6 +4,9 @@ import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 
 import MathContent from "@/components/ui/MathContent";
+import { formatMathText } from "@/utils/formatMathText";
+import { NUMERIC_INPUT_MARKER } from "@/constants/assessmentConstants";
+import { getFieldMatches } from "@/utils/grading/gradeNumericInput";
 
 export default function ResultPage({
     attemptId
@@ -72,9 +75,16 @@ export default function ResultPage({
     }
 
     const score =
-        results.filter(
-            r => r.correct
-        ).length;
+        results.reduce(
+            (sum, r) =>
+                sum + (r.points ?? (r.correct ? 1 : 0)),
+            0
+        );
+
+    const displayScore =
+        Number.isInteger(score)
+            ? score
+            : Math.round(score * 100) / 100;
 
     return (
 
@@ -97,7 +107,7 @@ export default function ResultPage({
                 </h2>
 
                 <p className="text-3xl mt-2">
-                    {score} / {results.length}
+                    {displayScore} / {results.length}
                 </p>
 
             </div>
@@ -124,12 +134,16 @@ export default function ResultPage({
                                     className={
                                         result.correct
                                             ? "text-green-600"
-                                            : "text-red-600"
+                                            : result.points > 0
+                                                ? "text-amber-600"
+                                                : "text-red-600"
                                     }
                                 >
                                     {result.correct
                                         ? "✓ Rätt"
-                                        : "✗ Fel"}
+                                        : result.points > 0
+                                            ? `◐ Delvis rätt (${Math.round(result.points * 100) / 100} p)`
+                                            : "✗ Fel"}
                                 </span>
 
                             </div>
@@ -190,11 +204,95 @@ export default function ResultPage({
 
                             )}
 
-                            <MathContent
-                                value={
-                                    result.question
-                                }
-                            />
+                            {result.question_type === "numeric_input" ? (
+
+                                <div className="leading-8">
+
+                                    {(() => {
+
+                                        const segments =
+                                            (result.question || "")
+                                                .split(NUMERIC_INPUT_MARKER);
+
+                                        let studentValues = [];
+
+                                        try {
+                                            studentValues =
+                                                JSON.parse(result.text_answer || "[]");
+                                        } catch (error) {
+                                            studentValues = [];
+                                        }
+
+                                        const config =
+                                            typeof result.answer_config === "string"
+                                                ? JSON.parse(result.answer_config || "{}")
+                                                : result.answer_config || {};
+
+                                        const fieldMatches =
+                                            getFieldMatches(
+                                                studentValues,
+                                                result.correct_options.map(o => o.text),
+                                                config
+                                            );
+
+                                        return segments.map((segment, index) => (
+
+                                            <span key={index}>
+
+                                                {segment && (
+
+                                                    <span
+                                                        dangerouslySetInnerHTML={{
+                                                            __html: formatMathText(segment)
+                                                        }}
+                                                    />
+
+                                                )}
+
+                                                {index < segments.length - 1 && (
+
+                                                    <strong
+                                                        className={`
+                                                            inline-block
+                                                            mx-1
+                                                            px-2
+                                                            py-0.5
+                                                            rounded-md
+                                                            border-2
+                                                            ${
+                                                                fieldMatches[index]
+                                                                    ? "border-green-600 bg-green-50"
+                                                                    : "border-red-600 bg-red-50"
+                                                            }
+                                                        `}
+                                                    >
+                                                        {
+                                                            studentValues[index] ||
+                                                            "–"
+                                                        }
+                                                    </strong>
+
+                                                )}
+
+                                            </span>
+
+                                        ));
+
+                                    })()}
+
+                                </div>
+
+                            ) : (
+
+                                <MathContent
+                                    value={
+                                        result.question
+                                    }
+                                />
+
+                            )}
+
+                            {result.question_type !== "numeric_input" && (
 
                             <div className="mt-4">
 
@@ -204,30 +302,77 @@ export default function ResultPage({
 
                                 {result.question_type === "text" ? (
 
-                                    <MathContent
-                                        value={
-                                            result.text_answer
-                                        }
-                                    />
+                                    <div
+                                        className={`
+                                            inline-block
+                                            mt-1
+                                            px-2
+                                            py-0.5
+                                            rounded-md
+                                            border-2
+                                            ${
+                                                result.correct
+                                                    ? "border-green-600 bg-green-50"
+                                                    : "border-red-600 bg-red-50"
+                                            }
+                                        `}
+                                    >
+
+                                        <MathContent
+                                            value={
+                                                result.text_answer
+                                            }
+                                        />
+
+                                    </div>
 
                                 ) : (
 
                                     <ul className="list-disc ml-5">
 
                                         {result.selected_options.map(
-                                            option => (
+                                            option => {
 
-                                                <li
-                                                    key={option.id}
-                                                >
-                                                    <MathContent
-                                                        value={
-                                                            option.text
-                                                        }
-                                                    />
-                                                </li>
+                                                const isOptionCorrect =
+                                                    result.correct_options.some(
+                                                        correctOption =>
+                                                            correctOption.id === option.id
+                                                    );
 
-                                            )
+                                                return (
+
+                                                    <li
+                                                        key={option.id}
+                                                    >
+
+                                                        <span
+                                                            className={`
+                                                                inline-block
+                                                                px-2
+                                                                py-0.5
+                                                                rounded-md
+                                                                border-2
+                                                                ${
+                                                                    isOptionCorrect
+                                                                        ? "border-green-600 bg-green-50"
+                                                                        : "border-red-600 bg-red-50"
+                                                                }
+                                                            `}
+                                                        >
+
+                                                            <MathContent
+                                                                value={
+                                                                    option.text
+                                                                }
+                                                            />
+
+                                                        </span>
+
+                                                    </li>
+
+                                                );
+
+                                            }
                                         )}
 
                                     </ul>
@@ -235,6 +380,8 @@ export default function ResultPage({
                                 )}
 
                             </div>
+
+                            )}
 
                             <div className="mt-4">
 
