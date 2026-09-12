@@ -12,12 +12,14 @@ import ResultPage from "./StudentDashboard/Main/ResultPage";
 import WaitingRoomPage from "./StudentDashboard/Main/WaitingRoomPage";
 import LockedExamPage from "./StudentDashboard/Main/LockedExamPage";
 import CompetitionTab from "@/components/addons/CompetitionTab";
+import PlanningBoard from "@/components/planning/PlanningBoard";
 import { toast } from "sonner";
 import { logEvent } from "@/utils/logEvent";
 import {
     KeyRound,
     Trophy,
     ClipboardList,
+    CalendarDays,
     ArrowLeft,
     ArrowUp,
     ArrowDown,
@@ -34,6 +36,8 @@ const StudentDashboard = () => {
     const [groups, setGroups] = useState([]);
     const [selectedGroupId, setSelectedGroupId] = useState("");
     const [loadingResults, setLoadingResults] = useState(false);
+    const [loadingPlanning, setLoadingPlanning] = useState(false);
+    const [planningLessons, setPlanningLessons] = useState([]);
     const [resultAttempts, setResultAttempts] = useState([]);
     const [resultAbilities, setResultAbilities] = useState([]);
     const [resultTab, setResultTab] = useState("results");
@@ -221,6 +225,62 @@ const StudentDashboard = () => {
 
     };
 
+    const loadPlanningLessons = async () => {
+        if (!selectedGroupId) return;
+        try {
+            const response = await fetch(
+                `${API_URL}/api/lessons?groupIds=${selectedGroupId}`,
+                {
+                    headers: authHeaders()
+                }
+            );
+
+            if (response.ok) {
+                const data = await response.json();
+                setPlanningLessons(data);
+            }
+        } catch (err) {
+            console.error("Kunde inte uppdatera planering:", err);
+        }
+    };
+
+    const openSelectedGroupPlanning = async () => {
+        if (!selectedGroupId) {
+            setErrorMessage(
+                "Välj en grupp först."
+            );
+            setErrorOpen(true);
+            return;
+        }
+
+        setLoadingPlanning(true);
+
+        try {
+            const response = await fetch(
+                `${API_URL}/api/lessons?groupIds=${selectedGroupId}`,
+                {
+                    headers: authHeaders()
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                setErrorMessage(data.error || "Kunde inte hämta planering.");
+                setErrorOpen(true);
+                return;
+            }
+
+            setPlanningLessons(data);
+            setView("planning");
+        } catch (err) {
+            setErrorMessage("Kunde inte hämta planering.");
+            setErrorOpen(true);
+        } finally {
+            setLoadingPlanning(false);
+        }
+    };
+
     // --- VYER ---
 
     if (view === "waiting-room") {
@@ -253,6 +313,51 @@ const StudentDashboard = () => {
                 attemptId={attemptId}
                 onUnlocked={() => setView("assessment")}
             />
+        );
+    }
+
+    if (view === "planning") {
+        const selectedGroup = groups.find(
+            g => String(g.id) === String(selectedGroupId)
+        );
+
+        return (
+            <div className="h-screen flex flex-col">
+                <Header />
+                <main className="flex-1 overflow-y-auto bg-slate-50 p-6">
+                    <div className="w-full max-w-6xl mx-auto space-y-4">
+                        <div className="flex items-center justify-between">
+                            <Button
+                                variant="ghost"
+                                onClick={() => setView("start")}
+                                className="gap-2"
+                            >
+                                <ArrowLeft className="h-4 w-4" /> Tillbaka till start
+                            </Button>
+
+                            {selectedGroup && (
+                                <div className="text-sm font-medium text-muted-foreground">
+                                    Grupp: <span className="font-semibold text-foreground">{selectedGroup.name}</span>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
+                            <h2 className="text-2xl font-bold">
+                                Gruppens planering
+                            </h2>
+
+                            <PlanningBoard
+                                groupId={selectedGroupId}
+                                lessons={planningLessons}
+                                loading={loadingPlanning}
+                                onReload={loadPlanningLessons}
+                                readOnly={true}
+                            />
+                        </div>
+                    </div>
+                </main>
+            </div>
         );
     }
 
@@ -349,12 +454,28 @@ const StudentDashboard = () => {
                                             key={ability.id}
                                             className="flex items-center justify-between gap-4 rounded-lg border px-4 py-3"
                                         >
-                                            <div>
+                                            <div className="space-y-1">
                                                 <div className="font-medium">
                                                     {ability.name}
                                                 </div>
-                                                <div className="text-xs text-muted-foreground">
-                                                    {ability.series_name}
+                                                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                                                    <span>{ability.series_name}</span>
+                                                    {ability.next_level && (
+                                                        <>
+                                                            <span>•</span>
+                                                            <span className="font-medium text-amber-700 bg-amber-50 border border-amber-200/60 rounded px-1.5 py-0.5">
+                                                                Nivå: {ability.next_level}
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                    {ability.pages && ability.pages.length > 0 && (
+                                                        <>
+                                                            <span>•</span>
+                                                            <span className="font-medium text-slate-700">
+                                                                Träna på sid {ability.pages.join(", ")}
+                                                            </span>
+                                                        </>
+                                                    )}
                                                 </div>
                                             </div>
 
@@ -526,6 +647,26 @@ const StudentDashboard = () => {
                                             : "Mina resultat"}
                                     </div>
                                     <div className="text-xs text-muted-foreground">Se tidigare provresultat och betyg</div>
+                                </div>
+                            </Button>
+
+                            {/* Gruppens planering */}
+                            <Button
+                                variant="outline"
+                                className="w-full h-auto p-4 flex items-center justify-start gap-4 border-2 hover:border-amber-600 hover:bg-amber-50/50 transition"
+                                onClick={openSelectedGroupPlanning}
+                                disabled={loadingPlanning}
+                            >
+                                <div className="p-3 rounded-lg bg-amber-100 text-amber-700">
+                                    <CalendarDays className="h-6 w-6" />
+                                </div>
+                                <div className="text-left">
+                                    <div className="font-bold text-base">
+                                        {loadingPlanning
+                                            ? "Hämtar planering..."
+                                            : "Gruppens planering"}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">Se lektioner, tider och planering</div>
                                 </div>
                             </Button>
                         </div>

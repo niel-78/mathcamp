@@ -179,12 +179,28 @@ export default function StudentTab({
                                     key={ability.id}
                                     className="flex items-center justify-between gap-4 rounded-lg border px-4 py-3"
                                 >
-                                    <div>
+                                    <div className="space-y-1">
                                         <div className="font-medium">
                                             {ability.name}
                                         </div>
-                                        <div className="text-xs text-muted-foreground">
-                                            {ability.series_name}
+                                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                                            <span>{ability.series_name}</span>
+                                            {ability.next_level && (
+                                                <>
+                                                    <span>•</span>
+                                                    <span className="font-medium text-amber-700 bg-amber-50 border border-amber-200/60 rounded px-1.5 py-0.5">
+                                                        Nivå: {ability.next_level}
+                                                    </span>
+                                                </>
+                                            )}
+                                            {ability.pages && ability.pages.length > 0 && (
+                                                <>
+                                                    <span>•</span>
+                                                    <span className="font-medium text-slate-700">
+                                                        Träna på sid {ability.pages.join(", ")}
+                                                    </span>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
 

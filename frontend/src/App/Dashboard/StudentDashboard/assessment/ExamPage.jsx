@@ -248,7 +248,11 @@ export default function ExamPage({
                         total={questions.length}
                         allowPrevious={attempt?.allow_go_to_previous_question}
                         //allowPrevious="true"
-                        showReset={answerConfig.default_answer !== undefined}
+                        showReset={
+                            answerConfig?.default_answer !== undefined &&
+                            answerConfig.default_answer !== null &&
+                            answerConfig.default_answer !== ""
+                        }
                         onPrev={prev}
                         onNext={next}
                         onReset={resetToDefault}

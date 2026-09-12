@@ -104,14 +104,76 @@ router.get("/assessments", requireAuth,
     }
 );
 
+// GET /api/archive/assessments/trash
+router.get("/assessments/trash", requireAuth,
+    async (req, res) => {
+
+        const [assessments] =
+            await db.query(
+                `
+                SELECT
+                    e.*
+                FROM assessments e
+
+                JOIN assessment_permissions ep
+                    ON ep.assessment_id = e.id
+
+                WHERE ep.user_id = ?
+                AND ep.role = 'owner'
+                AND e.deleted_at IS NOT NULL
+
+                ORDER BY e.deleted_at DESC
+                `,
+                [req.user.id]
+            );
+
+        res.json(assessments);
+
+    }
+);
+
 // POST /api/archive/assessments/:id/restore
 router.post("/assessments/:id/restore", requireAuth,
     async (req, res) => {
 
+        const [permissions] =
+            await db.query(
+                `
+                SELECT 1
+                FROM assessment_permissions
+                WHERE assessment_id = ?
+                AND user_id = ?
+                AND role = 'owner'
+                `,
+                [
+                    req.params.id,
+                    req.user.id
+                ]
+            );
+
+        if (!permissions.length) {
+            await db.query(
+                `
+                INSERT INTO assessment_permissions (
+                    assessment_id,
+                    user_id,
+                    role
+                )
+                VALUES (?, ?, 'owner')
+                `,
+                [
+                    req.params.id,
+                    req.user.id
+                ]
+            );
+        }
+
         await db.query(
             `
             UPDATE assessments
-            SET archived_at = NULL
+            SET
+                archived_at = NULL,
+                deleted_at = NULL
             WHERE id = ?
             `,
             [req.params.id]

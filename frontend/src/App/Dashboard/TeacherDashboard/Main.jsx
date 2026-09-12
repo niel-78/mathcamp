@@ -18,6 +18,7 @@ import GroupInfoTab from "./Main/GroupInfoTab";
 import ArchivedGroupsTab from "./Main/ArchivedGroupsTab";
 import ArchivedStudentsTab from "./Main/ArchivedStudentsTab";
 import ArchivedExamsTab from "./Main/ArchivedExamsTab";
+import TrashAssessmentsTab from "./Main/TrashAssessmentsTab";
 import ArchivedQuestionsTab from "./Main/ArchivedQuestionsTab";
 import ArchivedBlocksTab from "./Main/ArchivedBlocksTab";
 import GroupSchedulesTab from "./Main/GroupSchedulesTab";
@@ -367,6 +368,11 @@ export default function Main({
                     {currentTab?.type === "archived-assessments" && (
 
                         <ArchivedExamsTab />
+
+                    )}
+                    {currentTab?.type === "trash-assessments" && (
+
+                        <TrashAssessmentsTab />
 
                     )}
                     {currentTab?.type === "archived-questions" && (

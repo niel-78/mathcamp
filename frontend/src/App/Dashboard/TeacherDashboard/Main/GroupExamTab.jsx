@@ -78,7 +78,15 @@ export default function GroupExamTab({
                     minQuestionCount:
                         data.config?.attempt?.minQuestionCount ?? 5,
                     maxQuestionCount:
-                        data.config?.attempt?.maxQuestionCount ?? 15
+                        data.config?.attempt?.maxQuestionCount ?? 15,
+                    promoteAfterQuestions:
+                        data.config?.attempt?.promoteAfterQuestions ?? 1,
+                    demoteAfterQuestions:
+                        data.config?.attempt?.demoteAfterQuestions ?? 1,
+                    questionsPerAbility:
+                        data.config?.attempt?.questionsPerAbility ?? 1,
+                    completionQuestionsPerAbility:
+                        data.config?.attempt?.completionQuestionsPerAbility ?? 1
                 }
             }
         };
@@ -346,12 +354,12 @@ export default function GroupExamTab({
         if (
             isDiagnostic &&
             (!Number.isInteger(minQuestionCount) ||
-                minQuestionCount < 1 ||
+                minQuestionCount < 0 ||
                 !Number.isInteger(maxQuestionCount) ||
                 maxQuestionCount < minQuestionCount)
         ) {
             toast.error(
-                "Minsta antal frågor måste vara minst 1 och högst lika med högsta antal frågor."
+                "Minsta antal frågor måste vara minst 0 och högst lika med högsta antal frågor."
             );
             return;
         }
@@ -704,10 +712,10 @@ export default function GroupExamTab({
 
                         {isDiagnostic && (
                             <>
-                                <Field label="Minsta antal frågor">
+                                <Field label="Minsta antal frågor (adaptiv del)">
                                     <Input
                                         type="number"
-                                        min="1"
+                                        min="0"
                                         value={
                                             groupExam.config?.attempt
                                                 ?.minQuestionCount ?? ""
@@ -722,7 +730,7 @@ export default function GroupExamTab({
                                     />
                                 </Field>
 
-                                <Field label="Högsta antal frågor">
+                                <Field label="Högsta antal frågor (adaptiv del)">
                                     <Input
                                         type="number"
                                         min="1"
@@ -734,6 +742,24 @@ export default function GroupExamTab({
                                             updateConfig(
                                                 "attempt",
                                                 "maxQuestionCount",
+                                                Number(event.target.value)
+                                            )
+                                        }
+                                    />
+                                </Field>
+
+                                <Field label="Antal uppgifter per förmåga i komplettering">
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        value={
+                                            groupExam.config?.attempt
+                                                ?.completionQuestionsPerAbility ?? ""
+                                        }
+                                        onChange={(event) =>
+                                            updateConfig(
+                                                "attempt",
+                                                "completionQuestionsPerAbility",
                                                 Number(event.target.value)
                                             )
                                         }

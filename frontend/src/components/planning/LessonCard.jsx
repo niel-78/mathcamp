@@ -27,7 +27,9 @@ export default function LessonCard({
     onCancelLesson,
     onDeleteLesson,
     readOnly = false,
-    startDiagnosticTest
+    startDiagnosticTest,
+    isPublic = false,
+    hideCompletions = false
 }) {
 
     const [
@@ -355,6 +357,9 @@ export default function LessonCard({
                     <LessonAssessments
                         lessonId={lesson.id}
                         openTab={openTab}
+                        readOnly={readOnly}
+                        isPublic={isPublic}
+                        hideCompletions={hideCompletions}
                     />
 
                     {lesson.cancelled_at && (
@@ -439,6 +444,7 @@ export default function LessonCard({
                                     section={section}
                                     openTab={openTab}
                                     lessonId={lesson.id}
+                                    readOnly={readOnly}
                                 />
 
                             )

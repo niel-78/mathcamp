@@ -59,6 +59,7 @@ export async function buildExamSession(
 
             WHERE eb.assessment_id = ?
                 AND b.deleted_at IS NULL
+                AND b.archived_at IS NULL
 
             ORDER BY
                 eb.sort_order

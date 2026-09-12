@@ -184,8 +184,14 @@ router.get("/sessions", requireAuth,
                 `
                 SELECT
                     id,
-                    logged_in_at,
-                    logged_out_at
+                    DATE_FORMAT(
+                        logged_in_at,
+                        '%Y-%m-%dT%H:%i:%s.000Z'
+                    ) AS logged_in_at,
+                    DATE_FORMAT(
+                        logged_out_at,
+                        '%Y-%m-%dT%H:%i:%s.000Z'
+                    ) AS logged_out_at
                 FROM user_sessions
                 WHERE user_id = ?
                 ORDER BY logged_in_at DESC

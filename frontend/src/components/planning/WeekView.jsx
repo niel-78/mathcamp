@@ -22,6 +22,8 @@ export default function WeekView({
     onDeleteLesson,
     startDiagnosticTest,
     readOnly = false,
+    isPublic = false,
+    hideCompletions = false
 }) {
 
     const weekLessons =
@@ -174,6 +176,8 @@ export default function WeekView({
                                             openTab={openTab}
                                             lesson={lesson}
                                             readOnly={readOnly}
+                                            isPublic={isPublic}
+                                            hideCompletions={hideCompletions}
                                             onEditLesson={onEditLesson}
                                             onCancelLesson={onCancelLesson}
                                             onDeleteLesson={onDeleteLesson}

@@ -96,7 +96,7 @@ export default function LessonSection({
         const data =
             await response.json();
 
-        openTab({
+        openTab?.({
             id:
                 `presentation-player-${data.presentation.id}`,
             title:
@@ -206,103 +206,112 @@ export default function LessonSection({
                     "
                 >
 
-                    <GripVertical
-                        size={16}
-                        className="
-                            cursor-grab
-                            text-muted-foreground
-                        "
-                        {...listeners}
-                        {...attributes}
-                    />
+                    {!readOnly && (
+                        <GripVertical
+                            size={16}
+                            className="
+                                cursor-grab
+                                text-muted-foreground
+                            "
+                            {...listeners}
+                            {...attributes}
+                        />
+                    )}
 
-                    <div>
-                        {section.title}
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <span>{section.title}</span>
+                        {section.page_number != null && (
+                            <span className="text-xs text-muted-foreground">
+                                (sid {section.page_number}{section.end_page && section.end_page !== section.page_number ? `-${section.end_page}` : ""})
+                            </span>
+                        )}
                     </div>
 
                 </div>
 
-                <div className="flex items-center gap-2">
+                {!readOnly && (
+                    <div className="flex items-center gap-2">
 
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={openPresentation}
-                    >
-                        <Play size={14} />
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={openPresentation}
+                        >
+                            <Play size={14} />
 
-                        <span className="ml-1">
-                            {
-                                section.presentation_id
-                                    ? "Starta"
-                                    : "Skapa"
+                            <span className="ml-1">
+                                {
+                                    section.presentation_id
+                                        ? "Starta"
+                                        : "Skapa"
+                                }
+                            </span>
+                        </Button>
+
+                        <Button
+                            size="icon"
+                            variant={
+                                section.pinned
+                                    ? "default"
+                                    : "ghost"
                             }
-                        </span>
-                    </Button>
-
-                    <Button
-                        size="icon"
-                        variant={
-                            section.pinned
-                                ? "default"
-                                : "ghost"
-                        }
-                        onClick={() =>
-                            togglePin(
-                                section.lesson_section_id,
-                                !section.pinned
-                            )
-                        }
-                    >
-                        {section.pinned
-                            ? <Pin size={14} />
-                            : <PinOff size={14} />
-                        }
-                    </Button>
-
-                    <AlertDialog>
-                        <AlertDialogTrigger
-                            render={
-                                <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    disabled={readOnly}
-                                    title="Ta bort sektion från lektionen"
-                                />
+                            onClick={() =>
+                                togglePin(
+                                    section.lesson_section_id,
+                                    !section.pinned
+                                )
                             }
                         >
-                            <Trash2 size={14} />
-                        </AlertDialogTrigger>
+                            {section.pinned
+                                ? <Pin size={14} />
+                                : <PinOff size={14} />
+                            }
+                        </Button>
 
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                    Ta bort sektion från lektionen?
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    Sektionen tas bort från den här lektionen,
-                                    men finns kvar i boken.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
+                        <AlertDialog>
+                            <AlertDialogTrigger
+                                render={
+                                    <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        disabled={readOnly}
+                                        title="Ta bort sektion från lektionen"
+                                    />
+                                }
+                            >
+                                <Trash2 size={14} />
+                            </AlertDialogTrigger>
 
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>
-                                    Avbryt
-                                </AlertDialogCancel>
-                                <AlertDialogAction
-                                    variant="destructive"
-                                    onClick={removeFromLesson}
-                                    disabled={removing}
-                                >
-                                    {removing
-                                        ? "Tar bort..."
-                                        : "Ta bort"}
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                        Ta bort sektion från lektionen?
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Sektionen tas bort från den här lektionen,
+                                        men finns kvar i boken.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
 
-                </div>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>
+                                        Avbryt
+                                    </AlertDialogCancel>
+                                    <AlertDialogAction
+                                        variant="destructive"
+                                        onClick={removeFromLesson}
+                                        disabled={removing}
+                                    >
+                                        {removing
+                                            ? "Tar bort..."
+                                            : "Ta bort"}
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+
+                    </div>
+                )}
 
             </div>
 

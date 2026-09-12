@@ -6,6 +6,20 @@ import { useAppSettings } from "@/contexts/AppSettingsContext";
 
 const AuthContext = createContext();
 
+// Keys that hold per-user UI state (tabs, active tab, etc.) and must not leak between users on the same browser.
+const USER_SCOPED_LOCAL_STORAGE_KEYS = [
+    "leftTabs",
+    "rightTabs",
+    "activeLeftTab",
+    "activeRightTab"
+];
+
+export function clearUserScopedLocalStorage() {
+    USER_SCOPED_LOCAL_STORAGE_KEYS.forEach(key => {
+        localStorage.removeItem(key);
+    });
+}
+
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -46,6 +60,7 @@ export function AuthProvider({ children }) {
                 console.error(error);
 
                 localStorage.removeItem("token");
+                clearUserScopedLocalStorage();
 
                 setUser(null);
 
@@ -87,6 +102,7 @@ export function AuthProvider({ children }) {
         } finally {
 
             localStorage.removeItem("token");
+            clearUserScopedLocalStorage();
             setUser(null);
 
         }

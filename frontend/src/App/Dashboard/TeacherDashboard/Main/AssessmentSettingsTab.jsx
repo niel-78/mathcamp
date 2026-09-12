@@ -13,7 +13,11 @@ const diagnosticDefaults = {
         defaultTimeLimitMinutes: 60,
         countdownMode: "visible_lock",
         minQuestionCount: 5,
-        maxQuestionCount: 15
+        maxQuestionCount: 15,
+        promoteAfterQuestions: 1,
+        demoteAfterQuestions: 1,
+        questionsPerAbility: 1,
+        completionQuestionsPerAbility: 1
     },
     question_selection: {
         shuffleQuestions: true,
@@ -43,6 +47,20 @@ function normalizeDiagnosticConfig(config = {}) {
     const countdownMode =
         config.attempt?.countdownMode;
 
+    const parsePositiveIntOrFallback = (val, fallback) => {
+        if (val === "") return "";
+        if (val === undefined || val === null) return fallback;
+        const num = Number(val);
+        return Number.isInteger(num) && num >= 1 ? num : fallback;
+    };
+
+    const parseNonNegativeIntOrFallback = (val, fallback) => {
+        if (val === "") return "";
+        if (val === undefined || val === null) return fallback;
+        const num = Number(val);
+        return Number.isInteger(num) && num >= 0 ? num : fallback;
+    };
+
     return {
         attempt: {
             defaultTimeLimitMinutes:
@@ -57,15 +75,47 @@ function normalizeDiagnosticConfig(config = {}) {
                     .attempt
                     .countdownMode,
             minQuestionCount:
-                config.attempt?.minQuestionCount ??
-                diagnosticDefaults
-                    .attempt
-                    .minQuestionCount,
+                parseNonNegativeIntOrFallback(
+                    config.attempt?.minQuestionCount,
+                    diagnosticDefaults
+                        .attempt
+                        .minQuestionCount
+                ),
             maxQuestionCount:
-                config.attempt?.maxQuestionCount ??
-                diagnosticDefaults
-                    .attempt
-                    .maxQuestionCount
+                parsePositiveIntOrFallback(
+                    config.attempt?.maxQuestionCount,
+                    diagnosticDefaults
+                        .attempt
+                        .maxQuestionCount
+                ),
+            promoteAfterQuestions:
+                parsePositiveIntOrFallback(
+                    config.attempt?.promoteAfterQuestions,
+                    diagnosticDefaults
+                        .attempt
+                        .promoteAfterQuestions
+                ),
+            demoteAfterQuestions:
+                parsePositiveIntOrFallback(
+                    config.attempt?.demoteAfterQuestions,
+                    diagnosticDefaults
+                        .attempt
+                        .demoteAfterQuestions
+                ),
+            questionsPerAbility:
+                parsePositiveIntOrFallback(
+                    config.attempt?.questionsPerAbility,
+                    diagnosticDefaults
+                        .attempt
+                        .questionsPerAbility
+                ),
+            completionQuestionsPerAbility:
+                parsePositiveIntOrFallback(
+                    config.attempt?.completionQuestionsPerAbility,
+                    diagnosticDefaults
+                        .attempt
+                        .completionQuestionsPerAbility
+                )
         },
         question_selection: {
             shuffleQuestions: true,
@@ -192,6 +242,36 @@ export default function AssessmentSettingsTab({
 
         try {
 
+            const normalizedConfig =
+                activeAssessmentTab.normalize(config);
+
+            const cleanedConfig = {
+                ...normalizedConfig,
+                attempt: {
+                    ...normalizedConfig.attempt,
+                    minQuestionCount:
+                        Number.isInteger(Number(normalizedConfig.attempt?.minQuestionCount)) &&
+                        Number(normalizedConfig.attempt?.minQuestionCount) >= 0
+                            ? Number(normalizedConfig.attempt?.minQuestionCount)
+                            : diagnosticDefaults.attempt.minQuestionCount,
+                    maxQuestionCount:
+                        Number(normalizedConfig.attempt?.maxQuestionCount) ||
+                        diagnosticDefaults.attempt.maxQuestionCount,
+                    promoteAfterQuestions:
+                        Number(normalizedConfig.attempt?.promoteAfterQuestions) ||
+                        diagnosticDefaults.attempt.promoteAfterQuestions,
+                    demoteAfterQuestions:
+                        Number(normalizedConfig.attempt?.demoteAfterQuestions) ||
+                        diagnosticDefaults.attempt.demoteAfterQuestions,
+                    questionsPerAbility:
+                        Number(normalizedConfig.attempt?.questionsPerAbility) ||
+                        diagnosticDefaults.attempt.questionsPerAbility,
+                    completionQuestionsPerAbility:
+                        Number(normalizedConfig.attempt?.completionQuestionsPerAbility) ||
+                        diagnosticDefaults.attempt.completionQuestionsPerAbility
+                }
+            };
+
             const response =
                 await fetch(
                     `${API_URL}/api/assessment-type-settings/${activeAssessmentTab.type}`,
@@ -203,10 +283,7 @@ export default function AssessmentSettingsTab({
                                 "application/json"
                         },
                         body: JSON.stringify({
-                            config:
-                                activeAssessmentTab.normalize(
-                                    config
-                                )
+                            config: cleanedConfig
                         })
                     }
                 );
@@ -334,11 +411,11 @@ export default function AssessmentSettingsTab({
                             </select>
                         </Field>
 
-                        <Field label="Minsta antal frågor">
+                        <Field label="Minsta antal frågor (adaptiv del)">
                             <Input
                                 className="w-32"
                                 type="number"
-                                min="1"
+                                min="0"
                                 value={
                                     config.attempt?.minQuestionCount ?? ""
                                 }
@@ -346,13 +423,15 @@ export default function AssessmentSettingsTab({
                                     updateConfig(
                                         "attempt",
                                         "minQuestionCount",
-                                        Number(event.target.value)
+                                        event.target.value === ""
+                                            ? ""
+                                            : Number(event.target.value)
                                     )
                                 }
                             />
                         </Field>
 
-                        <Field label="Högsta antal frågor">
+                        <Field label="Högsta antal frågor (adaptiv del)">
                             <Input
                                 className="w-32"
                                 type="number"
@@ -364,7 +443,89 @@ export default function AssessmentSettingsTab({
                                     updateConfig(
                                         "attempt",
                                         "maxQuestionCount",
-                                        Number(event.target.value)
+                                        event.target.value === ""
+                                            ? ""
+                                            : Number(event.target.value)
+                                    )
+                                }
+                            />
+                        </Field>
+
+                        <Field label="Höj nivå efter antal uppgifter">
+                            <Input
+                                className="w-32"
+                                type="number"
+                                min="1"
+                                value={
+                                    config.attempt?.promoteAfterQuestions ?? ""
+                                }
+                                onChange={(event) =>
+                                    updateConfig(
+                                        "attempt",
+                                        "promoteAfterQuestions",
+                                        event.target.value === ""
+                                            ? ""
+                                            : Number(event.target.value)
+                                    )
+                                }
+                            />
+                        </Field>
+
+                        <Field label="Sänk nivå efter antal uppgifter">
+                            <Input
+                                className="w-32"
+                                type="number"
+                                min="1"
+                                value={
+                                    config.attempt?.demoteAfterQuestions ?? ""
+                                }
+                                onChange={(event) =>
+                                    updateConfig(
+                                        "attempt",
+                                        "demoteAfterQuestions",
+                                        event.target.value === ""
+                                            ? ""
+                                            : Number(event.target.value)
+                                    )
+                                }
+                            />
+                        </Field>
+
+                        <Field label="Antal uppgifter per förmåga">
+                            <Input
+                                className="w-32"
+                                type="number"
+                                min="1"
+                                value={
+                                    config.attempt?.questionsPerAbility ?? ""
+                                }
+                                onChange={(event) =>
+                                    updateConfig(
+                                        "attempt",
+                                        "questionsPerAbility",
+                                        event.target.value === ""
+                                            ? ""
+                                            : Number(event.target.value)
+                                    )
+                                }
+                            />
+                        </Field>
+
+                        <Field label="Antal uppgifter per förmåga i komplettering">
+                            <Input
+                                className="w-32"
+                                type="number"
+                                min="1"
+                                value={
+                                    config.attempt?.completionQuestionsPerAbility ?? ""
+                                }
+                                onChange={(event) =>
+                                    updateConfig(
+                                        "attempt",
+                                        "completionQuestionsPerAbility",
+                                        event.target.value === ""
+                                            ? ""
+                                            : Number(event.target.value)
                                     )
                                 }
                             />

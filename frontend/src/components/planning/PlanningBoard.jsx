@@ -22,7 +22,9 @@ export default function PlanningBoard({
     onCancelLesson,
     onDeleteLesson,
     startDiagnosticTest,
-    readOnly = false
+    readOnly = false,
+    isPublic = false,
+    hideCompletions = false
 }) {
 
 
@@ -33,8 +35,14 @@ export default function PlanningBoard({
     const [showEvents, setShowEvents] = useState(true);
 
     useEffect(() => {
+        if (initialEvents && initialEvents.length > 0) {
+            setEvents(initialEvents);
+        }
+    }, [initialEvents]);
 
-        if (!groupId) {
+    useEffect(() => {
+
+        if (!groupId || isPublic) {
             return;
         }
 
@@ -279,6 +287,8 @@ export default function PlanningBoard({
                     onDeleteLesson={onDeleteLesson}
                     startDiagnosticTest={startDiagnosticTest}
                     readOnly={readOnly}
+                    isPublic={isPublic}
+                    hideCompletions={hideCompletions}
                 />
             )}
 
@@ -290,6 +300,8 @@ export default function PlanningBoard({
                     selectedWeek={selectedWeek}
                     onReload={onReload}
                     readOnly={readOnly}
+                    isPublic={isPublic}
+                    hideCompletions={hideCompletions}
                 />
             )}
 
@@ -300,6 +312,8 @@ export default function PlanningBoard({
                     showEvents={showEvents}
                     onReload={onReload}
                     readOnly={readOnly}
+                    isPublic={isPublic}
+                    hideCompletions={hideCompletions}
                 />
             )}
             {viewMode === "month" && (

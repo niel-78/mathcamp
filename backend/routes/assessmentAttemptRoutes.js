@@ -497,6 +497,11 @@ router.put("/:id", async (req, res) => {
                     attemptConfig?.attempt?.maxQuestionCount
                 );
 
+            const initialSeedCount =
+                Number(
+                    attemptConfig?.attempt?.initialSeedQuestionCount
+                ) || 0;
+
             const [[questionCount]] =
                 await connection.query(
                     `
@@ -507,10 +512,16 @@ router.put("/:id", async (req, res) => {
                     [attempt.id]
                 );
 
+            const adaptiveQuestionsCount =
+                Math.max(
+                    0,
+                    Number(questionCount.value) - initialSeedCount
+                );
+
             if (
                 !Number.isInteger(configuredMaxQuestionCount) ||
                 configuredMaxQuestionCount < 1 ||
-                Number(questionCount.value) <
+                adaptiveQuestionsCount <
                 configuredMaxQuestionCount
             ) {
                 nextQuestion =
@@ -1004,6 +1015,20 @@ router.post("/start", async (req, res) => {
                 );
             }
 
+            const questionsPerAbility =
+                Math.max(
+                    1,
+                    Number(
+                        groupExamConfig?.attempt?.questionsPerAbility ??
+                        config?.attempt?.questionsPerAbility
+                    ) || 1
+                );
+
+            const abilityQuestionCounts =
+                groupExamConfig?.attempt?.abilityQuestionCounts ??
+                groupExamConfig?.ability_question_counts ??
+                {};
+
             const seedQuestions =
                 await AssessmentEngine
                     .getDiagnosticSeedQuestions(
@@ -1012,8 +1037,97 @@ router.post("/start", async (req, res) => {
                         attemptId,
                         maxQuestionCount,
                         groupExamConfig?.selected_block_ids,
-                        seedQuestionCount
+                        seedQuestionCount,
+                        questionsPerAbility,
+                        abilityQuestionCounts
                     );
+
+            const updatedAttemptConfig = {
+                ...(groupExam.config || {}),
+                attempt: {
+                    ...(groupExam.config?.attempt || {}),
+                    initialSeedQuestionCount: seedQuestions.length
+                }
+            };
+
+            await connection.query(
+                `
+                UPDATE assessment_attempts
+                SET config = ?
+                WHERE id = ?
+                `,
+                [
+                    JSON.stringify(updatedAttemptConfig),
+                    attemptId
+                ]
+            );
+
+            if (seedQuestions.length === 0) {
+
+                const firstQuestion =
+                    await AssessmentEngine
+                        .getNextQuestion(
+                            connection,
+                            attemptId
+                        );
+
+                if (firstQuestion) {
+
+                    await connection.query(
+                        `
+                        INSERT INTO attempt_questions (
+                            attempt_id,
+                            question_id,
+                            sort_order,
+                            selection_reason
+                        )
+                        VALUES (?, ?, 1, ?)
+                        `,
+                        [
+                            attemptId,
+                            firstQuestion.id,
+                            firstQuestion.selection_reason || null
+                        ]
+                    );
+
+                    const [options] =
+                        await connection.query(
+                            `
+                            SELECT *
+                            FROM options
+                            WHERE question_id = ?
+                            ORDER BY RAND()
+                            `,
+                            [firstQuestion.id]
+                        );
+
+                    for (
+                        let j = 0;
+                        j < options.length;
+                        j++
+                    ) {
+
+                        await connection.query(
+                            `
+                            INSERT INTO attempt_options (
+                                attempt_id,
+                                option_id,
+                                sort_order
+                            )
+                            VALUES (?, ?, ?)
+                            `,
+                            [
+                                attemptId,
+                                options[j].id,
+                                j + 1
+                            ]
+                        );
+
+                    }
+
+                }
+
+            }
 
             for (let i = 0; i < seedQuestions.length; i++) {
 
@@ -1266,6 +1380,11 @@ router.post("/:id/submit", async (req, res) => {
                     attemptConfig?.attempt?.maxQuestionCount
                 );
 
+            const initialSeedCount =
+                Number(
+                    attemptConfig?.attempt?.initialSeedQuestionCount
+                ) || 0;
+
             const [[questionCount]] =
                 await connection.query(
                     `
@@ -1276,10 +1395,16 @@ router.post("/:id/submit", async (req, res) => {
                     [attempt.id]
                 );
 
+            const adaptiveQuestionsCount =
+                Math.max(
+                    0,
+                    Number(questionCount.value) - initialSeedCount
+                );
+
             const maxQuestionCountReached =
                 Number.isInteger(configuredMaxQuestionCount) &&
                 configuredMaxQuestionCount > 0 &&
-                Number(questionCount.value) >=
+                adaptiveQuestionsCount >=
                 configuredMaxQuestionCount;
 
             const nextQuestion =
@@ -1733,20 +1858,28 @@ router.get("/:id/results", async (req, res) => {
                 attemptConfig?.attempt?.minQuestionCount
             );
 
-        const minimumQuestionCount =
+        const initialSeedCount =
+            Number(
+                attemptConfig?.attempt?.initialSeedQuestionCount
+            ) || 0;
+
+        const minimumAdaptiveCount =
             Number.isInteger(configuredMinQuestionCount) &&
-            configuredMinQuestionCount > 0
+            configuredMinQuestionCount >= 0
                 ? configuredMinQuestionCount
-                : 1;
+                : 0;
+
+        const minimumTotalQuestionCount =
+            initialSeedCount + minimumAdaptiveCount;
 
         const diagnosticComplete =
             attempt.assessment_type !== "diagnostic" ||
-            results.length >= minimumQuestionCount;
+            results.length >= minimumTotalQuestionCount;
 
         res.json({
             results,
             diagnostic_complete: diagnosticComplete,
-            minimum_question_count: minimumQuestionCount,
+            minimum_question_count: minimumTotalQuestionCount,
             answered_question_count: results.length
         });
 

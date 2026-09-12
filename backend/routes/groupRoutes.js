@@ -613,7 +613,10 @@ router.get("/:id", async (req, res) => {
             u.username,
             u.user_key,
             (
-                SELECT MAX(us.logged_in_at)
+                SELECT DATE_FORMAT(
+                    MAX(us.logged_in_at),
+                    '%Y-%m-%dT%H:%i:%s.000Z'
+                )
                 FROM user_sessions us
                 WHERE us.user_id = u.id
             ) AS last_login,
@@ -2180,6 +2183,62 @@ router.post("/:groupId/seat-assignments/shuffle",
                 mode = "current-seats"
             } = req.body;
 
+            const [students] =
+                await db.query(
+                    `
+                    SELECT
+                        u.id
+                    FROM group_students gs
+                    INNER JOIN users u
+                        ON u.id = gs.user_id
+                    WHERE gs.group_id = ?
+                    AND u.role = 'student'
+                    AND gs.deleted_at IS NULL
+                    `,
+                    [groupId]
+                );
+
+            const [existingAssignments] =
+                await db.query(
+                    `
+                    SELECT
+                        student_id
+                    FROM group_seat_assignments
+                    WHERE group_id = ?
+                    `,
+                    [groupId]
+                );
+
+            const assignedStudentIds =
+                new Set(
+                    existingAssignments.map(
+                        assignment =>
+                            assignment.student_id
+                    )
+                );
+
+            for (const student of students) {
+
+                if (assignedStudentIds.has(student.id)) {
+                    continue;
+                }
+
+                await db.query(
+                    `
+                    INSERT IGNORE INTO
+                        group_seat_assignments (
+                            group_id,
+                            student_id,
+                            classroom_seat_id,
+                            pinned
+                        )
+                    VALUES (?, ?, NULL, FALSE)
+                    `,
+                    [groupId, student.id]
+                );
+
+            }
+
             const [assignments] =
                 await db.query(
                     `
@@ -2210,7 +2269,7 @@ router.post("/:groupId/seat-assignments/shuffle",
                     movable.map(
                         assignment =>
                             assignment.classroom_seat_id
-                    );
+                    ).filter(Boolean);
 
             }
 

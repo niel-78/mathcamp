@@ -9,12 +9,19 @@ export default class AssessmentEngine {
     static buildSelectionReason({
         sectionName,
         abilityName,
-        levelName
+        levelName,
+        phase = null
     }) {
 
-        const parts = [
-            "Väljer uppgift"
-        ];
+        const parts = [];
+
+        if (phase === "komplettering") {
+            parts.push("Komplettering: Väljer uppgift");
+        } else if (phase === "träning") {
+            parts.push("Träning: Väljer uppgift");
+        } else {
+            parts.push("Väljer uppgift");
+        }
 
         if (sectionName) {
             parts.push(`från sektion "${sectionName}"`);
@@ -32,6 +39,140 @@ export default class AssessmentEngine {
 
     }
 
+    static async getPreviousDiagnosticAbilities(
+        connection,
+        groupId,
+        currentGroupAssessmentId
+    ) {
+
+        if (!groupId) {
+            return [];
+        }
+
+        const [previousDiagnostics] =
+            await connection.query(
+                `
+                SELECT
+                    ga.id,
+                    ga.config,
+                    lga.lesson_id
+                FROM group_assessments ga
+                INNER JOIN assessments a
+                    ON a.id = ga.assessment_id
+                LEFT JOIN lesson_group_assessments lga
+                    ON lga.group_assessment_id = ga.id
+                WHERE ga.group_id = ?
+                    AND a.type = 'diagnostic'
+                    AND ga.mode != 'test'
+                    AND ga.deleted_at IS NULL
+                    AND ga.id != ?
+                `,
+                [
+                    groupId,
+                    currentGroupAssessmentId
+                ]
+            );
+
+        if (previousDiagnostics.length === 0) {
+            return [];
+        }
+
+        const previousBlockIds = new Set();
+        const previousLessonIds = [];
+        const abilityIds = new Set();
+
+        for (const diag of previousDiagnostics) {
+            const diagConfig =
+                typeof diag.config === "string"
+                    ? JSON.parse(diag.config || "{}")
+                    : diag.config || {};
+
+            if (Array.isArray(diagConfig.selected_block_ids)) {
+                for (const bId of diagConfig.selected_block_ids) {
+                    previousBlockIds.add(Number(bId));
+                }
+            }
+            if (diagConfig.ability_question_counts) {
+                for (const aId of Object.keys(diagConfig.ability_question_counts)) {
+                    abilityIds.add(Number(aId));
+                }
+            }
+            if (diag.lesson_id) {
+                previousLessonIds.push(diag.lesson_id);
+            }
+        }
+
+        // Hämta även block som förekommit i provfrågor i tidigare diagnoser
+        const [attemptBlocks] =
+            await connection.query(
+                `
+                SELECT DISTINCT q.block_id
+                FROM assessment_attempts aa
+                INNER JOIN attempt_questions aq
+                    ON aq.attempt_id = aa.id
+                INNER JOIN questions q
+                    ON q.id = aq.question_id
+                WHERE aa.group_assessment_id IN (?)
+                `,
+                [previousDiagnostics.map(d => d.id)]
+            );
+
+        for (const row of attemptBlocks) {
+            if (row.block_id) {
+                previousBlockIds.add(Number(row.block_id));
+            }
+        }
+
+        // Hämta även block från lektioner kopplade till tidigare diagnoser
+        if (previousLessonIds.length > 0) {
+            const [lessonBlocks] =
+                await connection.query(
+                    `
+                    SELECT DISTINCT bs.block_id
+                    FROM lesson_sections ls
+                    INNER JOIN block_sections bs
+                        ON bs.section_id = ls.section_id
+                    INNER JOIN blocks b
+                        ON b.id = bs.block_id
+                    WHERE ls.lesson_id IN (?)
+                        AND b.deleted_at IS NULL
+                        AND b.archived_at IS NULL
+                    `,
+                    [previousLessonIds]
+                );
+
+            for (const row of lessonBlocks) {
+                if (row.block_id) {
+                    previousBlockIds.add(Number(row.block_id));
+                }
+            }
+        }
+
+        if (previousBlockIds.size > 0) {
+            const [blockAbilities] =
+                await connection.query(
+                    `
+                    SELECT DISTINCT ba.ability_id
+                    FROM block_abilities ba
+                    INNER JOIN abilities a
+                        ON a.id = ba.ability_id
+                    WHERE ba.block_id IN (?)
+                        AND a.deleted_at IS NULL
+                    `,
+                    [[...previousBlockIds]]
+                );
+
+            for (const row of blockAbilities) {
+                if (row.ability_id) {
+                    abilityIds.add(Number(row.ability_id));
+                }
+            }
+        }
+
+        return [...abilityIds];
+
+    }
+
     static async getNextQuestion(
         connection,
         attemptId,
@@ -41,9 +182,13 @@ export default class AssessmentEngine {
         const [[attempt]] =
             await connection.query(
                 `
-                SELECT *
-                FROM assessment_attempts
-                WHERE id = ?
+                SELECT
+                    ea.*,
+                    ga.group_id
+                FROM assessment_attempts ea
+                INNER JOIN group_assessments ga
+                    ON ga.id = ea.group_assessment_id
+                WHERE ea.id = ?
                 `,
                 [attemptId]
             );
@@ -54,11 +199,215 @@ export default class AssessmentEngine {
 
         const userId =
             attempt.user_id;
+        const groupId =
+            attempt.group_id;
+        const groupAssessmentId =
+            attempt.group_assessment_id;
+
+        // 1. Förmågor som ingått i tidigare diagnoser för gruppen
+        const previousDiagnosticAbilities =
+            await this.getPreviousDiagnosticAbilities(
+                connection,
+                groupId,
+                groupAssessmentId
+            );
+
+        // 2. Förmågor som eleven tidigare har testats på (före detta provförsök)
+        const [priorResults] =
+            await connection.query(
+                `
+                SELECT DISTINCT sah.ability_id
+                FROM student_ability_history sah
+                WHERE sah.user_id = ?
+                    AND sah.assessment_attempt_id != ?
+                `,
+                [userId, attemptId]
+            );
+
+        const priorTestedAbilitySet = new Set(
+            priorResults.map(r => Number(r.ability_id))
+        );
+
+        const attemptConfig =
+            typeof attempt.config === "string"
+                ? JSON.parse(attempt.config || "{}")
+                : attempt.config || {};
+
+        const completionQuestionsPerAbility =
+            Math.max(
+                1,
+                Number(
+                    attemptConfig?.attempt?.completionQuestionsPerAbility ??
+                    attemptConfig?.completion_questions_per_ability
+                ) || 1
+            );
+
+        // 3. Antal frågor per förmåga som redan har serverats i detta provförsök
+        const [currentAttemptAbilities] =
+            await connection.query(
+                `
+                SELECT ba.ability_id, COUNT(*) AS count
+                FROM attempt_questions aq
+                INNER JOIN questions q
+                    ON q.id = aq.question_id
+                INNER JOIN block_abilities ba
+                    ON ba.block_id = q.block_id
+                WHERE aq.attempt_id = ?
+                GROUP BY ba.ability_id
+                `,
+                [attemptId]
+            );
+
+        const currentAttemptAbilityCounts = new Map(
+            currentAttemptAbilities.map(r => [Number(r.ability_id), Number(r.count)])
+        );
+
+        // =========================================================================
+        // DEL 1: KOMPLETTERING
+        // Förmågor som ingått i tidigare diagnoser men som eleven saknar resultat på,
+        // och som ännu inte nått det önskade antalet kompletteringsuppgifter i detta provförsök.
+        // =========================================================================
+        const missingAbilities = previousDiagnosticAbilities.filter(
+            aId => !priorTestedAbilitySet.has(aId) &&
+                   (currentAttemptAbilityCounts.get(aId) || 0) < completionQuestionsPerAbility
+        );
+
+        for (const abilityId of missingAbilities) {
+
+            const currentLevelId =
+                await this.getCurrentLevel(
+                    connection,
+                    userId,
+                    abilityId
+                );
+
+            const [[question]] =
+                await connection.query(
+                    `
+                    SELECT DISTINCT
+                        q.*
+
+                    FROM questions q
+
+                    INNER JOIN blocks b
+                        ON b.id = q.block_id
+
+                    INNER JOIN block_abilities ba
+                        ON ba.block_id = q.block_id
+
+                    WHERE ba.ability_id = ?
+                    AND q.series_level_id = ?
+
+                    AND q.archived_at IS NULL
+                    AND q.deleted_at IS NULL
+                    AND b.archived_at IS NULL
+                    AND b.deleted_at IS NULL
+                    AND q.excluded_from_assessments = 0
+
+                    AND NOT EXISTS (
+
+                        SELECT 1
+                        FROM student_question_history h
+                        WHERE h.user_id = ?
+                        AND h.question_id = q.id
+
+                    )
+
+                    ORDER BY RAND()
+
+                    LIMIT 1
+                    `,
+                    [
+                        abilityId,
+                        currentLevelId,
+                        userId
+                    ]
+                );
+
+            if (question) {
+
+                if (reserveQuestion) {
+                    await connection.query(
+                        `
+                        INSERT IGNORE INTO
+                        student_question_history (
+                            user_id,
+                            question_id
+                        )
+                        VALUES (?, ?)
+                        `,
+                        [
+                            userId,
+                            question.id
+                        ]
+                    );
+                }
+
+                const [[abilityInfo]] =
+                    await connection.query(
+                        `
+                        SELECT name
+                        FROM abilities
+                        WHERE id = ?
+                        `,
+                        [abilityId]
+                    );
+
+                const [[levelInfo]] =
+                    await connection.query(
+                        `
+                        SELECT name
+                        FROM ability_series_levels
+                        WHERE id = ?
+                        `,
+                        [currentLevelId]
+                    );
+
+                const [[sectionInfo]] =
+                    await connection.query(
+                        `
+                        SELECT s.title
+                        FROM block_sections bs
+                        INNER JOIN sections s
+                            ON s.id = bs.section_id
+                        WHERE bs.block_id = ?
+                        ORDER BY s.title
+                        LIMIT 1
+                        `,
+                        [question.block_id]
+                    );
+
+                question.selection_reason =
+                    this.buildSelectionReason({
+                        sectionName: sectionInfo?.title,
+                        abilityName: abilityInfo?.name,
+                        levelName: levelInfo?.name,
+                        phase: "komplettering"
+                    });
+
+                return question;
+
+            }
+
+        }
+
+        // =========================================================================
+        // DEL 2: TRÄNING
+        // Eleven tränar på förmågor som den tidigare skrivit diagnos på
+        // (förmågor från tidigare diagnoser som eleven har resultat på, eller alla diagnostiserade förmågor)
+        // =========================================================================
+        const eligibleTrainingAbilities =
+            previousDiagnosticAbilities.length > 0
+                ? previousDiagnosticAbilities.filter(
+                    aId => priorTestedAbilitySet.has(aId) || currentAttemptAbilitySet.has(aId)
+                )
+                : null;
 
         const abilities =
             await this.findTargetAbilities(
                 connection,
-                userId
+                userId,
+                eligibleTrainingAbilities
             );
 
         for (const ability of abilities) {
@@ -78,6 +427,9 @@ export default class AssessmentEngine {
 
                     FROM questions q
 
+                    INNER JOIN blocks b
+                        ON b.id = q.block_id
+
                     INNER JOIN block_abilities ba
                         ON ba.block_id = q.block_id
 
@@ -86,6 +438,8 @@ export default class AssessmentEngine {
 
                     AND q.archived_at IS NULL
                     AND q.deleted_at IS NULL
+                    AND b.archived_at IS NULL
+                    AND b.deleted_at IS NULL
                     AND q.excluded_from_assessments = 0
 
                     AND NOT EXISTS (
@@ -165,7 +519,8 @@ export default class AssessmentEngine {
                     this.buildSelectionReason({
                         sectionName: sectionInfo?.title,
                         abilityName: abilityInfo?.name,
-                        levelName: levelInfo?.name
+                        levelName: levelInfo?.name,
+                        phase: "träning"
                     });
 
                 return question;
@@ -193,7 +548,7 @@ export default class AssessmentEngine {
         const [[attempt]] =
             await connection.query(
                 `
-                SELECT mode
+                SELECT mode, config
                 FROM assessment_attempts
                 WHERE id = ?
                 `,
@@ -203,6 +558,36 @@ export default class AssessmentEngine {
         // if (attempt?.mode === "test") {
         //     return;
         // }
+
+        const attemptConfig =
+            typeof attempt?.config === "string"
+                ? JSON.parse(attempt.config || "{}")
+                : attempt?.config || {};
+
+        const promoteAfterQuestions =
+            Math.max(
+                1,
+                Number(attemptConfig?.attempt?.promoteAfterQuestions) || 1
+            );
+
+        const demoteAfterQuestions =
+            Math.max(
+                1,
+                Number(attemptConfig?.attempt?.demoteAfterQuestions) || 1
+            );
+
+        const [[questionRow]] =
+            await connection.query(
+                `
+                SELECT series_level_id
+                FROM questions
+                WHERE id = ?
+                `,
+                [questionId]
+            );
+
+        const questionLevelId =
+            questionRow?.series_level_id ?? null;
 
         const [abilities] =
             await connection.query(
@@ -316,18 +701,55 @@ export default class AssessmentEngine {
                 ]
             );
 
+            const [recentHistory] =
+                await connection.query(
+                    `
+                    SELECT
+                        sah.correct,
+                        q.series_level_id
+                    FROM student_ability_history sah
+                    JOIN questions q ON q.id = sah.question_id
+                    WHERE sah.user_id = ?
+                      AND sah.ability_id = ?
+                      AND sah.assessment_attempt_id = ?
+                    ORDER BY sah.id DESC
+                    `,
+                    [
+                        userId,
+                        ability.ability_id,
+                        attemptId
+                    ]
+                );
+
+            let consecutiveCount = 0;
+            for (const entry of recentHistory) {
+                const sameLevel =
+                    questionLevelId != null
+                        ? entry.series_level_id === questionLevelId
+                        : true;
+                if (sameLevel && Boolean(entry.correct) === Boolean(correct)) {
+                    consecutiveCount++;
+                } else {
+                    break;
+                }
+            }
+
             if (correct) {
-                await this.promoteLevel(
-                    connection,
-                    userId,
-                    ability.ability_id
-                );
+                if (consecutiveCount >= promoteAfterQuestions) {
+                    await this.promoteLevel(
+                        connection,
+                        userId,
+                        ability.ability_id
+                    );
+                }
             } else {
-                await this.demoteLevel(
-                    connection,
-                    userId,
-                    ability.ability_id
-                );
+                if (consecutiveCount >= demoteAfterQuestions) {
+                    await this.demoteLevel(
+                        connection,
+                        userId,
+                        ability.ability_id
+                    );
+                }
             }
 
         }
@@ -340,7 +762,9 @@ export default class AssessmentEngine {
         attemptId,
         maxQuestionCount = null,
         selectedBlockIds = null,
-        seedQuestionCount = null
+        seedQuestionCount = null,
+        questionsPerAbility = 1,
+        abilityQuestionCounts = {}
     ) {
 
         const [[attempt]] =
@@ -363,7 +787,9 @@ export default class AssessmentEngine {
             await this.getDiagnosticSeedPlan(
                 lessonId,
                 attempt.user_id,
-                selectedBlockIds
+                selectedBlockIds,
+                questionsPerAbility,
+                abilityQuestionCounts
             );
 
         const questions =
@@ -375,7 +801,7 @@ export default class AssessmentEngine {
             Number.isInteger(seedQuestionCount) &&
             seedQuestionCount > 0
                 ? seedQuestionCount
-                : maxQuestionCount;
+                : null;
 
         const limitedQuestions =
             Number.isInteger(configuredSeedQuestionCount) &&
@@ -593,8 +1019,14 @@ export default class AssessmentEngine {
 
     static async findTargetAbilities(
         connection,
-        userId
+        userId,
+        filterAbilityIds = null
     ) {
+
+        const filterSet =
+            Array.isArray(filterAbilityIds) && filterAbilityIds.length > 0
+                ? new Set(filterAbilityIds.map(Number))
+                : null;
 
         const [masteries] =
             await connection.query(
@@ -624,10 +1056,21 @@ export default class AssessmentEngine {
 
         const scores = new Map();
 
+        if (filterSet) {
+            for (const aId of filterSet) {
+                scores.set(aId, 50);
+            }
+        }
+
         for (const row of masteries) {
 
+            const aId = Number(row.ability_id);
+            if (filterSet && !filterSet.has(aId)) {
+                continue;
+            }
+
             scores.set(
-                row.ability_id,
+                aId,
                 Math.max(
                     0,
                     100 - row.mastery_score
@@ -638,22 +1081,27 @@ export default class AssessmentEngine {
 
         for (const row of recentHistory) {
 
+            const aId = Number(row.ability_id);
+            if (filterSet && !filterSet.has(aId)) {
+                continue;
+            }
+
             const current =
                 scores.get(
-                    row.ability_id
+                    aId
                 ) || 0;
 
             if (row.correct) {
 
                 scores.set(
-                    row.ability_id,
+                    aId,
                     current - 5
                 );
 
             } else {
 
                 scores.set(
-                    row.ability_id,
+                    aId,
                     current + 25
                 );
 
@@ -883,12 +1331,14 @@ export default class AssessmentEngine {
     static async getDiagnosticSeedPlan(
         lessonId,
         userId = null,
-        selectedBlockIds = null
+        selectedBlockIds = null,
+        questionsPerAbility = 1,
+        abilityQuestionCounts = {},
+        completionQuestionsPerAbility = 1
     ) {
 
         const selectedBlockIdSet =
-            Array.isArray(selectedBlockIds) &&
-            selectedBlockIds.length > 0
+            Array.isArray(selectedBlockIds)
                 ? new Set(
                     selectedBlockIds.map(Number)
                 )
@@ -949,6 +1399,116 @@ export default class AssessmentEngine {
             lastDiagnostic?.submitted_at ??
             "2000-01-01";
 
+        const [previousDiagnostics] =
+            await db.query(
+                `
+                SELECT
+                    ga.id,
+                    ga.config,
+                    lga.lesson_id
+                FROM group_assessments ga
+                INNER JOIN assessments a
+                    ON a.id = ga.assessment_id
+                LEFT JOIN lesson_group_assessments lga
+                    ON lga.group_assessment_id = ga.id
+                WHERE ga.group_id = ?
+                    AND a.type = 'diagnostic'
+                    AND ga.mode != 'test'
+                    AND ga.deleted_at IS NULL
+                    AND (lga.lesson_id IS NULL OR lga.lesson_id != ?)
+                `,
+                [
+                    lesson.group_id,
+                    lessonId
+                ]
+            );
+
+        const previousBlockIdsSet = new Set();
+        for (const diag of previousDiagnostics) {
+            const diagConfig =
+                typeof diag.config === "string"
+                    ? JSON.parse(diag.config || "{}")
+                    : diag.config || {};
+
+            if (Array.isArray(diagConfig.selected_block_ids)) {
+                for (const bId of diagConfig.selected_block_ids) {
+                    previousBlockIdsSet.add(Number(bId));
+                }
+            }
+        }
+
+        const [previousAttemptBlocks] =
+            await db.query(
+                `
+                SELECT DISTINCT q.block_id
+                FROM assessment_attempts aa
+                INNER JOIN group_assessments ga
+                    ON ga.id = aa.group_assessment_id
+                INNER JOIN assessments a
+                    ON a.id = ga.assessment_id
+                LEFT JOIN lesson_group_assessments lga
+                    ON lga.group_assessment_id = ga.id
+                INNER JOIN attempt_questions aq
+                    ON aq.attempt_id = aa.id
+                INNER JOIN questions q
+                    ON q.id = aq.question_id
+                WHERE ga.group_id = ?
+                    AND a.type = 'diagnostic'
+                    AND ga.mode != 'test'
+                    AND ga.deleted_at IS NULL
+                    AND (lga.lesson_id IS NULL OR lga.lesson_id != ?)
+                `,
+                [
+                    lesson.group_id,
+                    lessonId
+                ]
+            );
+
+        for (const row of previousAttemptBlocks) {
+            if (row.block_id) {
+                previousBlockIdsSet.add(Number(row.block_id));
+            }
+        }
+
+        const previousSectionIdSet = new Set();
+        if (previousBlockIdsSet.size > 0) {
+            const [previousSectionRows] =
+                await db.query(
+                    `
+                    SELECT DISTINCT section_id
+                    FROM block_sections
+                    WHERE block_id IN (?)
+                    `,
+                    [[...previousBlockIdsSet]]
+                );
+            for (const row of previousSectionRows) {
+                if (row.section_id) {
+                    previousSectionIdSet.add(Number(row.section_id));
+                }
+            }
+        }
+
+        const previousLessonIds =
+            previousDiagnostics
+                .map(d => d.lesson_id)
+                .filter(Boolean);
+
+        if (previousLessonIds.length > 0) {
+            const [previousLessonSections] =
+                await db.query(
+                    `
+                    SELECT DISTINCT section_id
+                    FROM lesson_sections
+                    WHERE lesson_id IN (?)
+                    `,
+                    [previousLessonIds]
+                );
+            for (const row of previousLessonSections) {
+                if (row.section_id) {
+                    previousSectionIdSet.add(Number(row.section_id));
+                }
+            }
+        }
 
         const [blocks] =
             await db.query(
@@ -1094,7 +1654,14 @@ export default class AssessmentEngine {
                 continue;
             }
 
-            const [[question]] =
+            const countForAbility =
+                abilityQuestionCounts?.[block.ability_id] ??
+                abilityQuestionCounts?.[String(block.ability_id)] ??
+                questionsPerAbility;
+
+            const limit = Math.max(1, Number(countForAbility) || 1);
+
+            const [selectedQuestions] =
                 await db.query(
                     `
                     SELECT
@@ -1120,16 +1687,17 @@ export default class AssessmentEngine {
 
                     ORDER BY RAND()
 
-                    LIMIT 1
+                    LIMIT ?
                     `,
                     [
                         block.id,
                         userId,
-                        userId
+                        userId,
+                        limit
                     ]
                 );
 
-            if (question) {
+            for (const question of selectedQuestions) {
 
                 question.selection_reason =
                     this.buildSelectionReason({
@@ -1163,12 +1731,16 @@ export default class AssessmentEngine {
 
             if (!sectionsMap.has(block.section_id)) {
 
+                const isPreviouslyIncluded =
+                    previousSectionIdSet.has(Number(block.section_id));
+
                 sectionsMap.set(
                     block.section_id,
                     {
                         id: block.section_id,
                         name: block.section_name,
                         pageNumber: block.section_page_number,
+                        previouslyIncluded: isPreviouslyIncluded,
                         blocks: []
                     }
                 );
@@ -1196,7 +1768,32 @@ export default class AssessmentEngine {
         }
 
         const sections =
-            [...sectionsMap.values()];
+            [...sectionsMap.values()].sort((a, b) => {
+                const pageA = a.pageNumber != null ? Number(a.pageNumber) : -1;
+                const pageB = b.pageNumber != null ? Number(b.pageNumber) : -1;
+                if (pageB !== pageA) {
+                    return pageB - pageA;
+                }
+                return (a.name || "").localeCompare(b.name || "", "sv");
+            });
+
+        const abilitiesMap = new Map();
+        for (const block of blocks) {
+            if (block.ability_id && !abilitiesMap.has(block.ability_id)) {
+                abilitiesMap.set(block.ability_id, {
+                    id: block.ability_id,
+                    name: block.block_name,
+                    section_ids: []
+                });
+            }
+            if (block.ability_id && block.section_id) {
+                const item = abilitiesMap.get(block.ability_id);
+                if (!item.section_ids.includes(block.section_id)) {
+                    item.section_ids.push(block.section_id);
+                }
+            }
+        }
+        const abilities = [...abilitiesMap.values()];
 
         return {
 
@@ -1207,6 +1804,14 @@ export default class AssessmentEngine {
             sections,
 
             blocks,
+
+            abilities,
+
+            defaultQuestionsPerAbility: questionsPerAbility,
+
+            defaultCompletionQuestionsPerAbility: completionQuestionsPerAbility,
+
+            previouslyIncludedSectionIds: [...previousSectionIdSet],
 
             questions
 

@@ -137,7 +137,13 @@ VALUES
     JSON_OBJECT(
         'attempt', JSON_OBJECT(
             'defaultTimeLimitMinutes', 60,
-            'maxAttempts', 1
+            'maxAttempts', 1,
+            'minQuestionCount', 5,
+            'maxQuestionCount', 15,
+            'promoteAfterQuestions', 1,
+            'demoteAfterQuestions', 1,
+            'questionsPerAbility', 1,
+            'completionQuestionsPerAbility', 1
         ),
 
         'presentation', JSON_OBJECT(

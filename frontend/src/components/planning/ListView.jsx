@@ -1,7 +1,10 @@
 import LessonCard from "./LessonCard";
 
 export default function ListView({
-    lessons
+    lessons,
+    readOnly = false,
+    isPublic = false,
+    hideCompletions = false
 }) {
 
     const sortedLessons =
@@ -21,6 +24,9 @@ export default function ListView({
                     <LessonCard
                         key={lesson.id}
                         lesson={lesson}
+                        readOnly={readOnly}
+                        isPublic={isPublic}
+                        hideCompletions={hideCompletions}
                     />
 
                 )

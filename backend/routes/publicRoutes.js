@@ -1,5 +1,6 @@
 import express from "express";
 import db from "../db.js";
+import AssessmentEngine from "../services/AssessmentEngine.js";
 
 const router = express.Router();
 
@@ -30,6 +31,16 @@ router.get("/planning/:shareId",
 
             const groupId =
                 link.group_id;
+
+            const [[group]] =
+                await db.query(
+                    `
+                    SELECT id, name, school_id, book_id
+                    FROM \`groups\`
+                    WHERE id = ?
+                    `,
+                    [groupId]
+                );
 
             const [lessons] =
                 await db.query(
@@ -102,7 +113,45 @@ router.get("/planning/:shareId",
                     lessonIds
                 );
 
+                const subchapterIds = [...new Set(lessonSections.map(s => s.subchapter_id).filter(Boolean))];
+                const endPageBySectionId = new Map();
+
+                if (subchapterIds.length > 0) {
+                    const [allSubchapterSections] = await db.query(
+                        `
+                        SELECT id, subchapter_id, page_number, sort_order
+                        FROM sections
+                        WHERE subchapter_id IN (?)
+                        ORDER BY subchapter_id, sort_order
+                        `,
+                        [subchapterIds]
+                    );
+
+                    const bySubchapter = new Map();
+                    for (const s of allSubchapterSections) {
+                        if (!bySubchapter.has(s.subchapter_id)) {
+                            bySubchapter.set(s.subchapter_id, []);
+                        }
+                        bySubchapter.get(s.subchapter_id).push(s);
+                    }
+
+                    for (const subSections of bySubchapter.values()) {
+                        for (let i = 0; i < subSections.length; i++) {
+                            const current = subSections[i];
+                            let endPage = current.page_number;
+                            if (i < subSections.length - 1 && subSections[i + 1].page_number != null) {
+                                endPage = subSections[i + 1].page_number - 1;
+                            }
+                            if (endPage != null && current.page_number != null && endPage < current.page_number) {
+                                endPage = current.page_number;
+                            }
+                            endPageBySectionId.set(current.id, endPage);
+                        }
+                    }
+                }
+
                 for (const section of lessonSections) {
+                    section.end_page = endPageBySectionId.get(section.id) ?? section.page_number;
                     const sections =
                         sectionsByLessonId.get(section.lesson_id) || [];
 
@@ -164,9 +213,9 @@ router.get("/planning/:shareId",
                 );
 
             res.json({
+                group: group || { id: groupId, name: "" },
                 lessons,
                 events
-
             });
 
         } catch (error) {
@@ -180,6 +229,201 @@ router.get("/planning/:shareId",
 
         }
 
+    }
+);
+
+// GET /api/public/lessons/:id/group-assessments
+router.get("/lessons/:id/group-assessments",
+    async (req, res) => {
+        try {
+            const [rows] = await db.query(
+                `
+                SELECT
+                    ga.*,
+                    a.title,
+                    a.type
+                FROM lesson_group_assessments lga
+
+                INNER JOIN group_assessments ga
+                    ON ga.id = lga.group_assessment_id
+
+                INNER JOIN assessments a
+                    ON a.id = ga.assessment_id
+
+                WHERE lga.lesson_id = ?
+                    AND ga.mode = 'normal'
+                    AND ga.deleted_at IS NULL
+                `,
+                [req.params.id]
+            );
+
+            res.json(rows);
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({
+                error: "Kunde inte hämta provtillfällen."
+            });
+        }
+    }
+);
+
+// GET /api/public/lessons/:lessonId/group-assessments/:groupAssessmentId/diagnostic-details
+router.get("/lessons/:lessonId/group-assessments/:groupAssessmentId/diagnostic-details",
+    async (req, res) => {
+        try {
+            const lessonId = Number(req.params.lessonId);
+            const groupAssessmentId = Number(req.params.groupAssessmentId);
+
+            const [[ga]] = await db.query(
+                `
+                SELECT
+                    ga.*,
+                    a.type AS assessment_type,
+                    a.title AS assessment_title,
+                    l.group_id,
+                    l.starts_at,
+                    g.book_id
+                FROM group_assessments ga
+                INNER JOIN assessments a
+                    ON a.id = ga.assessment_id
+                LEFT JOIN lessons l
+                    ON l.id = ?
+                LEFT JOIN \`groups\` g
+                    ON g.id = ga.group_id
+                WHERE ga.id = ?
+                AND ga.deleted_at IS NULL
+                `,
+                [lessonId, groupAssessmentId]
+            );
+
+            if (!ga) {
+                return res.status(404).json({
+                    error: "Provtillfället hittades inte."
+                });
+            }
+
+            const config =
+                typeof ga.config === "string"
+                    ? JSON.parse(ga.config || "{}")
+                    : ga.config || {};
+
+            const selectedBlockIds =
+                Array.isArray(config.selected_block_ids)
+                    ? config.selected_block_ids.map(Number).filter(Boolean)
+                    : [];
+
+            let includedSections = [];
+
+            if (selectedBlockIds.length > 0) {
+                const [sectionRows] = await db.query(
+                    `
+                    SELECT DISTINCT
+                        s.id,
+                        s.subchapter_id,
+                        s.title,
+                        s.page_number,
+                        s.sort_order
+                    FROM block_sections bs
+                    INNER JOIN sections s
+                        ON s.id = bs.section_id
+                    WHERE bs.block_id IN (?)
+                    AND s.page_number IS NOT NULL
+                    ORDER BY
+                        s.page_number ASC,
+                        s.sort_order ASC
+                    `,
+                    [selectedBlockIds]
+                );
+                includedSections = sectionRows;
+            } else {
+                const plan = await AssessmentEngine.getDiagnosticSeedPlan(
+                    lessonId,
+                    null,
+                    null
+                );
+                const candidateSections = plan.sections?.filter(s => !s.previouslyIncluded) || [];
+                const targetSections = candidateSections.length > 0 ? candidateSections : (plan.sections || []);
+                const targetSectionIds = targetSections.map(s => s.id).filter(Boolean);
+
+                if (targetSectionIds.length > 0) {
+                    const [sectionRows] = await db.query(
+                        `
+                        SELECT id, subchapter_id, title, page_number, sort_order
+                        FROM sections
+                        WHERE id IN (?)
+                        AND page_number IS NOT NULL
+                        ORDER BY page_number ASC, sort_order ASC
+                        `,
+                        [targetSectionIds]
+                    );
+                    includedSections = sectionRows;
+                }
+            }
+
+            const allSubchapterIds = [...new Set(includedSections.map(s => s.subchapter_id).filter(Boolean))];
+            const endPageBySectionId = new Map();
+
+            if (allSubchapterIds.length > 0) {
+                const [allSubSections] = await db.query(
+                    `
+                    SELECT id, subchapter_id, page_number, sort_order
+                    FROM sections
+                    WHERE subchapter_id IN (?)
+                    ORDER BY subchapter_id, sort_order
+                    `,
+                    [allSubchapterIds]
+                );
+
+                const bySubchapter = new Map();
+                for (const s of allSubSections) {
+                    if (!bySubchapter.has(s.subchapter_id)) {
+                        bySubchapter.set(s.subchapter_id, []);
+                    }
+                    bySubchapter.get(s.subchapter_id).push(s);
+                }
+
+                for (const subSections of bySubchapter.values()) {
+                    for (let i = 0; i < subSections.length; i++) {
+                        const current = subSections[i];
+                        let endPage = current.page_number;
+                        if (i < subSections.length - 1 && subSections[i + 1].page_number != null) {
+                            endPage = subSections[i + 1].page_number - 1;
+                        }
+                        if (endPage != null && current.page_number != null && endPage < current.page_number) {
+                            endPage = current.page_number;
+                        }
+                        endPageBySectionId.set(current.id, endPage);
+                    }
+                }
+            }
+
+            const formattedIncludedSections = includedSections.map(s => {
+                const endPage = endPageBySectionId.get(s.id) ?? s.page_number;
+                return {
+                    id: s.id,
+                    title: s.title,
+                    page_number: s.page_number,
+                    end_page: endPage,
+                    page_range: s.page_number === endPage ? `${s.page_number}` : `${s.page_number}-${endPage}`
+                };
+            });
+
+            res.json({
+                group_assessment_id: groupAssessmentId,
+                title: ga.assessment_title || "Diagnos",
+                type: ga.assessment_type,
+                sections: formattedIncludedSections,
+                complement_sections: [],
+                needs_complement: false,
+                hideCompletions: true
+            });
+
+        } catch (err) {
+            console.error("public diagnostic-details error:", err);
+            res.status(500).json({
+                error: err.message
+            });
+        }
     }
 );
 

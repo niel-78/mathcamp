@@ -253,14 +253,27 @@ router.get("/me/groups/:groupId/abilities", async (req, res) => {
         });
     }
 
+    const [[group]] = await db.query(
+        `
+        SELECT book_id
+        FROM \`groups\`
+        WHERE id = ?
+        `,
+        [groupId]
+    );
+
     const [rows] = await db.query(
         `
         SELECT DISTINCT
             a.id,
             a.name,
             a.sort_order,
+            a.series_id,
             asr.name AS series_name,
-            COALESCE(sam.mastery_score, 50) AS mastery_score
+            COALESCE(sam.mastery_score, 50) AS mastery_score,
+            sap.series_level_id AS current_level_id,
+            current_asl.name AS current_level_name,
+            current_asl.sort_order AS current_level_sort_order
         FROM group_students gs
         INNER JOIN \`groups\` g
             ON g.id = gs.group_id
@@ -271,6 +284,11 @@ router.get("/me/groups/:groupId/abilities", async (req, res) => {
         LEFT JOIN student_ability_mastery sam
             ON sam.ability_id = a.id
             AND sam.user_id = ?
+        LEFT JOIN student_ability_progress sap
+            ON sap.ability_id = a.id
+            AND sap.user_id = ?
+        LEFT JOIN ability_series_levels current_asl
+            ON current_asl.id = sap.series_level_id
         WHERE gs.user_id = ?
             AND gs.group_id = ?
             AND gs.deleted_at IS NULL
@@ -280,6 +298,7 @@ router.get("/me/groups/:groupId/abilities", async (req, res) => {
             a.name
         `,
         [
+            req.user.id,
             req.user.id,
             req.user.id,
             groupId
@@ -335,6 +354,111 @@ router.get("/me/groups/:groupId/abilities", async (req, res) => {
 
     }
 
+    const sectionsByAbility = new Map();
+
+    if (rows.length > 0) {
+        const abilityIds = rows.map(a => a.id);
+        const placeholders = abilityIds.map(() => "?").join(",");
+
+        const [sectionRows] = await db.query(
+            `
+            SELECT DISTINCT
+                ba.ability_id,
+                s.id AS section_id,
+                s.subchapter_id,
+                s.title AS section_title,
+                s.page_number,
+                s.sort_order,
+                ch.book_id
+            FROM block_abilities ba
+            INNER JOIN blocks bl
+                ON bl.id = ba.block_id
+                AND bl.deleted_at IS NULL
+                AND bl.archived_at IS NULL
+            INNER JOIN block_sections bs
+                ON bs.block_id = bl.id
+            INNER JOIN sections s
+                ON s.id = bs.section_id
+            INNER JOIN subchapters sc
+                ON sc.id = s.subchapter_id
+            INNER JOIN chapters ch
+                ON ch.id = sc.chapter_id
+            WHERE ba.ability_id IN (${placeholders})
+              AND s.page_number IS NOT NULL
+            ORDER BY
+                s.page_number ASC,
+                s.sort_order ASC
+            `,
+            abilityIds
+        );
+
+        const subchapterIds = [...new Set(sectionRows.map(s => s.subchapter_id))];
+        const endPageBySectionId = new Map();
+
+        if (subchapterIds.length > 0) {
+            const [allSubchapterSections] = await db.query(
+                `
+                SELECT id, subchapter_id, page_number, sort_order
+                FROM sections
+                WHERE subchapter_id IN (?)
+                ORDER BY subchapter_id, sort_order
+                `,
+                [subchapterIds]
+            );
+
+            const bySubchapter = new Map();
+            for (const s of allSubchapterSections) {
+                if (!bySubchapter.has(s.subchapter_id)) {
+                    bySubchapter.set(s.subchapter_id, []);
+                }
+                bySubchapter.get(s.subchapter_id).push(s);
+            }
+
+            for (const subSections of bySubchapter.values()) {
+                for (let i = 0; i < subSections.length; i++) {
+                    const current = subSections[i];
+                    let endPage = current.page_number;
+                    if (i < subSections.length - 1 && subSections[i + 1].page_number != null) {
+                        endPage = subSections[i + 1].page_number - 1;
+                    }
+                    if (endPage != null && current.page_number != null && endPage < current.page_number) {
+                        endPage = current.page_number;
+                    }
+                    endPageBySectionId.set(current.id, endPage);
+                }
+            }
+        }
+
+        for (const section of sectionRows) {
+            section.end_page = endPageBySectionId.get(section.section_id) ?? section.page_number;
+            if (!sectionsByAbility.has(section.ability_id)) {
+                sectionsByAbility.set(section.ability_id, []);
+            }
+            sectionsByAbility.get(section.ability_id).push(section);
+        }
+    }
+
+    const seriesIds = [...new Set(rows.map(a => a.series_id).filter(Boolean))];
+    const defaultLevelsBySeries = new Map();
+
+    if (seriesIds.length > 0) {
+        const [seriesLevelRows] = await db.query(
+            `
+            SELECT id, series_id, name, sort_order
+            FROM ability_series_levels
+            WHERE series_id IN (?)
+            ORDER BY series_id, sort_order ASC
+            `,
+            [seriesIds]
+        );
+
+        for (const lvl of seriesLevelRows) {
+            if (!defaultLevelsBySeries.has(lvl.series_id)) {
+                defaultLevelsBySeries.set(lvl.series_id, lvl);
+            }
+        }
+    }
+
     for (const ability of rows) {
 
         const previousScore =
@@ -351,6 +475,50 @@ router.get("/me/groups/:groupId/abilities", async (req, res) => {
                     : Number(ability.mastery_score) < previousScore
                         ? "down"
                         : "unchanged";
+
+        const defaultLevel = defaultLevelsBySeries.get(ability.series_id) || null;
+        const nextLevelName = ability.current_level_name || defaultLevel?.name || null;
+        const nextLevelId = ability.current_level_id || defaultLevel?.id || null;
+
+        ability.next_level = nextLevelName;
+        ability.next_level_id = nextLevelId;
+
+        let abilitySections = sectionsByAbility.get(ability.id) || [];
+        if (group?.book_id) {
+            const bookSections = abilitySections.filter(s => s.book_id === group.book_id);
+            if (bookSections.length > 0) {
+                abilitySections = bookSections;
+            }
+        }
+
+        const formattedPageRanges = [];
+        const seenRanges = new Set();
+
+        for (const s of abilitySections) {
+            if (s.page_number == null) continue;
+            const start = s.page_number;
+            const end = s.end_page ?? s.page_number;
+            const label = start === end ? `${start}` : `${start}-${end}`;
+            if (!seenRanges.has(label)) {
+                seenRanges.add(label);
+                formattedPageRanges.push({
+                    start,
+                    end,
+                    label
+                });
+            }
+        }
+
+        formattedPageRanges.sort((a, b) => a.start - b.start);
+
+        ability.pages = formattedPageRanges.map(r => r.label);
+        ability.page_ranges = formattedPageRanges;
+        ability.sections = abilitySections.map(s => ({
+            id: s.section_id,
+            title: s.section_title,
+            page_number: s.page_number,
+            end_page: s.end_page ?? s.page_number
+        }));
 
     }
 
@@ -533,8 +701,12 @@ router.get("/:studentId/abilities", async (req, res) => {
             a.id,
             a.name,
             a.sort_order,
+            a.series_id,
             asr.name AS series_name,
-            COALESCE(sam.mastery_score, 50) AS mastery_score
+            COALESCE(sam.mastery_score, 50) AS mastery_score,
+            sap.series_level_id AS current_level_id,
+            current_asl.name AS current_level_name,
+            current_asl.sort_order AS current_level_sort_order
         FROM group_students gs
         INNER JOIN \`groups\` g
             ON g.id = gs.group_id
@@ -545,6 +717,11 @@ router.get("/:studentId/abilities", async (req, res) => {
         LEFT JOIN student_ability_mastery sam
             ON sam.ability_id = a.id
             AND sam.user_id = ?
+        LEFT JOIN student_ability_progress sap
+            ON sap.ability_id = a.id
+            AND sap.user_id = ?
+        LEFT JOIN ability_series_levels current_asl
+            ON current_asl.id = sap.series_level_id
         WHERE gs.user_id = ?
             AND gs.deleted_at IS NULL
             AND a.deleted_at IS NULL
@@ -553,7 +730,7 @@ router.get("/:studentId/abilities", async (req, res) => {
             a.sort_order,
             a.name
         `,
-        [req.params.studentId, req.params.studentId]
+        [req.params.studentId, req.params.studentId, req.params.studentId]
     );
 
     const [[lastDiagnosticAttempt]] =
@@ -611,6 +788,111 @@ router.get("/:studentId/abilities", async (req, res) => {
 
     }
 
+    const sectionsByAbility = new Map();
+
+    if (rows.length > 0) {
+        const abilityIds = rows.map(a => a.id);
+        const placeholders = abilityIds.map(() => "?").join(",");
+
+        const [sectionRows] = await db.query(
+            `
+            SELECT DISTINCT
+                ba.ability_id,
+                s.id AS section_id,
+                s.subchapter_id,
+                s.title AS section_title,
+                s.page_number,
+                s.sort_order,
+                ch.book_id
+            FROM block_abilities ba
+            INNER JOIN blocks bl
+                ON bl.id = ba.block_id
+                AND bl.deleted_at IS NULL
+                AND bl.archived_at IS NULL
+            INNER JOIN block_sections bs
+                ON bs.block_id = bl.id
+            INNER JOIN sections s
+                ON s.id = bs.section_id
+            INNER JOIN subchapters sc
+                ON sc.id = s.subchapter_id
+            INNER JOIN chapters ch
+                ON ch.id = sc.chapter_id
+            WHERE ba.ability_id IN (${placeholders})
+              AND s.page_number IS NOT NULL
+            ORDER BY
+                s.page_number ASC,
+                s.sort_order ASC
+            `,
+            abilityIds
+        );
+
+        const subchapterIds = [...new Set(sectionRows.map(s => s.subchapter_id))];
+        const endPageBySectionId = new Map();
+
+        if (subchapterIds.length > 0) {
+            const [allSubchapterSections] = await db.query(
+                `
+                SELECT id, subchapter_id, page_number, sort_order
+                FROM sections
+                WHERE subchapter_id IN (?)
+                ORDER BY subchapter_id, sort_order
+                `,
+                [subchapterIds]
+            );
+
+            const bySubchapter = new Map();
+            for (const s of allSubchapterSections) {
+                if (!bySubchapter.has(s.subchapter_id)) {
+                    bySubchapter.set(s.subchapter_id, []);
+                }
+                bySubchapter.get(s.subchapter_id).push(s);
+            }
+
+            for (const subSections of bySubchapter.values()) {
+                for (let i = 0; i < subSections.length; i++) {
+                    const current = subSections[i];
+                    let endPage = current.page_number;
+                    if (i < subSections.length - 1 && subSections[i + 1].page_number != null) {
+                        endPage = subSections[i + 1].page_number - 1;
+                    }
+                    if (endPage != null && current.page_number != null && endPage < current.page_number) {
+                        endPage = current.page_number;
+                    }
+                    endPageBySectionId.set(current.id, endPage);
+                }
+            }
+        }
+
+        for (const section of sectionRows) {
+            section.end_page = endPageBySectionId.get(section.section_id) ?? section.page_number;
+            if (!sectionsByAbility.has(section.ability_id)) {
+                sectionsByAbility.set(section.ability_id, []);
+            }
+            sectionsByAbility.get(section.ability_id).push(section);
+        }
+    }
+
+    const seriesIds = [...new Set(rows.map(a => a.series_id).filter(Boolean))];
+    const defaultLevelsBySeries = new Map();
+
+    if (seriesIds.length > 0) {
+        const [seriesLevelRows] = await db.query(
+            `
+            SELECT id, series_id, name, sort_order
+            FROM ability_series_levels
+            WHERE series_id IN (?)
+            ORDER BY series_id, sort_order ASC
+            `,
+            [seriesIds]
+        );
+
+        for (const lvl of seriesLevelRows) {
+            if (!defaultLevelsBySeries.has(lvl.series_id)) {
+                defaultLevelsBySeries.set(lvl.series_id, lvl);
+            }
+        }
+    }
+
     for (const ability of rows) {
 
         const previousScore =
@@ -636,6 +918,43 @@ router.get("/:studentId/abilities", async (req, res) => {
                         ? "down"
 
                         : "unchanged";
+
+        const defaultLevel = defaultLevelsBySeries.get(ability.series_id) || null;
+        const nextLevelName = ability.current_level_name || defaultLevel?.name || null;
+        const nextLevelId = ability.current_level_id || defaultLevel?.id || null;
+
+        ability.next_level = nextLevelName;
+        ability.next_level_id = nextLevelId;
+
+        const abilitySections = sectionsByAbility.get(ability.id) || [];
+        const formattedPageRanges = [];
+        const seenRanges = new Set();
+
+        for (const s of abilitySections) {
+            if (s.page_number == null) continue;
+            const start = s.page_number;
+            const end = s.end_page ?? s.page_number;
+            const label = start === end ? `${start}` : `${start}-${end}`;
+            if (!seenRanges.has(label)) {
+                seenRanges.add(label);
+                formattedPageRanges.push({
+                    start,
+                    end,
+                    label
+                });
+            }
+        }
+
+        formattedPageRanges.sort((a, b) => a.start - b.start);
+
+        ability.pages = formattedPageRanges.map(r => r.label);
+        ability.page_ranges = formattedPageRanges;
+        ability.sections = abilitySections.map(s => ({
+            id: s.section_id,
+            title: s.section_title,
+            page_number: s.page_number,
+            end_page: s.end_page ?? s.page_number
+        }));
 
     }
 

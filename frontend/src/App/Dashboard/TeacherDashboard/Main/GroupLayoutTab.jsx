@@ -269,7 +269,21 @@ export default function GroupLayoutTab({
                 return;
             }
 
-            await load();
+            setAssignments(
+                currentAssignments =>
+                    currentAssignments.map(
+                        assignment =>
+                            assignment.id === assignmentId
+                                ? {
+                                    ...assignment,
+                                    pinned:
+                                        assignment.pinned === 1
+                                            ? 0
+                                            : 1
+                                }
+                                : assignment
+                    )
+            );
         };
 
         const swapSeats =
@@ -304,7 +318,60 @@ export default function GroupLayoutTab({
                     return;
                 }
 
-                await load();
+                setAssignments(
+                    currentAssignments => {
+
+                        const source =
+                            currentAssignments.find(
+                                assignment =>
+                                    assignment.id ===
+                                    assignmentId
+                            );
+
+                        const target =
+                            currentAssignments.find(
+                                assignment =>
+                                    assignment.classroom_seat_id ===
+                                    targetSeatId
+                            );
+
+                        if (!source) {
+                            return currentAssignments;
+                        }
+
+                        return currentAssignments.map(
+                            assignment => {
+
+                                if (
+                                    assignment.id ===
+                                    source.id
+                                ) {
+                                    return {
+                                        ...assignment,
+                                        classroom_seat_id:
+                                            targetSeatId
+                                    };
+                                }
+
+                                if (
+                                    target &&
+                                    assignment.id ===
+                                    target.id
+                                ) {
+                                    return {
+                                        ...assignment,
+                                        classroom_seat_id:
+                                            source.classroom_seat_id
+                                    };
+                                }
+
+                                return assignment;
+
+                            }
+                        );
+
+                    }
+                );
 
             };
 

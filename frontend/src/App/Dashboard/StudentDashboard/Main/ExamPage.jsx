@@ -155,6 +155,14 @@ export default function ExamPage({
         attemptConfig?.attempt?.countdownMode ||
         "visible_lock";
 
+    const initialSeedCount =
+        attemptConfig?.attempt?.initialSeedQuestionCount ||
+        attemptConfig?.attempt?.seedQuestionCount ||
+        dynamicQuestions.length;
+
+    const currentQuestionNumber = index + 1;
+    const isSeedPhase = currentQuestionNumber <= initialSeedCount;
+
 
     const appendNextQuestion = (
         result
@@ -480,6 +488,24 @@ export default function ExamPage({
                             }
                         />
 
+                        {isDiagnostic && (
+                            <div className="flex items-center justify-between rounded-md border bg-muted/20 px-4 py-2.5 text-sm">
+                                <span className="font-medium text-foreground">
+                                    Uppgift {currentQuestionNumber}
+                                    {isSeedPhase ? ` / ${initialSeedCount}` : ""}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                    {isSeedPhase
+                                        ? "Basdel (före adaptiv del)"
+                                        : current.selection_reason?.startsWith("Komplettering")
+                                            ? "Adaptiv del – Komplettering"
+                                            : current.selection_reason?.startsWith("Träning")
+                                                ? "Adaptiv del – Träning"
+                                                : "Adaptiv del"}
+                                </span>
+                            </div>
+                        )}
+
                         {countdownMode !== "none" && (
 
                             <ExamTimer
@@ -567,8 +593,12 @@ export default function ExamPage({
                                 attempt?.allow_go_to_previous_question
                             }
                             showReset={
+                                answerConfig?.default_answer !==
+                                    undefined &&
                                 answerConfig.default_answer !==
-                                undefined
+                                    null &&
+                                answerConfig.default_answer !==
+                                    ""
                             }
                             timeExpired={timeExpired}
                             onPrev={prev}

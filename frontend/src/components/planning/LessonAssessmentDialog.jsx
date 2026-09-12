@@ -29,7 +29,9 @@ export default function LessonAssessmentDialog({
     assessmentType,
     onSaved,
     openTab,
-    startDiagnosticTest
+    startDiagnosticTest,
+    groupAssessmentId = null,
+    initialAssessment = null
 }) {
 
     const [
@@ -53,13 +55,26 @@ export default function LessonAssessmentDialog({
     ] = useState([]);
 
     const [
-        seedQuestionCount,
-        setSeedQuestionCount
-    ] = useState(5);
+        abilityQuestionCounts,
+        setAbilityQuestionCounts
+    ] = useState({});
+
+    const [
+        completionQuestionsPerAbility,
+        setCompletionQuestionsPerAbility
+    ] = useState(1);
+
+    const isEditMode = !!groupAssessmentId;
 
     const availableSections =
-        diagnosticPlan?.sections ||
-        [];
+        [...(diagnosticPlan?.sections || [])].sort((a, b) => {
+            const pageA = a.pageNumber != null ? Number(a.pageNumber) : -1;
+            const pageB = b.pageNumber != null ? Number(b.pageNumber) : -1;
+            if (pageB !== pageA) {
+                return pageB - pageA;
+            }
+            return (a.name || "").localeCompare(b.name || "", "sv");
+        });
 
     const availableSectionIds =
         availableSections
@@ -87,6 +102,23 @@ export default function LessonAssessmentDialog({
                         .map(block => Number(block.id))
             )
             .filter(Number.isFinite);
+
+    const selectedAbilities =
+        (diagnosticPlan?.abilities || []).filter(
+            ability =>
+                (ability.section_ids || []).some(
+                    sId => selectedSectionIds.includes(Number(sId))
+                )
+        );
+
+    const totalSeedQuestions =
+        selectedAbilities.reduce((sum, ability) => {
+            const count = Number(
+                abilityQuestionCounts[ability.id] ??
+                (diagnosticPlan?.defaultQuestionsPerAbility ?? 1)
+            );
+            return sum + (Number.isFinite(count) && count > 0 ? count : 0);
+        }, 0);
 
     useEffect(() => {
 
@@ -132,26 +164,115 @@ export default function LessonAssessmentDialog({
             const data =
                 await response.json();
 
+            let existingConfig = null;
+
+            if (groupAssessmentId) {
+
+                const existingResponse =
+                    await fetch(
+                        `${API_URL}/api/group-assessments/${groupAssessmentId}`,
+                        {
+                            headers: authHeaders()
+                        }
+                    );
+
+                if (existingResponse.ok) {
+                    const existingData =
+                        await existingResponse.json();
+
+                    existingConfig =
+                        typeof existingData.config === "string"
+                            ? JSON.parse(existingData.config || "{}")
+                            : (existingData.config || {});
+                }
+
+            }
+
             setDiagnosticPlan(data);
 
-            const preselectedBlockIds =
-                Array.isArray(data.selected_block_ids)
-                    ? data.selected_block_ids.map(Number)
-                    : null;
+            const defaultQuestions =
+                data.defaultQuestionsPerAbility ?? 1;
 
-            const nextSelected =
+            const defaultCompletion =
+                data.defaultCompletionQuestionsPerAbility ?? 1;
+
+            const initialCounts = {};
+            (data.abilities || []).forEach(ability => {
+                initialCounts[ability.id] = defaultQuestions;
+            });
+
+            if (existingConfig?.ability_question_counts) {
+
+                Object.entries(existingConfig.ability_question_counts).forEach(([abilityId, count]) => {
+                    const number = Number(count);
+                    if (Number.isFinite(number) && number > 0) {
+                        initialCounts[Number(abilityId)] = number;
+                    }
+                });
+
+            }
+
+            setAbilityQuestionCounts(initialCounts);
+            setCompletionQuestionsPerAbility(
+                existingConfig?.completion_questions_per_ability ?? defaultCompletion
+            );
+
+            const preselectedBlockIds =
+                Array.isArray(existingConfig?.selected_block_ids)
+                    ? existingConfig.selected_block_ids.map(Number)
+                    : (Array.isArray(data.selected_block_ids)
+                        ? data.selected_block_ids.map(Number)
+                        : null);
+
+            const previouslyIncludedSectionIdSet = new Set(
+                (data.previouslyIncludedSectionIds || [])
+                    .map(Number)
+            );
+
+            let nextSelected =
                 (data.sections || [])
-                    .filter(section =>
-                        !preselectedBlockIds ||
-                        (section.blocks || []).every(
-                            block =>
-                                preselectedBlockIds.includes(
-                                    Number(block.id)
-                                )
-                        )
-                    )
+                    .filter(section => {
+                        const sectionId = Number(section.id);
+                        if (
+                            section.previouslyIncluded ||
+                            previouslyIncludedSectionIdSet.has(sectionId)
+                        ) {
+                            return false;
+                        }
+                        if (preselectedBlockIds) {
+                            return (section.blocks || []).every(
+                                block =>
+                                    preselectedBlockIds.includes(
+                                        Number(block.id)
+                                    )
+                            );
+                        }
+                        return true;
+                    })
                     .map(section => Number(section.id))
                     .filter(Number.isFinite);
+
+            if (groupAssessmentId && Array.isArray(existingConfig?.selected_block_ids)) {
+
+                const selectedSectionSet = new Set();
+
+                (data.sections || []).forEach(section => {
+                    const sectionBlockIds = (section.blocks || []).map(block => Number(block.id));
+                    if (
+                        sectionBlockIds.length > 0 &&
+                        sectionBlockIds.every(blockId =>
+                            existingConfig.selected_block_ids
+                                .map(Number)
+                                .includes(blockId)
+                        )
+                    ) {
+                        selectedSectionSet.add(Number(section.id));
+                    }
+                });
+
+                nextSelected = Array.from(selectedSectionSet);
+
+            }
 
             setSelectedSectionIds(nextSelected);
 
@@ -188,73 +309,124 @@ export default function LessonAssessmentDialog({
 
     }
 
+    function updateAbilityCount(abilityId, value) {
+
+        setAbilityQuestionCounts(previous => ({
+            ...previous,
+            [abilityId]: value === "" ? "" : Number(value)
+        }));
+
+    }
+
     async function handleCreateDiagnostic() {
 
-        if (selectedBlockIds.length === 0) {
+        const normalizedAbilityCounts = {};
+        for (const ability of selectedAbilities) {
+            const count =
+                abilityQuestionCounts[ability.id] !== undefined
+                    ? Number(abilityQuestionCounts[ability.id])
+                    : (diagnosticPlan?.defaultQuestionsPerAbility ?? 1);
 
-            toast.error(
-                "Välj minst ett block att testa i diagnosen."
-            );
+            if (!Number.isInteger(count) || count < 1) {
+                toast.error(
+                    `Ange ett giltigt antal uppgifter (minst 1) för förmågan "${ability.name}".`
+                );
+                return;
+            }
 
-            return;
-
+            normalizedAbilityCounts[ability.id] = count;
         }
 
-        const normalizedSeedQuestionCount =
-            Number(seedQuestionCount);
+        const normalizedCompletionCount =
+            Number(completionQuestionsPerAbility);
 
         if (
-            !Number.isInteger(normalizedSeedQuestionCount) ||
-            normalizedSeedQuestionCount < 1
+            !Number.isInteger(normalizedCompletionCount) ||
+            normalizedCompletionCount < 1
         ) {
             toast.error(
-                "Ange minst en uppgift före den adaptiva delen."
+                "Ange minst 1 uppgift per förmåga i komplettering."
             );
-
             return;
-
         }
+
+        const payload = {
+            type: "diagnostic",
+            mode: "normal",
+            selected_block_ids:
+                selectedBlockIds,
+            ability_question_counts:
+                normalizedAbilityCounts,
+            completion_questions_per_ability:
+                normalizedCompletionCount
+        };
 
         try {
 
             setSaving(true);
 
-            const response =
-                await fetch(
-                    `${API_URL}/api/lessons/${lessonId}/group-assessments`,
-                    {
-                        method: "POST",
-                        headers: {
-                            "Content-Type":
-                                "application/json",
-                            ...authHeaders()
-                        },
-                        body: JSON.stringify({
-                            type: "diagnostic",
-                            mode: "normal",
-                            selected_block_ids:
-                                selectedBlockIds,
-                            seed_question_count:
-                                normalizedSeedQuestionCount
-                        })
-                    }
-                );
+            if (isEditMode && groupAssessmentId) {
 
-            const data =
-                await response.json();
+                const response =
+                    await fetch(
+                        `${API_URL}/api/group-assessments/${groupAssessmentId}`,
+                        {
+                            method: "PUT",
+                            headers: {
+                                "Content-Type":
+                                    "application/json",
+                                ...authHeaders()
+                            },
+                            body: JSON.stringify({
+                                config: payload,
+                                waiting_room_open: false,
+                                available_from: null,
+                                available_until: null
+                            })
+                        }
+                    );
 
-            if (!response.ok) {
+                if (!response.ok) {
+                    throw new Error(
+                        "Kunde inte uppdatera diagnosen."
+                    );
+                }
 
-                throw new Error(
-                    data.error ||
-                    "Kunde inte skapa diagnos."
+                toast.success("Diagnosen uppdaterades.");
+
+            } else {
+
+                const response =
+                    await fetch(
+                        `${API_URL}/api/lessons/${lessonId}/group-assessments`,
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type":
+                                    "application/json",
+                                ...authHeaders()
+                            },
+                            body: JSON.stringify(payload)
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        data.error ||
+                        "Kunde inte skapa diagnos."
+                    );
+
+                }
+
+                toast.success(
+                    "Diagnos skapad."
                 );
 
             }
-
-            toast.success(
-                "Diagnos skapad."
-            );
 
             window.dispatchEvent(
                 new Event(
@@ -282,29 +454,34 @@ export default function LessonAssessmentDialog({
 
     async function handleTestDiagnostic() {
 
-        if (selectedBlockIds.length === 0) {
+        const normalizedAbilityCounts = {};
+        for (const ability of selectedAbilities) {
+            const count =
+                abilityQuestionCounts[ability.id] !== undefined
+                    ? Number(abilityQuestionCounts[ability.id])
+                    : (diagnosticPlan?.defaultQuestionsPerAbility ?? 1);
 
-            toast.error(
-                "Välj minst ett block att testa i diagnosen."
-            );
+            if (!Number.isInteger(count) || count < 1) {
+                toast.error(
+                    `Ange ett giltigt antal uppgifter (minst 1) för förmågan "${ability.name}".`
+                );
+                return;
+            }
 
-            return;
-
+            normalizedAbilityCounts[ability.id] = count;
         }
 
-        const normalizedSeedQuestionCount =
-            Number(seedQuestionCount);
+        const normalizedCompletionCount =
+            Number(completionQuestionsPerAbility);
 
         if (
-            !Number.isInteger(normalizedSeedQuestionCount) ||
-            normalizedSeedQuestionCount < 1
+            !Number.isInteger(normalizedCompletionCount) ||
+            normalizedCompletionCount < 1
         ) {
             toast.error(
-                "Ange minst en uppgift före den adaptiva delen."
+                "Ange minst 1 uppgift per förmåga i komplettering."
             );
-
             return;
-
         }
 
         try {
@@ -326,8 +503,10 @@ export default function LessonAssessmentDialog({
                             mode: "test",
                             selected_block_ids:
                                 selectedBlockIds,
-                            seed_question_count:
-                                normalizedSeedQuestionCount
+                            ability_question_counts:
+                                normalizedAbilityCounts,
+                            completion_questions_per_ability:
+                                normalizedCompletionCount
                         })
                     }
                 );
@@ -431,7 +610,7 @@ export default function LessonAssessmentDialog({
                 <DialogHeader>
 
                     <DialogTitle>
-                        Skapa diagnos
+                        {isEditMode ? "Redigera diagnos" : "Skapa diagnos"}
                     </DialogTitle>
 
                 </DialogHeader>
@@ -579,6 +758,11 @@ export default function LessonAssessmentDialog({
                                                             onChange={() => toggleSection(sectionId)}
                                                         />
                                                         <MathContent value={section.name} />
+                                                        {section.previouslyIncluded && (
+                                                            <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+                                                                Tidigare testad
+                                                            </span>
+                                                        )}
                                                     </div>
 
                                                     {section.pageNumber != null && (
@@ -597,34 +781,92 @@ export default function LessonAssessmentDialog({
 
                         </div>
 
-                        <div
-                            className="
-                                space-y-2
-                            "
-                        >
+                        {selectedAbilities.length === 0 && (
+                            <div className="rounded-md border border-dashed p-3 text-sm text-muted-foreground bg-muted/20">
+                                Inga nya sektioner är valda. Diagnosen startar direkt med komplettering och träning av tidigare förmågor.
+                            </div>
+                        )}
+
+                        {selectedAbilities.length > 0 && (
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div className="font-medium">
+                                        Antal uppgifter per förmåga
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                        Totalt {totalSeedQuestions} uppgifter i basdelen
+                                    </div>
+                                </div>
+
+                                <div className="text-xs text-muted-foreground">
+                                    Standardvärdet ({diagnosticPlan?.defaultQuestionsPerAbility ?? 1}) är hämtat från inställningarna. Du kan justera antalet uppgifter för varje förmåga nedan.
+                                </div>
+
+                                <div className="max-h-56 space-y-2 overflow-y-auto rounded-md border p-2 bg-muted/10">
+                                    {selectedAbilities.map(ability => {
+                                        const val =
+                                            abilityQuestionCounts[ability.id] !== undefined
+                                                ? abilityQuestionCounts[ability.id]
+                                                : (diagnosticPlan?.defaultQuestionsPerAbility ?? 1);
+
+                                        return (
+                                            <div
+                                                key={ability.id}
+                                                className="flex items-center justify-between gap-3 rounded-md border bg-background px-3 py-2 text-sm shadow-sm"
+                                            >
+                                                <span className="font-medium truncate" title={ability.name}>
+                                                    {ability.name}
+                                                </span>
+                                                <div className="flex items-center gap-2 shrink-0">
+                                                    <Input
+                                                        type="number"
+                                                        min="1"
+                                                        step="1"
+                                                        value={val}
+                                                        onChange={event =>
+                                                            updateAbilityCount(
+                                                                ability.id,
+                                                                event.target.value
+                                                            )
+                                                        }
+                                                        className="h-8 w-20 text-center"
+                                                    />
+                                                    <span className="text-xs text-muted-foreground">st</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="space-y-2 rounded-md border p-3 bg-muted/10">
                             <label
-                                htmlFor="diagnostic-seed-question-count"
-                                className="font-medium"
+                                htmlFor="diagnostic-completion-questions-count"
+                                className="text-sm font-medium"
                             >
-                                Antal uppgifter före den adaptiva delen
+                                Antal uppgifter per förmåga i komplettering (adaptiv del)
                             </label>
 
-                            <Input
-                                id="diagnostic-seed-question-count"
-                                type="number"
-                                min="1"
-                                step="1"
-                                value={seedQuestionCount}
-                                onChange={event =>
-                                    setSeedQuestionCount(
-                                        event.target.value
-                                    )
-                                }
-                                className="max-w-32"
-                            />
-
-                            <div className="text-sm text-muted-foreground">
-                                Uppgifterna väljs från de valda sektionerna.
+                            <div className="flex items-center gap-3">
+                                <Input
+                                    id="diagnostic-completion-questions-count"
+                                    type="number"
+                                    min="1"
+                                    step="1"
+                                    value={completionQuestionsPerAbility}
+                                    onChange={event =>
+                                        setCompletionQuestionsPerAbility(
+                                            event.target.value === ""
+                                                ? ""
+                                                : Number(event.target.value)
+                                        )
+                                    }
+                                    className="h-8 w-24 text-center"
+                                />
+                                <span className="text-xs text-muted-foreground">
+                                    Standardvärde: {diagnosticPlan?.defaultCompletionQuestionsPerAbility ?? 1} st
+                                </span>
                             </div>
                         </div>
 
@@ -668,7 +910,7 @@ export default function LessonAssessmentDialog({
                                     handleCreateDiagnostic
                                 }
                             >
-                                Skapa diagnos
+                                {isEditMode ? "Spara ändringar" : "Skapa diagnos"}
                             </Button>
 
                         </div>

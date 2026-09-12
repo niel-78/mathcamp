@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, clearUserScopedLocalStorage } from "@/contexts/AuthContext";
 import { API_URL } from "@/config";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ export default function Login() {
             return;
         }
 
+        clearUserScopedLocalStorage();
         localStorage.setItem("token", data.token);
         setUser(data.user);
         toast.success("Inloggning lyckades");

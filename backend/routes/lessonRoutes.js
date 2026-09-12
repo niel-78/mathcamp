@@ -107,7 +107,45 @@ router.get("/",
                     lessonIds
                 );
 
+                const subchapterIds = [...new Set(lessonSections.map(s => s.subchapter_id).filter(Boolean))];
+                const endPageBySectionId = new Map();
+
+                if (subchapterIds.length > 0) {
+                    const [allSubchapterSections] = await db.query(
+                        `
+                        SELECT id, subchapter_id, page_number, sort_order
+                        FROM sections
+                        WHERE subchapter_id IN (?)
+                        ORDER BY subchapter_id, sort_order
+                        `,
+                        [subchapterIds]
+                    );
+
+                    const bySubchapter = new Map();
+                    for (const s of allSubchapterSections) {
+                        if (!bySubchapter.has(s.subchapter_id)) {
+                            bySubchapter.set(s.subchapter_id, []);
+                        }
+                        bySubchapter.get(s.subchapter_id).push(s);
+                    }
+
+                    for (const subSections of bySubchapter.values()) {
+                        for (let i = 0; i < subSections.length; i++) {
+                            const current = subSections[i];
+                            let endPage = current.page_number;
+                            if (i < subSections.length - 1 && subSections[i + 1].page_number != null) {
+                                endPage = subSections[i + 1].page_number - 1;
+                            }
+                            if (endPage != null && current.page_number != null && endPage < current.page_number) {
+                                endPage = current.page_number;
+                            }
+                            endPageBySectionId.set(current.id, endPage);
+                        }
+                    }
+                }
+
                 for (const section of lessonSections) {
+                    section.end_page = endPageBySectionId.get(section.id) ?? section.page_number;
                     const sections =
                         sectionsByLessonId.get(section.lesson_id) || [];
 
@@ -833,10 +871,48 @@ router.get("/teacher",
                         lessonIds
                     );
 
+                const subchapterIds = [...new Set(sections.map(s => s.subchapter_id).filter(Boolean))];
+                const endPageBySectionId = new Map();
+
+                if (subchapterIds.length > 0) {
+                    const [allSubchapterSections] = await db.query(
+                        `
+                        SELECT id, subchapter_id, page_number, sort_order
+                        FROM sections
+                        WHERE subchapter_id IN (?)
+                        ORDER BY subchapter_id, sort_order
+                        `,
+                        [subchapterIds]
+                    );
+
+                    const bySubchapter = new Map();
+                    for (const s of allSubchapterSections) {
+                        if (!bySubchapter.has(s.subchapter_id)) {
+                            bySubchapter.set(s.subchapter_id, []);
+                        }
+                        bySubchapter.get(s.subchapter_id).push(s);
+                    }
+
+                    for (const subSections of bySubchapter.values()) {
+                        for (let i = 0; i < subSections.length; i++) {
+                            const current = subSections[i];
+                            let endPage = current.page_number;
+                            if (i < subSections.length - 1 && subSections[i + 1].page_number != null) {
+                                endPage = subSections[i + 1].page_number - 1;
+                            }
+                            if (endPage != null && current.page_number != null && endPage < current.page_number) {
+                                endPage = current.page_number;
+                            }
+                            endPageBySectionId.set(current.id, endPage);
+                        }
+                    }
+                }
+
                 const sectionsByLesson =
                     {};
 
                 for (const section of sections) {
+                    section.end_page = endPageBySectionId.get(section.id) ?? section.page_number;
 
                     if (
                         !sectionsByLesson[
@@ -895,7 +971,9 @@ router.post("/:id/group-assessments",
             type,
             mode = "normal",
             selected_block_ids = [],
-            seed_question_count = null
+            seed_question_count = null,
+            ability_question_counts = null,
+            completion_questions_per_ability = null
         } = req.body;
 
         const connection =
@@ -942,6 +1020,19 @@ router.post("/:id/group-assessments",
             const normalizedSeedQuestionCount =
                 Number(seed_question_count);
 
+            const normalizedAbilityQuestionCounts = {};
+            if (
+                ability_question_counts &&
+                typeof ability_question_counts === "object"
+            ) {
+                for (const [key, val] of Object.entries(ability_question_counts)) {
+                    const num = Number(val);
+                    if (Number.isInteger(num) && num >= 1) {
+                        normalizedAbilityQuestionCounts[key] = num;
+                    }
+                }
+            }
+
             if (type === "diagnostic") {
 
                 const [[assessment]] =
@@ -961,14 +1052,6 @@ router.post("/:id/group-assessments",
 
                     throw new Error(
                         "Ingen diagnostisk assessment hittades."
-                    );
-
-                }
-
-                if (normalizedSelectedBlockIds.length === 0) {
-
-                    throw new Error(
-                        "Välj minst ett block för diagnosen."
                     );
 
                 }
@@ -1013,6 +1096,12 @@ router.post("/:id/group-assessments",
                     type
                 );
 
+            const normalizedCompletionQuestionsPerAbility =
+                Number.isInteger(Number(completion_questions_per_ability)) &&
+                Number(completion_questions_per_ability) >= 1
+                    ? Number(completion_questions_per_ability)
+                    : null;
+
             const [result] =
                 await connection.query(
                     `
@@ -1043,6 +1132,18 @@ router.post("/:id/group-assessments",
                             ...typeSettings,
                             attempt: {
                                 ...(typeSettings.attempt || {}),
+                                ...(normalizedCompletionQuestionsPerAbility != null
+                                    ? {
+                                        completionQuestionsPerAbility:
+                                            normalizedCompletionQuestionsPerAbility
+                                    }
+                                    : {}),
+                                ...(Object.keys(normalizedAbilityQuestionCounts).length > 0
+                                    ? {
+                                        abilityQuestionCounts:
+                                            normalizedAbilityQuestionCounts
+                                    }
+                                    : {}),
                                 ...(Number.isInteger(normalizedSeedQuestionCount) &&
                                 normalizedSeedQuestionCount > 0
                                     ? {
@@ -1052,7 +1153,11 @@ router.post("/:id/group-assessments",
                                     : {})
                             },
                             selected_block_ids:
-                                normalizedSelectedBlockIds
+                                normalizedSelectedBlockIds,
+                            ability_question_counts:
+                                normalizedAbilityQuestionCounts,
+                            completion_questions_per_ability:
+                                normalizedCompletionQuestionsPerAbility
                         })
                     ]
                 );
@@ -1135,16 +1240,322 @@ router.get("/:id/group-assessments",
     }
 );
 
+// GET /api/lessons/:lessonId/group-assessments/:groupAssessmentId/diagnostic-details
+router.get("/:lessonId/group-assessments/:groupAssessmentId/diagnostic-details",
+    async (req, res) => {
+        try {
+            const lessonId = Number(req.params.lessonId);
+            const groupAssessmentId = Number(req.params.groupAssessmentId);
+            const userId = req.user.id;
+
+            const [[ga]] = await db.query(
+                `
+                SELECT
+                    ga.*,
+                    a.type AS assessment_type,
+                    a.title AS assessment_title,
+                    l.group_id,
+                    l.starts_at,
+                    g.book_id
+                FROM group_assessments ga
+                INNER JOIN assessments a
+                    ON a.id = ga.assessment_id
+                LEFT JOIN lessons l
+                    ON l.id = ?
+                LEFT JOIN \`groups\` g
+                    ON g.id = ga.group_id
+                WHERE ga.id = ?
+                AND ga.deleted_at IS NULL
+                `,
+                [lessonId, groupAssessmentId]
+            );
+
+            if (!ga) {
+                return res.status(404).json({
+                    error: "Provtillfället hittades inte."
+                });
+            }
+
+            const config =
+                typeof ga.config === "string"
+                    ? JSON.parse(ga.config || "{}")
+                    : ga.config || {};
+
+            const selectedBlockIds =
+                Array.isArray(config.selected_block_ids)
+                    ? config.selected_block_ids.map(Number).filter(Boolean)
+                    : [];
+
+            // 1. Beräkna ingående sektioner och sidor
+            let includedSections = [];
+
+            if (selectedBlockIds.length > 0) {
+                const [sectionRows] = await db.query(
+                    `
+                    SELECT DISTINCT
+                        s.id,
+                        s.subchapter_id,
+                        s.title,
+                        s.page_number,
+                        s.sort_order
+                    FROM block_sections bs
+                    INNER JOIN sections s
+                        ON s.id = bs.section_id
+                    WHERE bs.block_id IN (?)
+                    AND s.page_number IS NOT NULL
+                    ORDER BY
+                        s.page_number ASC,
+                        s.sort_order ASC
+                    `,
+                    [selectedBlockIds]
+                );
+                includedSections = sectionRows;
+            } else {
+                const plan = await AssessmentEngine.getDiagnosticSeedPlan(
+                    lessonId,
+                    userId,
+                    null
+                );
+                const candidateSections = plan.sections?.filter(s => !s.previouslyIncluded) || [];
+                const targetSections = candidateSections.length > 0 ? candidateSections : (plan.sections || []);
+                const targetSectionIds = targetSections.map(s => s.id).filter(Boolean);
+
+                if (targetSectionIds.length > 0) {
+                    const [sectionRows] = await db.query(
+                        `
+                        SELECT id, subchapter_id, title, page_number, sort_order
+                        FROM sections
+                        WHERE id IN (?)
+                        AND page_number IS NOT NULL
+                        ORDER BY page_number ASC, sort_order ASC
+                        `,
+                        [targetSectionIds]
+                    );
+                    includedSections = sectionRows;
+                }
+            }
+
+            // Beräkna end_page för ingående sektioner
+            const allSubchapterIds = [...new Set(includedSections.map(s => s.subchapter_id).filter(Boolean))];
+            const endPageBySectionId = new Map();
+
+            if (allSubchapterIds.length > 0) {
+                const [allSubSections] = await db.query(
+                    `
+                    SELECT id, subchapter_id, page_number, sort_order
+                    FROM sections
+                    WHERE subchapter_id IN (?)
+                    ORDER BY subchapter_id, sort_order
+                    `,
+                    [allSubchapterIds]
+                );
+
+                const bySubchapter = new Map();
+                for (const s of allSubSections) {
+                    if (!bySubchapter.has(s.subchapter_id)) {
+                        bySubchapter.set(s.subchapter_id, []);
+                    }
+                    bySubchapter.get(s.subchapter_id).push(s);
+                }
+
+                for (const subSections of bySubchapter.values()) {
+                    for (let i = 0; i < subSections.length; i++) {
+                        const current = subSections[i];
+                        let endPage = current.page_number;
+                        if (i < subSections.length - 1 && subSections[i + 1].page_number != null) {
+                            endPage = subSections[i + 1].page_number - 1;
+                        }
+                        if (endPage != null && current.page_number != null && endPage < current.page_number) {
+                            endPage = current.page_number;
+                        }
+                        endPageBySectionId.set(current.id, endPage);
+                    }
+                }
+            }
+
+            const formattedIncludedSections = includedSections.map(s => {
+                const endPage = endPageBySectionId.get(s.id) ?? s.page_number;
+                return {
+                    id: s.id,
+                    title: s.title,
+                    page_number: s.page_number,
+                    end_page: endPage,
+                    page_range: s.page_number === endPage ? `${s.page_number}` : `${s.page_number}-${endPage}`
+                };
+            });
+
+            // 2. Beräkna komplettering för eleven
+            let complementSections = [];
+
+            if (req.user.role === "student" || req.query.studentId) {
+                const studentId = req.user.role === "student" ? req.user.id : Number(req.query.studentId);
+
+                const previousDiagnosticAbilities = await AssessmentEngine.getPreviousDiagnosticAbilities(
+                    db,
+                    ga.group_id,
+                    ga.id
+                );
+
+                const [priorResults] = await db.query(
+                    `
+                    SELECT DISTINCT sah.ability_id
+                    FROM student_ability_history sah
+                    WHERE sah.user_id = ?
+                    `,
+                    [studentId]
+                );
+
+                const priorTestedAbilitySet = new Set(priorResults.map(r => Number(r.ability_id)));
+
+                const missingAbilities = previousDiagnosticAbilities.filter(
+                    aId => !priorTestedAbilitySet.has(Number(aId))
+                );
+
+                if (missingAbilities.length > 0) {
+                    const [compSectionRows] = await db.query(
+                        `
+                        SELECT DISTINCT
+                            s.id,
+                            s.subchapter_id,
+                            s.title,
+                            s.page_number,
+                            s.sort_order,
+                            a.id AS ability_id,
+                            a.name AS ability_name
+                        FROM block_abilities ba
+                        INNER JOIN abilities a ON a.id = ba.ability_id
+                        INNER JOIN blocks bl ON bl.id = ba.block_id AND bl.deleted_at IS NULL AND bl.archived_at IS NULL
+                        INNER JOIN block_sections bs ON bs.block_id = bl.id
+                        INNER JOIN sections s ON s.id = bs.section_id
+                        INNER JOIN subchapters sc ON sc.id = s.subchapter_id
+                        INNER JOIN chapters ch ON ch.id = sc.chapter_id
+                        WHERE ba.ability_id IN (?)
+                          AND (? IS NULL OR ch.book_id = ?)
+                          AND s.page_number IS NOT NULL
+                        ORDER BY s.page_number ASC, s.sort_order ASC
+                        `,
+                        [missingAbilities, ga.book_id || null, ga.book_id || null]
+                    );
+
+                    const compSubchapterIds = [...new Set(compSectionRows.map(s => s.subchapter_id).filter(Boolean))];
+                    const compEndPageBySectionId = new Map();
+
+                    if (compSubchapterIds.length > 0) {
+                        const [allCompSubSections] = await db.query(
+                            `
+                            SELECT id, subchapter_id, page_number, sort_order
+                            FROM sections
+                            WHERE subchapter_id IN (?)
+                            ORDER BY subchapter_id, sort_order
+                            `,
+                            [compSubchapterIds]
+                        );
+
+                        const bySub = new Map();
+                        for (const s of allCompSubSections) {
+                            if (!bySub.has(s.subchapter_id)) {
+                                bySub.set(s.subchapter_id, []);
+                            }
+                            bySub.get(s.subchapter_id).push(s);
+                        }
+
+                        for (const subSections of bySub.values()) {
+                            for (let i = 0; i < subSections.length; i++) {
+                                const current = subSections[i];
+                                let endPage = current.page_number;
+                                if (i < subSections.length - 1 && subSections[i + 1].page_number != null) {
+                                    endPage = subSections[i + 1].page_number - 1;
+                                }
+                                if (endPage != null && current.page_number != null && endPage < current.page_number) {
+                                    endPage = current.page_number;
+                                }
+                                compEndPageBySectionId.set(current.id, endPage);
+                            }
+                        }
+                    }
+
+                    const compSectionsMap = new Map();
+                    for (const row of compSectionRows) {
+                        if (!compSectionsMap.has(row.id)) {
+                            const endPage = compEndPageBySectionId.get(row.id) ?? row.page_number;
+                            compSectionsMap.set(row.id, {
+                                id: row.id,
+                                title: row.title,
+                                page_number: row.page_number,
+                                end_page: endPage,
+                                page_range: row.page_number === endPage ? `${row.page_number}` : `${row.page_number}-${endPage}`,
+                                abilities: []
+                            });
+                        }
+                        if (row.ability_name) {
+                            const sec = compSectionsMap.get(row.id);
+                            if (!sec.abilities.some(a => a.id === row.ability_id)) {
+                                sec.abilities.push({
+                                    id: row.ability_id,
+                                    name: row.ability_name
+                                });
+                            }
+                        }
+                    }
+
+                    complementSections = [...compSectionsMap.values()];
+                }
+            }
+
+            res.json({
+                group_assessment_id: groupAssessmentId,
+                title: ga.assessment_title || "Diagnos",
+                type: ga.assessment_type,
+                sections: formattedIncludedSections,
+                complement_sections: complementSections,
+                needs_complement: complementSections.length > 0
+            });
+
+        } catch (err) {
+            console.error("diagnostic-details error:", err);
+            res.status(500).json({
+                error: err.message
+            });
+        }
+    }
+);
+
 // GET /api/lessons/:lessonId/diagnostic-preview
 router.get("/:lessonId/diagnostic-preview",
     async (req, res) => {
 
         try {
 
+            const typeSettings =
+                await getAssessmentTypeSettings(
+                    "diagnostic"
+                );
+
+            const questionsPerAbility =
+                Math.max(
+                    1,
+                    Number(
+                        typeSettings?.attempt?.questionsPerAbility
+                    ) || 1
+                );
+
+            const completionQuestionsPerAbility =
+                Math.max(
+                    1,
+                    Number(
+                        typeSettings?.attempt?.completionQuestionsPerAbility
+                    ) || 1
+                );
+
             const plan =
                 await AssessmentEngine
                     .getDiagnosticSeedPlan(
-                        req.params.lessonId
+                        req.params.lessonId,
+                        null,
+                        null,
+                        questionsPerAbility,
+                        {},
+                        completionQuestionsPerAbility
                     );
 
             res.json(plan);
