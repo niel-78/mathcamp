@@ -32,6 +32,9 @@ export const eventLabels = {
 
     terminated_all_by_teacher:
         "Provet avslutades när läraren avslutade samtliga prov",
+    
+    soft_terminated_all_by_teacher:
+        "Provet avslutades mjukt när läraren avslutade samtliga prov",
 
     attempt_resumed:
         "Eleven återupptog ett pågående prov",

@@ -32,10 +32,20 @@ export default function GroupPlanningTab({
             reload
         );
 
+        window.addEventListener(
+            "group-color-changed",
+            reload
+        );
+
         return () => {
 
             window.removeEventListener(
                 "lesson-section-added",
+                reload
+            );
+
+            window.removeEventListener(
+                "group-color-changed",
                 reload
             );
 

@@ -34,6 +34,7 @@ import StudentTab from "./Main/StudentTab";
 import AssessmentSettingsTab from "./Main/AssessmentSettingsTab";
 import GroupAddonsTab from "@/components/addons/GroupAddonsTab";
 import CompetitionTab from "@/components/addons/CompetitionTab";
+import ActionRequiredTab from "./Main/ActionRequiredTab";
 
 
 export default function Main({
@@ -188,6 +189,16 @@ export default function Main({
 
                     )}
 
+                    {currentTab?.type === "action-required" && (
+
+                        <ActionRequiredTab
+                            openTab={(tab) =>
+                                openTab(tab, area)
+                            }
+                        />
+
+                    )}
+
                     {currentTab?.type === "block" && (
 
                         <BlockContent
@@ -240,6 +251,11 @@ export default function Main({
                         <SectionTab
                             sectionId={
                                 currentTab.sectionId
+                            }
+                            groupId={currentTab.groupId}
+                            groupName={currentTab.groupName}
+                            groupAbilitySeriesId={
+                                currentTab.groupAbilitySeriesId
                             }
                             openTab={(tab) =>
                                 openTab(tab, area)

@@ -7,6 +7,7 @@ import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
 
 import { getAppSettings } from "../utils/getAppSettings.js";
+import { autoFixQuestion, autoFixMultipleQuestions } from "../utils/autoFixQuestion.js";
 
 const router = express.Router();
 
@@ -103,35 +104,79 @@ router.get("/:id", async (req, res) => {
 
 // PUT /api/questions/:id
 router.put("/:id", async (req, res) => {
-
-    const {
-        question,
-        question_type,
-        answer_config,
-        level_id
-    } = req.body;
-
-    await db.query(
-        `
-        UPDATE questions
-        SET
-            question = ?,
-            question_type = ?,
-            answer_config = ?,
-            level_id = ?
-
-        WHERE id = ?
-        `,
-        [
+    try {
+        const {
             question,
             question_type,
-            JSON.stringify(answer_config),
+            answer_config,
             level_id,
-            req.params.id
-        ]
-    );
+            calculator_allowed
+        } = req.body;
 
-    res.sendStatus(204);
+        const updates = [];
+        const params = [];
+
+        if (question !== undefined) {
+            updates.push("question = ?");
+            params.push(question);
+        }
+
+        if (question_type !== undefined) {
+            updates.push("question_type = ?");
+            params.push(question_type);
+        }
+
+        if (answer_config !== undefined) {
+            updates.push("answer_config = ?");
+            if (answer_config === null) {
+                params.push(null);
+            } else if (typeof answer_config === "string") {
+                params.push(answer_config);
+            } else {
+                params.push(JSON.stringify(answer_config));
+            }
+        }
+
+        if (level_id !== undefined) {
+            updates.push("level_id = ?");
+            params.push(level_id === null || level_id === "" ? null : Number(level_id));
+        }
+
+        if (calculator_allowed !== undefined) {
+            updates.push("calculator_allowed = ?");
+            params.push(calculator_allowed ? 1 : 0);
+        }
+
+        updates.push("updated_at = NOW()");
+
+        if (req.user?.id) {
+            updates.push("updated_by = ?");
+            params.push(req.user.id);
+        }
+
+        if (updates.length === 0) {
+            return res.sendStatus(204);
+        }
+
+        params.push(req.params.id);
+
+        await db.query(
+            `
+            UPDATE questions
+            SET ${updates.join(", ")}
+            WHERE id = ?
+            AND deleted_at IS NULL
+            `,
+            params
+        );
+
+        res.sendStatus(204);
+    } catch (error) {
+        console.error("Error updating question:", error);
+        res.status(500).json({
+            error: error.message || "Kunde inte spara frågan."
+        });
+    }
 });
 
 router.put("/:id/series-level", async (req, res) => {
@@ -193,6 +238,49 @@ router.delete("/:id/question-reports", async (req, res) => {
     );
 
     res.sendStatus(204);
+});
+
+// POST /api/questions/auto-fix-all
+router.post("/auto-fix-all", async (req, res) => {
+    try {
+        const { questionIds } = req.body;
+
+        let targetIds = questionIds;
+        if (!targetIds || !Array.isArray(targetIds) || targetIds.length === 0) {
+            // Find all active questions
+            const [rows] = await db.query(
+                `
+                SELECT q.id
+                FROM questions q
+                JOIN blocks b ON b.id = q.block_id
+                WHERE q.deleted_at IS NULL AND q.archived_at IS NULL
+                AND b.deleted_at IS NULL AND b.archived_at IS NULL
+                `
+            );
+            targetIds = rows.map(r => r.id);
+        }
+
+        const result = await autoFixMultipleQuestions(targetIds, req.user.id);
+        res.json(result);
+    } catch (error) {
+        console.error("Error auto-fixing all questions:", error);
+        res.status(500).json({
+            error: error.message || "Kunde inte åtgärda felen."
+        });
+    }
+});
+
+// POST /api/questions/:id/auto-fix
+router.post("/:id/auto-fix", async (req, res) => {
+    try {
+        const result = await autoFixQuestion(req.params.id, req.user.id);
+        res.json(result);
+    } catch (error) {
+        console.error(`Error auto-fixing question ${req.params.id}:`, error);
+        res.status(500).json({
+            error: error.message || "Kunde inte åtgärda frågan."
+        });
+    }
 });
 
 // DELETE /api/questions/:id
@@ -333,9 +421,10 @@ router.post("/:id/duplicate",
                     created_by,
                     updated_by,
                     level_id,
-                    series_level_id
+                    series_level_id,
+                    calculator_allowed
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `,
                 [
                     question.block_id,
@@ -347,7 +436,8 @@ router.post("/:id/duplicate",
                     req.user.id,
                     req.user.id,
                     question.level_id,
-                    question.series_level_id
+                    question.series_level_id,
+                    question.calculator_allowed ? 1 : 0
                 ]
             );
 

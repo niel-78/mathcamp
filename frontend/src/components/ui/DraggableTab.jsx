@@ -1,5 +1,6 @@
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { Button } from "@/components/ui/button";
+import { getGroupColor } from "@/utils/groupColors";
 
 export default function DraggableTab({
     tab,
@@ -52,6 +53,8 @@ export default function DraggableTab({
     const isActive =
         activeTab === tab.id;
 
+    const groupColor = getGroupColor(tab.groupId);
+
     const style = transform
         ? {
             transform: `
@@ -68,7 +71,12 @@ export default function DraggableTab({
 
         <div
             ref={setRefs}
-            style={style}
+            style={groupColor
+                ? {
+                    ...style,
+                    borderLeft: `4px solid ${groupColor.border}`
+                }
+                : style}
             onClick={() =>
                 setActiveTab(tab.id)
             }

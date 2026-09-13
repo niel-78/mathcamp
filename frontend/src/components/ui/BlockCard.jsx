@@ -1,12 +1,15 @@
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { useState } from "react";
-import { GripVertical } from "lucide-react";
-import { X } from "lucide-react";
+import { AlertCircle, BookOpen, GraduationCap, GripVertical, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import MathContent from "@/components/ui/MathContent";
 import FormatDateTimeShort from "@/utils/formatDateTimeShort";
 import BlockPoints from "@/components/ui/BlockPoints";
 import ExportBlockDialog from "@/components/ui/ExportBlockDialog";
+import { getBlockIssues } from "@/utils/getQuestionIssues";
+
+export { getBlockIssues };
 
 export default function BlockCard({
     block,
@@ -19,6 +22,9 @@ export default function BlockCard({
     onRemoveCentralContent,
     onRemoveSection,
     onRemoveAbility,
+    onAddAbility,
+    abilityOptions = [],
+    abilitySourceLabel = "Förmågor",
     onEditPoint,
     canRemoveFromExam,
     orderNumber
@@ -66,14 +72,35 @@ export default function BlockCard({
     };
 
     const [showReferences, setShowReferences] = useState(false);
+    const [showAbilityOptions, setShowAbilityOptions] = useState(false);
     const [showPoints, setShowPoints] = useState(false);
     const [showExport, setShowExport] = useState(false);
     const questionCount = block.question_count ?? block.questions?.length ?? 0;
     const pointsCount = block.point_count ?? block.points?.length ?? 0;
 
+    const books = block.books?.length > 0
+        ? block.books
+        : Array.from(new Map(
+            (block.bookSections || [])
+                .filter(s => s.book_title)
+                .map(s => [s.book_id || s.book_title, { id: s.book_id, title: s.book_title }])
+          ).values());
+
+    const courses = block.courses?.length > 0
+        ? block.courses
+        : Array.from(new Map([
+            ...(block.bookSections || [])
+                .filter(s => s.course_level_name)
+                .map(s => [s.course_level_id || s.course_level_name, { id: s.course_level_id, name: s.course_level_name, code: s.course_level_code }]),
+            ...(block.points || [])
+                .filter(p => p.level_name)
+                .map(p => [p.level_id || p.level_name, { id: p.level_id, name: p.level_name }])
+          ]).values());
+
     const referenceCount =
         (block.bookSections?.length ?? 0) +
-        (block.abilities?.length ?? 0);
+        (block.abilities?.length ?? 0) +
+        (courses.length > 0 && (block.bookSections?.length ?? 0) === 0 ? courses.length : 0);
 
     const totalPoints =
         Number(block.total_points ?? block.points?.reduce(
@@ -83,6 +110,14 @@ export default function BlockCard({
         ) ?? 0);
 
     const firstQuestion = block.questions?.[0]?.question;
+    const attachedAbilityIds = new Set(
+        (block.abilities || []).map(ability => ability.id)
+    );
+    const availableAbilities = abilityOptions.filter(
+        ability => !attachedAbilityIds.has(ability.id)
+    );
+
+    const issues = getBlockIssues(block);
 
     return (
 
@@ -92,7 +127,7 @@ export default function BlockCard({
             className="w-full"
         >
 
-            <div className="card h-full">
+            <div className={`card h-full ${issues.length > 0 ? "border-amber-300/80 bg-amber-50/10" : ""}`}>
 
                 <div className="flex justify-end mb-2">
 
@@ -153,6 +188,34 @@ export default function BlockCard({
 
                 </div>
             
+                {(courses.length > 0 || books.length > 0) && (
+                    <div className="flex flex-wrap items-center gap-1.5 my-2">
+                        {courses.map(course => (
+                            <Badge
+                                key={course.id || course.name}
+                                variant="secondary"
+                                className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200/70 font-medium"
+                                title="Kurs / Nivå"
+                            >
+                                <GraduationCap size={12} className="mr-1 inline-block" />
+                                {course.name}
+                            </Badge>
+                        ))}
+
+                        {books.map(b => (
+                            <Badge
+                                key={b.id || b.title}
+                                variant="outline"
+                                className="text-xs bg-amber-50/80 text-amber-850 border-amber-200/80 font-normal"
+                                title="Bok"
+                            >
+                                <BookOpen size={12} className="mr-1 inline-block text-amber-700" />
+                                {b.title}
+                            </Badge>
+                        ))}
+                    </div>
+                )}
+
                 {firstQuestion && (
 
                     <MathContent
@@ -162,17 +225,41 @@ export default function BlockCard({
 
                 )}
 
-                <p className="mt-2 text-sm text-muted-foreground">
+                <div className="mt-2 flex items-center justify-between gap-2">
+                    <p className="text-sm text-muted-foreground">
+                        {questionCount}
+                        {" "}
+                        {questionCount === 1
+                            ? "fråga"
+                            : "frågor"}
+                    </p>
 
-                    {questionCount}
-                    {" "}
-                    {questionCount === 1
-                        ? "fråga"
-                        : "frågor"}
+                    {issues.length > 0 && (
+                        <Badge variant="destructive" className="gap-1 text-xs">
+                            <AlertCircle size={12} />
+                            {issues.length} {issues.length === 1 ? "fel" : "fel"}
+                        </Badge>
+                    )}
+                </div>
 
-                </p>
+                {issues.length > 0 && (
+                    <div className="mt-3 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive space-y-1.5">
+                        <div className="flex items-center gap-1.5 font-semibold">
+                            <AlertCircle size={14} className="shrink-0" />
+                            <span>Varningar i blocket ({issues.length} st):</span>
+                        </div>
+                        <ul className="list-disc list-inside space-y-0.5 opacity-90">
+                            {issues.map((issue, idx) => (
+                                <li key={idx}>
+                                    {issue.message}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
 
-                {referenceCount > 0 && (
+                {(referenceCount > 0 ||
+                    (block.canEdit && abilityOptions.length > 0)) && (
 
                     <div className="mt-3">
 
@@ -200,87 +287,56 @@ export default function BlockCard({
 
                         {showReferences && (
 
-                            <div className="mt-2">
+                            <div className="mt-2 space-y-2">
 
-                                {block.abilities?.length > 0 && (
-                                    <>
-                                        <p
-                                            className="
-                                                text-xs
-                                                text-muted-foreground
-                                                mt-2
-                                            "
-                                        >
-                                            Förmågor
+                                {courses.length > 0 && (
+                                    <div>
+                                        <p className="text-xs font-semibold text-muted-foreground mb-1 flex items-center gap-1">
+                                            <GraduationCap size={13} />
+                                            Kurser / Nivåer
                                         </p>
-
-                                        {[...block.abilities]
-                                            .sort((a, b) =>
-                                                a.name.localeCompare(
-                                                    b.name,
-                                                    "sv"
-                                                )
-                                            )
-                                            .map(ability => (
-                                                <div
-                                                    key={ability.id}
-                                                    className="
-                                                        flex
-                                                        justify-between
-                                                        items-center
-                                                    "
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {courses.map(course => (
+                                                <Badge
+                                                    key={course.id || course.name}
+                                                    variant="secondary"
+                                                    className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200/70"
                                                 >
-                                                    {ability.name}
-
-                                                    {block.canEdit && (
-                                                        <Button
-                                                            variant="ghost"
-                                                            className="text-red-500"
-                                                            onClick={() =>
-                                                                onRemoveAbility?.(
-                                                                    block.id,
-                                                                    ability.id
-                                                                )
-                                                            }
-                                                        >
-                                                            <X size={14} />
-                                                        </Button>
-                                                    )}
-
-                                                </div>
+                                                    {course.name}
+                                                    {course.code && course.code !== course.name ? ` (${course.code})` : ""}
+                                                </Badge>
                                             ))}
-                                    </>
-                                )}                                    
+                                        </div>
+                                    </div>
+                                )}
 
                                 {block.bookSections?.length > 0 && (
-                                    <>
-                                        <p
-                                            className="
-                                                text-xs
-                                                text-muted-foreground
-                                                mt-2
-                                            "
-                                        >
-                                            Bok
+                                    <div>
+                                        <p className="text-xs font-semibold text-muted-foreground mb-1 flex items-center gap-1">
+                                            <BookOpen size={13} />
+                                            Böcker & Avsnitt
                                         </p>
 
-                                        {block.bookSections.map(
-                                            section => (
+                                        <div className="space-y-1">
+                                            {block.bookSections.map(section => (
                                                 <div
                                                     key={section.id}
-                                                    className="
-                                                        flex
-                                                        justify-between
-                                                        items-center
-                                                    "
+                                                    className="flex justify-between items-center text-sm py-0.5"
                                                 >
-                                                    {section.title}
+                                                    <span className="text-xs">
+                                                        {section.book_title ? (
+                                                            <span className="font-semibold text-muted-foreground mr-1">
+                                                                [{section.book_title}]
+                                                            </span>
+                                                        ) : null}
+                                                        {section.title}
+                                                    </span>
 
                                                     {block.canEdit && (
-
                                                         <Button
                                                             variant="ghost"
-                                                            className="text-red-500"
+                                                            size="xs"
+                                                            className="text-red-500 hover:text-red-700 size-6 p-0"
                                                             onClick={() =>
                                                                 onRemoveSection?.(
                                                                     block.id,
@@ -288,15 +344,125 @@ export default function BlockCard({
                                                                 )
                                                             }
                                                         >
-                                                            <X size={14} />
+                                                            <X size={12} />
                                                         </Button>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
 
+                                {block.abilities?.length > 0 && (
+                                    <div>
+                                        <p
+                                            className="
+                                                text-xs
+                                                font-semibold
+                                                text-muted-foreground
+                                                mb-1
+                                            "
+                                        >
+                                            Förmågor
+                                        </p>
+
+                                        <div className="space-y-1">
+                                            {[...block.abilities]
+                                                .sort((a, b) =>
+                                                    a.name.localeCompare(
+                                                        b.name,
+                                                        "sv"
+                                                    )
+                                                )
+                                                .map(ability => (
+                                                    <div
+                                                        key={ability.id}
+                                                        className="
+                                                            flex
+                                                            justify-between
+                                                            items-center
+                                                            text-xs
+                                                        "
+                                                    >
+                                                        {ability.name}
+
+                                                        {block.canEdit && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="xs"
+                                                                className="text-red-500 hover:text-red-700 size-6 p-0"
+                                                                onClick={() =>
+                                                                    onRemoveAbility?.(
+                                                                        block.id,
+                                                                        ability.id
+                                                                    )
+                                                                }
+                                                            >
+                                                                <X size={12} />
+                                                            </Button>
+                                                        )}
+
+                                                    </div>
+                                                ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {block.canEdit && abilityOptions.length > 0 && (
+
+                                    <div className="mt-3">
+
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() =>
+                                                setShowAbilityOptions(
+                                                    !showAbilityOptions
+                                                )
+                                            }
+                                        >
+                                            <Plus size={16} />
+                                            Lägg till förmåga
+                                        </Button>
+
+                                        {showAbilityOptions && (
+
+                                            <div className="mt-2">
+
+                                                <p className="text-xs text-muted-foreground">
+                                                    {abilitySourceLabel}
+                                                </p>
+
+                                                {availableAbilities.length > 0
+                                                    ? availableAbilities.map(ability => (
+                                                        <Button
+                                                            key={ability.id}
+                                                            type="button"
+                                                            variant="ghost"
+                                                            className="w-full justify-start"
+                                                            onClick={() =>
+                                                                onAddAbility?.(
+                                                                    block.id,
+                                                                    ability.id
+                                                                )
+                                                            }
+                                                        >
+                                                            <Plus size={14} />
+                                                            {ability.name}
+                                                        </Button>
+                                                    ))
+                                                    : (
+                                                        <p className="text-sm text-muted-foreground">
+                                                            Alla förmågor är redan kopplade.
+                                                        </p>
                                                     )}
 
-                                                </div>
-                                            )
+                                            </div>
+
                                         )}
-                                    </>
+
+                                    </div>
+
                                 )}
 
                             </div>

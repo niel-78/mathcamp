@@ -1,83 +1,69 @@
+import { useMemo } from "react";
 import dayjs from "dayjs";
+import { getGroupColor } from "@/utils/groupColors";
 
 export default function MonthView({
     lessons,
     events = [],
     showEvents,
-    selectedDate
+    selectedDate,
+    lessonAssessments = {}
 }) {
 
-    const currentMonth =
-        dayjs(selectedDate);
+    const { days, lessonsByDate, eventsByDate } = useMemo(() => {
+        const currentMonth = dayjs(selectedDate);
+        const startOfMonth = currentMonth.startOf("month");
+        const endOfMonth = currentMonth.endOf("month");
+        const firstWeekday =
+            startOfMonth.day() === 0
+                ? 7
+                : startOfMonth.day();
+        const monthDays = [];
 
-    const startOfMonth =
-        currentMonth.startOf("month");
-
-    const endOfMonth =
-        currentMonth.endOf("month");
-
-    const firstWeekday =
-        startOfMonth.day() === 0
-            ? 7
-            : startOfMonth.day();
-
-    const days = [];
-
-    for (
-        let i = 1;
-        i < firstWeekday;
-        i++
-    ) {
-        days.push(null);
-    }
-
-    let current =
-        startOfMonth;
-
-    while (
-        current.isBefore(endOfMonth) ||
-        current.isSame(endOfMonth, "day")
-    ) {
-
-        days.push(current);
-
-        current =
-            current.add(1, "day");
-    }
-
-    const lessonsByDate = {};
-
-    for (const lesson of lessons) {
-
-        const key =
-            dayjs(
-                lesson.starts_at
-            ).format("YYYY-MM-DD");
-
-        if (!lessonsByDate[key]) {
-            lessonsByDate[key] = [];
+        for (let i = 1; i < firstWeekday; i++) {
+            monthDays.push(null);
         }
 
-        lessonsByDate[key].push(
-            lesson
-        );
-    }
+        let current = startOfMonth;
 
-    const eventsByDate = {};
-
-    for (const event of events) {
-
-        const key =
-            dayjs(event.date)
-                .format("YYYY-MM-DD");
-
-        if (!eventsByDate[key]) {
-            eventsByDate[key] = [];
+        while (
+            current.isBefore(endOfMonth) ||
+            current.isSame(endOfMonth, "day")
+        ) {
+            monthDays.push(current);
+            current = current.add(1, "day");
         }
 
-        eventsByDate[key].push(event);
+        const lessonIndex = {};
 
-    }
+        for (const lesson of lessons) {
+            const key = dayjs(lesson.starts_at).format("YYYY-MM-DD");
+
+            if (!lessonIndex[key]) {
+                lessonIndex[key] = [];
+            }
+
+            lessonIndex[key].push(lesson);
+        }
+
+        const eventIndex = {};
+
+        for (const event of events) {
+            const key = dayjs(event.date).format("YYYY-MM-DD");
+
+            if (!eventIndex[key]) {
+                eventIndex[key] = [];
+            }
+
+            eventIndex[key].push(event);
+        }
+
+        return {
+            days: monthDays,
+            lessonsByDate: lessonIndex,
+            eventsByDate: eventIndex
+        };
+    }, [events, lessons, selectedDate]);
 
     return (
 
@@ -196,43 +182,70 @@ export default function MonthView({
                                                     px-2
                                                     py-1
                                                 "
+                                                style={getGroupColor(lesson.group_id, lesson.color_index)
+                                                    ? {
+                                                        backgroundColor: getGroupColor(lesson.group_id, lesson.color_index).background,
+                                                        color: getGroupColor(lesson.group_id, lesson.color_index).text,
+                                                        borderLeft: `3px solid ${getGroupColor(lesson.group_id, lesson.color_index).border}`
+                                                    }
+                                                    : undefined}
                                             >
 
                                                 <div
-                                                    key={lesson.id}
                                                     className="
-                                                        text-xs
-                                                        bg-blue-100
-                                                        text-blue-900
-                                                        rounded
-                                                        px-2
-                                                        py-1
+                                                        flex
+                                                        justify-between
+                                                        gap-2
                                                     "
                                                 >
-                                                    <div
+                                                    <span>
+                                                        {dayjs(lesson.starts_at).format("HH:mm")}
+                                                        -
+                                                        {dayjs(lesson.ends_at).format("HH:mm")}
+                                                    </span>
+
+                                                    <span
                                                         className="
-                                                            flex
-                                                            justify-between
-                                                            gap-2
+                                                            truncate
+                                                            font-medium
                                                         "
                                                     >
-                                                        <span>
-                                                            {dayjs(lesson.starts_at).format("HH:mm")}
-                                                            -
-                                                            {dayjs(lesson.ends_at).format("HH:mm")}
-                                                        </span>
-
-                                                        <span
-                                                            className="
-                                                                truncate
-                                                                font-medium
-                                                            "
-                                                        >
-                                                            {lesson.group_name}
-                                                        </span>
-                                                    </div>
-                                                    
+                                                        {lesson.group_name}
+                                                    </span>
                                                 </div>
+
+                                                {lesson.sections?.length > 0 && (
+                                                    <div className="mt-1 space-y-0.5 text-[11px] text-blue-800/80">
+                                                        {lesson.sections.map(section => (
+                                                            <div
+                                                                key={`section-${lesson.id}-${section.id}`}
+                                                                className="truncate"
+                                                            >
+                                                                <span>{section.title}</span>
+                                                                {(section.page_number != null || section.end_page != null) && (
+                                                                    <span className="ml-1 text-blue-800/60">
+                                                                        ({section.page_number ?? "?"}
+                                                                        -
+                                                                        {section.end_page ?? section.page_number ?? "?"})
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                {lessonAssessments[lesson.id]?.map(assessment => (
+                                                    <div
+                                                        key={`assessment-${assessment.id}`}
+                                                        className={assessment.type === "diagnostic"
+                                                            ? "mt-1 truncate px-1 text-[11px] font-bold"
+                                                            : "mt-1 truncate rounded bg-emerald-100 px-1 text-[11px] text-emerald-900"}
+                                                    >
+                                                        {assessment.type === "diagnostic"
+                                                            ? "Diagnos"
+                                                            : assessment.title || assessment.type}
+                                                    </div>
+                                                ))}
 
                                             </div>
 
@@ -251,18 +264,20 @@ export default function MonthView({
                                                     py-1
                                                     mt-1
 
-                                                    ${
-                                                        event.affects_lessons
-                                                            ? `
-                                                                bg-red-100
-                                                                text-red-900
-                                                            `
-                                                            : `
-                                                                bg-amber-100
-                                                                text-amber-900
-                                                            `
+                                                    ${getGroupColor(event.group_id)
+                                                        ? ""
+                                                        : event.affects_lessons
+                                                            ? "bg-red-100 text-red-900"
+                                                            : "bg-amber-100 text-amber-900"
                                                     }
                                                 `}
+                                                style={getGroupColor(event.group_id)
+                                                    ? {
+                                                        backgroundColor: getGroupColor(event.group_id).background,
+                                                        color: getGroupColor(event.group_id).text,
+                                                        borderLeft: `3px solid ${getGroupColor(event.group_id).border}`
+                                                    }
+                                                    : undefined}
                                             >
                                                 {event.title}
                                             </div>

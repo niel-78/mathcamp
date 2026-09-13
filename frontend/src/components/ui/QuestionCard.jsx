@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import {
     Card,
+    CardAction,
     CardContent,
     CardHeader,
     CardTitle
@@ -14,6 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 
 import DetailLayout
     from "@/components/layouts/DetailLayout";
@@ -40,18 +42,22 @@ import {
     QUESTION_TYPES
 } from "@/constants/assessmentConstants";
 
+function parseAnswerConfig(answerConfig) {
+    if (!answerConfig) return {};
+    if (typeof answerConfig === "string") {
+        try {
+            const parsed = JSON.parse(answerConfig);
+            return typeof parsed === "string" ? JSON.parse(parsed) : (parsed || {});
+        } catch {
+            return {};
+        }
+    }
+    return answerConfig;
+}
+
 function getNumericDefaultAnswer(question) {
 
-    const answerConfig =
-        typeof question.answer_config === "string"
-            ? (() => {
-                try {
-                    return JSON.parse(question.answer_config);
-                } catch {
-                    return {};
-                }
-            })()
-            : question.answer_config;
+    const answerConfig = parseAnswerConfig(question.answer_config);
 
     if (
         question.question_type !== "numeric_input" ||
@@ -63,6 +69,43 @@ function getNumericDefaultAnswer(question) {
     }
 
     return answerConfig.default_answer;
+}
+
+export function syncNumericInputs(text, correctCount) {
+    if (correctCount <= 0) return text || "";
+
+    const cleanText = (text || "").trim();
+
+    // Strip trailing input lines: e.g. "x = {{input}}", "x_1 = {{input}}", "x_2 = {{input}}", "{{input}}", "Svar: {{input}}"
+    const lines = cleanText.split("\n");
+    while (lines.length > 0) {
+        const lastLine = lines[lines.length - 1].trim();
+        if (
+            lastLine === "{{input}}" ||
+            /^(?:svar:\s*)?(?:[a-zA-Z](?:_\d+)?\s*=\s*)?\{\{input\}\}\s*$/i.test(lastLine)
+        ) {
+            lines.pop();
+        } else {
+            break;
+        }
+    }
+
+    const basePrompt = lines.join("\n").trim();
+
+    const inputLines = [];
+    if (correctCount === 1) {
+        inputLines.push("x = {{input}}");
+    } else {
+        for (let i = 1; i <= correctCount; i++) {
+            inputLines.push(`x_${i} = {{input}}`);
+        }
+    }
+
+    if (!basePrompt) {
+        return inputLines.join("\n");
+    }
+
+    return `${basePrompt}\n${inputLines.join("\n")}`;
 }
 
 export default function QuestionCard({
@@ -96,7 +139,13 @@ export default function QuestionCard({
     const [levelId,
         setLevelId] =
         useState(
-            question.level_id ?? 2
+            question.level_id ?? null
+        );
+
+    const [calculatorAllowed,
+        setCalculatorAllowed] =
+        useState(
+            Boolean(question.calculator_allowed)
         );
 
     const [previewAnswer,
@@ -152,10 +201,7 @@ export default function QuestionCard({
             return null;
         }
 
-        const config =
-            typeof question.answer_config === "string"
-                ? JSON.parse(question.answer_config || "{}")
-                : question.answer_config || {};
+        const config = parseAnswerConfig(question.answer_config);
 
         if (question.question_type === "numeric_input") {
 
@@ -206,6 +252,8 @@ export default function QuestionCard({
 
             try {
 
+                const currentConfig = parseAnswerConfig(question.answer_config);
+
                 const response = await fetch(
                     `${API_URL}/api/questions/${question.id}`,
                     {
@@ -217,16 +265,18 @@ export default function QuestionCard({
                         body: JSON.stringify({
                             question: questionText,
                             question_type: question.question_type,
-                            answer_config: question.answer_config,
-                            level_id: question.level_id,
+                            answer_config: currentConfig,
+                            level_id: levelId ?? question.level_id,
+                            calculator_allowed: calculatorAllowed,
                             ...overrides
                         })
                     }
                 );
 
                 if (!response.ok) {
+                    const data = await response.json().catch(() => null);
                     throw new Error(
-                        "Kunde inte spara frågan."
+                        data?.error || "Kunde inte spara frågan."
                     );
                 }
 
@@ -252,7 +302,9 @@ export default function QuestionCard({
         async () => {
 
             const saved =
-                await saveQuestion();
+                await saveQuestion({
+                    question: questionText
+                });
 
             if (saved) {
 
@@ -269,8 +321,16 @@ export default function QuestionCard({
     const changeQuestionType =
         async (newType) => {
 
+            let updatedQuestion = question.question;
+            if (newType === "numeric_input" && !question.question?.includes("{{input}}")) {
+                const targetCount = correctOptions.length || 1;
+                updatedQuestion = syncNumericInputs(question.question, targetCount);
+                setQuestionText(updatedQuestion);
+            }
+
             const saved =
                 await saveQuestion({
+                    question: updatedQuestion,
                     question_type: newType
                 });
 
@@ -282,6 +342,76 @@ export default function QuestionCard({
 
             }
 
+        };
+
+    const changeCalculatorPermission =
+        async (allowed) => {
+            setCalculatorAllowed(allowed);
+
+            const saved = await saveQuestion({
+                calculator_allowed: allowed
+            });
+
+            if (saved) {
+                toast.success("Miniräknarinställning sparad");
+            }
+        };
+
+    const deleteMedia =
+        async () => {
+            if (!mediaToDelete) return;
+
+            try {
+                const response = await fetch(
+                    `${API_URL}/api/questions/media/${mediaToDelete}`,
+                    {
+                        method: "DELETE",
+                        headers: authHeaders()
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error("Kunde inte ta bort mediefilen.");
+                }
+
+                toast.success("Media borttagen");
+                await onChanged?.();
+            } catch (error) {
+                toast.error(error.message);
+            } finally {
+                setMediaToDelete(null);
+            }
+        };
+
+    const handleUploadMedia =
+        async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            try {
+                const response = await fetch(
+                    `${API_URL}/api/questions/${question.id}/media`,
+                    {
+                        method: "POST",
+                        headers: authHeaders(),
+                        body: formData
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error("Kunde inte ladda upp media.");
+                }
+
+                toast.success("Media uppladdad");
+                await onChanged?.();
+            } catch (error) {
+                toast.error(error.message);
+            } finally {
+                e.target.value = "";
+            }
         };
 
     useEffect(() => {
@@ -311,10 +441,33 @@ export default function QuestionCard({
     useEffect(() => {
 
         setQuestionText(
-            question.question
+            question.question || ""
+        );
+        setEditingQuestion(false);
+
+    }, [question.id]);
+
+    useEffect(() => {
+        if (!editingQuestion) {
+            setQuestionText(question.question || "");
+        }
+    }, [question.question]);
+
+    useEffect(() => {
+
+        setCalculatorAllowed(
+            Boolean(question.calculator_allowed)
         );
 
-    }, [question.question]);
+    }, [question.id, question.calculator_allowed]);
+
+    useEffect(() => {
+
+        setLevelId(
+            question.level_id ?? null
+        );
+
+    }, [question.id, question.level_id]);
 
     useEffect(() => {
 
@@ -369,6 +522,7 @@ export default function QuestionCard({
                                             px-2
                                             py-1
                                             text-sm
+                                            w-full
                                         "
                                         value={
                                             question.question_type
@@ -398,16 +552,67 @@ export default function QuestionCard({
 
                                 <div>
 
-                                    <Badge
-                                        variant="outline"
-                                    >
-                                        {
-                                            question.level_name
-                                            ?? "Saknas"
-                                        }
-                                    </Badge>
+                                    {levels.length > 0 ? (
+                                        <select
+                                            className="
+                                                border
+                                                rounded
+                                                px-2
+                                                py-1
+                                                text-sm
+                                                w-full
+                                            "
+                                            value={levelId ?? ""}
+                                            disabled={savingQuestion}
+                                            onChange={async (e) => {
+                                                const newLevel = e.target.value ? Number(e.target.value) : null;
+                                                setLevelId(newLevel);
+                                                const saved = await saveQuestion({
+                                                    level_id: newLevel
+                                                });
+                                                if (saved) {
+                                                    toast.success("Nivå sparad");
+                                                }
+                                            }}
+                                        >
+                                            <option value="">Välj nivå...</option>
+                                            {levels.map(lvl => (
+                                                <option
+                                                    key={lvl.id}
+                                                    value={lvl.id}
+                                                >
+                                                    {lvl.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    ) : (
+                                        <Badge
+                                            variant="outline"
+                                        >
+                                            {
+                                                question.level_name
+                                                ?? "Saknas"
+                                            }
+                                        </Badge>
+                                    )}
 
                                 </div>
+
+                                <label
+                                    className="flex items-center gap-2 text-sm"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={calculatorAllowed}
+                                        disabled={savingQuestion}
+                                        onChange={(e) =>
+                                            changeCalculatorPermission(
+                                                e.target.checked
+                                            )
+                                        }
+                                    />
+                                    Miniräknare tillåten
+                                </label>
 
                             </CardContent>
 
@@ -450,28 +655,12 @@ export default function QuestionCard({
                                 Uppgift
                             </CardTitle>
 
-                        </CardHeader>
-
-                        <CardContent>
-
-                            {!editingQuestion ? (
-
-                                <div
-                                    className="
-                                        flex
-                                        justify-between
-                                        gap-4
-                                    "
-                                >
-
-                                    <MathContent
-                                        value={
-                                            question.question
-                                        }
-                                    />
-
+                            {!editingQuestion && (
+                                <CardAction>
                                     <Button
+                                        type="button"
                                         variant="outline"
+                                        size="sm"
                                         onClick={() =>
                                             setEditingQuestion(
                                                 true
@@ -480,7 +669,53 @@ export default function QuestionCard({
                                     >
                                         Redigera
                                     </Button>
+                                </CardAction>
+                            )}
 
+                        </CardHeader>
+
+                        <CardContent className="space-y-4">
+
+                            {question.question_type === "numeric_input" &&
+                                correctOptions.length > 0 &&
+                                (question.question?.match(/\{\{input\}\}/g) || []).length !== correctOptions.length && (
+                                <div className="bg-amber-500/10 border border-amber-500/30 text-amber-900 rounded-xl p-3 text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                    <div>
+                                        <strong>Antal svarsrutor stämmer inte:</strong> Frågan har{" "}
+                                        {(question.question?.match(/\{\{input\}\}/g) || []).length} ruta/rutor (<code>{'{{input}}'}</code>)
+                                        men {correctOptions.length} rätta svar i facit.
+                                    </div>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        type="button"
+                                        disabled={savingQuestion}
+                                        onClick={async () => {
+                                            const synced = syncNumericInputs(
+                                                question.question,
+                                                correctOptions.length
+                                            );
+                                            setQuestionText(synced);
+                                            const saved = await saveQuestion({ question: synced });
+                                            if (saved) {
+                                                toast.success("Svarsrutor synkroniserade");
+                                            }
+                                        }}
+                                    >
+                                        Synkronisera ({correctOptions.length === 1 ? "x = {{input}}" : `x_1..x_${correctOptions.length} = {{input}}`})
+                                    </Button>
+                                </div>
+                            )}
+
+                            {!editingQuestion ? (
+
+                                <div className="space-y-2">
+                                    <MathContent
+                                        className="text-base"
+                                        value={
+                                            question.question
+                                        }
+                                    />
                                 </div>
 
                             ) : (
@@ -491,21 +726,88 @@ export default function QuestionCard({
                                     "
                                 >
 
-                                    <textarea
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <span className="text-xs text-muted-foreground font-medium">Snabbval:</span>
+                                        {correctOptions.length > 0 && (
+                                            <Button
+                                                type="button"
+                                                variant="secondary"
+                                                size="xs"
+                                                onClick={() =>
+                                                    setQuestionText(prev =>
+                                                        syncNumericInputs(prev, correctOptions.length)
+                                                    )
+                                                }
+                                            >
+                                                Anpassa efter facit ({correctOptions.length} st: {correctOptions.length === 1 ? "x" : `x_1..x_${correctOptions.length}`})
+                                            </Button>
+                                        )}
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="xs"
+                                            onClick={() =>
+                                                setQuestionText(prev =>
+                                                    prev ? `${prev}\nx = {{input}}` : "x = {{input}}"
+                                                )
+                                            }
+                                        >
+                                            + x = {"{{input}}"}
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="xs"
+                                            onClick={() =>
+                                                setQuestionText(prev =>
+                                                    prev
+                                                        ? `${prev}\nx_1 = {{input}}\nx_2 = {{input}}`
+                                                        : "x_1 = {{input}}\nx_2 = {{input}}"
+                                                )
+                                            }
+                                        >
+                                            + x_1, x_2 = {"{{input}}"}
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="xs"
+                                            onClick={() =>
+                                                setQuestionText(prev =>
+                                                    prev ? `${prev} {{input}}` : "{{input}}"
+                                                )
+                                            }
+                                        >
+                                            + {"{{input}}"}
+                                        </Button>
+                                    </div>
+
+                                    <Textarea
                                         rows={5}
-                                        className="
-                                            input-standard
-                                            w-full
-                                        "
+                                        className="font-mono text-sm w-full"
                                         value={
                                             questionText
                                         }
+                                        placeholder="Skriv frågetext här..."
                                         onChange={(e) =>
                                             setQuestionText(
                                                 e.target.value
                                             )
                                         }
                                     />
+
+                                    {questionText && (
+                                        <div className="space-y-1">
+                                            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                                Förhandsgranskning
+                                            </div>
+                                            <div className="math-preview">
+                                                <MathContent
+                                                    value={questionText}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
 
                                     <div
                                         className="
@@ -516,6 +818,7 @@ export default function QuestionCard({
                                     >
 
                                         <Button
+                                            type="button"
                                             disabled={savingQuestion}
                                             onClick={saveQuestionText}
                                         >
@@ -523,11 +826,12 @@ export default function QuestionCard({
                                         </Button>
 
                                         <Button
+                                            type="button"
                                             variant="outline"
                                             disabled={savingQuestion}
                                             onClick={() => {
                                                 setQuestionText(
-                                                    question.question
+                                                    question.question || ""
                                                 );
                                                 setEditingQuestion(
                                                     false

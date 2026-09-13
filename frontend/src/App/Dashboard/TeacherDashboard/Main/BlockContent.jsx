@@ -7,6 +7,7 @@ import ArchiveQuestionDialog from "@/components/ui/ArchiveQuestionDialog";
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";    
 import MathContent from "@/components/ui/MathContent";
 import { checkOptionValues } from "@/utils/checkOptionValues";
+import { syncNumericInputs } from "@/components/ui/QuestionCard";
 import {
     Dialog,
     DialogContent,
@@ -150,6 +151,44 @@ export default function BlockContent({
 
         };
 
+    const setQuestionCalculatorPermission =
+        async (question, allowed) => {
+            const answerConfig =
+                typeof question.answer_config === "string"
+                    ? JSON.parse(question.answer_config || "{}")
+                    : question.answer_config || {};
+
+            const response = await fetch(
+                `${API_URL}/api/questions/${question.id}`,
+                {
+                    method: "PUT",
+                    headers: {
+                        ...authHeaders(),
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        question: question.question,
+                        question_type: question.question_type,
+                        answer_config: answerConfig,
+                        level_id: question.level_id,
+                        calculator_allowed: allowed
+                    })
+                }
+            );
+
+            if (!response.ok) {
+                toast.error("Kunde inte uppdatera miniräknarinställningen");
+                return;
+            }
+
+            await loadBlock();
+            toast.success(
+                allowed
+                    ? "Miniräknare tillåten för uppgiften"
+                    : "Miniräknare inte tillåten för uppgiften"
+            );
+        };
+
     const duplicateQuestion =
         async (questionId) => {
 
@@ -226,6 +265,49 @@ export default function BlockContent({
             await loadBlock();
             toast.success("Felanmälningarna togs bort");
         };
+
+    const syncSingleQuestionInputs = async (question) => {
+        const correctCount = (question.options || []).filter(o => o.is_correct).length;
+        if (correctCount === 0) return;
+
+        const updatedQuestionText = syncNumericInputs(question.question, correctCount);
+        const config =
+            typeof question.answer_config === "string"
+                ? JSON.parse(question.answer_config || "{}")
+                : question.answer_config || {};
+
+        try {
+            const response = await fetch(
+                `${API_URL}/api/questions/${question.id}`,
+                {
+                    method: "PUT",
+                    headers: {
+                        ...authHeaders(),
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        question: updatedQuestionText,
+                        question_type: "numeric_input",
+                        level_id: question.level_id,
+                        answer_config: {
+                            ...config,
+                            order_independent: correctCount > 1 ? true : (config.order_independent ?? false)
+                        }
+                    })
+                }
+            );
+
+            if (!response.ok) {
+                toast.error(`Kunde inte uppdatera uppgift #${question.id}`);
+                return;
+            }
+
+            await loadBlock();
+            toast.success("Svarsrutor synkroniserade");
+        } catch (error) {
+            toast.error("Kunde inte synkronisera svarsrutor");
+        }
+    };
 
     // Bulk-marks every question in the block as an equation: numeric_input question
     // type with one answer box per root (unlabeled "x = " for a single root, subscripted
@@ -399,9 +481,27 @@ export default function BlockContent({
 
                             <div className="flex min-w-0 flex-1 flex-col gap-3">
 
-                                <div className="flex items-center gap-2">
+                                <div className="flex flex-wrap items-center gap-2">
 
                                     <MathContent value={question.question} />
+
+                                    {question.question_type === "numeric_input" && (() => {
+                                        const correctCount = (question.options || []).filter(o => o.is_correct).length;
+                                        const inputCount = (question.question?.match(/\{\{input\}\}/g) || []).length;
+                                        if (correctCount > 0 && inputCount !== correctCount) {
+                                            return (
+                                                <Button
+                                                    size="xs"
+                                                    variant="outline"
+                                                    className="text-amber-800 bg-amber-50 border-amber-300 hover:bg-amber-100 font-medium"
+                                                    onClick={() => syncSingleQuestionInputs(question)}
+                                                >
+                                                    Synkronisera svarsrutor ({correctCount === 1 ? "x" : `x_1..x_${correctCount}`})
+                                                </Button>
+                                            );
+                                        }
+                                        return null;
+                                    })()}
 
                                     {question.options?.length > 1 && (() => {
                                         const optionCheck = checkOptionValues(
@@ -488,6 +588,23 @@ export default function BlockContent({
                                         </option>
                                     ))}
                                 </select>
+
+                                <label
+                                    className="flex items-center gap-1 text-sm whitespace-nowrap"
+                                    title="Tillåt miniräknare för uppgiften"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={Boolean(question.calculator_allowed)}
+                                        onChange={(e) =>
+                                            setQuestionCalculatorPermission(
+                                                question,
+                                                e.target.checked
+                                            )
+                                        }
+                                    />
+                                    Miniräknare
+                                </label>
 
                                 <Button
                                     size="sm"

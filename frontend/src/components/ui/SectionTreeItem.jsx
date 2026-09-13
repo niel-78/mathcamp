@@ -10,7 +10,10 @@ export default function SectionTreeItem({
     section,
     hoverTarget,
     openTab,
-    inPlanningQueue = true
+    inPlanningQueue = true,
+    groupId,
+    groupName,
+    groupAbilitySeriesId
 }) {
 
     const {
@@ -78,7 +81,10 @@ export default function SectionTreeItem({
                         id: `book-section-${section.id}`,
                         type: "book-section",
                         title: section.title,
-                        sectionId: section.id
+                        sectionId: section.id,
+                        groupId,
+                        groupName,
+                        groupAbilitySeriesId
                     })
                 }
             >

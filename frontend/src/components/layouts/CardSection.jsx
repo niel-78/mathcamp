@@ -5,19 +5,21 @@ export default function CardSection({
     description,
     actions,
     children,
-    className = ""
+    className = "",
+    style
 }) {
 
     return (
 
         <div
-            className="
+            className={`
                 card
                 p-6
                 border-l-4
                 border-l-primary
                 ${className}
-            "
+            `}
+            style={style}
         >
 
             <div

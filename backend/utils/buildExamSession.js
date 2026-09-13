@@ -13,10 +13,13 @@ export async function buildExamSession(
             `
             SELECT
                 ge.*,
-                e.title AS assessment_title
+                e.title AS assessment_title,
+                g.book_id AS group_book_id
             FROM group_assessments ge
             INNER JOIN assessments e
                 ON e.id = ge.assessment_id
+            INNER JOIN \`groups\` g
+                ON g.id = ge.group_id
             WHERE ge.id = ?
             `,
             [groupExamId]
@@ -49,7 +52,7 @@ export async function buildExamSession(
     const [blocks] =
         await connection.query(
             `
-            SELECT
+            SELECT DISTINCT
                 b.id,
                 eb.sort_order
             FROM blocks b
@@ -57,14 +60,34 @@ export async function buildExamSession(
             INNER JOIN assessment_blocks eb
                 ON eb.block_id = b.id
 
+            INNER JOIN block_sections bs
+                ON bs.block_id = b.id
+
+            INNER JOIN sections s
+                ON s.id = bs.section_id
+
+            INNER JOIN subchapters sc
+                ON sc.id = s.subchapter_id
+
+            INNER JOIN chapters c
+                ON c.id = sc.chapter_id
+
             WHERE eb.assessment_id = ?
                 AND b.deleted_at IS NULL
                 AND b.archived_at IS NULL
+                AND (
+                    ? IS NULL
+                    OR c.book_id = ?
+                )
 
             ORDER BY
                 eb.sort_order
             `,
-            [groupExam.assessment_id]
+            [
+                groupExam.assessment_id,
+                groupExam.group_book_id,
+                groupExam.group_book_id
+            ]
         );
 
 

@@ -26,6 +26,7 @@ import ExamHeader from "./ExamHeader";
 import ExamTimer from "./ExamTimer";
 import QuestionView from "./QuestionView.jsx";
 import ExamNavigation from "./ExamNavigation";
+import Calculator from "@/components/ui/Calculator";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { MessageSquareWarning } from "lucide-react";
@@ -561,6 +562,12 @@ export default function ExamPage({
                             }
                         />
 
+                        {isDiagnostic &&
+                            (current.calculator_allowed === true ||
+                                Number(current.calculator_allowed) === 1) && (
+                            <Calculator key={current.id} />
+                        )}
+
                         <div className="flex justify-end">
                             <Button
                                 type="button"
@@ -589,8 +596,8 @@ export default function ExamPage({
                                 dynamicQuestions.length
                             }
                             allowPrevious={
-                                !isDiagnostic &&
-                                attempt?.allow_go_to_previous_question
+                                !!attempt?.allow_go_to_previous_question &&
+                                (!isDiagnostic || isSeedPhase)
                             }
                             showReset={
                                 answerConfig?.default_answer !==

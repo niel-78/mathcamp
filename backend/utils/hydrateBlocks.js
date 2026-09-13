@@ -170,16 +170,64 @@ export default async function hydrateBlocks(blocks) {
 
         const [bookSections] = await db.query(
             `
-            SELECT s.*
+            SELECT
+                s.*,
+                b.id AS book_id,
+                b.title AS book_title,
+                l.id AS course_level_id,
+                l.name AS course_level_name,
+                l.code AS course_level_code
             FROM block_sections bs
             JOIN sections s
                 ON s.id = bs.section_id
+            JOIN subchapters sc
+                ON sc.id = s.subchapter_id
+            JOIN chapters c
+                ON c.id = sc.chapter_id
+            JOIN books b
+                ON b.id = c.book_id
+            LEFT JOIN level_books lb
+                ON lb.book_id = b.id
+            LEFT JOIN levels l
+                ON l.id = lb.level_id
             WHERE bs.block_id = ?
+            ORDER BY b.title, s.title
             `,
             [block.id]
         );
 
         block.bookSections = bookSections;
+
+        const booksMap = new Map();
+        const coursesMap = new Map();
+
+        for (const sec of bookSections) {
+            if (sec.book_id && !booksMap.has(sec.book_id)) {
+                booksMap.set(sec.book_id, {
+                    id: sec.book_id,
+                    title: sec.book_title
+                });
+            }
+            if (sec.course_level_id && !coursesMap.has(sec.course_level_id)) {
+                coursesMap.set(sec.course_level_id, {
+                    id: sec.course_level_id,
+                    name: sec.course_level_name,
+                    code: sec.course_level_code
+                });
+            }
+        }
+
+        for (const pt of points) {
+            if (pt.level_id && !coursesMap.has(pt.level_id)) {
+                coursesMap.set(pt.level_id, {
+                    id: pt.level_id,
+                    name: pt.level_name
+                });
+            }
+        }
+
+        block.books = Array.from(booksMap.values());
+        block.courses = Array.from(coursesMap.values());
 
         const [abilities] = await db.query(
             `

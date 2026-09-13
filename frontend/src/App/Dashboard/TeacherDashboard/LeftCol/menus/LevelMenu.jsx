@@ -1,12 +1,21 @@
 import { Button } from "@/components/ui/button";
 
 export default function LevelMenu({
-    onCreateBook
+    onCreateBook,
+    onRename
 }) {
 
     return (
 
         <div className="context-menu">
+
+            <Button
+                variant="inline"
+                className="context-menu-button"
+                onClick={onRename}
+            >
+                Byt namn
+            </Button>
 
             <Button
                 variant="inline"

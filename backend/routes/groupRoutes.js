@@ -685,6 +685,41 @@ router.put("/:id", async (req, res) => {
 
 });
 
+// PUT /api/groups/:id/color
+router.put("/:id/color", async (req, res) => {
+
+    try {
+
+        const { color_index } = req.body;
+
+        await db.query(
+            `
+            UPDATE \`groups\`
+            SET color_index = ?
+            WHERE id = ?
+            `,
+            [
+                color_index === null || typeof color_index === "undefined"
+                    ? null
+                    : Number(color_index),
+                req.params.id
+            ]
+        );
+
+        res.sendStatus(204);
+
+    } catch (err) {
+
+        console.error(err);
+
+        res.status(500).json({
+            error: "Kunde inte uppdatera gruppens f\u00e4rg."
+        });
+
+    }
+
+});
+
 // PUT /api/groups/:id/ability-series
 router.put("/:id/ability-series", async (req, res) => {
 

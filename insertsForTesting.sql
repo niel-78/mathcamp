@@ -1464,7 +1464,10 @@ VALUES
             'promoteAfterQuestions', 1,
             'demoteAfterQuestions', 1,
             'questionsPerAbility', 1,
-            'completionQuestionsPerAbility', 1
+            'completionQuestionsPerAbility', 1,
+            'trainingQuestionsPerAbility', 1,
+            'includeCompletion', true,
+            'includeTraining', true
         ),
 
         'presentation', JSON_OBJECT(

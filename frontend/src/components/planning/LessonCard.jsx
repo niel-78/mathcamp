@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
@@ -8,6 +8,7 @@ import FormatDateTimeShort from "@/utils/formatDateTimeShort";
 import LessonSection from "./LessonSection";
 import LessonAssessments from "./LessonAssessments";
 import LessonAssessmentDialog from "./LessonAssessmentDialog";
+import { getGroupColor } from "@/utils/groupColors";
 
 import {
     DropdownMenu,
@@ -29,8 +30,14 @@ export default function LessonCard({
     readOnly = false,
     startDiagnosticTest,
     isPublic = false,
-    hideCompletions = false
+    hideCompletions = false,
+    deferAssessments = false
 }) {
+
+    const assessmentContainerRef = useRef(null);
+    const [shouldLoadAssessments, setShouldLoadAssessments] =
+        useState(!deferAssessments);
+    const groupColor = getGroupColor(lesson.group_id, lesson.color_index);
 
     const [
         assessmentDialogOpen,
@@ -41,6 +48,28 @@ export default function LessonCard({
         assessmentType,
         setAssessmentType
     ] = useState(null);
+
+    useEffect(() => {
+        if (!deferAssessments || shouldLoadAssessments) {
+            return;
+        }
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setShouldLoadAssessments(true);
+                    observer.disconnect();
+                }
+            },
+            { rootMargin: "240px" }
+        );
+
+        if (assessmentContainerRef.current) {
+            observer.observe(assessmentContainerRef.current);
+        }
+
+        return () => observer.disconnect();
+    }, [deferAssessments, shouldLoadAssessments]);
 
     const addNextSection = async () => {
         try {
@@ -97,6 +126,9 @@ export default function LessonCard({
         return (
 
             <CardSection
+                style={groupColor
+                    ? { borderLeftColor: groupColor.border }
+                    : undefined}
                 title={
                     <div
                         className="
@@ -354,13 +386,17 @@ export default function LessonCard({
 
                     </div>
 
-                    <LessonAssessments
-                        lessonId={lesson.id}
-                        openTab={openTab}
-                        readOnly={readOnly}
-                        isPublic={isPublic}
-                        hideCompletions={hideCompletions}
-                    />
+                    <div ref={assessmentContainerRef}>
+                        {shouldLoadAssessments && (
+                            <LessonAssessments
+                                lessonId={lesson.id}
+                                openTab={openTab}
+                                readOnly={readOnly}
+                                isPublic={isPublic}
+                                hideCompletions={hideCompletions}
+                            />
+                        )}
+                    </div>
 
                     {lesson.cancelled_at && (
 

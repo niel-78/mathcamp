@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 import WeekView from "./WeekView";
@@ -7,15 +7,16 @@ import ListView from "./ListView";
 import MonthView from "./MonthView";
 import { Button } from "@/components/ui/button";
 import {
-    getCurrentWeek,
     getWeekNumber
 } from "@/utils/planningDates";
+
+const EMPTY_EVENTS = [];
 
 export default function PlanningBoard({
     groupId,
     openTab,
     lessons,
-    events: initialEvents = [],
+    events: initialEvents = EMPTY_EVENTS,
     loading,
     onReload,
     onEditLesson,
@@ -29,16 +30,52 @@ export default function PlanningBoard({
 
 
     const [viewMode, setViewMode] = useState("week");
+    const [isViewPending, startViewTransition] = useTransition();
     const [selectedDate, setSelectedDate] = useState(new Date());
     const selectedWeek = getWeekNumber(selectedDate);
-    const [events, setEvents] = useState(initialEvents);
-    const [showEvents, setShowEvents] = useState(true);
+    const [events, setEvents] = useState(EMPTY_EVENTS);
+    const [lessonAssessments, setLessonAssessments] = useState({});
+    const [showEvents] = useState(true);
+    const visibleEvents = isPublic ? initialEvents : events;
 
     useEffect(() => {
-        if (initialEvents && initialEvents.length > 0) {
-            setEvents(initialEvents);
+        if (viewMode !== "month" || lessons.length === 0) {
+            return;
         }
-    }, [initialEvents]);
+
+        const lessonIds = lessons.map(lesson => lesson.id).join(",");
+        const endpoint = isPublic
+            ? `${API_URL}/api/public/lessons/group-assessments?lessonIds=${lessonIds}`
+            : `${API_URL}/api/lessons/group-assessments?lessonIds=${lessonIds}`;
+
+        const loadLessonAssessments = async () => {
+            const response = await fetch(
+                endpoint,
+                {
+                    headers: isPublic ? {} : authHeaders()
+                }
+            );
+
+            if (!response.ok) {
+                return;
+            }
+
+            const data = await response.json();
+            const assessmentsByLesson = {};
+
+            for (const assessment of data) {
+                if (!assessmentsByLesson[assessment.lesson_id]) {
+                    assessmentsByLesson[assessment.lesson_id] = [];
+                }
+
+                assessmentsByLesson[assessment.lesson_id].push(assessment);
+            }
+
+            setLessonAssessments(assessmentsByLesson);
+        };
+
+        loadLessonAssessments();
+    }, [isPublic, lessons, viewMode]);
 
     useEffect(() => {
 
@@ -65,13 +102,16 @@ export default function PlanningBoard({
                 const data =
                     await response.json();
 
-                setEvents(data);
+                setEvents(data.map(event => ({
+                    ...event,
+                    group_id: groupId
+                })));
 
             };
 
         loadEvents();
 
-    }, [groupId]);
+    }, [groupId, isPublic]);
 
     useEffect(() => {
 
@@ -234,32 +274,60 @@ export default function PlanningBoard({
                 <div className="flex gap-2">
 
                     <Button
+                        variant={
+                            viewMode === "week"
+                                ? "default"
+                                : "outline"
+                        }
+                        aria-pressed={viewMode === "week"}
                         onClick={() =>
-                            setViewMode("week")
+                            startViewTransition(() =>
+                                setViewMode("week")
+                            )
                         }
                     >
                         Vecka
                     </Button>
 
                     <Button
+                        variant={
+                            viewMode === "compact"
+                                ? "default"
+                                : "outline"
+                        }
+                        aria-pressed={viewMode === "compact"}
                         onClick={() =>
-                            setViewMode("compact")
+                            startViewTransition(() =>
+                                setViewMode("compact")
+                            )
                         }
                     >
                         Slim
                     </Button>
 
                     <Button
+                        variant={
+                            viewMode === "list"
+                                ? "default"
+                                : "outline"
+                        }
+                        aria-pressed={viewMode === "list"}
                         onClick={() =>
-                            setViewMode("list")
+                            startViewTransition(() =>
+                                setViewMode("list")
+                            )
                         }
                     >
                         Lista
                     </Button>
                     <Button
-                        onClick={() =>
-                            setViewMode("month")
+                        variant={
+                            viewMode === "month"
+                                ? "default"
+                                : "outline"
                         }
+                        aria-pressed={viewMode === "month"}
+                        onClick={() => setViewMode("month")}
                     >
                         Månad
                     </Button>
@@ -268,7 +336,7 @@ export default function PlanningBoard({
 
             </div>
 
-            {loading && (
+            {(loading || isViewPending) && (
                 <div>
                     Laddar...
                 </div>
@@ -278,7 +346,7 @@ export default function PlanningBoard({
                 <WeekView
                     lessons={lessons}
                     openTab={openTab}
-                    events={events}
+                    events={visibleEvents}
                     showEvents={showEvents}
                     selectedWeek={selectedWeek}
                     onReload={onReload}
@@ -295,10 +363,15 @@ export default function PlanningBoard({
             {viewMode === "compact" && (
                 <CompactWeekView
                     lessons={lessons}
-                    events={events}
+                    events={visibleEvents}
                     showEvents={showEvents}
                     selectedWeek={selectedWeek}
+                    openTab={openTab}
                     onReload={onReload}
+                    onEditLesson={onEditLesson}
+                    onCancelLesson={onCancelLesson}
+                    onDeleteLesson={onDeleteLesson}
+                    startDiagnosticTest={startDiagnosticTest}
                     readOnly={readOnly}
                     isPublic={isPublic}
                     hideCompletions={hideCompletions}
@@ -308,9 +381,14 @@ export default function PlanningBoard({
             {viewMode === "list" && (
                 <ListView
                     lessons={lessons}
-                    events={events}
+                    events={visibleEvents}
                     showEvents={showEvents}
+                    openTab={openTab}
                     onReload={onReload}
+                    onEditLesson={onEditLesson}
+                    onCancelLesson={onCancelLesson}
+                    onDeleteLesson={onDeleteLesson}
+                    startDiagnosticTest={startDiagnosticTest}
                     readOnly={readOnly}
                     isPublic={isPublic}
                     hideCompletions={hideCompletions}
@@ -319,9 +397,10 @@ export default function PlanningBoard({
             {viewMode === "month" && (
                 <MonthView
                     lessons={lessons}
-                    events={events}
+                    events={visibleEvents}
                     showEvents={showEvents}
                     selectedDate={selectedDate}
+                    lessonAssessments={lessonAssessments}
                     readOnly={readOnly}
                 />
             )}

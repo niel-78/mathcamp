@@ -34,6 +34,8 @@ export default function ExportBlockDialog({
     const [seriesId, setSeriesId] = useState("");
     const [abilityId, setAbilityId] = useState("");
 
+    const [exportMode, setExportMode] = useState("link");
+
     const [newAbilityName, setNewAbilityName] = useState("");
     const [creatingAbility, setCreatingAbility] = useState(false);
 
@@ -51,6 +53,7 @@ export default function ExportBlockDialog({
         setSectionId("");
         setSeriesId("");
         setAbilityId("");
+        setExportMode("link");
         setNewAbilityName("");
 
         loadBooks();
@@ -317,7 +320,8 @@ export default function ExportBlockDialog({
                         },
                         body: JSON.stringify({
                             section_id: Number(sectionId),
-                            ability_id: Number(abilityId)
+                            ability_id: Number(abilityId),
+                            export_mode: exportMode
                         })
                     }
                 );
@@ -333,8 +337,13 @@ export default function ExportBlockDialog({
 
             }
 
+            const successMessage =
+                data.mode === "link"
+                    ? "Blocket länkades till valt avsnitt och förmåga."
+                    : "Fristående kopia av blocket skapades.";
+
             toast.success(
-                "Blocket exporterades."
+                successMessage
             );
 
             onExported?.(data);
@@ -588,6 +597,72 @@ export default function ExportBlockDialog({
                             </div>
 
                         )}
+
+                    </div>
+
+                    <div className="space-y-2">
+
+                        <div className="text-sm font-medium">
+                            Exportläge
+                        </div>
+
+                        <div className="space-y-2 rounded-md border p-3 bg-muted/30">
+
+                            <label className="flex items-start gap-3 cursor-pointer">
+
+                                <input
+                                    type="radio"
+                                    name="exportMode"
+                                    value="link"
+                                    checked={exportMode === "link"}
+                                    onChange={(e) =>
+                                        setExportMode(e.target.value)
+                                    }
+                                    className="mt-1"
+                                />
+
+                                <div>
+
+                                    <div className="text-sm font-medium">
+                                        Länka till befintligt block (rekommenderas)
+                                    </div>
+
+                                    <div className="text-xs text-muted-foreground">
+                                        Frågorna delas och uppdateras centralt. Ändringar i en fråga slår igenom överallt.
+                                    </div>
+
+                                </div>
+
+                            </label>
+
+                            <label className="flex items-start gap-3 cursor-pointer">
+
+                                <input
+                                    type="radio"
+                                    name="exportMode"
+                                    value="copy"
+                                    checked={exportMode === "copy"}
+                                    onChange={(e) =>
+                                        setExportMode(e.target.value)
+                                    }
+                                    className="mt-1"
+                                />
+
+                                <div>
+
+                                    <div className="text-sm font-medium">
+                                        Skapa fristående kopia
+                                    </div>
+
+                                    <div className="text-xs text-muted-foreground">
+                                        Frågorna dupliceras. Det nya blocket kan redigeras oberoende utan att påverka originalet.
+                                    </div>
+
+                                </div>
+
+                            </label>
+
+                        </div>
 
                     </div>
 

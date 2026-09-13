@@ -77,6 +77,29 @@ async function processBlockImportJob({
             }
         }
 
+        const workbook = XLSX.read(fileBuffer);
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet);
+
+        const [levels] = ability?.series_id
+            ? await db.query(
+                `
+                SELECT id
+                FROM ability_series_levels
+                WHERE series_id = ?
+                ORDER BY sort_order
+                `,
+                [ability.series_id]
+            )
+            : [[]];
+
+        const { questions } = normalizeImportRows({
+            rows,
+            blockId: null,
+            userId,
+            abilityLevels: levels
+        });
+
         const [blockResult] = await db.query(
             `
             INSERT INTO blocks (
@@ -128,28 +151,9 @@ async function processBlockImportJob({
             );
         }
 
-        const workbook = XLSX.read(fileBuffer);
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(sheet);
-
-        const [levels] = ability?.series_id
-            ? await db.query(
-                `
-                SELECT id
-                FROM ability_series_levels
-                WHERE series_id = ?
-                ORDER BY sort_order
-                `,
-                [ability.series_id]
-            )
-            : [[]];
-
-        const { questions } = normalizeImportRows({
-            rows,
-            blockId,
-            userId,
-            abilityLevels: levels
-        });
+        for (const question of questions) {
+            question.blockId = blockId;
+        }
 
         updateImportJob(jobId, {
             totalRows: Math.max(rows.length, 1),
@@ -179,6 +183,7 @@ async function processBlockImportJob({
                 question.question,
                 question.questionType,
                 question.seriesLevelId,
+                question.calculatorAllowed ? 1 : 0,
                 question.userId,
                 question.userId,
                 JSON.stringify(question.answerConfig)
@@ -191,6 +196,7 @@ async function processBlockImportJob({
                     question,
                     question_type,
                     series_level_id,
+                    calculator_allowed,
                     created_by,
                     updated_by,
                     answer_config
@@ -306,29 +312,68 @@ async function hydrateLightBlocks(blocks) {
 
     const blockIds = blocks.map(block => block.id);
 
-    const [questionRows] = await db.query(
+    const [questions] = await db.query(
         `
-        SELECT block_id, id, question
-        FROM questions
-        WHERE block_id IN (?)
-        AND deleted_at IS NULL
-        AND archived_at IS NULL
-        ORDER BY block_id, id
+        SELECT
+            q.block_id,
+            q.id,
+            q.question,
+            q.question_type,
+            q.level_id,
+            q.answer_config,
+            q.calculator_allowed,
+            COALESCE(report_counts.report_count, 0) AS report_count
+        FROM questions q
+        LEFT JOIN (
+            SELECT
+                question_id,
+                COUNT(*) AS report_count
+            FROM question_reports
+            WHERE report_type = 'missing_correct_option'
+            GROUP BY question_id
+        ) report_counts
+            ON report_counts.question_id = q.id
+        WHERE q.block_id IN (?)
+        AND q.deleted_at IS NULL
+        AND q.archived_at IS NULL
+        ORDER BY q.block_id, q.id
         `,
         [blockIds]
     );
 
-    const [questionCounts] = await db.query(
-        `
-        SELECT block_id, COUNT(*) AS question_count
-        FROM questions
-        WHERE block_id IN (?)
-        AND deleted_at IS NULL
-        AND archived_at IS NULL
-        GROUP BY block_id
-        `,
-        [blockIds]
-    );
+    const questionIds = questions.map(q => q.id);
+
+    const optionsByQuestionId = new Map();
+    if (questionIds.length > 0) {
+        const [options] = await db.query(
+            `
+            SELECT id, question_id, text, is_correct
+            FROM options
+            WHERE question_id IN (?)
+            AND deleted_at IS NULL
+            ORDER BY id
+            `,
+            [questionIds]
+        );
+
+        for (const option of options) {
+            const list = optionsByQuestionId.get(option.question_id) || [];
+            list.push(option);
+            optionsByQuestionId.set(option.question_id, list);
+        }
+    }
+
+    for (const q of questions) {
+        q.options = optionsByQuestionId.get(q.id) || [];
+    }
+
+    const questionsByBlock = new Map();
+    for (const q of questions) {
+        const bId = Number(q.block_id);
+        const list = questionsByBlock.get(bId) || [];
+        list.push(q);
+        questionsByBlock.set(bId, list);
+    }
 
     const [pointRows] = await db.query(
         `
@@ -353,30 +398,67 @@ async function hydrateLightBlocks(blocks) {
 
     const [sectionRows] = await db.query(
         `
-        SELECT bs.block_id, s.id, s.title
+        SELECT
+            bs.block_id,
+            s.id,
+            s.title,
+            sc.id AS subchapter_id,
+            sc.title AS subchapter_title,
+            c.id AS chapter_id,
+            c.title AS chapter_title,
+            b.id AS book_id,
+            b.title AS book_title,
+            l.id AS course_level_id,
+            l.name AS course_level_name,
+            l.code AS course_level_code,
+            l.subject_id
         FROM block_sections bs
         JOIN sections s
             ON s.id = bs.section_id
+        JOIN subchapters sc
+            ON sc.id = s.subchapter_id
+        JOIN chapters c
+            ON c.id = sc.chapter_id
+        JOIN books b
+            ON b.id = c.book_id
+        LEFT JOIN level_books lb
+            ON lb.book_id = b.id
+        LEFT JOIN levels l
+            ON l.id = lb.level_id
         WHERE bs.block_id IN (?)
-        ORDER BY bs.block_id, s.title
+        ORDER BY bs.block_id, b.title, s.title
         `,
         [blockIds]
     );
 
-    const firstQuestionByBlock = new Map();
-    for (const row of questionRows) {
-        if (!firstQuestionByBlock.has(row.block_id)) {
-            firstQuestionByBlock.set(row.block_id, {
-                id: row.id,
-                question: row.question
-            });
-        }
-    }
-
-    const questionCountByBlock = new Map();
-    for (const row of questionCounts) {
-        questionCountByBlock.set(Number(row.block_id), Number(row.question_count));
-    }
+    const [pointDetailRows] = await db.query(
+        `
+        SELECT DISTINCT
+            bp.block_id,
+            cc.id AS central_content_id,
+            cc.content AS central_content,
+            ca.id AS area_id,
+            ca.title AS area_title,
+            l.id AS course_level_id,
+            l.name AS course_level_name,
+            l.code AS course_level_code,
+            l.subject_id,
+            sub.name AS subject_name
+        FROM block_points bp
+        LEFT JOIN central_content cc
+            ON cc.id = bp.central_content_id
+        LEFT JOIN content_areas ca
+            ON ca.id = cc.area_id
+        LEFT JOIN competency_descriptors cd
+            ON cd.id = bp.competency_descriptor_id
+        LEFT JOIN levels l
+            ON l.id = COALESCE(ca.level_id, cd.level_id)
+        LEFT JOIN subjects sub
+            ON sub.id = l.subject_id
+        WHERE bp.block_id IN (?)
+        `,
+        [blockIds]
+    );
 
     const pointCountByBlock = new Map();
     const totalPointsByBlock = new Map();
@@ -399,6 +481,14 @@ async function hydrateLightBlocks(blocks) {
     }
 
     const sectionsByBlock = new Map();
+    const booksByBlock = new Map();
+    const chaptersByBlock = new Map();
+    const subchaptersByBlock = new Map();
+    const coursesByBlock = new Map();
+    const subjectsByBlock = new Map();
+    const areasByBlock = new Map();
+    const centralContentByBlock = new Map();
+
     for (const row of sectionRows) {
         const blockId = Number(row.block_id);
         if (!sectionsByBlock.has(blockId)) {
@@ -406,19 +496,127 @@ async function hydrateLightBlocks(blocks) {
         }
         sectionsByBlock.get(blockId).push({
             id: row.id,
-            title: row.title
+            title: row.title,
+            subchapter_id: row.subchapter_id,
+            subchapter_title: row.subchapter_title,
+            chapter_id: row.chapter_id,
+            chapter_title: row.chapter_title,
+            book_id: row.book_id,
+            book_title: row.book_title,
+            course_level_id: row.course_level_id,
+            course_level_name: row.course_level_name,
+            course_level_code: row.course_level_code,
+            subject_id: row.subject_id
         });
+
+        if (row.book_id) {
+            if (!booksByBlock.has(blockId)) {
+                booksByBlock.set(blockId, new Map());
+            }
+            booksByBlock.get(blockId).set(row.book_id, {
+                id: row.book_id,
+                title: row.book_title
+            });
+        }
+
+        if (row.chapter_id) {
+            if (!chaptersByBlock.has(blockId)) {
+                chaptersByBlock.set(blockId, new Map());
+            }
+            chaptersByBlock.get(blockId).set(row.chapter_id, {
+                id: row.chapter_id,
+                title: row.chapter_title,
+                book_id: row.book_id
+            });
+        }
+
+        if (row.subchapter_id) {
+            if (!subchaptersByBlock.has(blockId)) {
+                subchaptersByBlock.set(blockId, new Map());
+            }
+            subchaptersByBlock.get(blockId).set(row.subchapter_id, {
+                id: row.subchapter_id,
+                title: row.subchapter_title,
+                chapter_id: row.chapter_id
+            });
+        }
+
+        if (row.course_level_id) {
+            if (!coursesByBlock.has(blockId)) {
+                coursesByBlock.set(blockId, new Map());
+            }
+            coursesByBlock.get(blockId).set(row.course_level_id, {
+                id: row.course_level_id,
+                name: row.course_level_name,
+                code: row.course_level_code,
+                subject_id: row.subject_id
+            });
+        }
+
+        if (row.subject_id) {
+            if (!subjectsByBlock.has(blockId)) {
+                subjectsByBlock.set(blockId, new Map());
+            }
+            subjectsByBlock.get(blockId).set(row.subject_id, {
+                id: row.subject_id
+            });
+        }
+    }
+
+    for (const row of pointDetailRows) {
+        const blockId = Number(row.block_id);
+        if (row.course_level_id) {
+            if (!coursesByBlock.has(blockId)) {
+                coursesByBlock.set(blockId, new Map());
+            }
+            coursesByBlock.get(blockId).set(row.course_level_id, {
+                id: row.course_level_id,
+                name: row.course_level_name,
+                code: row.course_level_code,
+                subject_id: row.subject_id
+            });
+        }
+
+        if (row.subject_id) {
+            if (!subjectsByBlock.has(blockId)) {
+                subjectsByBlock.set(blockId, new Map());
+            }
+            subjectsByBlock.get(blockId).set(row.subject_id, {
+                id: row.subject_id,
+                name: row.subject_name
+            });
+        }
+
+        if (row.area_id) {
+            if (!areasByBlock.has(blockId)) {
+                areasByBlock.set(blockId, new Map());
+            }
+            areasByBlock.get(blockId).set(row.area_id, {
+                id: row.area_id,
+                title: row.area_title,
+                level_id: row.course_level_id
+            });
+        }
+
+        if (row.central_content_id) {
+            if (!centralContentByBlock.has(blockId)) {
+                centralContentByBlock.set(blockId, new Map());
+            }
+            centralContentByBlock.get(blockId).set(row.central_content_id, {
+                id: row.central_content_id,
+                content: row.central_content,
+                area_id: row.area_id,
+                level_id: row.course_level_id
+            });
+        }
     }
 
     for (const block of blocks) {
         const blockId = Number(block.id);
-        const firstQuestion = firstQuestionByBlock.get(blockId);
-        const questionCount = questionCountByBlock.get(blockId) || 0;
+        const blockQuestions = questionsByBlock.get(blockId) || [];
 
-        block.questions = firstQuestion
-            ? [firstQuestion]
-            : [];
-        block.question_count = questionCount;
+        block.questions = blockQuestions;
+        block.question_count = blockQuestions.length;
 
         const pointsCount = pointCountByBlock.get(blockId) || 0;
         block.points = pointsCount
@@ -429,6 +627,14 @@ async function hydrateLightBlocks(blocks) {
 
         block.abilities = abilitiesByBlock.get(blockId) || [];
         block.bookSections = sectionsByBlock.get(blockId) || [];
+        block.books = Array.from((booksByBlock.get(blockId) || new Map()).values());
+        block.chapters = Array.from((chaptersByBlock.get(blockId) || new Map()).values());
+        block.subchapters = Array.from((subchaptersByBlock.get(blockId) || new Map()).values());
+        block.courses = Array.from((coursesByBlock.get(blockId) || new Map()).values());
+        block.levels = block.courses;
+        block.subjects = Array.from((subjectsByBlock.get(blockId) || new Map()).values());
+        block.areas = Array.from((areasByBlock.get(blockId) || new Map()).values());
+        block.centralContent = Array.from((centralContentByBlock.get(blockId) || new Map()).values());
     }
 
     return blocks;
@@ -446,12 +652,14 @@ router.get("/import-template", async (req, res) => {
                 Fråga: "Beräkna $7 \\cdot 8$",
                 Frågetyp: "text",
                 Nivå: 1,
+                "Miniräknare tillåten": "Nej",
                 "Korrekta alternativ": "56"
             },
             {
                 Fråga: "Vilket uttryck är lika med $x^2$?",
                 Frågetyp: "single_choice",
                 Nivå: 2,
+                "Miniräknare tillåten": "Nej",
                 "Korrekta alternativ": "3",
                 "Alternativ 1": "$2x$",
                 "Alternativ 2": "$x+2$",
@@ -462,6 +670,7 @@ router.get("/import-template", async (req, res) => {
                 Fråga: "Vilka av följande tal är lösningar till $x^2 = 25$?",
                 Frågetyp: "multiple_choice",
                 Nivå: 3,
+                "Miniräknare tillåten": "Ja",
                 "Korrekta alternativ": "2,4",
                 "Alternativ 1": "$0$",
                 "Alternativ 2": "$5$",
@@ -472,6 +681,7 @@ router.get("/import-template", async (req, res) => {
                 Fråga: "Lös ekvationen $2x + 4 = 10$. Svar: $x = {{input}}$",
                 Frågetyp: "numeric_input",
                 Nivå: 1,
+                "Miniräknare tillåten": "Ja",
                 "Korrekta alternativ": "3"
             }
         ]);
@@ -1866,7 +2076,8 @@ router.post("/:id/export",
 
             const {
                 section_id,
-                ability_id
+                ability_id,
+                export_mode = "link"
             } = req.body;
 
             if (!section_id || !ability_id) {
@@ -1919,7 +2130,7 @@ router.post("/:id/export",
                 block.created_by ===
                 req.user.id;
 
-            if (!isOwner) {
+            if (!isOwner && export_mode === "copy") {
 
                 const [[settings]] =
                     await connection.query(
@@ -1973,6 +2184,45 @@ router.post("/:id/export",
                 return res.status(403).json({
                     error:
                         "Du saknar behörighet."
+                });
+
+            }
+
+            if (export_mode === "link") {
+
+                await connection.query(
+                    `
+                    INSERT IGNORE INTO block_sections (
+                        block_id,
+                        section_id
+                    )
+                    VALUES (?, ?)
+                    `,
+                    [
+                        block.id,
+                        section_id
+                    ]
+                );
+
+                await connection.query(
+                    `
+                    INSERT IGNORE INTO block_abilities (
+                        block_id,
+                        ability_id
+                    )
+                    VALUES (?, ?)
+                    `,
+                    [
+                        block.id,
+                        ability_id
+                    ]
+                );
+
+                await connection.commit();
+
+                return res.status(200).json({
+                    id: block.id,
+                    mode: "link"
                 });
 
             }
@@ -2195,7 +2445,8 @@ router.post("/:id/export",
             await connection.commit();
 
             res.status(201).json({
-                id: newBlockId
+                id: newBlockId,
+                mode: "copy"
             });
 
         } catch (error) {

@@ -45,6 +45,20 @@ export default function TeacherCalendarTab() {
 
         load();
 
+        window.addEventListener(
+            "group-color-changed",
+            load
+        );
+
+        return () => {
+
+            window.removeEventListener(
+                "group-color-changed",
+                load
+            );
+
+        };
+
     }, []);
 
     return (

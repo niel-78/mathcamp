@@ -19,20 +19,33 @@ function normalizeValue(text) {
         return `${n / g}/${d / g}`;
     }
 
+    const slashMatch = /^(-)?(\d+)\s*\/\s*(\d+)$/.exec(s);
+
+    if (slashMatch) {
+        const sign = slashMatch[1] ? -1 : 1;
+        const n = sign * Number(slashMatch[2]);
+        const d = Number(slashMatch[3]);
+        if (d !== 0) {
+            const g = gcd(Math.abs(n), d) || 1;
+            return `${n / g}/${d / g}`;
+        }
+    }
+
     if (/^-?\d+$/.test(s)) {
         return `${Number(s)}/1`;
     }
 
-    const linearMatch = /^(-?\d*)x([+-]\d+)?$/.exec(s);
+    const linearMatch = /^(-?\d*)([a-zA-Z])([+-]\d+)?$/.exec(s);
 
     if (linearMatch) {
         const aStr = linearMatch[1];
+        const variable = linearMatch[2];
         const a = aStr === "" ? 1 : aStr === "-" ? -1 : Number(aStr);
-        const b = linearMatch[2] ? Number(linearMatch[2]) : 0;
-        return `lin:${a}:${b}`;
+        const b = linearMatch[3] ? Number(linearMatch[3]) : 0;
+        return `lin:${variable}:${a}:${b}`;
     }
 
-    return `raw:${s.toLowerCase()}`;
+    return `raw:${s}`;
 
 }
 

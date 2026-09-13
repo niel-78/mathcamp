@@ -11,6 +11,41 @@ const upload = multer({
     storage: multer.memoryStorage()
 });
 
+// PUT /api/levels/:id
+router.put("/:id",
+    requireAuth,
+    requireRole("super"),
+    async (req, res) => {
+
+        const name = req.body.name?.trim();
+
+        if (!name) {
+            return res.status(400).json({
+                error: "Kursnamn krävs"
+            });
+        }
+
+        const [result] = await db.query(
+            `
+            UPDATE levels
+            SET name = ?
+            WHERE id = ?
+            `,
+            [name, req.params.id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                error: "Kursen hittades inte"
+            });
+        }
+
+        res.json({
+            success: true
+        });
+    }
+);
+
 // POST /api/levels/
 router.post("/",
     requireAuth,

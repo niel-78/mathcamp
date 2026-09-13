@@ -1,5 +1,6 @@
 import XLSX from "xlsx";
 import db from "../db.js";
+import { normalizeImportRows } from "./normalizeImportRows.js";
 
 export default async function importQuestionsToBlock({
     blockId,
@@ -46,71 +47,14 @@ export default async function importQuestionsToBlock({
 
     }
 
-    let importedCount = 0;
+    const { questions } = normalizeImportRows({
+        rows,
+        blockId,
+        userId,
+        abilityLevels: levels
+    });
 
-    for (const row of rows) {
-
-        const question =
-            row.Fråga ||
-            row.fråga ||
-            row.Question ||
-            row.question;
-
-        if (!question) {
-            continue;
-        }
-
-        const questionType =
-            row.Frågetyp ||
-            row.frågetyp ||
-            row.QuestionType ||
-            row.questionType ||
-            "text";
-
-        const levelNumber =
-            Number(
-                row.Nivå ||
-                row.Level ||
-                row.level ||
-                1
-            );
-
-        const seriesLevelId =
-            levels[levelNumber - 1]?.id || null;
-
-        console.log("blockId", blockId);
-        console.log("ability", ability);
-        console.log("levels", levels);
-
-        const correctAnswers =
-            String(
-                row["Korrekta alternativ"] ||
-                row["Rätta svar"] ||
-                ""
-            )
-                .split(",")
-                .map(x => x.trim())
-                .filter(Boolean);
-
-        let answerConfig = {};
-
-        if (questionType === "text") {
-
-            answerConfig = {
-                correctAnswers
-            };
-
-        }
-
-        if (questionType === "numeric_input") {
-
-            answerConfig = {
-                grading_mode: "numeric_input",
-                default_answer:
-                    correctAnswers[0] || ""
-            };
-
-        }
+    for (const question of questions) {
 
         const [questionResult] =
             await db.query(
@@ -120,99 +64,51 @@ export default async function importQuestionsToBlock({
                     question,
                     question_type,
                     series_level_id,
+                    calculator_allowed,
                     created_by,
                     updated_by,
                     answer_config
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 `,
                 [
                     blockId,
-                    question,
-                    questionType,
-                    seriesLevelId,
+                    question.question,
+                    question.questionType,
+                    question.seriesLevelId,
+                    question.calculatorAllowed ? 1 : 0,
                     userId,
                     userId,
-                    JSON.stringify(answerConfig)
+                    JSON.stringify(question.answerConfig)
                 ]
             );
 
         const questionId =
             questionResult.insertId;
 
-        if (
-            questionType === "single_choice" ||
-            questionType === "multiple_choice"
-        ) {
-
-            for (let i = 1; i <= 20; i++) {
-
-                const optionText =
-                    row[`Alternativ ${i}`];
-
-                if (!optionText) {
-                    continue;
-                }
-
-                const isCorrect =
-                    correctAnswers.includes(
-                        String(i)
-                    );
-
-                await db.query(
-                    `
-                    INSERT INTO options (
-                        question_id,
-                        text,
-                        is_correct,
-                        created_by,
-                        updated_by
-                    )
-                    VALUES (?, ?, ?, ?, ?)
-                    `,
-                    [
-                        questionId,
-                        optionText,
-                        isCorrect ? 1 : 0,
-                        userId,
-                        userId
-                    ]
-                );
-
-            }
-
+        for (const option of question.options) {
+            await db.query(
+                `
+                INSERT INTO options (
+                    question_id,
+                    text,
+                    is_correct,
+                    created_by,
+                    updated_by
+                )
+                VALUES (?, ?, ?, ?, ?)
+                `,
+                [
+                    questionId,
+                    option.text,
+                    option.isCorrect,
+                    userId,
+                    userId
+                ]
+            );
         }
-
-        if (questionType === "numeric_input") {
-
-            for (const correctAnswer of correctAnswers) {
-
-                await db.query(
-                    `
-                    INSERT INTO options (
-                        question_id,
-                        text,
-                        is_correct,
-                        created_by,
-                        updated_by
-                    )
-                    VALUES (?, ?, 1, ?, ?)
-                    `,
-                    [
-                        questionId,
-                        correctAnswer,
-                        userId,
-                        userId
-                    ]
-                );
-
-            }
-
-        }
-
-        importedCount++;
 
     }
 
-    return importedCount;
+    return questions.length;
 }

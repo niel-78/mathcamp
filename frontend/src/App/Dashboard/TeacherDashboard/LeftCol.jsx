@@ -15,6 +15,7 @@ import EditStudentDialog from "./LeftCol/EditStudentDialog";
 import ResetPasswordDialog from "./LeftCol/ResetPasswordDialog";
 import ArchiveStudentDialog from "./LeftCol/ArchiveStudentDialog";
 import ImportStudentsDialog from "./LeftCol/ImportStudentsDialog";
+import ImportExistingStudentDialog from "./LeftCol/ImportExistingStudentDialog";
 import CreateStaffDialog from "./LeftCol/CreateStaffDialog";
 import SectionTreeItem from "@/components/ui/SectionTreeItem";
 import CreateAbilityDialog from "./LeftCol/CreateAbilityDialog";
@@ -27,6 +28,7 @@ import CreateLessonSeriesDialog from "./LeftCol/CreateLessonSeriesDialog";
 import ImportCriteriaDialog from "./LeftCol/ImportCriteriaDialog";
 import ImportCentralContentDialog from "./LeftCol/ImportCentralContentDialog";
 import CreateLevelDialog from "./LeftCol/CreateLevelDialog";
+import RenameLevelDialog from "./LeftCol/RenameLevelDialog";
 import ImportBookStructureDialog from "./LeftCol/ImportBookStructureDialog";
 import CreateBookDialog from "./LeftCol/CreateBookDialog";
 import CreateAbilitySeriesDialog from "./LeftCol/CreateAbilitySeriesDialog";
@@ -46,6 +48,13 @@ import EditScheduleExceptionDialog from "./Main/EditScheduleExceptionDialog";
 import CreateClassroomDialog from "./LeftCol/CreateClassroomDialog";
 import PrintLoginDialog from "./Main/PrintLoginDialog";
 import { scheduleExceptionLabels } from "@/constants/scheduleExceptionLabels";
+import { getGroupColor, GROUP_COLORS } from "@/utils/groupColors";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 
 export default function LeftCol( {openTab, hoverTarget} ) {
 
@@ -83,6 +92,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [abilitySeries, setAbilitySeries] = useState([]);
     const [expandedAbilitySeries, setExpandedAbilitySeries] = useState({});
     const [importStudentsDialog,setImportStudentsDialog] = useState(null);
+    const [importExistingStudentDialog, setImportExistingStudentDialog] = useState(null);
     const [createAbilityDialog, setCreateAbilityDialog] = useState(null);
     const [importAbilitiesDialog, setImportAbilitiesDialog] = useState(null);
     const [renameAbilityDialog, setRenameAbilityDialog] = useState(null);
@@ -98,6 +108,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [importCriteriaDialog,setImportCriteriaDialog] = useState(null);
     const [importCentralContentDialog, setImportCentralContentDialog] = useState(null);
     const [createLevelDialog, setCreateLevelDialog] = useState(null);
+    const [renameLevelDialog, setRenameLevelDialog] = useState(null);
     const [importBookStructureDialog, setImportBookStructureDialog] = useState(null);
     const [createBookDialog, setCreateBookDialog] = useState(null);
     const [createAbilitySeriesDialog, setCreateAbilitySeriesDialog] = useState(false);
@@ -291,6 +302,39 @@ export default function LeftCol( {openTab, hoverTarget} ) {
         const data = await response.json();
 
         setGroups(data);
+
+    };
+
+    const updateGroupColor = async (groupId, colorIndex) => {
+
+        setGroups(prev =>
+            prev.map(group =>
+                group.id === groupId
+                    ? { ...group, color_index: colorIndex }
+                    : group
+            )
+        );
+
+        const response = await fetch(
+            `${API_URL}/api/groups/${groupId}/color`,
+            {
+                method: "PUT",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ color_index: colorIndex })
+            }
+        );
+
+        if (!response.ok) {
+            loadGroups();
+            return;
+        }
+
+        window.dispatchEvent(
+            new Event("group-color-changed")
+        );
 
     };
 
@@ -956,6 +1000,18 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                         groupName
                     });
                 }}
+
+                onImportExistingStudent={(groupId, groupName) => {
+                    const group = groups.find(
+                        item => Number(item.id) === Number(groupId)
+                    );
+
+                    setImportExistingStudentDialog({
+                        groupId,
+                        groupName,
+                        schoolId: group?.school_id
+                    });
+                }}
                 onPrintLogins={(
                     groupId,
                     groupName
@@ -1009,6 +1065,13 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                     setCreateLevelDialog({
                         subjectId,
                         subjectName
+                    });
+                }}
+
+                onRenameLevel={(levelId, levelName) => {
+                    setRenameLevelDialog({
+                        id: levelId,
+                        name: levelName
                     });
                 }}
 
@@ -1202,10 +1265,13 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                         {groups.map(group => (
 
-                            <li key={group.id}>
+                            <li
+                                key={group.id}
+                                className="flex items-center gap-1"
+                            >
 
                                 <Button
-                                    className="tree-node ml-4"
+                                    className="tree-node ml-4 flex-1 justify-start"
                                     variant="ghost"
                                     onClick={() => {
                                         toggleFolder(group.id);
@@ -1240,6 +1306,53 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                                     {group.name}
                                 </Button>
+
+                                <DropdownMenu>
+
+                                    <DropdownMenuTrigger
+                                        title="Byt gruppens f\u00e4rg"
+                                        className="
+                                            mr-2
+                                            inline-flex
+                                            h-4
+                                            w-4
+                                            shrink-0
+                                            rounded-full
+                                            border
+                                        "
+                                        style={{
+                                            backgroundColor:
+                                                getGroupColor(group.id, group.color_index)?.background,
+                                            borderColor:
+                                                getGroupColor(group.id, group.color_index)?.border
+                                        }}
+                                    />
+
+                                    <DropdownMenuContent>
+
+                                        {GROUP_COLORS.map((color, index) => (
+
+                                            <DropdownMenuItem
+                                                key={index}
+                                                onClick={() =>
+                                                    updateGroupColor(group.id, index)
+                                                }
+                                            >
+                                                <span
+                                                    className="inline-flex h-4 w-4 shrink-0 rounded-full border"
+                                                    style={{
+                                                        backgroundColor: color.background,
+                                                        borderColor: color.border
+                                                    }}
+                                                />
+                                                {group.color_index === index && "Vald f\u00e4rg"}
+                                            </DropdownMenuItem>
+
+                                        ))}
+
+                                    </DropdownMenuContent>
+
+                                </DropdownMenu>
 
                                 {expandedGroups[group.id] && (
                                     <div className="ml-8 border-l border-border pl-4">
@@ -1303,6 +1416,11 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                                 key={section.id}
                                                                 section={section}
                                                                 openTab={openTab}
+                                                                groupId={group.id}
+                                                                groupName={group.name}
+                                                                groupAbilitySeriesId={
+                                                                    group.ability_series_id
+                                                                }
                                                                 hoverTarget={hoverTarget}
                                                                 inPlanningQueue={
                                                                     (group.planningSectionIds || [])
@@ -1622,6 +1740,21 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                     onClick={() =>
                                                         toggleLevel(level.id)
                                                     }
+                                                    onContextMenu={(e) => {
+                                                        if (user?.role !== "super") {
+                                                            return;
+                                                        }
+
+                                                        e.preventDefault();
+
+                                                        setContextMenu({
+                                                            type: "level",
+                                                            levelId: level.id,
+                                                            levelName: level.name,
+                                                            x: e.clientX,
+                                                            y: e.clientY
+                                                        });
+                                                    }}
                                                 >
                                                     {expandedLevels[level.id]
                                                         ? "▼"
@@ -2792,6 +2925,19 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                 }
             />
 
+            <ImportExistingStudentDialog
+                group={importExistingStudentDialog}
+                open={!!importExistingStudentDialog}
+                onOpenChange={() =>
+                    setImportExistingStudentDialog(null)
+                }
+                onImported={() =>
+                    loadStudents(
+                        importExistingStudentDialog.groupId
+                    )
+                }
+            />
+
             <CreateAbilityDialog
                 open={!!createAbilityDialog}
                 series={createAbilityDialog}
@@ -2857,6 +3003,14 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                     setCreateLevelDialog(null)
                 }
                 onCreated={loadSubjects}
+            />
+            <RenameLevelDialog
+                open={!!renameLevelDialog}
+                level={renameLevelDialog}
+                onOpenChange={() =>
+                    setRenameLevelDialog(null)
+                }
+                onRenamed={loadSubjects}
             />
             <ImportBookStructureDialog
                 open={!!importBookStructureDialog}

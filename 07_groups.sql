@@ -21,6 +21,8 @@ CREATE TABLE `groups`(
 
     pages_per_lesson INT NULL DEFAULT 4,
 
+    color_index INT NULL,
+
     archived_at DATETIME NULL,
 
     deleted_at DATETIME NULL,

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { updateQuestion } from "@/api/questionApi";
@@ -10,17 +10,25 @@ import {
     getQuestionTypeLabel
 } from "@/constants/assessmentConstants";
 
+function parseAnswerConfig(answerConfig) {
+    if (!answerConfig) return {};
+    if (typeof answerConfig === "string") {
+        try {
+            const parsed = JSON.parse(answerConfig);
+            return typeof parsed === "string" ? JSON.parse(parsed) : (parsed || {});
+        } catch {
+            return {};
+        }
+    }
+    return answerConfig;
+}
+
 export default function AnswerConfigEditor({
     question,
     onChanged
 }) {
 
-    let config =
-        typeof question.answer_config === "string"
-            ? JSON.parse(question.answer_config)
-            : question.answer_config;
-
-    config = config ?? {};
+    const config = parseAnswerConfig(question.answer_config);
 
     const [editing, setEditing] =
         useState(false);
@@ -83,6 +91,20 @@ export default function AnswerConfigEditor({
     ] = useState(
         config.order_independent ?? false
     );
+
+    useEffect(() => {
+        const currentConfig = parseAnswerConfig(question.answer_config);
+        setQuestionType(question.question_type);
+        setGradingMode(currentConfig.grading_mode ?? GRADING_MODES.TEXT.value);
+        setDefaultAnswer(currentConfig.default_answer || "");
+        setIgnoreVariableNames(currentConfig.ignore_variable_names ?? false);
+        setDecimals(currentConfig.decimals ?? "");
+        setTolerance(currentConfig.tolerance ?? "");
+        setRoundTo(currentConfig.round_to ?? "");
+        setRequireSimplified(currentConfig.require_simplified ?? false);
+        setAllowDecimal(currentConfig.allow_decimal ?? false);
+        setOrderIndependent(currentConfig.order_independent ?? false);
+    }, [question]);
 
     const modeConfig =
         Object.values(GRADING_MODES)

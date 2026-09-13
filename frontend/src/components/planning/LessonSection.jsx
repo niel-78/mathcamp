@@ -2,10 +2,11 @@ import { useState } from "react";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 import { useDraggable } from "@dnd-kit/core";
-import { GripVertical, Trash2 } from "lucide-react";
-import { Play } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
+    GripVertical,
+    Trash2,
+    MoreVertical,
+    Play,
     Pin,
     PinOff
 } from "lucide-react";
@@ -17,9 +18,14 @@ import {
     AlertDialogDescription,
     AlertDialogFooter,
     AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger
+    AlertDialogTitle
 } from "@/components/ui/alert-dialog";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 
 export default function LessonSection({
     section,
@@ -29,6 +35,7 @@ export default function LessonSection({
 }) {
 
     const [removing, setRemoving] = useState(false);
+    const [confirmRemoveOpen, setConfirmRemoveOpen] = useState(false);
 
     const {
         attributes,
@@ -128,6 +135,8 @@ export default function LessonSection({
             window.dispatchEvent(
                 new Event("lesson-section-added")
             );
+
+            setConfirmRemoveOpen(false);
         } finally {
             setRemoving(false);
         }
@@ -230,90 +239,94 @@ export default function LessonSection({
                 </div>
 
                 {!readOnly && (
-                    <div className="flex items-center gap-2">
+                    <DropdownMenu>
 
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={openPresentation}
+                        <DropdownMenuTrigger
+                            className="
+                                inline-flex
+                                h-8
+                                w-8
+                                items-center
+                                justify-center
+                                rounded-md
+                                hover:bg-accent
+                            "
                         >
-                            <Play size={14} />
+                            <MoreVertical size={16} />
+                        </DropdownMenuTrigger>
 
-                            <span className="ml-1">
-                                {
-                                    section.presentation_id
-                                        ? "Starta"
-                                        : "Skapa"
-                                }
-                            </span>
-                        </Button>
+                        <DropdownMenuContent>
 
-                        <Button
-                            size="icon"
-                            variant={
-                                section.pinned
-                                    ? "default"
-                                    : "ghost"
-                            }
-                            onClick={() =>
-                                togglePin(
-                                    section.lesson_section_id,
-                                    !section.pinned
-                                )
-                            }
-                        >
-                            {section.pinned
-                                ? <Pin size={14} />
-                                : <PinOff size={14} />
-                            }
-                        </Button>
+                            <DropdownMenuItem onClick={openPresentation}>
+                                <Play size={14} />
+                                {section.presentation_id
+                                    ? "Starta presentation"
+                                    : "Skapa presentation"}
+                            </DropdownMenuItem>
 
-                        <AlertDialog>
-                            <AlertDialogTrigger
-                                render={
-                                    <Button
-                                        size="icon"
-                                        variant="ghost"
-                                        disabled={readOnly}
-                                        title="Ta bort sektion från lektionen"
-                                    />
+                            <DropdownMenuItem
+                                onClick={() =>
+                                    togglePin(
+                                        section.lesson_section_id,
+                                        !section.pinned
+                                    )
                                 }
                             >
+                                {section.pinned
+                                    ? <PinOff size={14} />
+                                    : <Pin size={14} />
+                                }
+                                {section.pinned
+                                    ? "Ta bort pinning"
+                                    : "Pinna sektion"}
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem
+                                variant="destructive"
+                                onClick={() => setConfirmRemoveOpen(true)}
+                            >
                                 <Trash2 size={14} />
-                            </AlertDialogTrigger>
+                                Ta bort sektion
+                            </DropdownMenuItem>
 
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>
-                                        Ta bort sektion från lektionen?
-                                    </AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        Sektionen tas bort från den här lektionen,
-                                        men finns kvar i boken.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
+                        </DropdownMenuContent>
 
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>
-                                        Avbryt
-                                    </AlertDialogCancel>
-                                    <AlertDialogAction
-                                        variant="destructive"
-                                        onClick={removeFromLesson}
-                                        disabled={removing}
-                                    >
-                                        {removing
-                                            ? "Tar bort..."
-                                            : "Ta bort"}
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-
-                    </div>
+                    </DropdownMenu>
                 )}
 
             </div>
+
+            <AlertDialog
+                open={confirmRemoveOpen}
+                onOpenChange={setConfirmRemoveOpen}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            Ta bort sektion från lektionen?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Sektionen tas bort från den här lektionen,
+                            men finns kvar i boken.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>
+                            Avbryt
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            variant="destructive"
+                            onClick={removeFromLesson}
+                            disabled={removing}
+                        >
+                            {removing
+                                ? "Tar bort..."
+                                : "Ta bort"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
 
         </div>

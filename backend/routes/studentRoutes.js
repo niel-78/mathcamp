@@ -964,36 +964,40 @@ router.get("/:studentId/abilities", async (req, res) => {
 
 // GET /api/students/:id/results
 
-// GET /api/students/:id/events
-router.get("/:id/students/:userId/events", async (req, res) => {
+// GET /api/students/:studentId/events
+router.get("/:studentId/events", async (req, res) => {
 
-        const [rows] =
-            await db.query(
-                `
-                SELECT
-                    ee.*
-                FROM assessment_events ee
+    const [rows] = await db.query(
+        `
+        SELECT
+            ee.id,
+            ee.event_type,
+            ee.event_data,
+            ee.created_at,
+            a.title AS assessment_title,
+            ea.id AS attempt_id
+        FROM assessment_events ee
+        INNER JOIN assessment_attempts ea
+            ON ea.id = ee.attempt_id
+        INNER JOIN group_assessments ga
+            ON ga.id = ea.group_assessment_id
+        INNER JOIN assessments a
+            ON a.id = ga.assessment_id
+        INNER JOIN group_permissions gp
+            ON gp.group_id = ga.group_id
+        WHERE ea.user_id = ?
+            AND gp.user_id = ?
+        ORDER BY ee.created_at DESC
+        `,
+        [
+            req.params.studentId,
+            req.user.id
+        ]
+    );
 
-                INNER JOIN assessment_attempts ea
-                    ON ea.id = ee.attempt_id
+    res.json(rows);
 
-                WHERE
-                    ea.group_assessment_id = ?
-                    AND ea.user_id = ?
-
-                ORDER BY
-                    ee.created_at DESC
-                `,
-                [
-                    req.params.id,
-                    req.params.userId
-                ]
-            );
-
-        res.json(rows);
-
-    }
-);
+});
 
 
 export default router

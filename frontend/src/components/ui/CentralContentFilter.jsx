@@ -4,8 +4,9 @@ import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 import TabPanelSection from "@/components/layouts/TabPanelSection";
 
-
 export default function CentralContentFilter({
+    contentFilter = {},
+    onFilterChange,
     centralContentId,
     onCentralContentChange
 }) {
@@ -14,15 +15,39 @@ export default function CentralContentFilter({
         useState([]);
 
     const [subjectId, setSubjectId] =
-        useState("");
+        useState(contentFilter.subjectId || "");
 
     const [levelId, setLevelId] =
-        useState("");
+        useState(contentFilter.levelId || "");
 
     const [areaId, setAreaId] =
-        useState("");
+        useState(contentFilter.areaId || "");
 
+    const [currentCentralContentId, setCurrentCentralContentId] =
+        useState(contentFilter.centralContentId || centralContentId || "");
 
+    useEffect(() => {
+        if (contentFilter.subjectId !== undefined) setSubjectId(contentFilter.subjectId || "");
+        if (contentFilter.levelId !== undefined) setLevelId(contentFilter.levelId || "");
+        if (contentFilter.areaId !== undefined) setAreaId(contentFilter.areaId || "");
+        if (contentFilter.centralContentId !== undefined) setCurrentCentralContentId(contentFilter.centralContentId || "");
+    }, [contentFilter.subjectId, contentFilter.levelId, contentFilter.areaId, contentFilter.centralContentId]);
+
+    useEffect(() => {
+        if (centralContentId !== undefined && centralContentId !== currentCentralContentId) {
+            setCurrentCentralContentId(centralContentId || "");
+        }
+    }, [centralContentId]);
+
+    const notifyChange = (newSubjectId, newLevelId, newAreaId, newCentralContentId) => {
+        onFilterChange?.({
+            subjectId: newSubjectId,
+            levelId: newLevelId,
+            areaId: newAreaId,
+            centralContentId: newCentralContentId
+        });
+        onCentralContentChange?.(newCentralContentId);
+    };
 
     useEffect(() => {
 
@@ -72,6 +97,21 @@ export default function CentralContentFilter({
                 area.id === Number(areaId)
         );
 
+    const levels =
+        subjectId
+            ? selectedSubject?.levels || []
+            : subjects.flatMap(s => s.levels || []);
+
+    const areas =
+        levelId
+            ? selectedLevel?.areas || []
+            : levels.flatMap(l => l.areas || []);
+
+    const centralContents =
+        areaId
+            ? (selectedArea?.centralContent || selectedArea?.central_content || [])
+            : areas.flatMap(a => a.centralContent || a.central_content || []);
+
     return (
 
         <TabPanelSection
@@ -85,20 +125,15 @@ export default function CentralContentFilter({
         >
 
             <select
-                className="
-                    input-standard
-                "
+                className="input-standard"
                 value={subjectId}
                 onChange={(e) => {
-
-                    setSubjectId(
-                        e.target.value
-                    );
-
+                    const newSubjectId = e.target.value;
+                    setSubjectId(newSubjectId);
                     setLevelId("");
                     setAreaId("");
-                    onCentralContentChange("");
-
+                    setCurrentCentralContentId("");
+                    notifyChange(newSubjectId, "", "", "");
                 }}
             >
 
@@ -122,19 +157,14 @@ export default function CentralContentFilter({
             </select>
 
             <select
-                className="
-                    input-standard
-                "
+                className="input-standard"
                 value={levelId}
                 onChange={(e) => {
-
-                    setLevelId(
-                        e.target.value
-                    );
-
+                    const newLevelId = e.target.value;
+                    setLevelId(newLevelId);
                     setAreaId("");
-                    onCentralContentChange("");
-
+                    setCurrentCentralContentId("");
+                    notifyChange(subjectId, newLevelId, "", "");
                 }}
             >
 
@@ -142,7 +172,7 @@ export default function CentralContentFilter({
                     Alla kurser
                 </option>
 
-                {selectedSubject?.levels?.map(
+                {levels.map(
                     level => (
 
                         <option
@@ -161,13 +191,10 @@ export default function CentralContentFilter({
                 className="input-standard"
                 value={areaId}
                 onChange={(e) => {
-
-                    setAreaId(
-                        e.target.value
-                    );
-
-                    onCentralContentChange("");
-
+                    const newAreaId = e.target.value;
+                    setAreaId(newAreaId);
+                    setCurrentCentralContentId("");
+                    notifyChange(subjectId, levelId, newAreaId, "");
                 }}
             >
 
@@ -175,7 +202,7 @@ export default function CentralContentFilter({
                     Alla områden
                 </option>
 
-                {selectedLevel?.areas?.map(
+                {areas.map(
                     area => (
 
                         <option
@@ -192,19 +219,19 @@ export default function CentralContentFilter({
 
             <select
                 className="input-standard"
-                value={centralContentId}
-                onChange={(e) =>
-                    onCentralContentChange(
-                        e.target.value
-                    )
-                }
+                value={currentCentralContentId}
+                onChange={(e) => {
+                    const newCCId = e.target.value;
+                    setCurrentCentralContentId(newCCId);
+                    notifyChange(subjectId, levelId, areaId, newCCId);
+                }}
             >
 
                 <option value="">
                     Allt centralt innehåll
                 </option>
 
-                {selectedArea?.centralContent?.map(
+                {centralContents.map(
                     cc => (
 
                         <option
@@ -219,9 +246,7 @@ export default function CentralContentFilter({
 
             </select>
 
-
         </TabPanelSection>      
     );
-
 
 }

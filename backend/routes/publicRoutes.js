@@ -233,6 +233,48 @@ router.get("/planning/:shareId",
 );
 
 // GET /api/public/lessons/:id/group-assessments
+router.get("/lessons/group-assessments",
+    async (req, res) => {
+        try {
+            const lessonIds = (req.query.lessonIds || "")
+                .split(",")
+                .map(Number)
+                .filter(Boolean);
+
+            if (lessonIds.length === 0) {
+                return res.json([]);
+            }
+
+            const placeholders = lessonIds.map(() => "?").join(",");
+            const [rows] = await db.query(
+                `
+                SELECT
+                    lga.lesson_id,
+                    ga.id,
+                    a.title,
+                    a.type
+                FROM lesson_group_assessments lga
+                INNER JOIN group_assessments ga
+                    ON ga.id = lga.group_assessment_id
+                INNER JOIN assessments a
+                    ON a.id = ga.assessment_id
+                WHERE lga.lesson_id IN (${placeholders})
+                    AND ga.mode = 'normal'
+                    AND ga.deleted_at IS NULL
+                `,
+                lessonIds
+            );
+
+            res.json(rows);
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({
+                error: "Kunde inte hämta lektionshändelser."
+            });
+        }
+    }
+);
+
 router.get("/lessons/:id/group-assessments",
     async (req, res) => {
         try {

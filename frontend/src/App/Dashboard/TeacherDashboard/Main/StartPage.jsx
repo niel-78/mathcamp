@@ -1,73 +1,134 @@
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";   
+import { API_URL } from "@/config";
+import { authHeaders } from "@/api/authHeaders";
+import { getQuestionIssues } from "@/utils/getQuestionIssues";
+import { AlertCircle } from "lucide-react";
 
 export default function StartPage({
     openTab
 }) {
+    const [issueCount, setIssueCount] = useState(0);
+
+    useEffect(() => {
+        const fetchIssues = async () => {
+            try {
+                const res = await fetch(`${API_URL}/api/blocks/`, {
+                    headers: authHeaders()
+                });
+                if (res.ok) {
+                    const blocks = await res.json();
+                    let count = 0;
+                    const activeBlocks = (blocks || []).filter(
+                        b => !b.deleted_at && !b.archived_at
+                    );
+                    activeBlocks.forEach(b => {
+                        (b.questions || []).forEach(q => {
+                            if (!q.deleted_at && !q.archived_at) {
+                                const issues = getQuestionIssues(q, b);
+                                if (issues.length > 0) {
+                                    count += 1;
+                                }
+                            }
+                        });
+                    });
+                    setIssueCount(count);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        fetchIssues();
+    }, []);
 
     return (
         <BaseTabLayout
             title="Startsida"
         >
-            <Button
-                onClick={() =>
-                    openTab({
-                        id: "teacher-calendar",
-                        title: "Min kalender",
-                        type: "teacher-calendar"
-                    })
-                }
-            >
-                Min kalender
-            </Button>
+            <div className="flex flex-wrap items-center gap-3">
+                <Button
+                    onClick={() =>
+                        openTab({
+                            id: "teacher-calendar",
+                            title: "Min kalender",
+                            type: "teacher-calendar"
+                        })
+                    }
+                >
+                    Min kalender
+                </Button>
 
-            <Button
-                onClick={() =>
-                    openTab({
-                        id: "assessments",
-                        title: "Provbank",
-                        type: "assessments"
-                    })
-                }
-            >
-                Provbank
-            </Button>
+                <Button
+                    onClick={() =>
+                        openTab({
+                            id: "assessments",
+                            title: "Provbank",
+                            type: "assessments"
+                        })
+                    }
+                >
+                    Provbank
+                </Button>
 
-            <Button
-                onClick={() =>
-                    openTab({
-                        id: "blocks",
-                        title: "Frågebank",
-                        type: "blocks"
-                    })
-                }
-            >
-                Frågebank
-            </Button>
+                <Button
+                    onClick={() =>
+                        openTab({
+                            id: "blocks",
+                            title: "Frågebank",
+                            type: "blocks"
+                        })
+                    }
+                >
+                    Frågebank
+                </Button>
 
-            <Button
-                onClick={() =>
-                    openTab({
-                        id: "group-assessments",
-                        title: "Provtillfällen",
-                        type: "group-assessments"
-                    })
-                }
-            >
-                Provtillfällen
-            </Button>
-            <Button
-                onClick={() =>
-                    openTab({
-                        id: "presentations",
-                        title: "Presentationer",
-                        type: "presentations"
-                    })
-                }
-            >
-                Presentationer
-            </Button>
+                <Button
+                    variant={issueCount > 0 ? "destructive" : "outline"}
+                    className="gap-2"
+                    onClick={() =>
+                        openTab({
+                            id: "action-required",
+                            title: `Kräver åtgärd (${issueCount})`,
+                            type: "action-required"
+                        })
+                    }
+                >
+                    <AlertCircle size={16} />
+                    <span>Kräver åtgärd</span>
+                    {issueCount > 0 && (
+                        <Badge variant="secondary" className="px-1.5 py-0 text-xs font-bold bg-white text-destructive">
+                            {issueCount}
+                        </Badge>
+                    )}
+                </Button>
 
+                <Button
+                    onClick={() =>
+                        openTab({
+                            id: "group-assessments",
+                            title: "Provtillfällen",
+                            type: "group-assessments"
+                        })
+                    }
+                >
+                    Provtillfällen
+                </Button>
+
+                <Button
+                    onClick={() =>
+                        openTab({
+                            id: "presentations",
+                            title: "Presentationer",
+                            type: "presentations"
+                        })
+                    }
+                >
+                    Presentationer
+                </Button>
+            </div>
         </BaseTabLayout>
     );
 }

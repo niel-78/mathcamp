@@ -15,7 +15,12 @@ const weekdays = [
 
 export default function CompactWeekView({
     lessons,
+    openTab,
     selectedWeek,
+    onEditLesson,
+    onCancelLesson,
+    onDeleteLesson,
+    startDiagnosticTest,
     readOnly = false,
     isPublic = false,
     hideCompletions = false
@@ -106,6 +111,11 @@ export default function CompactWeekView({
                                         <LessonCard
                                             key={lesson.id}
                                             lesson={lesson}
+                                            openTab={openTab}
+                                            onEditLesson={onEditLesson}
+                                            onCancelLesson={onCancelLesson}
+                                            onDeleteLesson={onDeleteLesson}
+                                            startDiagnosticTest={startDiagnosticTest}
                                             readOnly={readOnly}
                                             isPublic={isPublic}
                                             hideCompletions={hideCompletions}

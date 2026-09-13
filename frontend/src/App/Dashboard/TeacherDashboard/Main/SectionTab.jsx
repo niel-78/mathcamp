@@ -11,12 +11,15 @@ import CreateBlockFromExcelDialog from "@/components/ui/CreateBlockFromExcelDial
 
 export default function SectionTab({
     sectionId,
+    groupName,
+    groupAbilitySeriesId,
     openTab,
     blockRefreshKey
 }) {
 
     const [section, setSection] = useState(null);
     const [blocks, setBlocks] = useState([]);
+    const [groupAbilities, setGroupAbilities] = useState([]);
     const [createBlockOpen, setCreateBlockOpen] = useState(false);
     const [importOpen, setImportOpen] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -26,8 +29,37 @@ export default function SectionTab({
 
         loadSection();
         loadBlocks();
+        loadGroupAbilities();
 
     }, [sectionId,blockRefreshKey]);
+
+    const loadGroupAbilities = async () => {
+
+        if (!groupAbilitySeriesId) {
+            setGroupAbilities([]);
+            return;
+        }
+
+        const response = await fetch(
+            `${API_URL}/api/ability-series`,
+            {
+                headers: authHeaders()
+            }
+        );
+
+        if (!response.ok) {
+            setGroupAbilities([]);
+            return;
+        }
+
+        const series = await response.json();
+        const groupSeries = series.find(
+            item => Number(item.id) === Number(groupAbilitySeriesId)
+        );
+
+        setGroupAbilities(groupSeries?.abilities || []);
+
+    };
 
     const loadSection = async () => {
 
@@ -243,6 +275,12 @@ export default function SectionTab({
                     dragPrefix="section"
                     openTab={openTab}
                     onReload={loadBlocks}
+                    abilityOptions={groupAbilities}
+                    abilitySourceLabel={
+                        groupName
+                            ? `Förmågor från ${groupName}`
+                            : "Gruppens förmågor"
+                    }
                 />
 
             </BaseTabLayout>

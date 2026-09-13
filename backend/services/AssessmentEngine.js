@@ -242,11 +242,35 @@ export default class AssessmentEngine {
                 ) || 1
             );
 
-        // 3. Antal frågor per förmåga som redan har serverats i detta provförsök
+        const trainingQuestionsPerAbility =
+            Math.max(
+                1,
+                Number(
+                    attemptConfig?.attempt?.trainingQuestionsPerAbility ??
+                    attemptConfig?.training_questions_per_ability
+                ) || 1
+            );
+
+        const includeCompletion =
+            (
+                attemptConfig?.attempt?.includeCompletion ??
+                attemptConfig?.include_completion
+            ) !== false;
+
+        const includeTraining =
+            (
+                attemptConfig?.attempt?.includeTraining ??
+                attemptConfig?.include_training
+            ) !== false;
+
+        // 3. Antal adaptiva frågor per fas och förmåga i detta provförsök
         const [currentAttemptAbilities] =
             await connection.query(
                 `
-                SELECT ba.ability_id, COUNT(*) AS count
+                SELECT
+                    ba.ability_id,
+                    SUM(aq.selection_reason LIKE 'Komplettering:%') AS completion_count,
+                    SUM(aq.selection_reason LIKE 'Träning:%') AS training_count
                 FROM attempt_questions aq
                 INNER JOIN questions q
                     ON q.id = aq.question_id
@@ -259,7 +283,13 @@ export default class AssessmentEngine {
             );
 
         const currentAttemptAbilityCounts = new Map(
-            currentAttemptAbilities.map(r => [Number(r.ability_id), Number(r.count)])
+            currentAttemptAbilities.map(r => [
+                Number(r.ability_id),
+                {
+                    completion: Number(r.completion_count),
+                    training: Number(r.training_count)
+                }
+            ])
         );
 
         // =========================================================================
@@ -267,10 +297,13 @@ export default class AssessmentEngine {
         // Förmågor som ingått i tidigare diagnoser men som eleven saknar resultat på,
         // och som ännu inte nått det önskade antalet kompletteringsuppgifter i detta provförsök.
         // =========================================================================
-        const missingAbilities = previousDiagnosticAbilities.filter(
-            aId => !priorTestedAbilitySet.has(aId) &&
-                   (currentAttemptAbilityCounts.get(aId) || 0) < completionQuestionsPerAbility
-        );
+        const missingAbilities = includeCompletion
+            ? previousDiagnosticAbilities.filter(
+                aId => !priorTestedAbilitySet.has(aId) &&
+                    (currentAttemptAbilityCounts.get(aId)?.completion || 0) <
+                    completionQuestionsPerAbility
+            )
+            : [];
 
         for (const abilityId of missingAbilities) {
 
@@ -396,12 +429,20 @@ export default class AssessmentEngine {
         // Eleven tränar på förmågor som den tidigare skrivit diagnos på
         // (förmågor från tidigare diagnoser som eleven har resultat på, eller alla diagnostiserade förmågor)
         // =========================================================================
+        if (!includeTraining) {
+            return null;
+        }
+
         const eligibleTrainingAbilities =
-            previousDiagnosticAbilities.length > 0
-                ? previousDiagnosticAbilities.filter(
-                    aId => priorTestedAbilitySet.has(aId) || currentAttemptAbilitySet.has(aId)
-                )
-                : null;
+            previousDiagnosticAbilities.filter(
+                aId =>
+                    (
+                        priorTestedAbilitySet.has(aId) ||
+                        (currentAttemptAbilityCounts.get(aId)?.completion || 0) > 0
+                    ) &&
+                    (currentAttemptAbilityCounts.get(aId)?.training || 0) <
+                    trainingQuestionsPerAbility
+            );
 
         const abilities =
             await this.findTargetAbilities(
@@ -770,7 +811,7 @@ export default class AssessmentEngine {
         const [[attempt]] =
             await connection.query(
                 `
-                SELECT user_id
+                SELECT user_id, config
                 FROM assessment_attempts
                 WHERE id = ?
                 `,
@@ -783,19 +824,39 @@ export default class AssessmentEngine {
             );
         }
 
+        const attemptConfig =
+            typeof attempt.config === "string"
+                ? JSON.parse(attempt.config || "{}")
+                : attempt.config || {};
+
+        const questionSelection =
+            attemptConfig.question_selection || {};
+
+        const shuffleQuestions =
+            questionSelection.shuffleQuestions !== false;
+
+        const useDifferentQuestionsInBlock =
+            questionSelection.useDifferentQuestionsInBlock !== false;
+
         const plan =
             await this.getDiagnosticSeedPlan(
                 lessonId,
                 attempt.user_id,
                 selectedBlockIds,
                 questionsPerAbility,
-                abilityQuestionCounts
+                abilityQuestionCounts,
+                1,
+                useDifferentQuestionsInBlock
             );
 
         const questions =
             plan.questions.map(
                 item => item.question
             );
+
+        if (shuffleQuestions) {
+            questions.sort(() => Math.random() - 0.5);
+        }
 
         const configuredSeedQuestionCount =
             Number.isInteger(seedQuestionCount) &&
@@ -1024,7 +1085,7 @@ export default class AssessmentEngine {
     ) {
 
         const filterSet =
-            Array.isArray(filterAbilityIds) && filterAbilityIds.length > 0
+            Array.isArray(filterAbilityIds)
                 ? new Set(filterAbilityIds.map(Number))
                 : null;
 
@@ -1334,7 +1395,8 @@ export default class AssessmentEngine {
         selectedBlockIds = null,
         questionsPerAbility = 1,
         abilityQuestionCounts = {},
-        completionQuestionsPerAbility = 1
+        completionQuestionsPerAbility = 1,
+        useDifferentQuestionsInBlock = true
     ) {
 
         const selectedBlockIdSet =
@@ -1685,7 +1747,7 @@ export default class AssessmentEngine {
                         )
                     )
 
-                    ORDER BY RAND()
+                    ORDER BY ${useDifferentQuestionsInBlock ? "RAND()" : "q.id"}
 
                     LIMIT ?
                     `,

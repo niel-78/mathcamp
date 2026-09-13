@@ -31,6 +31,10 @@ async function migrate() {
             promoteAfterQuestions: 1,
             demoteAfterQuestions: 1,
             questionsPerAbility: 1,
+            completionQuestionsPerAbility: 1,
+            trainingQuestionsPerAbility: 1,
+            includeCompletion: true,
+            includeTraining: true,
             ...(config.attempt || {})
         };
 
@@ -42,6 +46,18 @@ async function migrate() {
         }
         if (config.attempt.questionsPerAbility === undefined) {
             config.attempt.questionsPerAbility = 1;
+        }
+        if (config.attempt.completionQuestionsPerAbility === undefined) {
+            config.attempt.completionQuestionsPerAbility = 1;
+        }
+        if (config.attempt.trainingQuestionsPerAbility === undefined) {
+            config.attempt.trainingQuestionsPerAbility = 1;
+        }
+        if (config.attempt.includeCompletion === undefined) {
+            config.attempt.includeCompletion = true;
+        }
+        if (config.attempt.includeTraining === undefined) {
+            config.attempt.includeTraining = true;
         }
 
         await connection.query(

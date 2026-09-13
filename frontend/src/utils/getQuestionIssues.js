@@ -1,0 +1,120 @@
+import { checkOptionValues } from "@/utils/checkOptionValues";
+
+export function getQuestionIssues(question, block = null) {
+    if (!question) return [];
+
+    // Ignorera om blocket är raderat eller arkiverat
+    if (block && (block.deleted_at || block.archived_at)) {
+        return [];
+    }
+
+    // Ignorera raderade eller arkiverade frågor
+    if (question.deleted_at || question.archived_at) {
+        return [];
+    }
+
+    const issues = [];
+    const correctOptions = (question.options || []).filter(o => o.is_correct);
+    const options = question.options || [];
+
+    let answerConfig = {};
+    if (typeof question.answer_config === "string") {
+        try {
+            answerConfig = JSON.parse(question.answer_config);
+        } catch {
+            answerConfig = {};
+        }
+    } else if (question.answer_config) {
+        answerConfig = question.answer_config;
+    }
+
+    const hasDefaultAnswer =
+        answerConfig?.default_answer !== undefined &&
+        answerConfig?.default_answer !== "";
+
+    // 1. Saknar korrekt lösning
+    if (question.question_type === "single_choice" || question.question_type === "multiple_choice") {
+        if (correctOptions.length === 0) {
+            issues.push({
+                type: "missing_correct",
+                questionId: question.id,
+                message: "Saknar korrekt lösning"
+            });
+        }
+    } else if (question.question_type === "numeric_input" || question.question_type === "text") {
+        if (correctOptions.length === 0 && !hasDefaultAnswer) {
+            issues.push({
+                type: "missing_correct",
+                questionId: question.id,
+                message: "Saknar korrekt lösning / facit"
+            });
+        }
+    }
+
+    // 2. Fel i alternativ
+    if (options.length > 1) {
+        const check = checkOptionValues(options);
+        if (!check.valid) {
+            issues.push({
+                type: "option_error",
+                questionId: question.id,
+                message: `Fel i svarsalternativ (${check.issues.join(", ")})`
+            });
+        }
+    }
+
+    // 3. Fel i antalet svarsrutor
+    if (question.question_type === "numeric_input") {
+        const inputCount = (question.question?.match(/\{\{input\}\}/g) || []).length;
+        const expectedCount = correctOptions.length || (hasDefaultAnswer ? 1 : 0);
+        if (expectedCount > 0 && inputCount !== expectedCount) {
+            issues.push({
+                type: "input_count_mismatch",
+                questionId: question.id,
+                message: `Fel i antalet svarsrutor (${inputCount} st finns, ${expectedCount} st förväntas)`
+            });
+        } else if (expectedCount === 0 && inputCount === 0) {
+            issues.push({
+                type: "input_count_mismatch",
+                questionId: question.id,
+                message: "Saknar svarsruta ({{input}})"
+            });
+        }
+    }
+
+    // 4. Felanmälan från elever
+    if (Number(question.report_count) > 0) {
+        issues.push({
+            type: "report",
+            questionId: question.id,
+            message: `${question.report_count} ${Number(question.report_count) > 1 ? "felanmälningar" : "felanmälan"}`
+        });
+    }
+
+    return issues;
+}
+
+export function getBlockIssues(block) {
+    if (!block || block.deleted_at || block.archived_at) {
+        return [];
+    }
+
+    const issues = [];
+    const questions = (block.questions || []).filter(
+        q => !q.deleted_at && !q.archived_at
+    );
+
+    questions.forEach((q, idx) => {
+        const questionNum = idx + 1;
+        const qIssues = getQuestionIssues(q, block);
+        qIssues.forEach(issue => {
+            issues.push({
+                ...issue,
+                questionNum,
+                message: `Fråga ${questionNum}: ${issue.message}`
+            });
+        });
+    });
+
+    return issues;
+}

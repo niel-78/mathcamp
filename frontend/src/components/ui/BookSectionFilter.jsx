@@ -3,8 +3,9 @@ import { useEffect, useState } from "react";
 import { API_URL } from "@/config";
 import TabPanelSection from "@/components/layouts/TabPanelSection";
 
-
 export default function BookSectionFilter({
+    bookFilter = {},
+    onFilterChange,
     sectionId,
     onSectionChange
 }) {
@@ -13,13 +14,39 @@ export default function BookSectionFilter({
         useState([]);
 
     const [bookId, setBookId] =
-        useState("");
+        useState(bookFilter.bookId || "");
 
     const [chapterId, setChapterId] =
-        useState("");
+        useState(bookFilter.chapterId || "");
 
     const [subchapterId, setSubchapterId] =
-        useState("");
+        useState(bookFilter.subchapterId || "");
+
+    const [currentSectionId, setCurrentSectionId] =
+        useState(bookFilter.sectionId || sectionId || "");
+
+    useEffect(() => {
+        if (bookFilter.bookId !== undefined) setBookId(bookFilter.bookId || "");
+        if (bookFilter.chapterId !== undefined) setChapterId(bookFilter.chapterId || "");
+        if (bookFilter.subchapterId !== undefined) setSubchapterId(bookFilter.subchapterId || "");
+        if (bookFilter.sectionId !== undefined) setCurrentSectionId(bookFilter.sectionId || "");
+    }, [bookFilter.bookId, bookFilter.chapterId, bookFilter.subchapterId, bookFilter.sectionId]);
+
+    useEffect(() => {
+        if (sectionId !== undefined && sectionId !== currentSectionId) {
+            setCurrentSectionId(sectionId || "");
+        }
+    }, [sectionId]);
+
+    const notifyChange = (newBookId, newChapterId, newSubchapterId, newSectionId) => {
+        onFilterChange?.({
+            bookId: newBookId,
+            chapterId: newChapterId,
+            subchapterId: newSubchapterId,
+            sectionId: newSectionId
+        });
+        onSectionChange?.(newSectionId);
+    };
 
     useEffect(() => {
 
@@ -70,7 +97,7 @@ export default function BookSectionFilter({
 
             : books.flatMap(
                 book =>
-                    book.chapters
+                    book.chapters || []
             );
             
     const subchapters =
@@ -81,7 +108,7 @@ export default function BookSectionFilter({
 
             : chapters.flatMap(
                 chapter =>
-                    chapter.subchapters
+                    chapter.subchapters || []
             );
 
     const sections =
@@ -92,7 +119,7 @@ export default function BookSectionFilter({
 
             : subchapters.flatMap(
                 subchapter =>
-                    subchapter.sections
+                    subchapter.sections || []
             );
     
     return (
@@ -101,7 +128,7 @@ export default function BookSectionFilter({
             title="Filtrera på avsnitt i matematikbok"
             description="
                 Hitta block utifrån
-                kapitel, delkapitel och avsnitt.
+                bok, kapitel, delkapitel och avsnitt.
             "
         >
 
@@ -109,15 +136,12 @@ export default function BookSectionFilter({
                 className="input-standard"
                 value={bookId}
                 onChange={(e) => {
-
-                    setBookId(
-                        e.target.value
-                    );
-
+                    const newBookId = e.target.value;
+                    setBookId(newBookId);
                     setChapterId("");
                     setSubchapterId("");
-                    onSectionChange("");
-
+                    setCurrentSectionId("");
+                    notifyChange(newBookId, "", "", "");
                 }}
             >
 
@@ -142,14 +166,11 @@ export default function BookSectionFilter({
                 className="input-standard"
                 value={chapterId}
                 onChange={(e) => {
-
-                    setChapterId(
-                        e.target.value
-                    );
-
+                    const newChapterId = e.target.value;
+                    setChapterId(newChapterId);
                     setSubchapterId("");
-                    onSectionChange("");
-
+                    setCurrentSectionId("");
+                    notifyChange(bookId, newChapterId, "", "");
                 }}
             >
 
@@ -176,13 +197,10 @@ export default function BookSectionFilter({
                 className="input-standard"
                 value={subchapterId}
                 onChange={(e) => {
-
-                    setSubchapterId(
-                        e.target.value
-                    );
-
-                    onSectionChange("");
-
+                    const newSubchapterId = e.target.value;
+                    setSubchapterId(newSubchapterId);
+                    setCurrentSectionId("");
+                    notifyChange(bookId, chapterId, newSubchapterId, "");
                 }}
             >
 
@@ -211,12 +229,12 @@ export default function BookSectionFilter({
 
             <select
                 className="input-standard"
-                value={sectionId}
-                onChange={(e) =>
-                    onSectionChange(
-                        e.target.value
-                    )
-                }
+                value={currentSectionId}
+                onChange={(e) => {
+                    const newSectionId = e.target.value;
+                    setCurrentSectionId(newSectionId);
+                    notifyChange(bookId, chapterId, subchapterId, newSectionId);
+                }}
             >
 
                 <option value="">
@@ -235,8 +253,6 @@ export default function BookSectionFilter({
                 ))}
 
             </select>
-            
-
 
         </TabPanelSection>      
     );

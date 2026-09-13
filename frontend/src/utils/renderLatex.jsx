@@ -14,30 +14,48 @@ const toHtmlText = (str) =>
 export const renderLatex = (text) => {
   if (!text) return "";
 
-  // säkerställ att det är ren text
   const safe = String(text);
 
-  // hantera $...$ manuellt
-  const regex = /\$(.*?)\$/g;
+  // Match $$...$$, \[...\], $...$, \(...\)
+  const mathRegex = /(\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]|\$[^\$\n]+?\$|\\\([\s\S]*?\\\))/g;
 
   let result = "";
   let lastIndex = 0;
   let match;
 
-  while ((match = regex.exec(safe)) !== null) {
+  while ((match = mathRegex.exec(safe)) !== null) {
     // text före math
     result += toHtmlText(safe.slice(lastIndex, match.index));
 
+    const token = match[0];
+    let mathContent = "";
+    let isDisplay = false;
+
+    if (token.startsWith("$$") && token.endsWith("$$")) {
+      mathContent = token.slice(2, -2);
+      isDisplay = true;
+    } else if (token.startsWith("\\[") && token.endsWith("\\]")) {
+      mathContent = token.slice(2, -2);
+      isDisplay = true;
+    } else if (token.startsWith("\\(") && token.endsWith("\\)")) {
+      mathContent = token.slice(2, -2);
+      isDisplay = false;
+    } else if (token.startsWith("$") && token.endsWith("$")) {
+      mathContent = token.slice(1, -1);
+      isDisplay = false;
+    }
+
     try {
-      result += katex.renderToString(match[1], {
+      result += katex.renderToString(mathContent, {
+        displayMode: isDisplay,
         throwOnError: false,
         strict: "ignore",
       });
     } catch {
-      result += toHtmlText(match[0]);
+      result += toHtmlText(token);
     }
 
-    lastIndex = match.index + match[0].length;
+    lastIndex = match.index + token.length;
   }
 
   // resten av texten

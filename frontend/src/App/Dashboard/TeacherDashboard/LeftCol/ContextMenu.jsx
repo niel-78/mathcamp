@@ -150,6 +150,15 @@ export default function ContextMenu(props) {
                             setContextMenu(null);
                         }}
 
+                        onImportExistingStudent={() => {
+                            props.onImportExistingStudent?.(
+                                contextMenu.groupId,
+                                contextMenu.groupName
+                            );
+
+                            setContextMenu(null);
+                        }}
+
                         onDownloadStudentTemplate={() => {
                             props.onDownloadStudentTemplate?.();
 
@@ -221,6 +230,14 @@ export default function ContextMenu(props) {
 
                 return (
                     <LevelMenu
+                        onRename={() => {
+                            props.onRenameLevel?.(
+                                contextMenu.levelId,
+                                contextMenu.levelName
+                            );
+
+                            setContextMenu(null);
+                        }}
                         onCreateBook={() => {
                             props.onCreateBook?.(
                                 contextMenu.levelId,

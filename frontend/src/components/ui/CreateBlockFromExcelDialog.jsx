@@ -289,6 +289,11 @@ export default function CreateBlockFromExcelDialog({
                     Ladda ner Excel-mall
                 </Button>
 
+                <p className="text-sm text-muted-foreground">
+                    Använd kolumnen "Miniräknare tillåten" med värdet Ja eller Nej
+                    för varje fråga.
+                </p>
+
                 {!abilityId && (
                     <div className="space-y-3">
                         <select

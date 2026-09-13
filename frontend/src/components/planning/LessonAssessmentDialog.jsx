@@ -18,6 +18,10 @@ import {
     Input
 } from "@/components/ui/input";
 
+import {
+    Switch
+} from "@/components/ui/switch";
+
 import MathContent from "@/components/ui/MathContent";
 
 import { toast } from "sonner";
@@ -63,6 +67,14 @@ export default function LessonAssessmentDialog({
         completionQuestionsPerAbility,
         setCompletionQuestionsPerAbility
     ] = useState(1);
+
+    const [
+        trainingQuestionsPerAbility,
+        setTrainingQuestionsPerAbility
+    ] = useState(1);
+
+    const [includeCompletion, setIncludeCompletion] = useState(true);
+    const [includeTraining, setIncludeTraining] = useState(true);
 
     const isEditMode = !!groupAssessmentId;
 
@@ -196,6 +208,9 @@ export default function LessonAssessmentDialog({
             const defaultCompletion =
                 data.defaultCompletionQuestionsPerAbility ?? 1;
 
+            const defaultTraining =
+                data.defaultTrainingQuestionsPerAbility ?? 1;
+
             const initialCounts = {};
             (data.abilities || []).forEach(ability => {
                 initialCounts[ability.id] = defaultQuestions;
@@ -214,7 +229,26 @@ export default function LessonAssessmentDialog({
 
             setAbilityQuestionCounts(initialCounts);
             setCompletionQuestionsPerAbility(
-                existingConfig?.completion_questions_per_ability ?? defaultCompletion
+                existingConfig?.attempt?.completionQuestionsPerAbility ??
+                existingConfig?.completion_questions_per_ability ??
+                defaultCompletion
+            );
+            setTrainingQuestionsPerAbility(
+                existingConfig?.attempt?.trainingQuestionsPerAbility ??
+                existingConfig?.training_questions_per_ability ??
+                defaultTraining
+            );
+            setIncludeCompletion(
+                existingConfig?.attempt?.includeCompletion ??
+                existingConfig?.include_completion ??
+                data.defaultIncludeCompletion ??
+                true
+            );
+            setIncludeTraining(
+                existingConfig?.attempt?.includeTraining ??
+                existingConfig?.include_training ??
+                data.defaultIncludeTraining ??
+                true
             );
 
             const preselectedBlockIds =
@@ -341,11 +375,26 @@ export default function LessonAssessmentDialog({
             Number(completionQuestionsPerAbility);
 
         if (
+            includeCompletion &&
             !Number.isInteger(normalizedCompletionCount) ||
-            normalizedCompletionCount < 1
+            includeCompletion && normalizedCompletionCount < 1
         ) {
             toast.error(
                 "Ange minst 1 uppgift per förmåga i komplettering."
+            );
+            return;
+        }
+
+        const normalizedTrainingCount =
+            Number(trainingQuestionsPerAbility);
+
+        if (
+            includeTraining &&
+            (!Number.isInteger(normalizedTrainingCount) ||
+            normalizedTrainingCount < 1)
+        ) {
+            toast.error(
+                "Ange minst 1 uppgift per förmåga i träning."
             );
             return;
         }
@@ -358,7 +407,13 @@ export default function LessonAssessmentDialog({
             ability_question_counts:
                 normalizedAbilityCounts,
             completion_questions_per_ability:
-                normalizedCompletionCount
+                normalizedCompletionCount,
+            training_questions_per_ability:
+                normalizedTrainingCount,
+            include_completion:
+                includeCompletion,
+            include_training:
+                includeTraining
         };
 
         try {
@@ -475,11 +530,26 @@ export default function LessonAssessmentDialog({
             Number(completionQuestionsPerAbility);
 
         if (
+            includeCompletion &&
             !Number.isInteger(normalizedCompletionCount) ||
-            normalizedCompletionCount < 1
+            includeCompletion && normalizedCompletionCount < 1
         ) {
             toast.error(
                 "Ange minst 1 uppgift per förmåga i komplettering."
+            );
+            return;
+        }
+
+        const normalizedTrainingCount =
+            Number(trainingQuestionsPerAbility);
+
+        if (
+            includeTraining &&
+            (!Number.isInteger(normalizedTrainingCount) ||
+            normalizedTrainingCount < 1)
+        ) {
+            toast.error(
+                "Ange minst 1 uppgift per förmåga i träning."
             );
             return;
         }
@@ -506,7 +576,13 @@ export default function LessonAssessmentDialog({
                             ability_question_counts:
                                 normalizedAbilityCounts,
                             completion_questions_per_ability:
-                                normalizedCompletionCount
+                                normalizedCompletionCount,
+                            training_questions_per_ability:
+                                normalizedTrainingCount,
+                            include_completion:
+                                includeCompletion,
+                            include_training:
+                                includeTraining
                         })
                     }
                 );
@@ -863,11 +939,61 @@ export default function LessonAssessmentDialog({
                                         )
                                     }
                                     className="h-8 w-24 text-center"
+                                    disabled={!includeCompletion}
                                 />
                                 <span className="text-xs text-muted-foreground">
                                     Standardvärde: {diagnosticPlan?.defaultCompletionQuestionsPerAbility ?? 1} st
                                 </span>
                             </div>
+                        </div>
+
+                        <div className="space-y-2 rounded-md border p-3 bg-muted/10">
+                            <label
+                                htmlFor="diagnostic-training-questions-count"
+                                className="text-sm font-medium"
+                            >
+                                Antal uppgifter per förmåga i träning (adaptiv del)
+                            </label>
+
+                            <div className="flex items-center gap-3">
+                                <Input
+                                    id="diagnostic-training-questions-count"
+                                    type="number"
+                                    min="1"
+                                    step="1"
+                                    value={trainingQuestionsPerAbility}
+                                    onChange={event =>
+                                        setTrainingQuestionsPerAbility(
+                                            event.target.value === ""
+                                                ? ""
+                                                : Number(event.target.value)
+                                        )
+                                    }
+                                    className="h-8 w-24 text-center"
+                                    disabled={!includeTraining}
+                                />
+                                <span className="text-xs text-muted-foreground">
+                                    Standardvärde: {diagnosticPlan?.defaultTrainingQuestionsPerAbility ?? 1} st
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3 rounded-md border p-3">
+                            <label className="flex items-center justify-between gap-4 text-sm font-medium">
+                                <span>Inkludera komplettering</span>
+                                <Switch
+                                    checked={includeCompletion}
+                                    onCheckedChange={setIncludeCompletion}
+                                />
+                            </label>
+
+                            <label className="flex items-center justify-between gap-4 text-sm font-medium">
+                                <span>Inkludera träning</span>
+                                <Switch
+                                    checked={includeTraining}
+                                    onCheckedChange={setIncludeTraining}
+                                />
+                            </label>
                         </div>
 
                         <div

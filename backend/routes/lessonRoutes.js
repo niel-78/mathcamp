@@ -39,6 +39,7 @@ router.get("/",
                         g.name AS group_name,
                         g.school_id,
                         g.book_id,
+                        g.color_index,
 
                         c.name AS classroom_name,
 
@@ -779,6 +780,7 @@ router.get("/teacher",
 
                         g.name AS group_name,
                         g.school_id,
+                        g.color_index,
 
                         c.name AS classroom_name,
 
@@ -973,7 +975,10 @@ router.post("/:id/group-assessments",
             selected_block_ids = [],
             seed_question_count = null,
             ability_question_counts = null,
-            completion_questions_per_ability = null
+            completion_questions_per_ability = null,
+            training_questions_per_ability = null,
+            include_completion = null,
+            include_training = null
         } = req.body;
 
         const connection =
@@ -1102,6 +1107,12 @@ router.post("/:id/group-assessments",
                     ? Number(completion_questions_per_ability)
                     : null;
 
+            const normalizedTrainingQuestionsPerAbility =
+                Number.isInteger(Number(training_questions_per_ability)) &&
+                Number(training_questions_per_ability) >= 1
+                    ? Number(training_questions_per_ability)
+                    : null;
+
             const [result] =
                 await connection.query(
                     `
@@ -1138,6 +1149,18 @@ router.post("/:id/group-assessments",
                                             normalizedCompletionQuestionsPerAbility
                                     }
                                     : {}),
+                                ...(normalizedTrainingQuestionsPerAbility != null
+                                    ? {
+                                        trainingQuestionsPerAbility:
+                                            normalizedTrainingQuestionsPerAbility
+                                    }
+                                    : {}),
+                                ...(typeof include_completion === "boolean"
+                                    ? { includeCompletion: include_completion }
+                                    : {}),
+                                ...(typeof include_training === "boolean"
+                                    ? { includeTraining: include_training }
+                                    : {}),
                                 ...(Object.keys(normalizedAbilityQuestionCounts).length > 0
                                     ? {
                                         abilityQuestionCounts:
@@ -1157,7 +1180,11 @@ router.post("/:id/group-assessments",
                             ability_question_counts:
                                 normalizedAbilityQuestionCounts,
                             completion_questions_per_ability:
-                                normalizedCompletionQuestionsPerAbility
+                                normalizedCompletionQuestionsPerAbility,
+                            training_questions_per_ability:
+                                normalizedTrainingQuestionsPerAbility,
+                            include_completion,
+                            include_training
                         })
                     ]
                 );
@@ -1210,6 +1237,42 @@ router.post("/:id/group-assessments",
 );
 
 // GET /api/lessons/:id/group-assessments
+router.get("/group-assessments",
+    async (req, res) => {
+
+        const lessonIds = (req.query.lessonIds || "")
+            .split(",")
+            .map(Number)
+            .filter(Boolean);
+
+        if (lessonIds.length === 0) {
+            return res.json([]);
+        }
+
+        const placeholders = lessonIds.map(() => "?").join(",");
+        const [rows] = await db.query(
+            `
+            SELECT
+                lga.lesson_id,
+                ga.id,
+                a.title,
+                a.type
+            FROM lesson_group_assessments lga
+            INNER JOIN group_assessments ga
+                ON ga.id = lga.group_assessment_id
+            INNER JOIN assessments a
+                ON a.id = ga.assessment_id
+            WHERE lga.lesson_id IN (${placeholders})
+                AND ga.mode = 'normal'
+                AND ga.deleted_at IS NULL
+            `,
+            lessonIds
+        );
+
+        res.json(rows);
+    }
+);
+
 router.get("/:id/group-assessments",
     async (req, res) => {
 
@@ -1547,6 +1610,20 @@ router.get("/:lessonId/diagnostic-preview",
                     ) || 1
                 );
 
+            const trainingQuestionsPerAbility =
+                Math.max(
+                    1,
+                    Number(
+                        typeSettings?.attempt?.trainingQuestionsPerAbility
+                    ) || 1
+                );
+
+            const includeCompletion =
+                typeSettings?.attempt?.includeCompletion !== false;
+
+            const includeTraining =
+                typeSettings?.attempt?.includeTraining !== false;
+
             const plan =
                 await AssessmentEngine
                     .getDiagnosticSeedPlan(
@@ -1558,7 +1635,15 @@ router.get("/:lessonId/diagnostic-preview",
                         completionQuestionsPerAbility
                     );
 
-            res.json(plan);
+            res.json({
+                ...plan,
+                defaultTrainingQuestionsPerAbility:
+                    trainingQuestionsPerAbility,
+                defaultIncludeCompletion:
+                    includeCompletion,
+                defaultIncludeTraining:
+                    includeTraining
+            });
 
         } catch (err) {
 

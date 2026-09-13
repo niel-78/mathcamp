@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 export default function StudentsMenu({
     onCreateStudent,
     onImportStudents,
+    onImportExistingStudent,
     onDownloadStudentTemplate,
     onPrintLogins
 }) {
@@ -26,6 +27,15 @@ export default function StudentsMenu({
             >
                 Importera elever
             </Button>
+
+            <Button
+                className="context-menu-button"
+                variant="inline"
+                onClick={onImportExistingStudent}
+            >
+                Importera befintlig elev
+            </Button>
+
             <Button
                 className="context-menu-button"
                 variant="inline"

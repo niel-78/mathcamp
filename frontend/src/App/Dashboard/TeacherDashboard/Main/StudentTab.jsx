@@ -6,10 +6,50 @@ import { authHeaders } from "@/api/authHeaders";
 import ResultPage from "@/App/Dashboard/StudentDashboard/Main/ResultPage";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { eventLabels } from "@/constants/eventLabels";
 
 export default function StudentTab({
     studentId
 }) {
+
+    const formatEventData = (eventData) => {
+
+        if (!eventData) {
+            return null;
+        }
+
+        try {
+
+            const parsed = typeof eventData === "string"
+                ? JSON.parse(eventData)
+                : eventData;
+
+            if (
+                !parsed ||
+                typeof parsed !== "object" ||
+                Array.isArray(parsed) ||
+                Object.keys(parsed).length === 0
+            ) {
+                return null;
+            }
+
+            return Object.entries(parsed)
+                .map(([key, value]) => {
+                    const renderedValue =
+                        typeof value === "object"
+                            ? JSON.stringify(value)
+                            : String(value);
+
+                    return `${key}: ${renderedValue}`;
+                })
+                .join(" • ");
+
+        } catch (error) {
+
+            return null;
+
+        }
+    };
 
     const [attempts, setAttempts] = useState([]);
     const [selectedAttemptId, setSelectedAttemptId] =
@@ -17,7 +57,27 @@ export default function StudentTab({
     const [loading, setLoading] = useState(true);
 
     const [abilities, setAbilities] = useState([]);
+    const [studentEvents, setStudentEvents] = useState([]);
     const [resultTab, setResultTab] = useState("results");
+
+    const groupedEvents = studentEvents.reduce((groups, event) => {
+
+        const key = event.attempt_id || event.assessment_title || "unknown";
+        const existingGroup = groups.find(group => group.key === key);
+
+        if (existingGroup) {
+            existingGroup.events.push(event);
+            return groups;
+        }
+
+        groups.push({
+            key,
+            title: event.assessment_title || "Prov",
+            events: [event]
+        });
+
+        return groups;
+    }, []);
 
     useEffect(() => {
 
@@ -48,6 +108,38 @@ export default function StudentTab({
         };
 
         loadAbilities();
+
+    }, [studentId]);
+
+    useEffect(() => {
+
+        const loadStudentEvents = async () => {
+
+            try {
+
+                const response = await fetch(
+                    `${API_URL}/api/students/${studentId}/events`,
+                    {
+                        headers: authHeaders()
+                    }
+                );
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error);
+                }
+
+                setStudentEvents(data);
+
+            } catch (error) {
+
+                console.error(error);
+
+            }
+        };
+
+        loadStudentEvents();
 
     }, [studentId]);
 
@@ -97,7 +189,7 @@ export default function StudentTab({
         <div className="h-full overflow-y-auto bg-slate-50 p-6">
             <div className="w-full max-w-4xl mx-auto space-y-4">
 
-                <div className="flex gap-2 rounded-xl border bg-white p-2 shadow-sm">
+                <div className="flex gap-2 rounded-xl border bg-white p-2 shadow-sm flex-wrap">
                     <Button
                         variant={
                             resultTab === "results"
@@ -118,6 +210,17 @@ export default function StudentTab({
                         onClick={() => setResultTab("abilities")}
                     >
                         Förmågor
+                    </Button>
+
+                    <Button
+                        variant={
+                            resultTab === "activity"
+                                ? "default"
+                                : "ghost"
+                        }
+                        onClick={() => setResultTab("activity")}
+                    >
+                        Elevaktiviteter
                     </Button>
                 </div>
 
@@ -224,6 +327,67 @@ export default function StudentTab({
                                 </div>
                             ))}
                         </div>
+                    </div>
+                )}
+
+                {resultTab === "activity" && (
+                    <div className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
+                        <h2 className="text-2xl font-bold">
+                            Elevaktiviteter
+                        </h2>
+
+                        {!studentEvents.length && (
+                            <p className="text-sm text-muted-foreground">
+                                Inga elevaktiviteter registrerade.
+                            </p>
+                        )}
+
+                        {groupedEvents.length > 0 && (
+                            <div className="space-y-5">
+                                {groupedEvents.map(group => (
+                                    <div
+                                        key={group.key}
+                                        className="rounded-xl border bg-white"
+                                    >
+                                        <div className="border-b bg-slate-50 px-4 py-3 font-semibold text-sm">
+                                            {group.title}
+                                        </div>
+
+                                        <div className="relative pl-6 pr-4 py-4">
+                                            <div className="absolute left-3 top-0 bottom-0 w-px bg-slate-200" />
+
+                                            {group.events.map(event => (
+                                                <div
+                                                    key={event.id}
+                                                    className="relative pb-4 last:pb-0"
+                                                >
+                                                    <div className="absolute -left-[18px] top-1.5 h-3 w-3 rounded-full border-2 border-white bg-sky-600" />
+
+                                                    <div className="flex items-start justify-between gap-3">
+                                                        <div className="font-medium">
+                                                            {eventLabels[event.event_type] || event.event_type}
+                                                        </div>
+
+                                                        <div className="text-[11px] text-muted-foreground whitespace-nowrap">
+                                                            {new Date(event.created_at).toLocaleString("sv-SE", {
+                                                                dateStyle: "medium",
+                                                                timeStyle: "short"
+                                                            })}
+                                                        </div>
+                                                    </div>
+
+                                                    {formatEventData(event.event_data) && (
+                                                        <div className="mt-1 text-xs text-muted-foreground break-all">
+                                                            {formatEventData(event.event_data)}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
 

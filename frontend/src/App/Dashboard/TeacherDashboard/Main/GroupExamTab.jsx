@@ -65,13 +65,17 @@ export default function GroupExamTab({
                 ...data.config,
                 question_selection: {
                     ...data.config?.question_selection,
-                    shuffleQuestions: true,
-                    shuffleOptions: true,
-                    useDifferentQuestionsInBlock: true
+                    shuffleQuestions:
+                        data.config?.question_selection?.shuffleQuestions ?? true,
+                    shuffleOptions:
+                        data.config?.question_selection?.shuffleOptions ?? true,
+                    useDifferentQuestionsInBlock:
+                        data.config?.question_selection?.useDifferentQuestionsInBlock ?? true
                 },
                 navigation: {
                     ...data.config?.navigation,
-                    allowGoToPreviousQuestion: false
+                    allowGoToPreviousQuestion:
+                        data.config?.navigation?.allowGoToPreviousQuestion ?? false
                 },
                 attempt: {
                     ...data.config?.attempt,
@@ -842,10 +846,8 @@ export default function GroupExamTab({
 
                             <Switch
                                 checked={
-                                    isDiagnostic ||
                                     !!groupExam.config?.question_selection?.shuffleQuestions
                                 }
-                                disabled={isDiagnostic}
                                 onCheckedChange={(checked) =>
                                     updateConfig(
                                         "question_selection",
@@ -861,10 +863,8 @@ export default function GroupExamTab({
 
                             <Switch
                                 checked={
-                                    isDiagnostic ||
                                     !!groupExam.config?.question_selection?.shuffleOptions
                                 }
-                                disabled={isDiagnostic}
                                 onCheckedChange={(checked) =>
                                     updateConfig(
                                         "question_selection",
@@ -880,10 +880,8 @@ export default function GroupExamTab({
 
                             <Switch
                                 checked={
-                                    isDiagnostic ||
                                     !!groupExam.config?.question_selection?.useDifferentQuestionsInBlock
                                 }
-                                disabled={isDiagnostic}
                                 onCheckedChange={(checked) =>
                                     updateConfig(
                                         "question_selection",
@@ -895,14 +893,15 @@ export default function GroupExamTab({
 
                         </Field>
 
-                        <Field label="Tillåt att gå tillbaka">
+                        <Field label={isDiagnostic
+                            ? "Tillåt att gå tillbaka i basdelen"
+                            : "Tillåt att gå tillbaka"}
+                        >
 
                             <Switch
                                 checked={
-                                    !isDiagnostic &&
                                     !!groupExam.config?.navigation?.allowGoToPreviousQuestion
                                 }
-                                disabled={isDiagnostic}
                                 onCheckedChange={(checked) =>
                                     updateConfig(
                                         "navigation",

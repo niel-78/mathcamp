@@ -1158,7 +1158,11 @@ router.post("/start", async (req, res) => {
                         SELECT *
                         FROM options
                         WHERE question_id = ?
-                        ORDER BY RAND()
+                        ORDER BY ${
+                            groupExamConfig?.question_selection?.shuffleOptions !== false
+                                ? "RAND()"
+                                : "id"
+                        }
                         `,
                         [question.id]
                     );

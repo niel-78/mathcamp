@@ -14,6 +14,8 @@ export default function BlockLibrary({
     onReload,
     dragPrefix,
     deleteLabel = "Ta bort block"
+    ,abilityOptions = []
+    ,abilitySourceLabel = "Förmågor"
 }) {
 
 
@@ -89,6 +91,25 @@ export default function BlockLibrary({
 
     };
 
+    const addAbility = async (
+        blockId,
+        abilityId
+    ) => {
+
+        const response = await fetch(
+            `${API_URL}/api/blocks/${blockId}/abilities/${abilityId}`,
+            {
+                method: "POST",
+                headers: authHeaders()
+            }
+        );
+
+        if (response.ok) {
+            onReload();
+        }
+
+    };
+
     const [pointDialog, setPointDialog] = useState(null);
     const [blockToArchive, setBlockToArchive] = useState(null);
 
@@ -131,6 +152,9 @@ export default function BlockLibrary({
                     deleteLabel={deleteLabel}
                     onRemoveSection={removeSection}
                     onRemoveAbility={removeAbility}
+                    onAddAbility={addAbility}
+                    abilityOptions={abilityOptions}
+                    abilitySourceLabel={abilitySourceLabel}
                     onRemoveCentralContent={removeCentralContent}
                     onCopy={copyBlock}
                     onArchive={setBlockToArchive}

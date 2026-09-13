@@ -2,6 +2,11 @@ import LessonCard from "./LessonCard";
 
 export default function ListView({
     lessons,
+    openTab,
+    onEditLesson,
+    onCancelLesson,
+    onDeleteLesson,
+    startDiagnosticTest,
     readOnly = false,
     isPublic = false,
     hideCompletions = false
@@ -24,9 +29,15 @@ export default function ListView({
                     <LessonCard
                         key={lesson.id}
                         lesson={lesson}
+                        openTab={openTab}
+                        onEditLesson={onEditLesson}
+                        onCancelLesson={onCancelLesson}
+                        onDeleteLesson={onDeleteLesson}
+                        startDiagnosticTest={startDiagnosticTest}
                         readOnly={readOnly}
                         isPublic={isPublic}
                         hideCompletions={hideCompletions}
+                        deferAssessments={true}
                     />
 
                 )

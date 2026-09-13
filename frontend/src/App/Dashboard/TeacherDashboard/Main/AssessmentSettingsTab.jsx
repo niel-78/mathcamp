@@ -17,7 +17,10 @@ const diagnosticDefaults = {
         promoteAfterQuestions: 1,
         demoteAfterQuestions: 1,
         questionsPerAbility: 1,
-        completionQuestionsPerAbility: 1
+        completionQuestionsPerAbility: 1,
+        trainingQuestionsPerAbility: 1,
+        includeCompletion: true,
+        includeTraining: true
     },
     question_selection: {
         shuffleQuestions: true,
@@ -115,12 +118,31 @@ function normalizeDiagnosticConfig(config = {}) {
                     diagnosticDefaults
                         .attempt
                         .completionQuestionsPerAbility
-                )
+                ),
+            trainingQuestionsPerAbility:
+                parsePositiveIntOrFallback(
+                    config.attempt?.trainingQuestionsPerAbility,
+                    diagnosticDefaults
+                        .attempt
+                        .trainingQuestionsPerAbility
+                ),
+            includeCompletion:
+                config.attempt?.includeCompletion ??
+                diagnosticDefaults.attempt.includeCompletion,
+            includeTraining:
+                config.attempt?.includeTraining ??
+                diagnosticDefaults.attempt.includeTraining
         },
         question_selection: {
-            shuffleQuestions: true,
-            shuffleOptions: true,
-            useDifferentQuestionsInBlock: true
+            shuffleQuestions:
+                config.question_selection?.shuffleQuestions ??
+                diagnosticDefaults.question_selection.shuffleQuestions,
+            shuffleOptions:
+                config.question_selection?.shuffleOptions ??
+                diagnosticDefaults.question_selection.shuffleOptions,
+            useDifferentQuestionsInBlock:
+                config.question_selection?.useDifferentQuestionsInBlock ??
+                diagnosticDefaults.question_selection.useDifferentQuestionsInBlock
         },
         monitoring: {
             lock_page_refresh:
@@ -135,7 +157,9 @@ function normalizeDiagnosticConfig(config = {}) {
                 !!config.monitoring?.lock_page_unload
         },
         navigation: {
-            allowGoToPreviousQuestion: false
+            allowGoToPreviousQuestion:
+                config.navigation?.allowGoToPreviousQuestion ??
+                diagnosticDefaults.navigation.allowGoToPreviousQuestion
         }
     };
 
@@ -268,7 +292,10 @@ export default function AssessmentSettingsTab({
                         diagnosticDefaults.attempt.questionsPerAbility,
                     completionQuestionsPerAbility:
                         Number(normalizedConfig.attempt?.completionQuestionsPerAbility) ||
-                        diagnosticDefaults.attempt.completionQuestionsPerAbility
+                        diagnosticDefaults.attempt.completionQuestionsPerAbility,
+                    trainingQuestionsPerAbility:
+                        Number(normalizedConfig.attempt?.trainingQuestionsPerAbility) ||
+                        diagnosticDefaults.attempt.trainingQuestionsPerAbility
                 }
             };
 
@@ -531,6 +558,52 @@ export default function AssessmentSettingsTab({
                             />
                         </Field>
 
+                        <Field label="Antal uppgifter per förmåga i träning">
+                            <Input
+                                className="w-32"
+                                type="number"
+                                min="1"
+                                value={
+                                    config.attempt?.trainingQuestionsPerAbility ?? ""
+                                }
+                                onChange={(event) =>
+                                    updateConfig(
+                                        "attempt",
+                                        "trainingQuestionsPerAbility",
+                                        event.target.value === ""
+                                            ? ""
+                                            : Number(event.target.value)
+                                    )
+                                }
+                            />
+                        </Field>
+
+                        <Field label="Inkludera komplettering">
+                            <Switch
+                                checked={!!config.attempt?.includeCompletion}
+                                onCheckedChange={(checked) =>
+                                    updateConfig(
+                                        "attempt",
+                                        "includeCompletion",
+                                        checked
+                                    )
+                                }
+                            />
+                        </Field>
+
+                        <Field label="Inkludera träning">
+                            <Switch
+                                checked={!!config.attempt?.includeTraining}
+                                onCheckedChange={(checked) =>
+                                    updateConfig(
+                                        "attempt",
+                                        "includeTraining",
+                                        checked
+                                    )
+                                }
+                            />
+                        </Field>
+
                     </div>
 
                 </CardSection>
@@ -541,29 +614,53 @@ export default function AssessmentSettingsTab({
 
                         <Field label="Slumpa frågeordning">
                             <Switch
-                                checked
-                                disabled
+                                checked={!!config.question_selection?.shuffleQuestions}
+                                onCheckedChange={(checked) =>
+                                    updateConfig(
+                                        "question_selection",
+                                        "shuffleQuestions",
+                                        checked
+                                    )
+                                }
                             />
                         </Field>
 
                         <Field label="Slumpa alternativordning">
                             <Switch
-                                checked
-                                disabled
+                                checked={!!config.question_selection?.shuffleOptions}
+                                onCheckedChange={(checked) =>
+                                    updateConfig(
+                                        "question_selection",
+                                        "shuffleOptions",
+                                        checked
+                                    )
+                                }
                             />
                         </Field>
 
                         <Field label="Använd olika uppgifter i block">
                             <Switch
-                                checked
-                                disabled
+                                checked={!!config.question_selection?.useDifferentQuestionsInBlock}
+                                onCheckedChange={(checked) =>
+                                    updateConfig(
+                                        "question_selection",
+                                        "useDifferentQuestionsInBlock",
+                                        checked
+                                    )
+                                }
                             />
                         </Field>
 
-                        <Field label="Tillåt att gå tillbaka">
+                        <Field label="Tillåt att gå tillbaka i basdelen">
                             <Switch
-                                checked={false}
-                                disabled
+                                checked={!!config.navigation?.allowGoToPreviousQuestion}
+                                onCheckedChange={(checked) =>
+                                    updateConfig(
+                                        "navigation",
+                                        "allowGoToPreviousQuestion",
+                                        checked
+                                    )
+                                }
                             />
                         </Field>
 
