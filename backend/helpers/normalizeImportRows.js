@@ -1,5 +1,3 @@
-import { checkImportedAnswerKey } from "../utils/answerKeyChecker.js";
-
 function validateImportQuestion({
     questionType,
     correctAnswers,
@@ -62,6 +60,20 @@ function parseBoolean(value) {
     );
 }
 
+function parseCorrectAnswers(value, questionType) {
+    const delimiter =
+        questionType === "numeric_input" ? ";" : ",";
+
+    return String(value ?? "")
+        .split(delimiter)
+        .map(answer => answer.trim())
+        .filter(Boolean);
+}
+
+function isNumericAnswer(value) {
+    return /^-?\d+(?:[,.]\d+)?$/.test(String(value ?? "").trim());
+}
+
 export function normalizeImportRows({
     rows,
     blockId,
@@ -82,7 +94,7 @@ export function normalizeImportRows({
             continue;
         }
 
-        const questionType =
+        let questionType =
             row.Frågetyp ||
             row.frågetyp ||
             row.QuestionType ||
@@ -111,14 +123,33 @@ export function normalizeImportRows({
             row["GeoGebra CAS tillåten"]
         );
 
-        const correctAnswers = String(
+        const imageUrl = String(
+            row["Bild (URL)"] ??
+            row["Bild"] ??
+            row["Bild URL"] ??
+            row.image_url ??
+            ""
+        ).trim();
+
+        const correctAnswers = parseCorrectAnswers(
             row["Korrekta alternativ"] ||
             row["Rätta svar"] ||
-            ""
-        )
-            .split(",")
-            .map(value => value.trim())
-            .filter(Boolean);
+            row["Svar"] ||
+            row.svar ||
+            row.Answer ||
+            row.answer ||
+            "",
+            questionType
+        );
+
+        if (
+            questionType === "text" &&
+            String(question).includes("{{input}}") &&
+            correctAnswers.length > 0 &&
+            correctAnswers.every(isNumericAnswer)
+        ) {
+            questionType = "numeric_input";
+        }
 
         let answerConfig = {};
 
@@ -154,6 +185,15 @@ export function normalizeImportRows({
             }
         }
 
+        if (questionType === "text") {
+            for (const correctAnswer of correctAnswers) {
+                options.push({
+                    text: correctAnswer,
+                    isCorrect: 1
+                });
+            }
+        }
+
         if (questionType === "numeric_input") {
             for (const correctAnswer of correctAnswers) {
                 options.push({
@@ -172,23 +212,6 @@ export function normalizeImportRows({
             })
         );
 
-        try {
-            const answerKeyIsCorrect = checkImportedAnswerKey({
-                question,
-                questionType,
-                options,
-                answerConfig
-            });
-
-            if (answerKeyIsCorrect === false) {
-                validationErrors.push(
-                    `Rad ${index + 2}: facit stämmer inte med det uträknade svaret`
-                );
-            }
-        } catch {
-            // Uttryck som kräver algebraisk eller semantisk tolkning kontrolleras senare manuellt.
-        }
-
         questions.push({
             blockId,
             question,
@@ -196,6 +219,7 @@ export function normalizeImportRows({
             seriesLevelId,
             calculatorAllowed,
             geogebraAllowed,
+            imageUrl,
             userId,
             answerConfig,
             options

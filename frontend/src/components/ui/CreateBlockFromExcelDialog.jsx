@@ -17,10 +17,13 @@ export default function CreateBlockFromExcelDialog({
     abilityId,
     sectionId,
     centralContentId,
+    groupAbilitySeriesId,
     onCreated
 }) {
 
     const [file, setFile] = useState(null);
+    const [importMode, setImportMode] = useState("file");
+    const [csvText, setCsvText] = useState("");
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(false);
     const [importProgress, setImportProgress] = useState({
@@ -33,6 +36,13 @@ export default function CreateBlockFromExcelDialog({
         abilityId ?? ""
     );
     const [newAbilityName, setNewAbilityName] = useState("");
+
+    const filterAbilitySeries = (seriesList) =>
+        (seriesList || []).filter(
+            (series) =>
+                !groupAbilitySeriesId ||
+                Number(series.id) === Number(groupAbilitySeriesId)
+        );
 
     const downloadTemplate = async () => {
 
@@ -86,11 +96,13 @@ export default function CreateBlockFromExcelDialog({
                 }
 
                 const data = await response.json();
-                const nextSeries = data || [];
+                const nextSeries = filterAbilitySeries(data);
                 setAbilitySeries(nextSeries);
 
                 setSelectedSeriesId((current) => {
-                    if (current) {
+                    if (current && nextSeries.some(
+                        (series) => String(series.id) === String(current)
+                    )) {
                         return current;
                     }
 
@@ -167,7 +179,7 @@ export default function CreateBlockFromExcelDialog({
 
         if (refreshed.ok) {
             const data = await refreshed.json();
-            setAbilitySeries(data || []);
+            setAbilitySeries(filterAbilitySeries(data));
         }
 
         return created.id;
@@ -191,7 +203,12 @@ export default function CreateBlockFromExcelDialog({
 
             const formData = new FormData();
 
-            formData.append("file", file);
+            if (importMode === "csv") {
+                formData.append("csvText", csvText);
+            } else {
+                formData.append("file", file);
+            }
+
             formData.append("abilityId", String(resolvedAbilityId));
 
             if (sectionId) {
@@ -351,19 +368,51 @@ export default function CreateBlockFromExcelDialog({
                     </div>
                 )}
 
-                <input
-                    type="file"
-                    accept=".xlsx,.xls"
-                    onChange={(e) =>
-                        setFile(
-                            e.target.files?.[0]
-                        )
-                    }
-                />
+                <div className="flex gap-2">
+                    <Button
+                        type="button"
+                        variant={importMode === "file" ? "default" : "outline"}
+                        onClick={() => setImportMode("file")}
+                    >
+                        Excel-fil
+                    </Button>
+
+                    <Button
+                        type="button"
+                        variant={importMode === "csv" ? "default" : "outline"}
+                        onClick={() => setImportMode("csv")}
+                    >
+                        Klistra in CSV-text
+                    </Button>
+                </div>
+
+                {importMode === "file" ? (
+                    <input
+                        type="file"
+                        accept=".xlsx,.xls"
+                        onChange={(e) =>
+                            setFile(
+                                e.target.files?.[0]
+                            )
+                        }
+                    />
+                ) : (
+                    <textarea
+                        value={csvText}
+                        onChange={(e) => setCsvText(e.target.value)}
+                        placeholder="Klistra in CSV-data (kommaseparerad, samma kolumner som Excel-mallen)"
+                        rows={10}
+                        className="w-full rounded border p-2 font-mono text-sm"
+                    />
+                )}
 
                 <Button
                     onClick={createBlock}
-                    disabled={!file || loading || (!abilityId && !selectedAbilityId && !newAbilityName.trim())}
+                    disabled={
+                        loading ||
+                        (importMode === "file" ? !file : !csvText.trim()) ||
+                        (!abilityId && !selectedAbilityId && !newAbilityName.trim())
+                    }
                 >
                     {loading
                         ? "Skapar block..."

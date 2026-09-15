@@ -26,7 +26,8 @@ export default function StudentMonitorCard({
     status,
     onSelect,
     onTerminate,
-    onResume
+    onResume,
+    onCalculatorToggle
 }) {
 
     const [open, setOpen] = useState(false);
@@ -42,6 +43,10 @@ export default function StudentMonitorCard({
 
     const hasAttempt =
         !!student.attempt_id;
+    const calculatorOverride =
+        student.calculator_allowed_override === true ||
+        student.calculator_allowed_override === "true" ||
+        Number(student.calculator_allowed_override) === 1;
 
     return (
 
@@ -84,6 +89,34 @@ export default function StudentMonitorCard({
                         />
 
                     </div>
+
+                )}
+
+                {student.current_question_number &&
+                    student.total_question_count && (
+
+                    <div>
+
+                        <strong>Uppgift:</strong>
+                        {" "}
+                        {student.current_question_number}/
+                        {student.total_question_count}
+
+                    </div>
+
+                )}
+
+                {status === "in_progress" && (
+
+                    <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => onCalculatorToggle(!calculatorOverride)}
+                    >
+                        {calculatorOverride
+                            ? "Ta bort räknare"
+                            : "Ge tillgång till räknare"}
+                    </Button>
 
                 )}
 

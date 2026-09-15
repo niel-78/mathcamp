@@ -28,6 +28,7 @@ router.use(requireRole("teacher","super"));
 async function processBlockImportJob({
     jobId,
     fileBuffer,
+    csvText,
     userId,
     abilityId,
     sectionId,
@@ -42,7 +43,7 @@ async function processBlockImportJob({
     try {
         updateImportJob(jobId, {
             status: "processing",
-            message: "Kontrollerar Excel-fil...",
+            message: "Kontrollerar importdata...",
             progress: 5
         });
 
@@ -77,7 +78,9 @@ async function processBlockImportJob({
             }
         }
 
-        const workbook = XLSX.read(fileBuffer);
+        const workbook = csvText
+            ? XLSX.read(csvText, { type: "string" })
+            : XLSX.read(fileBuffer);
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json(sheet);
 
@@ -243,6 +246,21 @@ async function processBlockImportJob({
                     ]);
                 }
 
+                if (questions[i].imageUrl) {
+                    await connection.query(
+                        `
+                        INSERT INTO question_media (
+                            question_id,
+                            media_type,
+                            media_url,
+                            sort_order
+                        )
+                        VALUES (?, 'image', ?, 0)
+                        `,
+                        [questionId, questions[i].imageUrl]
+                    );
+                }
+
                 updateImportJob(jobId, {
                     processedRows: i + 1,
                     message: `Sparar fråga ${i + 1} av ${questions.length}`
@@ -288,7 +306,10 @@ async function processBlockImportJob({
                 block
             });
 
-            removeImportJob(jobId);
+            setTimeout(
+                () => removeImportJob(jobId),
+                5 * 60 * 1000
+            ).unref();
         } catch (error) {
             await connection.rollback();
             throw error;
@@ -347,6 +368,7 @@ async function hydrateLightBlocks(blocks) {
     const questionIds = questions.map(q => q.id);
 
     const optionsByQuestionId = new Map();
+    const mediaByQuestionId = new Map();
     if (questionIds.length > 0) {
         const [options] = await db.query(
             `
@@ -364,10 +386,27 @@ async function hydrateLightBlocks(blocks) {
             list.push(option);
             optionsByQuestionId.set(option.question_id, list);
         }
+
+        const [mediaItems] = await db.query(
+            `
+            SELECT id, question_id, media_type, media_url, sort_order
+            FROM question_media
+            WHERE question_id IN (?)
+            ORDER BY question_id, sort_order
+            `,
+            [questionIds]
+        );
+
+        for (const mediaItem of mediaItems) {
+            const list = mediaByQuestionId.get(mediaItem.question_id) || [];
+            list.push(mediaItem);
+            mediaByQuestionId.set(mediaItem.question_id, list);
+        }
     }
 
     for (const q of questions) {
         q.options = optionsByQuestionId.get(q.id) || [];
+        q.media = mediaByQuestionId.get(q.id) || [];
     }
 
     const questionsByBlock = new Map();
@@ -656,6 +695,8 @@ router.get("/import-template", async (req, res) => {
                 Frågetyp: "text",
                 Nivå: 1,
                 "Miniräknare tillåten": "Nej",
+                "GeoGebra tillåten": "Nej",
+                "Bild (URL)": "",
                 "Korrekta alternativ": "56"
             },
             {
@@ -663,6 +704,8 @@ router.get("/import-template", async (req, res) => {
                 Frågetyp: "single_choice",
                 Nivå: 2,
                 "Miniräknare tillåten": "Nej",
+                "GeoGebra tillåten": "Nej",
+                "Bild (URL)": "",
                 "Korrekta alternativ": "3",
                 "Alternativ 1": "$2x$",
                 "Alternativ 2": "$x+2$",
@@ -674,6 +717,8 @@ router.get("/import-template", async (req, res) => {
                 Frågetyp: "multiple_choice",
                 Nivå: 3,
                 "Miniräknare tillåten": "Ja",
+                "GeoGebra tillåten": "Ja",
+                "Bild (URL)": "https://example.com/diagram.png",
                 "Korrekta alternativ": "2,4",
                 "Alternativ 1": "$0$",
                 "Alternativ 2": "$5$",
@@ -685,6 +730,8 @@ router.get("/import-template", async (req, res) => {
                 Frågetyp: "numeric_input",
                 Nivå: 1,
                 "Miniräknare tillåten": "Ja",
+                "GeoGebra tillåten": "Ja",
+                "Bild (URL)": "",
                 "Korrekta alternativ": "3"
             }
         ]);
@@ -714,6 +761,8 @@ router.get("/import-template", async (req, res) => {
             ["osv."],
             [],
             ["LaTeX kan användas i frågor och alternativ."],
+            ["GeoGebra tillåten → Ja/Nej eller 1/0 i kolumnen 'GeoGebra tillåten'"],
+            ["Bild (URL) → valfri bildadress som visas till frågan. Lämna tomt om bilden saknas."],
             ["Exempel:"],
             ["$x^2 + 2x + 1$"],
             ["$\\frac{3}{4}$"],
@@ -724,6 +773,7 @@ router.get("/import-template", async (req, res) => {
             ["single_choice → skriv numret på rätt alternativ, t.ex. 2"],
             ["multiple_choice → skriv flera nummer, t.ex. 1,3,4"],
             ["numeric_input → skriv {{input}} där svarsrutan ska visas och ange rätt svar, t.ex. 3"],
+            ["numeric_input → använd semikolon mellan flera svar, t.ex. -2; 2. Decimaltal kan skrivas 2,5."],
             ["numeric_input använder numerisk rättning och kan ha flera svarsrutor"]
         ]);
 
@@ -1599,9 +1649,11 @@ router.post("/:blockId/points", requireAuth,
 // POST /api/blocks/import
 router.post("/import", upload.single("file"), async (req, res) => {
     try {
-        if (!req.file) {
+        const csvText = req.file ? null : req.body.csvText;
+
+        if (!req.file && !csvText) {
             return res.status(400).json({
-                error: "Ingen fil uppladdad"
+                error: "Ingen fil eller CSV-text angiven"
             });
         }
 
@@ -1609,13 +1661,14 @@ router.post("/import", upload.single("file"), async (req, res) => {
 
         createImportJob({
             jobId,
-            fileName: req.file.originalname,
+            fileName: req.file ? req.file.originalname : "csv-text",
             userId: req.user.id
         });
 
         void processBlockImportJob({
             jobId,
-            fileBuffer: req.file.buffer,
+            fileBuffer: req.file ? req.file.buffer : null,
+            csvText,
             userId: req.user.id,
             abilityId: req.body.abilityId || null,
             sectionId: req.body.sectionId || null,

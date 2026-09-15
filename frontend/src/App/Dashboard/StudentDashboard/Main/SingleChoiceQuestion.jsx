@@ -4,6 +4,7 @@ import MathContent from "@/components/ui/MathContent";
 export default function SingleChoiceQuestion({
     question,
     value,
+    questionTextClassName = "text-base",
     onChange
 }) {
 
@@ -13,7 +14,10 @@ export default function SingleChoiceQuestion({
                 Fråga {question.sort_order}
             </h2>
 
-            <MathContent value={question.question} />
+            <MathContent
+                value={question.question}
+                className={questionTextClassName}
+            />
 
             <div className="assessment_answers">
 

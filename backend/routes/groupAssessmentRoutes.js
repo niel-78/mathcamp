@@ -103,6 +103,100 @@ router.get( "/:id/students/:userId/events", async (req, res) => {
     }
 );
 
+// PATCH /api/group-assessments/:id/students/:userId/calculator
+router.patch("/:id/students/:userId/calculator", async (req, res) => {
+
+    const allowed = req.body?.allowed;
+
+    if (typeof allowed !== "boolean") {
+        return res.status(400).json({
+            error: "Fältet allowed måste vara booleskt."
+        });
+    }
+
+    try {
+
+        const [[attempt]] = await db.query(
+            `
+            SELECT
+                ea.id,
+                ea.config
+            FROM assessment_attempts ea
+            INNER JOIN group_assessments ga
+                ON ga.id = ea.group_assessment_id
+            INNER JOIN group_students gs
+                ON gs.group_id = ga.group_id
+                AND gs.user_id = ea.user_id
+            WHERE ga.id = ?
+                AND ea.user_id = ?
+            `,
+            [req.params.id, req.params.userId]
+        );
+
+        if (!attempt) {
+            return res.status(404).json({
+                error: "Elevens provförsök hittades inte."
+            });
+        }
+
+        const config = typeof attempt.config === "string"
+            ? JSON.parse(attempt.config || "{}")
+            : attempt.config || {};
+
+        const updatedConfig = {
+            ...config,
+            teacher_overrides: {
+                ...(config.teacher_overrides || {}),
+                calculator_allowed: allowed
+            }
+        };
+
+        await db.query(
+            `
+            UPDATE assessment_attempts
+            SET config = ?
+            WHERE id = ?
+            `,
+            [JSON.stringify(updatedConfig), attempt.id]
+        );
+
+        await db.query(
+            `
+            INSERT INTO assessment_events (
+                attempt_id,
+                event_type,
+                event_data
+            )
+            VALUES (?, ?, ?)
+            `,
+            [
+                attempt.id,
+                allowed
+                    ? "calculator_access_granted"
+                    : "calculator_access_revoked",
+                JSON.stringify({
+                    allowed,
+                    changed_by: req.user.id
+                })
+            ]
+        );
+
+        res.json({
+            calculator_allowed: allowed
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            error: "Kunde inte uppdatera räknarbehörigheten."
+        });
+
+    }
+
+});
+
 
 // POST /api/group-assessments
 router.post("/", async (req, res) => {
@@ -542,6 +636,39 @@ router.get("/:id/monitor", async (req, res) => {
                 ea.status,
                 ea.started_at,
                 ea.submitted_at,
+
+                (
+                    SELECT CAST(
+                        JSON_UNQUOTE(
+                            JSON_EXTRACT(ee.event_data, '$.question_number')
+                        ) AS UNSIGNED
+                    )
+                    FROM assessment_events ee
+                    WHERE ee.attempt_id = ea.id
+                        AND ee.event_type = 'question_view'
+                    ORDER BY ee.created_at DESC, ee.id DESC
+                    LIMIT 1
+                ) AS current_question_number,
+
+                (
+                    SELECT CAST(
+                        JSON_UNQUOTE(
+                            JSON_EXTRACT(ee.event_data, '$.total_questions')
+                        ) AS UNSIGNED
+                    )
+                    FROM assessment_events ee
+                    WHERE ee.attempt_id = ea.id
+                        AND ee.event_type = 'question_view'
+                    ORDER BY ee.created_at DESC, ee.id DESC
+                    LIMIT 1
+                ) AS total_question_count,
+
+                JSON_UNQUOTE(
+                    JSON_EXTRACT(
+                        ea.config,
+                        '$.teacher_overrides.calculator_allowed'
+                    )
+                ) AS calculator_allowed_override,
 
                 ea.started_ip,
                 ea.started_user_agent,

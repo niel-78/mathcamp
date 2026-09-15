@@ -248,6 +248,28 @@ export default function GroupExamMonitorTab({
 
     };
 
+    const setCalculatorAccess = async (student, allowed) => {
+
+        const response = await fetch(
+            `${API_URL}/api/group-assessments/${groupExamId}/students/${student.user_id}/calculator`,
+            {
+                method: "PATCH",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ allowed })
+            }
+        );
+
+        if (!response.ok) {
+            return;
+        }
+
+        await load();
+
+    };
+
     const total =
         students.length;
 
@@ -585,6 +607,9 @@ return (
                             resumeAttempt(
                                 student.attempt_id
                             )
+                        }
+                        onCalculatorToggle={allowed =>
+                            setCalculatorAccess(student, allowed)
                         }
                     />
 

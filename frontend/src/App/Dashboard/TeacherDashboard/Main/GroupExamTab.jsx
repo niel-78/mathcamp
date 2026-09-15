@@ -714,6 +714,19 @@ export default function GroupExamTab({
                             </select>
                         </Field>
 
+                        <Field label="Visa klocka">
+                            <Switch
+                                checked={groupExam.config?.attempt?.showClock !== false}
+                                onCheckedChange={(checked) =>
+                                    updateConfig(
+                                        "attempt",
+                                        "showClock",
+                                        checked
+                                    )
+                                }
+                            />
+                        </Field>
+
                         {isDiagnostic && (
                             <>
                                 <Field label="Minsta antal frågor (adaptiv del)">

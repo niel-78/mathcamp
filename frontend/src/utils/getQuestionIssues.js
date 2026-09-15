@@ -1,5 +1,14 @@
 import { checkOptionValues } from "@/utils/checkOptionValues";
 
+function isCorrectOption(option) {
+    return (
+        option?.is_correct === true ||
+        Number(option?.is_correct) === 1 ||
+        option?.isCorrect === true ||
+        Number(option?.isCorrect) === 1
+    );
+}
+
 export function getQuestionIssues(
     question,
     block = null,
@@ -18,7 +27,7 @@ export function getQuestionIssues(
     }
 
     const issues = [];
-    const correctOptions = (question.options || []).filter(o => o.is_correct);
+    const correctOptions = (question.options || []).filter(isCorrectOption);
     const options = question.options || [];
 
     let answerConfig = {};
@@ -32,9 +41,14 @@ export function getQuestionIssues(
         answerConfig = question.answer_config;
     }
 
+    const configuredCorrectAnswers = Array.isArray(answerConfig?.correctAnswers)
+        ? answerConfig.correctAnswers.filter(answer => String(answer ?? "").trim() !== "")
+        : [];
+
     const hasDefaultAnswer =
         answerConfig?.default_answer !== undefined &&
-        answerConfig?.default_answer !== "";
+        answerConfig?.default_answer !== null &&
+        String(answerConfig.default_answer).trim() !== "";
 
     // 1. Saknar korrekt lösning
     if (question.question_type === "single_choice" || question.question_type === "multiple_choice") {
@@ -46,7 +60,7 @@ export function getQuestionIssues(
             });
         }
     } else if (question.question_type === "numeric_input" || question.question_type === "text") {
-        if (correctOptions.length === 0 && !hasDefaultAnswer) {
+        if (correctOptions.length === 0) {
             issues.push({
                 type: "missing_correct",
                 questionId: question.id,
@@ -70,7 +84,7 @@ export function getQuestionIssues(
     // 3. Fel i antalet svarsrutor
     if (question.question_type === "numeric_input") {
         const inputCount = (question.question?.match(/\{\{input\}\}/g) || []).length;
-        const expectedCount = correctOptions.length || (hasDefaultAnswer ? 1 : 0);
+        const expectedCount = correctOptions.length || configuredCorrectAnswers.length || (hasDefaultAnswer ? 1 : 0);
         if (expectedCount > 0 && inputCount !== expectedCount) {
             issues.push({
                 type: "input_count_mismatch",

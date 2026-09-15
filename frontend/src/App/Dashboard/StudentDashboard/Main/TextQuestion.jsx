@@ -6,6 +6,7 @@ import MathPreview from "@/components/ui/MathPreview";
 export default function TextQuestion({
     question,
     value,
+    questionTextClassName = "text-base",
     onBlur
 }) {
 
@@ -21,7 +22,10 @@ export default function TextQuestion({
                 Fråga {question.sort_order}
             </h2>
 
-            <MathContent value={question.question} />
+            <MathContent
+                value={question.question}
+                className={questionTextClassName}
+            />
 
             <MathPreview value={text} />
 

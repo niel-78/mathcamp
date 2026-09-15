@@ -262,6 +262,124 @@ router.post("/:id/question-reports", async (req, res) => {
     }
 });
 
+router.get("/:attemptId/question-image-notes/:mediaId", async (req, res) => {
+    const { attemptId, mediaId } = req.params;
+
+    try {
+        const [[access]] = await db.query(
+            `
+            SELECT
+                aa.user_id,
+                gp.user_id AS teacher_user_id
+            FROM assessment_attempts aa
+            INNER JOIN group_assessments ga
+                ON ga.id = aa.group_assessment_id
+            LEFT JOIN group_permissions gp
+                ON gp.group_id = ga.group_id
+                AND gp.user_id = ?
+            WHERE aa.id = ?
+            `,
+            [req.user.id, attemptId]
+        );
+
+        if (!access) {
+            return res.status(404).json({ error: "Provförsöket hittades inte." });
+        }
+
+        const isStudentOwner = Number(access.user_id) === Number(req.user.id);
+        const isTeacher = req.user.role === "teacher" && access.teacher_user_id;
+
+        if (!isStudentOwner && !isTeacher) {
+            return res.status(403).json({ error: "Saknar behörighet." });
+        }
+
+        const [[note]] = await db.query(
+            `
+            SELECT notes_data, updated_at
+            FROM assessment_question_image_notes
+            WHERE attempt_id = ?
+                AND media_id = ?
+            `,
+            [attemptId, mediaId]
+        );
+
+        res.json({
+            notes_data: note?.notes_data || null,
+            updated_at: note?.updated_at || null
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Kunde inte hämta anteckningarna." });
+    }
+});
+
+router.put("/:attemptId/question-image-notes/:mediaId", async (req, res) => {
+    const { attemptId, mediaId } = req.params;
+    const { question_id: questionId, notes_data: notesData } = req.body;
+
+    if (!Number.isInteger(Number(questionId)) || typeof notesData !== "string") {
+        return res.status(400).json({ error: "Ogiltiga bildanteckningar." });
+    }
+
+    if (notesData.length > 16 * 1024 * 1024) {
+        return res.status(413).json({ error: "Anteckningarna är för stora." });
+    }
+
+    try {
+        const [[attemptQuestion]] = await db.query(
+            `
+            SELECT aq.question_id
+            FROM assessment_attempts aa
+            INNER JOIN attempt_questions aq
+                ON aq.attempt_id = aa.id
+            INNER JOIN question_media qm
+                ON qm.id = ?
+                AND qm.question_id = aq.question_id
+            WHERE aa.id = ?
+                AND aa.user_id = ?
+                AND aq.question_id = ?
+            `,
+            [mediaId, attemptId, req.user.id, questionId]
+        );
+
+        if (!attemptQuestion) {
+            return res.status(403).json({ error: "Saknar behörighet." });
+        }
+
+        if (notesData.length === 0) {
+            await db.query(
+                `
+                DELETE FROM assessment_question_image_notes
+                WHERE attempt_id = ? AND media_id = ?
+                `,
+                [attemptId, mediaId]
+            );
+        } else {
+            await db.query(
+                `
+                INSERT INTO assessment_question_image_notes (
+                    attempt_id,
+                    question_id,
+                    media_id,
+                    notes_data
+                )
+                VALUES (?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE
+                    question_id = VALUES(question_id),
+                    notes_data = VALUES(notes_data),
+                    updated_at = CURRENT_TIMESTAMP
+                `,
+                [attemptId, questionId, mediaId, notesData]
+            );
+        }
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Kunde inte spara anteckningarna." });
+    }
+});
+
 router.get("/:id", async (req, res) => {
 
     const connection = await db.getConnection();
@@ -346,6 +464,7 @@ router.get("/:id", async (req, res) => {
         const questionIds = questions.map(q => q.id);
 
         let options = [];
+        let media = [];
 
         if (questionIds.length > 0) {
             const [optionRows] = await connection.query(
@@ -365,6 +484,23 @@ router.get("/:id", async (req, res) => {
             );
 
             options = optionRows;
+
+            const [mediaRows] = await connection.query(
+                `
+                SELECT
+                    qm.id,
+                    qm.question_id,
+                    qm.media_type,
+                    qm.media_url,
+                    qm.sort_order
+                FROM question_media qm
+                WHERE qm.question_id IN (?)
+                ORDER BY qm.question_id, qm.sort_order, qm.id
+                `,
+                [questionIds]
+            );
+
+            media = mediaRows;
         }
 
         /*
@@ -374,6 +510,9 @@ router.get("/:id", async (req, res) => {
             ...question,
             options: options.filter(
                 option => option.question_id === question.id
+            ),
+            media: media.filter(
+                mediaItem => mediaItem.question_id === question.id
             )
         }));
 
@@ -736,6 +875,18 @@ router.put("/:id", async (req, res) => {
                     );
 
                 nextQuestion.options = options;
+
+                const [media] = await connection.query(
+                    `
+                    SELECT *
+                    FROM question_media
+                    WHERE question_id = ?
+                    ORDER BY sort_order, id
+                    `,
+                    [nextQuestion.id]
+                );
+
+                nextQuestion.media = media;
 
                 for (let i = 0; i < options.length; i++) {
 
@@ -1351,6 +1502,14 @@ router.post("/start", async (req, res) => {
 
             }
 
+            if (isTest) {
+                await AssessmentEngine
+                    .resetAttemptLevelsToFirst(
+                        connection,
+                        attemptId
+                    );
+            }
+
         } else {
 
             const session =
@@ -1675,7 +1834,8 @@ router.post("/:id/terminate",
                 id,
                 status,
                 submitted_at,
-                teacher_end_mode
+                teacher_end_mode,
+                config
             FROM assessment_attempts
             WHERE id = ?
             `,
@@ -1992,6 +2152,24 @@ router.get("/:id/results", async (req, res) => {
                 points = correct ? 1 : 0;
             }
 
+            const [questionMedia] = await connection.query(
+                `
+                SELECT
+                    qm.id,
+                    qm.media_type,
+                    qm.media_url,
+                    n.notes_data
+                FROM question_media qm
+                LEFT JOIN assessment_question_image_notes n
+                    ON n.attempt_id = ?
+                    AND n.media_id = qm.id
+                WHERE qm.question_id = ?
+                    AND (qm.media_type = 'image' OR qm.media_type LIKE 'image/%')
+                ORDER BY qm.sort_order, qm.id
+                `,
+                [id, question.id]
+            );
+
             results.push({
                 question_id: question.id,
                 question: question.question,
@@ -2005,6 +2183,7 @@ router.get("/:id/results", async (req, res) => {
                 correct_options: correctOptions,
                 selection_reason: question.selection_reason,
                 duration_seconds: question.duration_seconds,
+                media: questionMedia,
                 correct,
                 points
             });
@@ -2160,7 +2339,8 @@ router.get("/:id/status", async (req, res) => {
     res.json({
         status: attempt.status,
         submitted_at: attempt.submitted_at,
-        teacher_end_mode: attempt.teacher_end_mode
+        teacher_end_mode: attempt.teacher_end_mode,
+        config: attempt.config
     });
 
 });

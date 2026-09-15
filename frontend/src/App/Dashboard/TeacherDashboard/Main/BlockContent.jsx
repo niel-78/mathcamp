@@ -7,6 +7,7 @@ import ArchiveQuestionDialog from "@/components/ui/ArchiveQuestionDialog";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";    
 import MathContent from "@/components/ui/MathContent";
+import QuestionImagePreview from "@/components/ui/QuestionImagePreview";
 import { checkOptionValues } from "@/utils/checkOptionValues";
 import { checkBlockAnswerKeys } from "@/utils/checkAnswerKey";
 import { syncNumericInputs } from "@/components/ui/QuestionCard";
@@ -21,25 +22,40 @@ import {
 
 function getDisplayedOptions(question) {
 
+    const answerConfig =
+        typeof question.answer_config === "string"
+            ? JSON.parse(question.answer_config || "{}")
+            : question.answer_config || {};
+
     if (question.options?.length > 0) {
         return question.options;
     }
 
     if (
         question.question_type === "numeric_input" &&
-        question.answer_config?.default_answer !== undefined &&
-        question.answer_config?.default_answer !== ""
+        answerConfig?.default_answer !== undefined &&
+        answerConfig?.default_answer !== null &&
+        String(answerConfig.default_answer).trim() !== ""
     ) {
         return [
             {
                 id: `numeric-answer-${question.id}`,
-                text: question.answer_config.default_answer,
+                text: answerConfig.default_answer,
                 is_correct: 1
             }
         ];
     }
 
     return [];
+}
+
+function isCorrectOption(option) {
+    return (
+        option?.is_correct === true ||
+        Number(option?.is_correct) === 1 ||
+        option?.isCorrect === true ||
+        Number(option?.isCorrect) === 1
+    );
 }
 
 export default function BlockContent({
@@ -56,6 +72,8 @@ export default function BlockContent({
     const [operationsDialogOpen, setOperationsDialogOpen] = useState(false);
 
     const [calculatorConfirmOpen, setCalculatorConfirmOpen] = useState(false);
+
+    const [geogebraConfirmOpen, setGeogebraConfirmOpen] = useState(false);
 
     const [equationsConfirmOpen, setEquationsConfirmOpen] = useState(false);
 
@@ -262,6 +280,23 @@ export default function BlockContent({
 
         };
 
+    const geogebraToggleQuestions = currentBlock?.questions || [];
+
+    const geogebraToggleNewValue = !geogebraToggleQuestions.every(
+        question => Boolean(question.geogebra_allowed)
+    );
+
+    const toggleGeoGebraForAllQuestions =
+        () => {
+
+            if (geogebraToggleQuestions.length === 0) {
+                return;
+            }
+
+            setGeogebraConfirmOpen(true);
+
+        };
+
     const runCalculatorToggle =
         async () => {
 
@@ -298,6 +333,46 @@ export default function BlockContent({
                 newValue
                     ? "Miniräknare tillåten för alla uppgifter"
                     : "Miniräknare borttagen för alla uppgifter"
+            );
+
+        };
+
+    const runGeoGebraToggle =
+        async () => {
+
+            const questions = geogebraToggleQuestions;
+            const newValue = geogebraToggleNewValue;
+
+            setGeogebraConfirmOpen(false);
+
+            for (const question of questions) {
+
+                const response = await fetch(
+                    `${API_URL}/api/questions/${question.id}`,
+                    {
+                        method: "PUT",
+                        headers: {
+                            ...authHeaders(),
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            geogebra_allowed: newValue
+                        })
+                    }
+                );
+
+                if (!response.ok) {
+                    toast.error(`Kunde inte uppdatera uppgift #${question.id}`);
+                }
+
+            }
+
+            await loadBlock();
+
+            toast.success(
+                newValue
+                    ? "GeoGebra tillåten för alla uppgifter"
+                    : "GeoGebra borttagen för alla uppgifter"
             );
 
         };
@@ -380,7 +455,7 @@ export default function BlockContent({
         };
 
     const syncSingleQuestionInputs = async (question) => {
-        const correctCount = (question.options || []).filter(o => o.is_correct).length;
+        const correctCount = (question.options || []).filter(isCorrectOption).length;
         if (correctCount === 0) return;
 
         try {
@@ -394,11 +469,11 @@ export default function BlockContent({
     };
 
     const synchronizeQuestionAnswerOptions = async (question) => {
-        const correctCount = (question.options || []).filter(option => option.is_correct).length;
+        const correctCount = (question.options || []).filter(isCorrectOption).length;
         if (correctCount <= 0) return false;
 
         const incorrectOptions = (question.options || [])
-            .filter(option => !option.is_correct);
+            .filter(option => !isCorrectOption(option));
 
         await Promise.all(
             incorrectOptions.map(async option => {
@@ -500,7 +575,7 @@ export default function BlockContent({
 
             const correctAnswerCount =
                 (question.options || [])
-                    .filter(o => o.is_correct).length;
+                    .filter(isCorrectOption).length;
 
             const currentInputCount =
                 (
@@ -645,7 +720,7 @@ export default function BlockContent({
                         unusedOptions.has(option.id) && normalize(option.text) === normalize(suggestion)
                     );
                     const replacementOption = matchingOption || options.find(option =>
-                        unusedOptions.has(option.id) && option.is_correct
+                        unusedOptions.has(option.id) && isCorrectOption(option)
                     ) || options.find(option => unusedOptions.has(option.id));
 
                     if (!replacementOption) {
@@ -734,6 +809,13 @@ export default function BlockContent({
                         </Button>
 
                         <Button
+                            variant="outline"
+                            onClick={toggleGeoGebraForAllQuestions}
+                        >
+                            GeoGebra
+                        </Button>
+
+                        <Button
                             onClick={createQuestion}
                         >
                             Ny uppgift
@@ -764,6 +846,8 @@ export default function BlockContent({
 
                             <div className="flex min-w-0 flex-1 flex-col gap-3">
 
+                                <QuestionImagePreview media={question.media} />
+
                                 <div className="flex flex-wrap items-center gap-2">
 
                                     <MathContent value={question.question} />
@@ -787,7 +871,7 @@ export default function BlockContent({
                                     )}
 
                                     {question.question_type === "numeric_input" && (() => {
-                                        const correctCount = (question.options || []).filter(o => o.is_correct).length;
+                                        const correctCount = (question.options || []).filter(isCorrectOption).length;
                                         const inputCount = (question.question?.match(/\{\{input\}\}/g) || []).length;
                                         if (correctCount > 0 && inputCount !== correctCount) {
                                             return (
@@ -849,12 +933,12 @@ export default function BlockContent({
                                                 <MathContent value={option.text} />
                                                 <span
                                                     className={
-                                                        option.is_correct
+                                                        isCorrectOption(option)
                                                             ? "text-green-600"
                                                             : "text-muted-foreground"
                                                     }
                                                 >
-                                                    {option.is_correct
+                                                    {isCorrectOption(option)
                                                         ? "Rätt svar"
                                                         : "Felaktigt"}
                                                 </span>
@@ -1193,6 +1277,19 @@ export default function BlockContent({
                 }
                 confirmLabel={calculatorToggleNewValue ? "Tillåt" : "Ta bort"}
                 onConfirm={runCalculatorToggle}
+            />
+
+            <ConfirmDialog
+                open={geogebraConfirmOpen}
+                onOpenChange={setGeogebraConfirmOpen}
+                title={geogebraToggleNewValue
+                    ? "Tillåt GeoGebra för alla uppgifter?"
+                    : "Ta bort GeoGebra för alla uppgifter?"}
+                description={geogebraToggleNewValue
+                    ? "GeoGebra blir tillåten som hjälpmedel på alla uppgifter i blocket."
+                    : "GeoGebra blir inte längre tillåten på någon uppgift i blocket."}
+                confirmLabel="Bekräfta"
+                onConfirm={runGeoGebraToggle}
             />
 
             <ConfirmDialog

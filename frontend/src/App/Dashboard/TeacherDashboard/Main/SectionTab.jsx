@@ -296,6 +296,7 @@ export default function SectionTab({
                 open={importOpen}
                 onOpenChange={setImportOpen}
                 sectionId={sectionId}
+                groupAbilitySeriesId={groupAbilitySeriesId}
                 onCreated={(block) => {
 
                     loadBlocks();

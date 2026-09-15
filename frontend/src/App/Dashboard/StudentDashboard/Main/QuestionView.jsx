@@ -2,22 +2,28 @@ import TextQuestion from "./TextQuestion";
 import SingleChoiceQuestion from "./SingleChoiceQuestion";
 import MultiChoiceQuestion from "./MultiChoiceQuestion";
 import NumericInputQuestion from "./NumericInputQuestion";
+import MathQuestionMedia from "./MathQuestionMedia";
 
 export default function QuestionView({
     question,
     answer,
     onTextAnswer,
     onSingleChoice,
-    onMultiChoice
+    onMultiChoice,
+    questionTextClassName = "text-base",
+    attemptId
 }) {
+
+    let questionContent;
 
     switch (question.question_type) {
 
         case 'text':
-            return (
+            questionContent = (
                 <TextQuestion
                     question={question}
                     value={answer}
+                    questionTextClassName={questionTextClassName}
                     onBlur={value =>
                         onTextAnswer(
                             question.id,
@@ -26,12 +32,14 @@ export default function QuestionView({
                     }
                 />
             );
+            break;
 
         case 'numeric_input':
-            return (
+            questionContent = (
                 <NumericInputQuestion
                     question={question}
                     value={answer}
+                    questionTextClassName={questionTextClassName}
                     onBlur={value =>
                         onTextAnswer(
                             question.id,
@@ -40,12 +48,14 @@ export default function QuestionView({
                     }
                 />
             );
+            break;
 
         case 'single_choice':
-            return (
+            questionContent = (
                 <SingleChoiceQuestion
                     question={question}
                     value={answer}
+                    questionTextClassName={questionTextClassName}
                     onChange={optionId =>
                         onSingleChoice(
                             question.id,
@@ -54,12 +64,14 @@ export default function QuestionView({
                     }
                 />
                             );
+            break;
 
         case 'multiple_choice':
-            return (
+            questionContent = (
                 <MultiChoiceQuestion
                     question={question}
                     value={answer || []}
+                    questionTextClassName={questionTextClassName}
                     onChange={optionId =>
                         onMultiChoice(
                             question.id,
@@ -68,12 +80,24 @@ export default function QuestionView({
                     }
                 />
             );
+            break;
 
         default:
-            return (
+            questionContent = (
                 <p>
                     Okänd frågetyp: {question.question_type}
                 </p>
             );
+            break;
     }
+
+    return (
+        <>
+            <MathQuestionMedia
+                media={question.media}
+                attemptId={attemptId}
+            />
+            {questionContent}
+        </>
+    );
 }

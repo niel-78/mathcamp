@@ -12,6 +12,7 @@ const diagnosticDefaults = {
     attempt: {
         defaultTimeLimitMinutes: 60,
         countdownMode: "visible_lock",
+        showClock: true,
         minQuestionCount: 5,
         maxQuestionCount: 15,
         promoteAfterQuestions: 1,
@@ -49,6 +50,8 @@ function normalizeDiagnosticConfig(config = {}) {
 
     const countdownMode =
         config.attempt?.countdownMode;
+    const showClock =
+        config.attempt?.showClock;
 
     const parsePositiveIntOrFallback = (val, fallback) => {
         if (val === "") return "";
@@ -77,6 +80,11 @@ function normalizeDiagnosticConfig(config = {}) {
                 diagnosticDefaults
                     .attempt
                     .countdownMode,
+            showClock:
+                showClock ??
+                diagnosticDefaults
+                    .attempt
+                    .showClock,
             minQuestionCount:
                 parseNonNegativeIntOrFallback(
                     config.attempt?.minQuestionCount,
@@ -436,6 +444,19 @@ export default function AssessmentSettingsTab({
                                     Visa nedräkning och stäng ner
                                 </option>
                             </select>
+                        </Field>
+
+                        <Field label="Visa klocka">
+                            <Switch
+                                checked={config.attempt?.showClock !== false}
+                                onCheckedChange={(checked) =>
+                                    updateConfig(
+                                        "attempt",
+                                        "showClock",
+                                        checked
+                                    )
+                                }
+                            />
                         </Field>
 
                         <Field label="Minsta antal frågor (adaptiv del)">

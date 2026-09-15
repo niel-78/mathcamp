@@ -7,6 +7,7 @@ import MathContent from "@/components/ui/MathContent";
 import FormatDateTimeShort from "@/utils/formatDateTimeShort";
 import BlockPoints from "@/components/ui/BlockPoints";
 import ExportBlockDialog from "@/components/ui/ExportBlockDialog";
+import QuestionImagePreview from "@/components/ui/QuestionImagePreview";
 import { getBlockIssues } from "@/utils/getQuestionIssues";
 
 export { getBlockIssues };
@@ -109,7 +110,8 @@ export default function BlockCard({
             0
         ) ?? 0);
 
-    const firstQuestion = block.questions?.[0]?.question;
+    const firstQuestionData = block.questions?.[0];
+    const firstQuestion = firstQuestionData?.question;
     const attachedAbilityIds = new Set(
         (block.abilities || []).map(ability => ability.id)
     );
@@ -216,12 +218,20 @@ export default function BlockCard({
                     </div>
                 )}
 
-                {firstQuestion && (
+                {firstQuestionData && (
 
-                    <MathContent
-                        value={firstQuestion}
-                        className="p-2"
-                    />
+                    <>
+                        <QuestionImagePreview
+                            media={firstQuestionData.media}
+                            compact
+                        />
+                        {firstQuestion && (
+                            <MathContent
+                                value={firstQuestion}
+                                className="p-2"
+                            />
+                        )}
+                    </>
 
                 )}
 

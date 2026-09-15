@@ -1,7 +1,6 @@
 import { isSEB } from "@/utils/isSEB";
 
 export default function ExamHeader({
-    attemptId,
     title = "Prov"
 }) {
 
@@ -15,10 +14,6 @@ export default function ExamHeader({
             )}
 
             <h1>{title}</h1>
-
-            <p>
-                Försök: {attemptId}
-            </p>
 
         </div>
     );

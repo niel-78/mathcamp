@@ -7,6 +7,7 @@ import MathContent from "@/components/ui/MathContent";
 import { formatMathText } from "@/utils/formatMathText";
 import { NUMERIC_INPUT_MARKER } from "@/constants/assessmentConstants";
 import { getFieldMatches } from "@/utils/grading/gradeNumericInput";
+import { SavedQuestionImage } from "./MathQuestionMedia";
 
 export default function ResultPage({
     attemptId
@@ -202,6 +203,17 @@ export default function ResultPage({
                                     {result.selection_reason}
                                 </p>
 
+                            )}
+
+                            {result.media?.length > 0 && (
+                                <div className="mb-4 flex flex-wrap justify-center gap-3">
+                                    {result.media.map(media => (
+                                        <SavedQuestionImage
+                                            key={media.id}
+                                            media={media}
+                                        />
+                                    ))}
+                                </div>
                             )}
 
                             {result.question_type === "numeric_input" ? (

@@ -102,7 +102,8 @@ export function useExamAttempt(attemptId) {
                     ...prev,
                     status: data.status,
                     submitted_at: data.submitted_at,
-                    teacher_end_mode: data.teacher_end_mode
+                    teacher_end_mode: data.teacher_end_mode,
+                    config: data.config
                 };
 
             });

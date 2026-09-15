@@ -1,9 +1,9 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { evaluate } from "mathjs";
 import Draggable from "react-draggable";
-import { Calculator as CalculatorIcon, Delete } from "lucide-react";
+import { Calculator as CalculatorIcon, Delete, Grip } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 import { toast } from "sonner";
@@ -80,6 +80,7 @@ export default function Calculator({
     attemptId = null,
     questionId = null
 }) {
+    const anchorRef = useRef(null);
     const calculatorRef = useRef(null);
     const geogebraContainerRef = useRef(null);
     const geogebraAppletRef = useRef(null);
@@ -93,17 +94,29 @@ export default function Calculator({
     const [result, setResult] = useState("");
     const [geogebraSize, setGeogebraSize] = useState(savedSize.current);
     const [geogebraReady, setGeogebraReady] = useState(false);
-    const [geogebraSaving, setGeogebraSaving] = useState(false);
     const [geogebraName, setGeogebraName] = useState(
         attemptId && questionId
             ? "Provkonstruktion"
             : "Min GeoGebra-konstruktion"
     );
-    const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
+    const [panelAnchor, setPanelAnchor] = useState(null);
     const canPersistGeoGebra = Boolean(attemptId && questionId);
     const geogebraStorageUrl = attemptId && questionId
         ? `${API_URL}/api/assessment-attempts/${attemptId}/geogebra/${questionId}`
         : `${API_URL}/api/geogebra-constructions`;
+
+    const updatePanelAnchor = () => {
+        if (!anchorRef.current) {
+            return;
+        }
+
+        const rect = anchorRef.current.getBoundingClientRect();
+
+        setPanelAnchor({
+            top: Math.min(rect.bottom + 8, window.innerHeight - 48),
+            right: Math.max(16, window.innerWidth - rect.right)
+        });
+    };
 
     const handleUnauthorized = async (response) => {
         if (response.status !== 401) {
@@ -228,7 +241,22 @@ export default function Calculator({
     }, [activeTool, attemptId, canPersistGeoGebra, geogebraContainerId, open, questionId]);
 
     useEffect(() => {
-        if (!open || activeTool !== "geogebra" || !geogebraReady || !autoSaveEnabled) {
+        if (!open) {
+            return undefined;
+        }
+
+        updatePanelAnchor();
+        window.addEventListener("resize", updatePanelAnchor);
+        window.addEventListener("scroll", updatePanelAnchor, true);
+
+        return () => {
+            window.removeEventListener("resize", updatePanelAnchor);
+            window.removeEventListener("scroll", updatePanelAnchor, true);
+        };
+    }, [open]);
+
+    useEffect(() => {
+        if (!open || activeTool !== "geogebra" || !geogebraReady) {
             return undefined;
         }
 
@@ -244,7 +272,7 @@ export default function Calculator({
         }, 5000);
 
         return () => window.clearInterval(interval);
-    }, [activeTool, autoSaveEnabled, geogebraName, geogebraReady, open]);
+    }, [activeTool, geogebraName, geogebraReady, open]);
 
     const append = (value) => {
         setExpression(current => `${current}${value}`);
@@ -278,12 +306,10 @@ export default function Calculator({
         setResult("");
     };
 
-    const saveGeoGebra = async (silent = false) => {
+    async function saveGeoGebra(silent = false) {
         if (!geogebraAppletRef.current) {
             return;
         }
-
-        setGeogebraSaving(true);
 
         try {
             const response = await fetch(
@@ -321,99 +347,12 @@ export default function Calculator({
             if (!silent) {
                 toast.error(error.message || "Kunde inte spara konstruktionen.");
             }
-        } finally {
-            setGeogebraSaving(false);
         }
-    };
+    }
 
-    const closeModal = () => {
-        savedPosition.current = {
-            x: 0,
-            y: 0
-        };
-        localStorage.removeItem(calculatorPositionStorageKey);
-        setOpen(false);
-    };
-
-    const loadGeoGebra = async () => {
-        if (!geogebraAppletRef.current) {
-            return;
-        }
-
-        try {
-            const response = await fetch(
-                geogebraStorageUrl,
-                { headers: authHeaders() }
-            );
-
-            if (await handleUnauthorized(response)) {
-                return;
-            }
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || "Kunde inte ladda konstruktionen.");
-            }
-
-            if (!data.construction?.construction_xml) {
-                toast.info("Det finns ingen sparad konstruktion för frågan.");
-                return;
-            }
-
-            setGeogebraName(
-                data.construction.name || geogebraName
-            );
-            geogebraAppletRef.current.setXML(
-                data.construction.construction_xml
-            );
-            lastSavedGeoGebraXml.current = data.construction.construction_xml;
-            toast.success("GeoGebra-konstruktionen laddades.");
-        } catch (error) {
-            console.error(error);
-            toast.error(error.message || "Kunde inte ladda konstruktionen.");
-        }
-    };
-
-    const deleteGeoGebra = async () => {
-        if (!geogebraAppletRef.current) {
-            return;
-        }
-
-        if (!window.confirm("Vill du radera den sparade GeoGebra-konstruktionen?")) {
-            return;
-        }
-
-        try {
-            const response = await fetch(
-                geogebraStorageUrl,
-                {
-                    method: "DELETE",
-                    headers: authHeaders()
-                }
-            );
-
-            if (await handleUnauthorized(response)) {
-                return;
-            }
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || "Kunde inte radera konstruktionen.");
-            }
-
-            geogebraAppletRef.current.reset?.();
-            toast.success("GeoGebra-konstruktionen raderades.");
-        } catch (error) {
-            console.error(error);
-            toast.error(error.message || "Kunde inte radera konstruktionen.");
-        }
-    };
-
-    const resizeGeoGebra = (direction) => {
-        const nextWidth = Math.min(1100, Math.max(520, savedSize.current.width + (direction === "larger" ? 80 : -80)));
-        const nextHeight = Math.min(900, Math.max(400, savedSize.current.height + (direction === "larger" ? 60 : -60)));
+    const resizeGeoGebra = () => {
+        const nextWidth = Math.min(1400, savedSize.current.width + 80);
+        const nextHeight = Math.min(1000, savedSize.current.height + 60);
 
         savedSize.current = {
             width: nextWidth,
@@ -441,6 +380,16 @@ export default function Calculator({
         );
     };
 
+    const closeModal = async () => {
+        await saveGeoGebra(true);
+        savedPosition.current = {
+            x: 0,
+            y: 0
+        };
+        localStorage.removeItem(calculatorPositionStorageKey);
+        setOpen(false);
+    };
+
     const hasAnyTool = showCalculator || showGeoGebra;
 
     if (!hasAnyTool) {
@@ -454,6 +403,7 @@ export default function Calculator({
         }
 
         setActiveTool(tool);
+        updatePanelAnchor();
         setOpen(true);
     };
 
@@ -462,7 +412,10 @@ export default function Calculator({
             {showCalculator && (
                 <Button
                     type="button"
-                    variant={activeTool === "calculator" ? "default" : "outline"}
+                    variant="outline"
+                    className={open && activeTool === "calculator"
+                        ? "border-green-600 bg-green-600 text-white hover:bg-green-700 hover:text-white"
+                        : "bg-white"}
                     onClick={() => toggleTool("calculator")}
                 >
                     <CalculatorIcon className="h-4 w-4" />
@@ -473,7 +426,10 @@ export default function Calculator({
             {showGeoGebra && (
                 <Button
                     type="button"
-                    variant={activeTool === "geogebra" ? "default" : "outline"}
+                    variant="outline"
+                    className={open && activeTool === "geogebra"
+                        ? "border-green-600 bg-green-600 text-white hover:bg-green-700 hover:text-white"
+                        : "bg-white"}
                     onClick={() => toggleTool("geogebra")}
                 >
                     <CalculatorIcon className="h-4 w-4" />
@@ -483,202 +439,152 @@ export default function Calculator({
         </div>
     );
 
+    const toolPanel = open && panelAnchor && createPortal(
+        <Draggable
+            handle=".calculator-drag-handle"
+            cancel=".calculator-controls"
+            nodeRef={calculatorRef}
+            defaultPosition={savedPosition.current}
+            onStop={(_event, data) => {
+                savedPosition.current = {
+                    x: data.x,
+                    y: data.y
+                };
+
+                localStorage.setItem(
+                    calculatorPositionStorageKey,
+                    JSON.stringify(savedPosition.current)
+                );
+            }}
+        >
+            <section
+                ref={calculatorRef}
+                aria-label={activeTool === "geogebra" ? "GeoGebra CAS" : "Miniräknare"}
+                className="fixed z-[9999] rounded-lg border bg-background shadow-lg"
+                style={{
+                    top: `${panelAnchor.top}px`,
+                    right: `${panelAnchor.right}px`,
+                    width: activeTool === "geogebra" ? `${savedSize.current.width}px` : "18rem",
+                    maxWidth: "calc(100vw - 2rem)"
+                }}
+            >
+                {activeTool === "calculator" && (
+                    <div className="calculator-drag-handle m-3 cursor-move select-none rounded-md border bg-background px-3 py-2 text-right">
+                        <div className="mb-2 flex items-center justify-between gap-2">
+                            <div className="text-xs font-medium text-muted-foreground">
+                                Miniräknare
+                            </div>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0"
+                                onClick={closeModal}
+                                aria-label="Stäng verktyg"
+                            >
+                                ×
+                            </Button>
+                        </div>
+                        <>
+                            <div className="min-h-5 break-all text-sm text-muted-foreground">
+                                {expression || "0"}
+                            </div>
+                            <div className="min-h-7 break-all text-xl font-semibold">
+                                {result}
+                            </div>
+                        </>
+                    </div>
+                )}
+
+                {activeTool === "geogebra" ? (
+                    <div className="relative overflow-hidden rounded-md">
+                        <div className="calculator-drag-handle absolute right-2 top-2 z-10 flex cursor-move items-center rounded-md bg-background/90 p-1 shadow">
+                            <div className="calculator-controls flex items-center gap-1">
+                                <Grip className="mx-1 h-4 w-4 text-muted-foreground" aria-label="Flytta GeoGebra" />
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={resizeGeoGebra}
+                                    aria-label="Öka GeoGebra-fönstret"
+                                >
+                                    +
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0"
+                                    onClick={closeModal}
+                                    aria-label="Stäng verktyg"
+                                >
+                                    ×
+                                </Button>
+                            </div>
+                        </div>
+                        <div
+                            id={geogebraContainerId}
+                            ref={geogebraContainerRef}
+                            aria-label="GeoGebra CAS"
+                            style={{
+                                width: "100%",
+                                height: `${geogebraSize.height}px`,
+                                minHeight: `${geogebraSize.height}px`
+                            }}
+                        />
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-4 gap-2">
+                        {calculatorKeys.flat().map((key, index) => (
+                            key ? (
+                                <Button
+                                    key={key}
+                                    type="button"
+                                    variant="outline"
+                                    className="h-9"
+                                    onClick={() => append(key)}
+                                >
+                                    {key}
+                                </Button>
+                            ) : (
+                                <div key={`empty-${index}`} />
+                            )
+                        ))}
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            className="h-9"
+                            onClick={clear}
+                        >
+                            C
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            className="h-9"
+                            onClick={removeLast}
+                            aria-label="Ta bort sista tecknet"
+                        >
+                            <Delete />
+                        </Button>
+                        <Button
+                            type="button"
+                            className="col-span-2 h-9"
+                            onClick={calculate}
+                        >
+                            =
+                        </Button>
+                    </div>
+                )}
+            </section>
+        </Draggable>,
+        document.body
+    );
+
     return (
-        <div className="relative flex flex-col items-end gap-2">
+        <div ref={anchorRef} className="relative flex flex-col items-end gap-2">
             {renderToolToggleRow()}
-
-            {open && (
-                <Draggable
-                    handle=".calculator-drag-handle"
-                    cancel=".calculator-controls"
-                    nodeRef={calculatorRef}
-                    defaultPosition={savedPosition.current}
-                    onStop={(_event, data) => {
-                        savedPosition.current = {
-                            x: data.x,
-                            y: data.y
-                        };
-
-                        localStorage.setItem(
-                            calculatorPositionStorageKey,
-                            JSON.stringify(savedPosition.current)
-                        );
-                    }}
-                >
-                    <section
-                        ref={calculatorRef}
-                        aria-label={activeTool === "geogebra" ? "GeoGebra CAS" : "Miniräknare"}
-                        className="absolute right-0 top-full z-[9999] mt-2 rounded-lg border bg-background shadow-lg"
-                        style={{
-                            width: activeTool === "geogebra" ? `${savedSize.current.width}px` : "18rem",
-                            maxWidth: "calc(100vw - 2rem)"
-                        }}
-                    >
-                        {activeTool === "calculator" && (
-                            <div className="calculator-drag-handle m-3 cursor-move select-none rounded-md border bg-background px-3 py-2 text-right">
-                                <div className="mb-2 flex items-center justify-between gap-2">
-                                    <div className="text-xs font-medium text-muted-foreground">
-                                        Miniräknare
-                                    </div>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-6 w-6 p-0"
-                                        onClick={closeModal}
-                                        aria-label="Stäng verktyg"
-                                    >
-                                        ×
-                                    </Button>
-                                </div>
-                                <>
-                                    <div className="min-h-5 break-all text-sm text-muted-foreground">
-                                        {expression || "0"}
-                                    </div>
-                                    <div className="min-h-7 break-all text-xl font-semibold">
-                                        {result}
-                                    </div>
-                                </>
-                            </div>
-                        )}
-
-                        {activeTool === "geogebra" ? (
-                            <div className="relative overflow-hidden rounded-md">
-                                <div className="calculator-drag-handle absolute right-2 top-2 z-10 flex cursor-move items-center rounded-md bg-background/90 p-1 shadow">
-                                    <div className="calculator-controls flex items-center gap-2">
-                                        <Input
-                                            value={geogebraName}
-                                            onChange={event => setGeogebraName(event.target.value)}
-                                            className="h-8 w-44 bg-background text-xs"
-                                            placeholder="Namn på konstruktion"
-                                            aria-label="Namn på konstruktion"
-                                        />
-                                        <label className="flex items-center gap-1 whitespace-nowrap text-xs">
-                                            <input
-                                                type="checkbox"
-                                                checked={autoSaveEnabled}
-                                                onChange={event => setAutoSaveEnabled(event.target.checked)}
-                                            />
-                                            Autospara
-                                        </label>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => resizeGeoGebra("smaller")}
-                                            aria-label="Minska GeoGebra-fönstret"
-                                        >
-                                            -
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => resizeGeoGebra("larger")}
-                                            aria-label="Öka GeoGebra-fönstret"
-                                        >
-                                            +
-                                        </Button>
-                                        {geogebraReady && canPersistGeoGebra && (
-                                            <>
-                                                <Button
-                                                    type="button"
-                                                    variant="default"
-                                                    size="sm"
-                                                    disabled={!geogebraReady || geogebraSaving}
-                                                    onClick={saveGeoGebra}
-                                                >
-                                                    {geogebraSaving ? "Sparar..." : "Spara"}
-                                                </Button>
-                                                <Button
-                                                    type="button"
-                                                    variant="outline"
-                                                    size="sm"
-                                                    disabled={!geogebraReady || geogebraSaving}
-                                                    onClick={loadGeoGebra}
-                                                >
-                                                    Öppna
-                                                </Button>
-                                                <Button
-                                                    type="button"
-                                                    variant="outline"
-                                                    size="sm"
-                                                    disabled={!geogebraReady || geogebraSaving}
-                                                    onClick={deleteGeoGebra}
-                                                >
-                                                    Radera
-                                                </Button>
-                                            </>
-                                        )}
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            className="h-8 w-8 p-0"
-                                            onClick={closeModal}
-                                            aria-label="Stäng verktyg"
-                                        >
-                                            ×
-                                        </Button>
-                                    </div>
-                                </div>
-                                <div
-                                    id={geogebraContainerId}
-                                    ref={geogebraContainerRef}
-                                    aria-label="GeoGebra CAS"
-                                    style={{
-                                        width: "100%",
-                                        height: `${geogebraSize.height}px`,
-                                        minHeight: `${geogebraSize.height}px`
-                                    }}
-                                />
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-4 gap-2">
-                                {calculatorKeys.flat().map((key, index) => (
-                                    key ? (
-                                        <Button
-                                            key={key}
-                                            type="button"
-                                            variant="outline"
-                                            className="h-9"
-                                            onClick={() => append(key)}
-                                        >
-                                            {key}
-                                        </Button>
-                                    ) : (
-                                        <div key={`empty-${index}`} />
-                                    )
-                                ))}
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    className="h-9"
-                                    onClick={clear}
-                                >
-                                    C
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    className="h-9"
-                                    onClick={removeLast}
-                                    aria-label="Ta bort sista tecknet"
-                                >
-                                    <Delete />
-                                </Button>
-                                <Button
-                                    type="button"
-                                    className="col-span-2 h-9"
-                                    onClick={calculate}
-                                >
-                                    =
-                                </Button>
-                            </div>
-                        )}
-                    </section>
-                </Draggable>
-            )}
+            {toolPanel}
         </div>
     );
 }

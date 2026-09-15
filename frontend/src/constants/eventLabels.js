@@ -48,6 +48,12 @@ export const eventLabels = {
     resumed_by_teacher:
         "Provet återupptogs av läraren",
 
+    calculator_access_granted:
+        "Läraren gav tillgång till räknare",
+
+    calculator_access_revoked:
+        "Läraren tog bort tillgången till räknare",
+
     attempt_resumed_after_lock:
         "Eleven återupptog provet efter låsning"
 

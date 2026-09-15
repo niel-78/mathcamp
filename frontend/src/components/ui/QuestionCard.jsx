@@ -71,6 +71,15 @@ function getNumericDefaultAnswer(question) {
     return answerConfig.default_answer;
 }
 
+function isCorrectOption(option) {
+    return (
+        option?.is_correct === true ||
+        Number(option?.is_correct) === 1 ||
+        option?.isCorrect === true ||
+        Number(option?.isCorrect) === 1
+    );
+}
+
 export function syncNumericInputs(text, correctCount) {
     if (correctCount <= 0) return text || "";
 
@@ -183,7 +192,7 @@ export default function QuestionCard({
             });
 
     const correctOptions =
-        question.options?.filter(option => option.is_correct) || [];
+        question.options?.filter(isCorrectOption) || [];
 
     const hasPreviewAnswer =
         question.question_type === "multiple_choice"
@@ -923,7 +932,9 @@ export default function QuestionCard({
                                         >
 
                                             <img
-                                                src={`${API_URL}${media.media_url}`}
+                                                src={media.media_url?.startsWith("http")
+                                                    ? media.media_url
+                                                    : `${API_URL}${media.media_url}`}
                                                 alt=""
                                                 className="
                                                     rounded-xl

@@ -110,6 +110,21 @@ export default async function importQuestionsToBlock({
             );
         }
 
+        if (question.imageUrl) {
+            await db.query(
+                `
+                INSERT INTO question_media (
+                    question_id,
+                    media_type,
+                    media_url,
+                    sort_order
+                )
+                VALUES (?, 'image', ?, 0)
+                `,
+                [questionId, question.imageUrl]
+            );
+        }
+
     }
 
     return questions.length;

@@ -5,7 +5,6 @@ import { useExamAttempt } from "@/hooks/useExamAttempt";
 import { usePreventBackButton } from "@/hooks/usePreventBackButton";
 import { useDisableContextMenu } from "@/hooks/useDisableContextMenu";
 import useExamActivityLogging from "@/hooks/useExamActivityLogging";
-
 import { logEvent } from "@/utils/logEvent";
 
 import { API_URL } from "@/config";
@@ -27,9 +26,63 @@ import ExamTimer from "./ExamTimer";
 import QuestionView from "./QuestionView.jsx";
 import ExamNavigation from "./ExamNavigation";
 import Calculator from "@/components/ui/Calculator";
+import FormulaSheetButton from "@/components/ui/FormulaSheetButton";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { MessageSquareWarning } from "lucide-react";
+import { MessageSquareWarning, Settings } from "lucide-react";
+
+const questionTextSizeStorageKey = "math-camp-question-text-size";
+const showQuestionInfoStorageKey = "math-camp-show-question-info";
+const showCountdownStorageKey = "math-camp-show-countdown";
+
+const questionTextSizeOptions = [
+    { value: "normal", label: "Normal", className: "text-base" },
+    { value: "large", label: "Stor", className: "text-lg" },
+    { value: "xlarge", label: "Extra stor", className: "text-xl" },
+    { value: "xxlarge", label: "Mycket stor", className: "text-2xl" }
+];
+
+function getSavedQuestionTextSize() {
+    try {
+        const saved = localStorage.getItem(questionTextSizeStorageKey);
+
+        if (questionTextSizeOptions.some(option => option.value === saved)) {
+            return saved;
+        }
+    } catch {
+        // Use the default when localStorage is unavailable.
+    }
+
+    return "normal";
+}
+
+function getSavedShowQuestionInfo() {
+    try {
+        const saved = localStorage.getItem(showQuestionInfoStorageKey);
+
+        if (saved === "false") {
+            return false;
+        }
+    } catch {
+        // Use the default when localStorage is unavailable.
+    }
+
+    return true;
+}
+
+function getSavedShowCountdown() {
+    try {
+        const saved = localStorage.getItem(showCountdownStorageKey);
+
+        if (saved === "false") {
+            return false;
+        }
+    } catch {
+        // Use the default when localStorage is unavailable.
+    }
+
+    return true;
+}
 
 export default function ExamPage({
     attemptId,
@@ -50,6 +103,14 @@ export default function ExamPage({
         useState("");
     const [reportSubmitting, setReportSubmitting] =
         useState(false);
+    const [settingsOpen, setSettingsOpen] =
+        useState(false);
+    const [questionTextSize, setQuestionTextSize] =
+        useState(getSavedQuestionTextSize);
+    const [showQuestionInfo, setShowQuestionInfo] =
+        useState(getSavedShowQuestionInfo);
+    const [showCountdown, setShowCountdown] =
+        useState(getSavedShowCountdown);
     const [reportedQuestionIds, setReportedQuestionIds] =
         useState(new Set());
     const isSubmittingRef = useRef(false);
@@ -75,6 +136,23 @@ export default function ExamPage({
         );
 
     }, [questions]);
+
+    useEffect(() => {
+
+        if (!attemptId || !dynamicQuestions.length) {
+            return;
+        }
+
+        logEvent(
+            attemptId,
+            "question_view",
+            {
+                question_number: index + 1,
+                total_questions: dynamicQuestions.length
+            }
+        );
+
+    }, [attemptId, index, dynamicQuestions.length]);
 
     useEffect(() => {
 
@@ -155,6 +233,9 @@ export default function ExamPage({
     const countdownMode =
         attemptConfig?.attempt?.countdownMode ||
         "visible_lock";
+    const showClock =
+        attemptConfig?.attempt?.showClock !== false &&
+        showCountdown;
 
     const initialSeedCount =
         attemptConfig?.attempt?.initialSeedQuestionCount ||
@@ -163,6 +244,34 @@ export default function ExamPage({
 
     const currentQuestionNumber = index + 1;
     const isSeedPhase = currentQuestionNumber <= initialSeedCount;
+    const calculatorOverride =
+        attemptConfig?.teacher_overrides?.calculator_allowed;
+    const calculatorAllowed =
+        calculatorOverride === undefined
+            ? current.calculator_allowed === true ||
+                Number(current.calculator_allowed) === 1
+            : calculatorOverride === true;
+    const geogebraAllowed =
+        current.geogebra_allowed === true ||
+        Number(current.geogebra_allowed) === 1;
+    const questionTextSizeClassName =
+        questionTextSizeOptions.find(option => option.value === questionTextSize)?.className ||
+        "text-base";
+
+    const saveQuestionTextSize = (value) => {
+        setQuestionTextSize(value);
+        localStorage.setItem(questionTextSizeStorageKey, value);
+    };
+
+    const saveShowQuestionInfo = (value) => {
+        setShowQuestionInfo(value);
+        localStorage.setItem(showQuestionInfoStorageKey, String(value));
+    };
+
+    const saveShowCountdown = (value) => {
+        setShowCountdown(value);
+        localStorage.setItem(showCountdownStorageKey, String(value));
+    };
 
 
     const appendNextQuestion = (
@@ -481,12 +590,46 @@ export default function ExamPage({
 
                     <CardContent className="p-8 space-y-6">
 
-                        <UserProfile />
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <UserProfile />
+
+                            <div className="flex flex-col items-end gap-2">
+                                <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
+                                    <FormulaSheetButton />
+                                    <Calculator
+                                        key={current.id}
+                                        attemptId={attemptId}
+                                        questionId={current.id}
+                                        showCalculator={calculatorAllowed}
+                                        showGeoGebra={geogebraAllowed}
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className={settingsOpen
+                                            ? "border-green-600 bg-green-600 text-white hover:bg-green-700 hover:text-white"
+                                            : "bg-white"}
+                                        onClick={() => setSettingsOpen(true)}
+                                    >
+                                        <Settings className="h-4 w-4" />
+                                        Inställningar
+                                    </Button>
+                                </div>
+
+                                {showClock && countdownMode !== "none" && (
+                                    <ExamTimer
+                                        attempt={attempt}
+                                        onExpire={() => {
+                                            if (countdownMode === "visible_lock") {
+                                                setTimeExpired(true);
+                                            }
+                                        }}
+                                    />
+                                )}
+                            </div>
+                        </div>
 
                         <ExamHeader
-                            attemptId={
-                                attemptId
-                            }
                         />
 
                         {isDiagnostic && (
@@ -507,25 +650,8 @@ export default function ExamPage({
                             </div>
                         )}
 
-                        {countdownMode !== "none" && (
-
-                            <ExamTimer
-                                attempt={attempt}
-                                onExpire={() => {
-
-                                    if (
-                                        countdownMode ===
-                                        "visible_lock"
-                                    ) {
-                                        setTimeExpired(true);
-                                    }
-
-                                }}
-                            />
-
-                        )}
-
-                        {isDiagnostic &&
+                        {showQuestionInfo &&
+                            isDiagnostic &&
                             current.selection_reason && (
 
                             <div
@@ -546,6 +672,7 @@ export default function ExamPage({
 
                         <QuestionView
                             question={current}
+                            attemptId={attemptId}
                             answer={
                                 assessment_answers[
                                     current.id
@@ -560,26 +687,10 @@ export default function ExamPage({
                             onMultiChoice={
                                 handleMultiChoice
                             }
+                            questionTextClassName={
+                                questionTextSizeClassName
+                            }
                         />
-
-                        {(current.calculator_allowed === true ||
-                            Number(current.calculator_allowed) === 1 ||
-                            current.geogebra_allowed === true ||
-                            Number(current.geogebra_allowed) === 1) && (
-                            <Calculator
-                                key={current.id}
-                                attemptId={attemptId}
-                                questionId={current.id}
-                                showCalculator={
-                                    current.calculator_allowed === true ||
-                                    Number(current.calculator_allowed) === 1
-                                }
-                                showGeoGebra={
-                                    current.geogebra_allowed === true ||
-                                    Number(current.geogebra_allowed) === 1
-                                }
-                            />
-                        )}
 
                         <div className="flex justify-end">
                             <Button
@@ -684,6 +795,81 @@ export default function ExamPage({
                             Skicka anmälan
                         </Button>
                     </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog
+                open={settingsOpen}
+                onOpenChange={setSettingsOpen}
+            >
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Inställningar</DialogTitle>
+                        <DialogDescription>
+                            Försök: {attemptId}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-5">
+                        <div className="space-y-2">
+                            <div className="text-sm font-medium">
+                                Textstorlek för uppgiften
+                            </div>
+                            <div className="grid gap-2">
+                                {questionTextSizeOptions.map(option => (
+                                    <Button
+                                        key={option.value}
+                                        type="button"
+                                        variant="outline"
+                                        className={questionTextSize === option.value
+                                            ? "justify-start border-green-600 bg-green-600 text-white hover:bg-green-700 hover:text-white"
+                                            : "justify-start bg-white"}
+                                        onClick={() => saveQuestionTextSize(option.value)}
+                                    >
+                                        {option.label}
+                                    </Button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <div className="text-sm font-medium">
+                                Nedräkning
+                            </div>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className={showCountdown
+                                    ? "w-full justify-start border-green-600 bg-green-600 text-white hover:bg-green-700 hover:text-white"
+                                    : "w-full justify-start bg-white"}
+                                disabled={attemptConfig?.attempt?.showClock === false}
+                                onClick={() => saveShowCountdown(!showCountdown)}
+                            >
+                                Visa nedräkning
+                            </Button>
+                        </div>
+
+                        <div className="space-y-2">
+                            <div className="text-sm font-medium">
+                                Uppgiftsinfo
+                            </div>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className={showQuestionInfo
+                                    ? "w-full justify-start border-green-600 bg-green-600 text-white hover:bg-green-700 hover:text-white"
+                                    : "w-full justify-start bg-white"}
+                                onClick={() => saveShowQuestionInfo(!showQuestionInfo)}
+                            >
+                                Visa uppgiftsinfo
+                            </Button>
+                            {current.selection_reason && (
+                                <div className="rounded-md border bg-muted/20 p-3 text-sm text-muted-foreground">
+                                    {current.selection_reason}
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </DialogContent>
             </Dialog>
 

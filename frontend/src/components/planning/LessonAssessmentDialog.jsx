@@ -123,6 +123,12 @@ export default function LessonAssessmentDialog({
             )
             .filter(Number.isFinite);
 
+    const selectedSections =
+        availableSections.filter(
+            section =>
+                selectedSectionIds.includes(Number(section.id))
+        );
+
     const selectedAbilities =
         (diagnosticPlan?.abilities || []).filter(
             ability =>
@@ -819,6 +825,9 @@ export default function LessonAssessmentDialog({
                             {availableSections.length > 0 && (
                                 <div
                                     className="
+                                        max-h-64
+                                        overflow-y-auto
+                                        pr-1
                                         space-y-2
                                     "
                                 >
@@ -889,6 +898,28 @@ export default function LessonAssessmentDialog({
 
                             <TabsContent value="questions" className="mt-4 space-y-4">
 
+                        {selectedSections.length > 0 && (
+                            <div className="space-y-2 rounded-md border p-3 bg-muted/10">
+                                <div className="font-medium text-sm">
+                                    Kopplade block per vald sektion
+                                </div>
+
+                                <div className="space-y-1">
+                                    {selectedSections.map(section => (
+                                        <div
+                                            key={section.id}
+                                            className="flex items-center justify-between gap-3 text-sm"
+                                        >
+                                            <MathContent value={section.name} />
+                                            <span className="shrink-0 text-xs text-muted-foreground">
+                                                {(section.blocks || []).length} block
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         {selectedAbilities.length === 0 && (
                             <div className="rounded-md border border-dashed p-3 text-sm text-muted-foreground bg-muted/20">
                                 Inga nya sektioner är valda. Diagnosen startar direkt med komplettering och träning av tidigare förmågor.
@@ -910,7 +941,7 @@ export default function LessonAssessmentDialog({
                                     Standardvärdet ({diagnosticPlan?.defaultQuestionsPerAbility ?? 1}) är hämtat från inställningarna. Du kan justera antalet uppgifter för varje förmåga nedan.
                                 </div>
 
-                                <div className="max-h-56 space-y-2 overflow-y-auto rounded-md border p-2 bg-muted/10">
+                                <div className="max-h-64 space-y-2 overflow-y-auto rounded-md border p-2 bg-muted/10">
                                     {selectedAbilities.map(ability => {
                                         const val =
                                             abilityQuestionCounts[ability.id] !== undefined

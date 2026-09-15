@@ -8,6 +8,7 @@ import { NUMERIC_INPUT_MARKER } from "@/constants/assessmentConstants";
 export default function NumericInputQuestion({
     question,
     value,
+    questionTextClassName = "text-base",
     onBlur
 }) {
 
@@ -75,7 +76,7 @@ export default function NumericInputQuestion({
                 Fråga {question.sort_order}
             </h2>
 
-            <div className="leading-8">
+            <div className={`leading-8 ${questionTextClassName}`}>
 
                 {segments.map((segment, index) => (
 

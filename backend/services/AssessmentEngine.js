@@ -1255,6 +1255,74 @@ export default class AssessmentEngine {
 
     }
 
+    static async resetAttemptLevelsToFirst(
+        connection,
+        attemptId
+    ) {
+
+        const [abilities] =
+            await connection.query(
+                `
+                SELECT DISTINCT
+                    ba.ability_id,
+                    a.series_id
+                FROM attempt_questions aq
+                INNER JOIN questions q
+                    ON q.id = aq.question_id
+                INNER JOIN block_abilities ba
+                    ON ba.block_id = q.block_id
+                INNER JOIN abilities a
+                    ON a.id = ba.ability_id
+                WHERE aq.attempt_id = ?
+                `,
+                [attemptId]
+            );
+
+        for (const ability of abilities) {
+
+            const [[firstLevel]] =
+                await connection.query(
+                    `
+                    SELECT id
+                    FROM ability_series_levels
+                    WHERE series_id = ?
+                    ORDER BY sort_order
+                    LIMIT 1
+                    `,
+                    [ability.series_id]
+                );
+
+            if (!firstLevel) {
+                continue;
+            }
+
+            await connection.query(
+                `
+                INSERT INTO student_ability_progress (
+                    user_id,
+                    ability_id,
+                    series_level_id
+                )
+                SELECT
+                    aa.user_id,
+                    ?,
+                    ?
+                FROM assessment_attempts aa
+                WHERE aa.id = ?
+                ON DUPLICATE KEY UPDATE
+                    series_level_id = VALUES(series_level_id)
+                `,
+                [
+                    ability.ability_id,
+                    firstLevel.id,
+                    attemptId
+                ]
+            );
+
+        }
+
+    }
+
     static async promoteLevel(
         connection,
         userId,
@@ -1662,6 +1730,8 @@ export default class AssessmentEngine {
 
         }
 
+        const blockGroups = new Map();
+
         for (const block of uniqueBlocks) {
 
             if (
@@ -1671,6 +1741,16 @@ export default class AssessmentEngine {
                 continue;
             }
 
+            const key = `${block.section_id}-${block.ability_id}`;
+            if (!blockGroups.has(key)) {
+                blockGroups.set(key, []);
+            }
+            blockGroups.get(key).push(block);
+        }
+
+        for (const groupBlocks of blockGroups.values()) {
+
+            const firstBlock = groupBlocks[0];
             const [[ability]] =
                 await db.query(
                     `
@@ -1684,10 +1764,11 @@ export default class AssessmentEngine {
                         ON a.id = ba.ability_id
 
                     WHERE ba.block_id = ?
+                    AND ba.ability_id = ?
 
                     LIMIT 1
                     `,
-                    [block.id]
+                    [firstBlock.id, firstBlock.ability_id]
                 );
 
             if (!ability) {
@@ -1717,74 +1798,126 @@ export default class AssessmentEngine {
             }
 
             const countForAbility =
-                abilityQuestionCounts?.[block.ability_id] ??
-                abilityQuestionCounts?.[String(block.ability_id)] ??
+                abilityQuestionCounts?.[firstBlock.ability_id] ??
+                abilityQuestionCounts?.[String(firstBlock.ability_id)] ??
                 questionsPerAbility;
 
             const limit = Math.max(1, Number(countForAbility) || 1);
+            const questionsByBlock = [];
 
-            const [selectedQuestions] =
-                await db.query(
-                    `
-                    SELECT
-                        q.*
+            for (const block of groupBlocks) {
+                let [selectedQuestions] =
+                    await db.query(
+                        `
+                        SELECT
+                            q.*
 
-                    FROM questions q
+                        FROM questions q
 
-                    WHERE q.block_id = ?
+                        WHERE q.block_id = ?
+                        AND q.series_level_id = ?
 
-                    AND q.archived_at IS NULL
-                    AND q.deleted_at IS NULL
-                    AND q.excluded_from_assessments = 0
+                        AND q.archived_at IS NULL
+                        AND q.deleted_at IS NULL
+                        AND q.excluded_from_assessments = 0
 
-                    AND (
-                        ? IS NULL
-                        OR NOT EXISTS (
-                            SELECT 1
-                            FROM student_question_history h
-                            WHERE h.user_id = ?
-                            AND h.question_id = q.id
+                        AND (
+                            ? IS NULL
+                            OR NOT EXISTS (
+                                SELECT 1
+                                FROM student_question_history h
+                                WHERE h.user_id = ?
+                                AND h.question_id = q.id
+                            )
                         )
-                    )
 
-                    ORDER BY ${useDifferentQuestionsInBlock ? "RAND()" : "q.id"}
+                        ORDER BY ${useDifferentQuestionsInBlock ? "RAND()" : "q.id"}
 
-                    LIMIT ?
-                    `,
-                    [
-                        block.id,
-                        userId,
-                        userId,
-                        limit
-                    ]
-                );
+                        LIMIT ?
+                        `,
+                        [
+                            block.id,
+                            firstLevel.id,
+                            userId,
+                            userId,
+                            limit
+                        ]
+                    );
 
-            for (const question of selectedQuestions) {
+                if (selectedQuestions.length === 0) {
+                    [selectedQuestions] = await db.query(
+                        `
+                        SELECT
+                            q.*
 
-                question.selection_reason =
-                    this.buildSelectionReason({
-                        sectionName: block.section_name,
-                        abilityName: block.block_name,
-                        levelName: firstLevel.name
-                    });
+                        FROM questions q
 
-                questions.push({
-                    section_id: block.section_id,
-                    section_name: block.section_name,
+                        WHERE q.block_id = ?
+                        AND q.series_level_id = ?
 
-                    block_id: block.id,
+                        AND q.archived_at IS NULL
+                        AND q.deleted_at IS NULL
+                        AND q.excluded_from_assessments = 0
 
-                    ability_id: block.ability_id,
-                    block_name: block.block_name,
+                        ORDER BY ${useDifferentQuestionsInBlock ? "RAND()" : "q.id"}
 
-                    series_level_id: firstLevel.id,
-                    series_level_name: firstLevel.name,
+                        LIMIT ?
+                        `,
+                        [
+                            block.id,
+                            firstLevel.id,
+                            limit
+                        ]
+                    );
+                }
 
-                    question
-                });
-
+                questionsByBlock.push({ block, selectedQuestions });
             }
 
+            let selectedCount = 0;
+            for (let round = 0; selectedCount < limit; round++) {
+                let selectedInRound = 0;
+
+                for (const { block, selectedQuestions } of questionsByBlock) {
+                    const question = selectedQuestions[round];
+                    if (!question) {
+                        continue;
+                    }
+
+                    question.selection_reason =
+                        this.buildSelectionReason({
+                            sectionName: block.section_name,
+                            abilityName: block.block_name,
+                            levelName: firstLevel.name
+                        });
+
+                    questions.push({
+                        section_id: block.section_id,
+                        section_name: block.section_name,
+
+                        block_id: block.id,
+
+                        ability_id: block.ability_id,
+                        block_name: block.block_name,
+
+                        series_level_id: firstLevel.id,
+                        series_level_name: firstLevel.name,
+
+                        question
+                    });
+
+                    selectedCount++;
+                    selectedInRound++;
+
+                    if (selectedCount >= limit) {
+                        break;
+                    }
+                }
+
+                if (selectedInRound === 0) {
+                    break;
+                }
+            }
         }
 
         const sectionsMap = new Map();
