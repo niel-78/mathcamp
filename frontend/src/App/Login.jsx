@@ -29,7 +29,9 @@ export default function Login() {
         }
 
         clearUserScopedLocalStorage();
-        localStorage.setItem("token", data.token);
+        const token = data.token.replace(/^Bearer\s+/i, "");
+        localStorage.setItem("token", token);
+        sessionStorage.setItem("token", token);
         setUser(data.user);
         toast.success("Inloggning lyckades");
     };

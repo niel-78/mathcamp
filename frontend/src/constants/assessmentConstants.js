@@ -19,6 +19,24 @@ export const QUESTION_TYPES = {
 
 // Marker used in the question text to place an answer input box, e.g. "x = {{input}}"
 export const NUMERIC_INPUT_MARKER = "{{input}}";
+export const ANSWER_FORMATS = {
+    ALL: {
+        value: "all",
+        label: "Alla"
+    },
+    DECIMAL: {
+        value: "decimal",
+        label: "Decimalform"
+    },
+    PERCENT: {
+        value: "percent",
+        label: "Procentform"
+    },
+    FRACTION: {
+        value: "fraction",
+        label: "Bråkform"
+    }
+};
 
 export const GRADING_MODES = {
     TEXT: {

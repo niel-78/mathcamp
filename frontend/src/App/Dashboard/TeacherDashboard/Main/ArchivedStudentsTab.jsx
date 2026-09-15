@@ -5,6 +5,8 @@ import { authHeaders } from "@/api/authHeaders";
 import { Button } from "@/components/ui/button";
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 import CardSection from "@/components/layouts/CardSection";
+import ArchiveDates from "@/components/ui/ArchiveDates";
+import ArchiveToolbar from "@/components/ui/ArchiveToolbar";
 
 export default function ArchivedStudentsTab() {
 
@@ -13,6 +15,9 @@ export default function ArchivedStudentsTab() {
 
     const [loading, setLoading] =
         useState(true);
+    const [query, setQuery] = useState("");
+    const [sortBy, setSortBy] = useState("deleted_at");
+    const [group, setGroup] = useState("");
 
     useEffect(() => {
 
@@ -86,15 +91,42 @@ export default function ArchivedStudentsTab() {
 
 };
 
+    const visibleStudents = students
+        .filter(student => `${student.first_name} ${student.last_name} ${student.group_name}`
+            .toLowerCase().includes(query.toLowerCase()))
+        .filter(student => !group || student.group_name === group)
+        .sort((first, second) =>
+            new Date(second[sortBy] || second.deleted_at || second.created_at || 0) -
+            new Date(first[sortBy] || first.deleted_at || first.created_at || 0)
+        );
+
+    const groups = [...new Set(students.map(student => student.group_name))].sort();
+
     return (
 
         <BaseTabLayout
-            title="Borttagna elever"
+            title="Arkiverade elever"
         >
 
             <CardSection
-                title="Borttagna elever"
+                title="Arkiverade elever"
+                description="Elevens medlemskap i gruppen som tagits bort."
             >
+
+                <div className="w-full max-w-3xl justify-self-start">
+
+                <ArchiveToolbar
+                    query={query}
+                    setQuery={setQuery}
+                    sortBy={sortBy}
+                    setSortBy={setSortBy}
+                    showCourseBookFilters={false}
+                    category={group}
+                    setCategory={setGroup}
+                    categories={groups}
+                    categoryLabel="Grupp"
+                    stacked
+                />
 
                 {loading && (
                     <div>Laddar...</div>
@@ -114,9 +146,9 @@ export default function ArchivedStudentsTab() {
 
                 )}
 
-                <div className="space-y-4">
+                <div className="w-full space-y-4">
 
-                    {students.map(student => (
+                    {visibleStudents.map(student => (
 
                         <div
                             key={`${student.group_id}-${student.id}`}
@@ -126,8 +158,9 @@ export default function ArchivedStudentsTab() {
                                 p-4
 
                                 flex
-                                justify-between
+                                justify-start
                                 items-center
+                                text-left
                             "
                         >
 
@@ -148,10 +181,13 @@ export default function ArchivedStudentsTab() {
                                     Grupp: {student.group_name}
                                 </div>
 
+                                <ArchiveDates item={student} />
+
                             </div>
 
                             <Button
                                 variant="outline"
+                                className="ml-auto"
                                 onClick={() =>
                                     restoreStudent(
                                         student.group_id,
@@ -165,6 +201,8 @@ export default function ArchivedStudentsTab() {
                         </div>
 
                     ))}
+
+                </div>
 
                 </div>
 

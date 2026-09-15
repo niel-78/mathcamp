@@ -116,7 +116,7 @@ router.post("/logout",
     async (req, res) => {
 
         const token =
-            req.headers.authorization;
+            req.headers.authorization?.replace(/^Bearer\s+/i, "");
 
         await db.query(
             `

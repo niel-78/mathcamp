@@ -22,6 +22,13 @@ import {
     Switch
 } from "@/components/ui/switch";
 
+import {
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger
+} from "@/components/ui/tabs";
+
 import MathContent from "@/components/ui/MathContent";
 
 import { toast } from "sonner";
@@ -75,6 +82,7 @@ export default function LessonAssessmentDialog({
 
     const [includeCompletion, setIncludeCompletion] = useState(true);
     const [includeTraining, setIncludeTraining] = useState(true);
+    const [activeTab, setActiveTab] = useState("sections");
 
     const isEditMode = !!groupAssessmentId;
 
@@ -714,6 +722,26 @@ export default function LessonAssessmentDialog({
                         "
                     >
 
+                        <Tabs
+                            value={activeTab}
+                            onValueChange={setActiveTab}
+                            className="w-full"
+                        >
+                            <TabsList className="grid w-full grid-cols-3">
+                                <TabsTrigger value="sections">
+                                    Sektioner
+                                </TabsTrigger>
+                                <TabsTrigger value="questions">
+                                    Frågor
+                                </TabsTrigger>
+                                <TabsTrigger value="settings">
+                                    Inställningar
+                                </TabsTrigger>
+                            </TabsList>
+
+                            <div className="max-h-[55vh] overflow-y-auto pr-1">
+                                <TabsContent value="sections" className="mt-4 space-y-4">
+
                         <div
                             className="
                                 rounded-md
@@ -857,6 +885,10 @@ export default function LessonAssessmentDialog({
 
                         </div>
 
+                            </TabsContent>
+
+                            <TabsContent value="questions" className="mt-4 space-y-4">
+
                         {selectedAbilities.length === 0 && (
                             <div className="rounded-md border border-dashed p-3 text-sm text-muted-foreground bg-muted/20">
                                 Inga nya sektioner är valda. Diagnosen startar direkt med komplettering och träning av tidigare förmågor.
@@ -915,6 +947,10 @@ export default function LessonAssessmentDialog({
                                 </div>
                             </div>
                         )}
+
+                            </TabsContent>
+
+                            <TabsContent value="settings" className="mt-4 space-y-4">
 
                         <div className="space-y-2 rounded-md border p-3 bg-muted/10">
                             <label
@@ -995,6 +1031,10 @@ export default function LessonAssessmentDialog({
                                 />
                             </label>
                         </div>
+
+                                </TabsContent>
+                            </div>
+                        </Tabs>
 
                         <div
                             className="

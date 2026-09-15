@@ -1,5 +1,10 @@
 export function authHeaders() {
+    const token =
+        localStorage.getItem("token") ||
+        sessionStorage.getItem("token") ||
+        "";
+
     return {
-        Authorization: localStorage.getItem("token")
+        Authorization: token.replace(/^Bearer\s+/i, "")
     };
 }

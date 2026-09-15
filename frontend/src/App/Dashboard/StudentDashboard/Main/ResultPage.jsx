@@ -95,7 +95,7 @@ export default function ResultPage({
             </h1>
 
             {diagnosticStatus?.complete === false && (
-                <div className="mb-6 border border-amber-500 bg-amber-50 p-4 text-amber-900">
+                <div className="mb-6 border border-amber-500/70 bg-amber-500/10 p-4 text-amber-900 dark:text-amber-200">
                     Diagnosen är inte klar. Eleven har besvarat {diagnosticStatus.answeredQuestionCount} av minst {diagnosticStatus.minimumQuestionCount} frågor.
                 </div>
             )}
@@ -133,10 +133,10 @@ export default function ResultPage({
                                 <span
                                     className={
                                         result.correct
-                                            ? "text-green-600"
+                                            ? "text-green-600 dark:text-green-400"
                                             : result.points > 0
-                                                ? "text-amber-600"
-                                                : "text-red-600"
+                                                ? "text-amber-600 dark:text-amber-400"
+                                                : "text-red-600 dark:text-red-400"
                                     }
                                 >
                                     {result.correct

@@ -1,8 +1,47 @@
+import { useEffect, useRef } from "react";
+
 export default function BaseTabLayout({
     title,
     actions,
-    children
+    children,
+    scrollKey
 }) {
+
+    const contentRef = useRef(null);
+    const storageKey = scrollKey ? `tab-scroll:${scrollKey}` : null;
+
+    useEffect(() => {
+        const content = contentRef.current;
+        if (!content || !storageKey) return undefined;
+
+        const savedPosition = Number(sessionStorage.getItem(storageKey) || 0);
+        let restored = false;
+
+        const restorePosition = () => {
+            if (restored || content.scrollHeight <= content.clientHeight && savedPosition > 0) {
+                return;
+            }
+
+            content.scrollTop = savedPosition;
+            restored = true;
+        };
+
+        const savePosition = () => {
+            sessionStorage.setItem(storageKey, String(content.scrollTop));
+        };
+
+        restorePosition();
+        content.addEventListener("scroll", savePosition, { passive: true });
+
+        const observer = new ResizeObserver(restorePosition);
+        observer.observe(content);
+
+        return () => {
+            savePosition();
+            observer.disconnect();
+            content.removeEventListener("scroll", savePosition);
+        };
+    }, [storageKey]);
 
     return (
 
@@ -23,7 +62,7 @@ export default function BaseTabLayout({
 
             </div>
 
-            <div className="tab-content">
+            <div ref={contentRef} className="tab-content">
                 {children}
             </div>
 

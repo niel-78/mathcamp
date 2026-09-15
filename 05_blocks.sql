@@ -98,6 +98,9 @@ CREATE TABLE questions (
     calculator_allowed TINYINT(1) NOT NULL
         DEFAULT 0,
 
+    geogebra_allowed TINYINT(1) NOT NULL
+        DEFAULT 0,
+
     excluded_from_assessments TINYINT(1) NOT NULL
         DEFAULT 0,
 

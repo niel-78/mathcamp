@@ -25,10 +25,17 @@ router.get("/me/groups", async (req, res) => {
             g.level_id,
             g.book_id,
             g.ability_series_id,
+            l.code AS level_code,
+            l.name AS level_name,
+            s.name AS subject_name,
             gs.joined_at
         FROM group_students gs
         INNER JOIN \`groups\` g
             ON g.id = gs.group_id
+        LEFT JOIN levels l
+            ON l.id = g.level_id
+        LEFT JOIN subjects s
+            ON s.id = l.subject_id
         WHERE gs.user_id = ?
             AND gs.deleted_at IS NULL
             AND g.archived_at IS NULL

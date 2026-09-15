@@ -323,8 +323,8 @@ const StudentDashboard = () => {
 
         return (
             <div className="h-screen flex flex-col">
-                <Header />
-                <main className="flex-1 overflow-y-auto bg-slate-50 p-6">
+                <Header groups={groups} />
+                <main className="flex-1 overflow-y-auto bg-background p-6 text-foreground">
                     <div className="w-full max-w-6xl mx-auto space-y-4">
                         <div className="flex items-center justify-between">
                             <Button
@@ -342,7 +342,7 @@ const StudentDashboard = () => {
                             )}
                         </div>
 
-                        <div className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
+                        <div className="rounded-xl border bg-card p-6 shadow-sm space-y-4">
                             <h2 className="text-2xl font-bold">
                                 Gruppens planering
                             </h2>
@@ -364,14 +364,14 @@ const StudentDashboard = () => {
     if (view === "result") {
         return (
             <div className="h-screen flex flex-col">
-                <Header />
-                <main className="flex-1 overflow-y-auto bg-slate-50 p-6">
+                <Header groups={groups} />
+                <main className="flex-1 overflow-y-auto bg-background p-6 text-foreground">
                     <div className="w-full max-w-4xl mx-auto space-y-4">
                         <Button variant="ghost" onClick={() => setView("start")} className="gap-2">
                             <ArrowLeft className="h-4 w-4" /> Tillbaka till start
                         </Button>
 
-                        <div className="flex gap-2 rounded-xl border bg-white p-2 shadow-sm">
+                        <div className="flex gap-2 rounded-xl border bg-card p-2 shadow-sm">
                             <Button
                                 variant={
                                     resultTab === "results"
@@ -400,7 +400,7 @@ const StudentDashboard = () => {
                         </div>
 
                         {resultTab === "results" && resultAttempts.length > 0 && (
-                            <div className="rounded-xl border bg-white p-4 shadow-sm space-y-2">
+                            <div className="rounded-xl border bg-card p-4 shadow-sm space-y-2">
                                 <Label htmlFor="resultAttempt">
                                     Resultat
                                 </Label>
@@ -437,7 +437,7 @@ const StudentDashboard = () => {
                         )}
 
                         {resultTab === "abilities" && (
-                            <div className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
+                            <div className="rounded-xl border bg-card p-6 shadow-sm space-y-4">
                                 <h2 className="text-2xl font-bold">
                                     Förmågor
                                 </h2>
@@ -510,7 +510,7 @@ const StudentDashboard = () => {
     if (view === "investments") {
         return (
             <div className="h-screen flex flex-col">
-                <Header />
+                <Header groups={groups} />
                 <div className="p-4 bg-muted/20 border-b">
                     <Button variant="ghost" onClick={() => setView("start")} className="gap-2 text-xs">
                         <ArrowLeft className="h-4 w-4" /> Tillbaka till huvudmeny
@@ -528,9 +528,9 @@ const StudentDashboard = () => {
     if (view === "key-entry") {
         return (
             <div className="h-screen flex flex-col">
-                <Header />
+                <Header groups={groups} />
                 <Main>
-                    <div className="w-full max-w-md rounded-xl border bg-white p-6 shadow-sm space-y-4">
+                    <div className="w-full max-w-md rounded-xl border bg-card p-6 shadow-sm space-y-4">
                         <Button variant="ghost" onClick={() => setView("start")} className="gap-2 -ml-2 text-muted-foreground">
                             <ArrowLeft className="h-4 w-4" /> Tillbaka
                         </Button>
@@ -564,7 +564,7 @@ const StudentDashboard = () => {
     // HUVUDMENY (START-VYN)
     return (
         <div className="h-screen flex flex-col">
-            <Header />
+            <Header groups={groups} />
 
             <Main>
                 <div className="w-full max-w-lg rounded-xl border bg-white p-8 shadow-sm space-y-6 text-center">
@@ -633,11 +633,11 @@ const StudentDashboard = () => {
                             {/* Mina resultat */}
                             <Button
                                 variant="outline"
-                                className="w-full h-auto p-4 flex items-center justify-start gap-4 border-2 hover:border-blue-600 hover:bg-blue-50/50 transition"
+                                className="w-full h-auto p-4 flex items-center justify-start gap-4 border-2 hover:border-blue-500/80 hover:bg-blue-500/5 transition"
                                 onClick={openSelectedGroupResults}
                                 disabled={loadingResults}
                             >
-                                <div className="p-3 rounded-lg bg-blue-100 text-blue-700">
+                                <div className="p-3 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
                                     <ClipboardList className="h-6 w-6" />
                                 </div>
                                 <div className="text-left">
@@ -653,11 +653,11 @@ const StudentDashboard = () => {
                             {/* Gruppens planering */}
                             <Button
                                 variant="outline"
-                                className="w-full h-auto p-4 flex items-center justify-start gap-4 border-2 hover:border-amber-600 hover:bg-amber-50/50 transition"
+                                className="w-full h-auto p-4 flex items-center justify-start gap-4 border-2 hover:border-amber-500/80 hover:bg-amber-500/5 transition"
                                 onClick={openSelectedGroupPlanning}
                                 disabled={loadingPlanning}
                             >
-                                <div className="p-3 rounded-lg bg-amber-100 text-amber-700">
+                                <div className="p-3 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
                                     <CalendarDays className="h-6 w-6" />
                                 </div>
                                 <div className="text-left">
@@ -687,10 +687,10 @@ const StudentDashboard = () => {
                             {/* Investeringar & Tävling */}
                             <Button
                                 variant="outline"
-                                className="w-full h-auto p-4 flex items-center justify-start gap-4 border-2 hover:border-emerald-600 hover:bg-emerald-50/50 transition"
+                                className="w-full h-auto p-4 flex items-center justify-start gap-4 border-2 hover:border-emerald-500/80 hover:bg-emerald-500/5 transition"
                                 onClick={() => setView("investments")}
                             >
-                                <div className="p-3 rounded-lg bg-emerald-100 text-emerald-700">
+                                <div className="p-3 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                                     <Trophy className="h-6 w-6" />
                                 </div>
                                 <div className="text-left">

@@ -1,4 +1,22 @@
-// Accepts both "." and "," as decimal separator (e.g. "3,5" and "3.5" are equivalent)
+export const isAnswerFormatAllowed = (value, answerFormat = "all") => {
+    if (answerFormat === "all") return true;
+
+    const normalized = String(value ?? "").trim();
+    if (answerFormat === "percent") {
+        return /^[-+]?\d+(?:[.,]\d+)?%$/.test(normalized);
+    }
+    if (answerFormat === "fraction") {
+        return /^[-+]?\d+\s*\/\s*[-+]?\d+$/.test(normalized) ||
+            /^[-+]?\\frac\{[-+]?\d+\}\{[-+]?\d+\}$/.test(normalized);
+    }
+    if (answerFormat === "decimal") {
+        return /^[-+]?\d+(?:[.,]\d+)?$/.test(normalized);
+    }
+
+    return false;
+};
+
+// Accepts decimal point/comma, fractions and percentages (e.g. 50% = 0.5).
 export const parseNumericAnswer = (value) => {
 
     if (
@@ -8,12 +26,28 @@ export const parseNumericAnswer = (value) => {
         return NaN;
     }
 
+    const raw = String(value).trim();
+    const isPercent = raw.endsWith("%");
     const normalized =
-        String(value)
-            .trim()
+        raw.replace(/%$/, "")
             .replace(",", ".");
 
-    return Number(normalized);
+    const latexFraction = /^(-?)\\frac\{(\d+)\}\{(\d+)\}$/.exec(normalized);
+    if (latexFraction) {
+        const result = (latexFraction[1] ? -1 : 1) *
+            Number(latexFraction[2]) /
+            Number(latexFraction[3]);
+        return isPercent ? result / 100 : result;
+    }
+
+    const slashFraction = /^(-?\d+)\/(\d+)$/.exec(normalized);
+    if (slashFraction) {
+        const result = Number(slashFraction[1]) / Number(slashFraction[2]);
+        return isPercent ? result / 100 : result;
+    }
+
+    const result = Number(normalized);
+    return isPercent ? result / 100 : result;
 };
 
 export const compareNumeric = (
@@ -21,6 +55,10 @@ export const compareNumeric = (
     correctAnswer,
     config = {}
 ) => {
+
+    if (!isAnswerFormatAllowed(studentAnswer, config.answer_format ?? "all")) {
+        return false;
+    }
 
     const student =
         parseNumericAnswer(studentAnswer);

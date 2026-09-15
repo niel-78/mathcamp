@@ -97,8 +97,14 @@ router.get("/", async (req, res) => {
 
         [groups] = await db.query(
             `
-            SELECT *
-            FROM \`groups\`
+            SELECT
+                g.*,
+                l.code AS level_code,
+                l.name AS level_name,
+                s.name AS subject_name
+            FROM \`groups\` g
+            LEFT JOIN levels l ON l.id = g.level_id
+            LEFT JOIN subjects s ON s.id = l.subject_id
             WHERE archived_at IS NULL
             ORDER BY name
             `
@@ -108,10 +114,16 @@ router.get("/", async (req, res) => {
 
         [groups] = await db.query(
             `
-            SELECT g.*
+            SELECT
+                g.*,
+                l.code AS level_code,
+                l.name AS level_name,
+                s.name AS subject_name
             FROM \`groups\` g
             INNER JOIN group_permissions gp
                 ON gp.group_id = g.id
+            LEFT JOIN levels l ON l.id = g.level_id
+            LEFT JOIN subjects s ON s.id = l.subject_id
             WHERE gp.user_id = ?
             AND g.archived_at IS NULL
             ORDER BY g.name
@@ -365,7 +377,19 @@ router.get("/:id/results", async (req, res) => {
                 u.first_name,
                 u.last_name,
                 u.display_name,
-                u.username
+                u.username,
+                gs.review_status,
+                (
+                    SELECT ROUND(AVG(COALESCE(sam.mastery_score, 50)), 2)
+                    FROM \`groups\` ability_group
+                    INNER JOIN abilities ability
+                        ON ability.series_id = ability_group.ability_series_id
+                        AND ability.deleted_at IS NULL
+                    LEFT JOIN student_ability_mastery sam
+                        ON sam.ability_id = ability.id
+                        AND sam.user_id = gs.user_id
+                    WHERE ability_group.id = gs.group_id
+                ) AS mastery_average
             FROM group_students gs
             INNER JOIN users u
                 ON u.id = gs.user_id
@@ -493,6 +517,9 @@ router.get("/:id/results", async (req, res) => {
                 name: student.display_name ||
                     `${student.first_name} ${student.last_name}`,
                 username: student.username,
+                mastery_average: student.mastery_average === null
+                    ? null
+                    : Number(student.mastery_average),
                 answered_question_count: answers.length,
                 correct_answer_count: Math.round(correctCount * 100) / 100,
                 correct_percentage: answers.length
@@ -574,7 +601,10 @@ router.get("/:id", async (req, res) => {
             g.*,
             gp.role,
             b.title AS book_title,
-            a.name AS ability_series_name
+            a.name AS ability_series_name,
+            l.code AS level_code,
+            l.name AS level_name,
+            s.name AS subject_name
         FROM \`groups\` g
 
         INNER JOIN group_permissions gp
@@ -585,6 +615,12 @@ router.get("/:id", async (req, res) => {
 
         LEFT JOIN ability_series a
             ON a.id = g.ability_series_id
+
+        LEFT JOIN levels l
+            ON l.id = g.level_id
+
+        LEFT JOIN subjects s
+            ON s.id = l.subject_id
 
         WHERE g.id = ?
         AND gp.user_id = ?
@@ -612,6 +648,8 @@ router.get("/:id", async (req, res) => {
             u.display_name,
             u.username,
             u.user_key,
+            gs.review_status,
+            gs.review_updated_at,
             (
                 SELECT DATE_FORMAT(
                     MAX(us.logged_in_at),
@@ -816,6 +854,8 @@ router.get("/:id/students", async (req, res) => {
                 u.last_name,
                 u.username,
                 u.display_name,
+                gs.review_status,
+                gs.review_updated_at,
                 gs.joined_at
             FROM group_students gs
             INNER JOIN users u
@@ -840,6 +880,85 @@ router.get("/:id/students", async (req, res) => {
             error: "Kunde inte hämta gruppens elever."
         });
 
+    }
+});
+
+router.put("/:id/students/:studentId/review", async (req, res) => {
+    const { id: groupId, studentId } = req.params;
+    const { review_status: reviewStatus } = req.body;
+    const validStatuses = new Set(["green", "yellow", "red"]);
+
+    if (!validStatuses.has(reviewStatus)) {
+        return res.status(400).json({
+            error: "Omdömet måste vara green, yellow eller red."
+        });
+    }
+
+    const connection = await db.getConnection();
+
+    try {
+        await connection.beginTransaction();
+
+        const [[membership]] = await connection.query(
+            `
+            SELECT review_status
+            FROM group_students
+            WHERE group_id = ?
+                AND user_id = ?
+                AND deleted_at IS NULL
+            FOR UPDATE
+            `,
+            [groupId, studentId]
+        );
+
+        if (!membership) {
+            await connection.rollback();
+            return res.status(404).json({
+                error: "Eleven finns inte i gruppen."
+            });
+        }
+
+        if (membership.review_status === reviewStatus) {
+            await connection.commit();
+            return res.json({ review_status: reviewStatus });
+        }
+
+        await connection.query(
+            `
+            UPDATE group_students
+            SET review_status = ?,
+                review_updated_at = NOW(),
+                review_updated_by = ?
+            WHERE group_id = ?
+                AND user_id = ?
+            `,
+            [reviewStatus, req.user.id, groupId, studentId]
+        );
+
+        await connection.query(
+            `
+            INSERT INTO group_student_review_history (
+                user_id,
+                group_id,
+                previous_status,
+                new_status,
+                changed_by
+            )
+            VALUES (?, ?, ?, ?, ?)
+            `,
+            [studentId, groupId, membership.review_status, reviewStatus, req.user.id]
+        );
+
+        await connection.commit();
+        res.json({ review_status: reviewStatus });
+    } catch (error) {
+        await connection.rollback();
+        console.error(error);
+        res.status(500).json({
+            error: "Kunde inte spara omdömet."
+        });
+    } finally {
+        connection.release();
     }
 });
 // POST /api/groups/:id/students

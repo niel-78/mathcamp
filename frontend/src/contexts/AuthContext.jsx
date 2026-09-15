@@ -27,7 +27,9 @@ export function AuthProvider({ children }) {
 
     useEffect(() => {
 
-        const token = localStorage.getItem("token");
+        const token =
+            localStorage.getItem("token") ||
+            sessionStorage.getItem("token");
         if (!token) {
             setLoading(false);
             return;
@@ -60,6 +62,7 @@ export function AuthProvider({ children }) {
                 console.error(error);
 
                 localStorage.removeItem("token");
+                sessionStorage.removeItem("token");
                 clearUserScopedLocalStorage();
 
                 setUser(null);
@@ -74,7 +77,9 @@ export function AuthProvider({ children }) {
 
     const logout = useCallback(async () => {
 
-        const currentToken = localStorage.getItem("token");
+        const currentToken =
+            localStorage.getItem("token") ||
+            sessionStorage.getItem("token");
 
         if (!currentToken) {
             setUser(null);
@@ -102,6 +107,7 @@ export function AuthProvider({ children }) {
         } finally {
 
             localStorage.removeItem("token");
+            sessionStorage.removeItem("token");
             clearUserScopedLocalStorage();
             setUser(null);
 

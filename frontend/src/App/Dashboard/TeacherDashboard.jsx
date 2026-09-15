@@ -27,6 +27,14 @@ export default function TeacherDashboard() {
     const [blockRefreshKey, setBlockRefreshKey] = useState(0);
     const [moveSectionDialog,setMoveSectionDialog] = useState(null);
     const [testAttemptId, setTestAttemptId] = useState(null);
+    const [teacherGroups, setTeacherGroups] = useState([]);
+
+    useEffect(() => {
+        fetch(`${API_URL}/api/groups`, { headers: authHeaders() })
+            .then(response => response.ok ? response.json() : [])
+            .then(data => setTeacherGroups(data || []))
+            .catch(() => setTeacherGroups([]));
+    }, []);
 
     const bumpBlockRefresh = () =>
         setBlockRefreshKey(prev => prev + 1);
@@ -89,6 +97,7 @@ export default function TeacherDashboard() {
                 "activeRightTab"
             )
         );
+    const [lastActiveArea, setLastActiveArea] = useState("left");
 
     useEffect(() => {
 
@@ -124,6 +133,14 @@ export default function TeacherDashboard() {
             activeRightTab ?? ""
         );
 
+    }, [activeRightTab]);
+
+    useEffect(() => {
+        setLastActiveArea("left");
+    }, [activeLeftTab]);
+
+    useEffect(() => {
+        setLastActiveArea("right");
     }, [activeRightTab]);
 
     useEffect(() => {
@@ -780,6 +797,14 @@ export default function TeacherDashboard() {
                                     <AppHeader
                                         splitView={splitView}
                                         setSplitView={setSplitView}
+                                        activeTab={
+                                            (lastActiveArea === "right"
+                                                ? rightTabs.find(tab => tab.id === activeRightTab)
+                                                : leftTabs.find(tab => tab.id === activeLeftTab)) ||
+                                            leftTabs.find(tab => tab.id === activeLeftTab) ||
+                                            rightTabs.find(tab => tab.id === activeRightTab)
+                                        }
+                                        groups={teacherGroups}
                                     />
 
                                 </div>

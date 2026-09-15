@@ -11,6 +11,7 @@ test("normalizes single_choice rows into question and option batches", () => {
             Nivå: 1,
             "Korrekta alternativ": "2",
             "Miniräknare tillåten": "Ja",
+            "GeoGebra tillåten": "Ja",
             "Alternativ 1": "3",
             "Alternativ 2": "5",
             "Alternativ 3": "7"
@@ -28,6 +29,7 @@ test("normalizes single_choice rows into question and option batches", () => {
     assert.equal(result.questions[0].blockId, 10);
     assert.equal(result.questions[0].seriesLevelId, 1);
     assert.equal(result.questions[0].calculatorAllowed, true);
+    assert.equal(result.questions[0].geogebraAllowed, true);
     assert.equal(result.questions[0].options.length, 3);
     assert.deepEqual(
         result.questions[0].options.map(option => [option.text, option.isCorrect]),

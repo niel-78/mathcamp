@@ -182,70 +182,90 @@ export default function MonthView({
                                                     px-2
                                                     py-1
                                                 "
-                                                style={getGroupColor(lesson.group_id, lesson.color_index)
+                                                style={getGroupColor(lesson.group_id)
                                                     ? {
-                                                        backgroundColor: getGroupColor(lesson.group_id, lesson.color_index).background,
-                                                        color: getGroupColor(lesson.group_id, lesson.color_index).text,
-                                                        borderLeft: `3px solid ${getGroupColor(lesson.group_id, lesson.color_index).border}`
+                                                        backgroundColor: getGroupColor(lesson.group_id).background,
+                                                        color: getGroupColor(lesson.group_id).text,
+                                                        borderLeft: `3px solid ${getGroupColor(lesson.group_id).border}`
                                                     }
                                                     : undefined}
                                             >
 
                                                 <div
+                                                    key={lesson.id}
                                                     className="
-                                                        flex
-                                                        justify-between
-                                                        gap-2
+                                                        text-xs
+                                                        bg-blue-100
+                                                        text-blue-900
+                                                        rounded
+                                                        px-2
+                                                        py-1
                                                     "
+                                                    style={getGroupColor(lesson.group_id)
+                                                        ? {
+                                                            backgroundColor: getGroupColor(lesson.group_id).background,
+                                                            color: getGroupColor(lesson.group_id).text,
+                                                            borderLeft: `3px solid ${getGroupColor(lesson.group_id).border}`
+                                                        }
+                                                        : undefined}
                                                 >
-                                                    <span>
-                                                        {dayjs(lesson.starts_at).format("HH:mm")}
-                                                        -
-                                                        {dayjs(lesson.ends_at).format("HH:mm")}
-                                                    </span>
-
-                                                    <span
+                                                    <div
                                                         className="
-                                                            truncate
-                                                            font-medium
+                                                            flex
+                                                            justify-between
+                                                            gap-2
                                                         "
                                                     >
-                                                        {lesson.group_name}
-                                                    </span>
+                                                        <span>
+                                                            {dayjs(lesson.starts_at).format("HH:mm")}
+                                                            -
+                                                            {dayjs(lesson.ends_at).format("HH:mm")}
+                                                        </span>
+
+                                                        <span
+                                                            className="
+                                                                truncate
+                                                                font-medium
+                                                            "
+                                                        >
+                                                            {lesson.group_name}
+                                                        </span>
+                                                    </div>
+
+                                                    {lesson.sections?.length > 0 && (
+                                                        <div className="mt-1 space-y-0.5 text-[11px] text-blue-800/80">
+                                                            {lesson.sections.map(section => (
+                                                                <div
+                                                                    key={`section-${lesson.id}-${section.id}`}
+                                                                    className="truncate"
+                                                                >
+                                                                    <span>{section.title}</span>
+                                                                    {(section.page_number != null || section.end_page != null) && (
+                                                                        <span className="ml-1 text-blue-800/60">
+                                                                            ({section.page_number ?? "?"}
+                                                                            -
+                                                                            {section.end_page ?? section.page_number ?? "?"})
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+
+                                                    {lessonAssessments[lesson.id]?.map(assessment => (
+                                                        <div
+                                                            key={`assessment-${assessment.id}`}
+                                                            className={assessment.type === "diagnostic"
+                                                                ? "mt-1 truncate px-1 text-[11px] font-bold"
+                                                                : "mt-1 truncate rounded bg-emerald-100 px-1 text-[11px] text-emerald-900"}
+                                                        >
+                                                            {assessment.type === "diagnostic"
+                                                                ? "Diagnos"
+                                                                : assessment.title || assessment.type}
+                                                        </div>
+                                                    ))}
+                                                    
                                                 </div>
-
-                                                {lesson.sections?.length > 0 && (
-                                                    <div className="mt-1 space-y-0.5 text-[11px] text-blue-800/80">
-                                                        {lesson.sections.map(section => (
-                                                            <div
-                                                                key={`section-${lesson.id}-${section.id}`}
-                                                                className="truncate"
-                                                            >
-                                                                <span>{section.title}</span>
-                                                                {(section.page_number != null || section.end_page != null) && (
-                                                                    <span className="ml-1 text-blue-800/60">
-                                                                        ({section.page_number ?? "?"}
-                                                                        -
-                                                                        {section.end_page ?? section.page_number ?? "?"})
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                )}
-
-                                                {lessonAssessments[lesson.id]?.map(assessment => (
-                                                    <div
-                                                        key={`assessment-${assessment.id}`}
-                                                        className={assessment.type === "diagnostic"
-                                                            ? "mt-1 truncate px-1 text-[11px] font-bold"
-                                                            : "mt-1 truncate rounded bg-emerald-100 px-1 text-[11px] text-emerald-900"}
-                                                    >
-                                                        {assessment.type === "diagnostic"
-                                                            ? "Diagnos"
-                                                            : assessment.title || assessment.type}
-                                                    </div>
-                                                ))}
 
                                             </div>
 

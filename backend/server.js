@@ -32,6 +32,7 @@ import assessmentRoutes from "./routes/assessmentRoutes.js";
 import assessmentTypeSettingsRoutes from "./routes/assessmentTypeSettingsRoutes.js";
 import groupAssessmentRoutes from "./routes/groupAssessmentRoutes.js";
 import assessmentAttemptRoutes from "./routes/assessmentAttemptRoutes.js";
+import geogebraConstructionRoutes from "./routes/geogebraConstructionRoutes.js";
 
 import groupRoutes from "./routes/groupRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
@@ -128,6 +129,7 @@ app.use("/api/assessments", assessmentRoutes);
 app.use("/api/assessment-type-settings", assessmentTypeSettingsRoutes);
 app.use("/api/group-assessments", groupAssessmentRoutes);
 app.use("/api/assessment-attempts", assessmentAttemptRoutes);
+app.use("/api/geogebra-constructions", geogebraConstructionRoutes);
 
 app.use("/api/groups", groupRoutes);
 app.use("/api/students", studentRoutes);

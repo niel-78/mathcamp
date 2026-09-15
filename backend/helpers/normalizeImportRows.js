@@ -1,3 +1,5 @@
+import { checkImportedAnswerKey } from "../utils/answerKeyChecker.js";
+
 function validateImportQuestion({
     questionType,
     correctAnswers,
@@ -102,6 +104,13 @@ export function normalizeImportRows({
             row.calculator_allowed
         );
 
+        const geogebraAllowed = parseBoolean(
+            row["GeoGebra tillåten"] ??
+            row["GeoGebra"] ??
+            row.geogebra_allowed ??
+            row["GeoGebra CAS tillåten"]
+        );
+
         const correctAnswers = String(
             row["Korrekta alternativ"] ||
             row["Rätta svar"] ||
@@ -163,12 +172,30 @@ export function normalizeImportRows({
             })
         );
 
+        try {
+            const answerKeyIsCorrect = checkImportedAnswerKey({
+                question,
+                questionType,
+                options,
+                answerConfig
+            });
+
+            if (answerKeyIsCorrect === false) {
+                validationErrors.push(
+                    `Rad ${index + 2}: facit stämmer inte med det uträknade svaret`
+                );
+            }
+        } catch {
+            // Uttryck som kräver algebraisk eller semantisk tolkning kontrolleras senare manuellt.
+        }
+
         questions.push({
             blockId,
             question,
             questionType,
             seriesLevelId,
             calculatorAllowed,
+            geogebraAllowed,
             userId,
             answerConfig,
             options

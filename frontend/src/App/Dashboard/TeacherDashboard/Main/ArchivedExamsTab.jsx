@@ -5,12 +5,16 @@ import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 import CardSection from "@/components/layouts/CardSection";
 import { Button } from "@/components/ui/button";
 import DeleteExamDialog from "@/components/ui/DeleteExamDialog";
+import ArchiveDates from "@/components/ui/ArchiveDates";
+import ArchiveToolbar from "@/components/ui/ArchiveToolbar";
 
 export default function ArchivedExamsTab() {
 
     const [assessments, setExams] = useState([]);
     const [loading, setLoading] = useState(true);
     const [assessmentToDelete, setExamToDelete] = useState(null);
+    const [query, setQuery] = useState("");
+    const [sortBy, setSortBy] = useState("archived_at");
 
     useEffect(() => {
 
@@ -81,6 +85,14 @@ export default function ArchivedExamsTab() {
 
     };
 
+    const visibleAssessments = assessments
+        .filter(assessment => (assessment.title || "")
+            .toLowerCase().includes(query.toLowerCase()))
+        .sort((first, second) =>
+            new Date(second[sortBy] || second.archived_at || second.created_at || 0) -
+            new Date(first[sortBy] || first.archived_at || first.created_at || 0)
+        );
+
     return (
         <>
             <BaseTabLayout
@@ -91,6 +103,14 @@ export default function ArchivedExamsTab() {
                     title="Arkiverade prov"
                     description="Prov som du äger och har arkiverat."
                 >
+
+                    <ArchiveToolbar
+                        query={query}
+                        setQuery={setQuery}
+                        sortBy={sortBy}
+                        setSortBy={setSortBy}
+                        showCourseBookFilters={false}
+                    />
 
                     {loading && (
 
@@ -116,7 +136,7 @@ export default function ArchivedExamsTab() {
 
                     <div className="space-y-4">
 
-                        {assessments.map(assessment => (
+                        {visibleAssessments.map(assessment => (
 
                             <div
                                 key={assessment.id}
@@ -140,6 +160,8 @@ export default function ArchivedExamsTab() {
                                     >
                                         {assessment.title}
                                     </div>
+
+                                    <ArchiveDates item={assessment} />
 
                                 </div>
 

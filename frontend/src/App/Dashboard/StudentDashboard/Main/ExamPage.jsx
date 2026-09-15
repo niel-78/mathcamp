@@ -562,10 +562,23 @@ export default function ExamPage({
                             }
                         />
 
-                        {isDiagnostic &&
-                            (current.calculator_allowed === true ||
-                                Number(current.calculator_allowed) === 1) && (
-                            <Calculator key={current.id} />
+                        {(current.calculator_allowed === true ||
+                            Number(current.calculator_allowed) === 1 ||
+                            current.geogebra_allowed === true ||
+                            Number(current.geogebra_allowed) === 1) && (
+                            <Calculator
+                                key={current.id}
+                                attemptId={attemptId}
+                                questionId={current.id}
+                                showCalculator={
+                                    current.calculator_allowed === true ||
+                                    Number(current.calculator_allowed) === 1
+                                }
+                                showGeoGebra={
+                                    current.geogebra_allowed === true ||
+                                    Number(current.geogebra_allowed) === 1
+                                }
+                            />
                         )}
 
                         <div className="flex justify-end">

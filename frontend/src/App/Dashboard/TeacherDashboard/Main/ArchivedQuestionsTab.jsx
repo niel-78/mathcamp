@@ -5,6 +5,31 @@ import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 import CardSection from "@/components/layouts/CardSection";
 import DeleteQuestionDialog from "@/components/ui/DeleteQuestionDialog";
 import { Button } from "@/components/ui/button";
+import MathContent from "@/components/ui/MathContent";
+import { AlertCircle } from "lucide-react";
+import { getQuestionIssues } from "@/utils/getQuestionIssues";
+import ArchiveDates from "@/components/ui/ArchiveDates";
+import ArchiveToolbar from "@/components/ui/ArchiveToolbar";
+
+function IssueDetails({ issues }) {
+    if (!issues.length) {
+        return null;
+    }
+
+    return (
+        <div className="mt-3 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive space-y-1.5">
+            <div className="flex items-center gap-1.5 font-semibold">
+                <AlertCircle size={14} />
+                <span>{issues.length} fel</span>
+            </div>
+            <ul className="list-disc list-inside space-y-0.5 opacity-90">
+                {issues.map(issue => (
+                    <li key={issue.type}>{issue.message}</li>
+                ))}
+            </ul>
+        </div>
+    );
+}
 
 export default function ArchivedQuestionsTab() {
 
@@ -17,6 +42,11 @@ export default function ArchivedQuestionsTab() {
     const [questionToDelete,
         setQuestionToDelete] =
         useState(null);
+
+    const [query, setQuery] = useState("");
+    const [sortBy, setSortBy] = useState("updated_at");
+    const [course, setCourse] = useState("");
+    const [book, setBook] = useState("");
 
     useEffect(() => {
 
@@ -115,6 +145,38 @@ export default function ArchivedQuestionsTab() {
 
     };
 
+    const courses = [...new Set(
+        questions.flatMap(question =>
+            (question.course_names || "").split(", ").filter(Boolean)
+        )
+    )].sort();
+
+    const books = [...new Set(
+        questions.flatMap(question =>
+            (question.book_names || "").split(", ").filter(Boolean)
+        )
+    )].sort();
+
+    const visibleQuestions = questions
+        .filter(question => {
+            const text = [
+                question.id,
+                question.question,
+                question.level_name,
+                question.course_names,
+                question.book_names
+            ].filter(Boolean).join(" ").toLowerCase();
+
+            return (
+                text.includes(query.toLowerCase()) &&
+                (!course || question.course_names?.split(", ").includes(course)) &&
+                (!book || question.book_names?.split(", ").includes(book))
+            );
+        })
+        .sort((first, second) =>
+            new Date(second[sortBy] || 0) - new Date(first[sortBy] || 0)
+        );
+
 
     return (
 
@@ -127,6 +189,21 @@ export default function ArchivedQuestionsTab() {
                     title="Arkiverade uppgifter"
                     description="Uppgifter från dina block som har arkiverats."
                 >
+
+                    <div className="w-full max-w-5xl justify-self-start">
+
+                    <ArchiveToolbar
+                        query={query}
+                        setQuery={setQuery}
+                        sortBy={sortBy}
+                        setSortBy={setSortBy}
+                        course={course}
+                        setCourse={setCourse}
+                        book={book}
+                        setBook={setBook}
+                        courses={courses}
+                        books={books}
+                    />
 
                     {loading && (
 
@@ -152,7 +229,7 @@ export default function ArchivedQuestionsTab() {
 
                     <div className="space-y-4">
 
-                        {questions.map(question => (
+                        {visibleQuestions.map(question => (
 
                             <div
                                 key={question.id}
@@ -187,6 +264,41 @@ export default function ArchivedQuestionsTab() {
                                         {" "}
                                         {question.block_id}
                                     </div>
+
+                                    <ArchiveDates item={question} />
+
+                                    {question.question && (
+                                        <MathContent
+                                            value={question.question}
+                                            className="mt-2"
+                                        />
+                                    )}
+
+                                    {question.level_name && (
+                                        <div className="text-sm text-muted-foreground mt-2">
+                                            Nivå: {question.level_name}
+                                        </div>
+                                    )}
+
+                                    {question.course_names && (
+                                        <div className="text-sm text-muted-foreground">
+                                            Kurser: {question.course_names}
+                                        </div>
+                                    )}
+
+                                    {question.book_names && (
+                                        <div className="text-sm text-muted-foreground">
+                                            Böcker: {question.book_names}
+                                        </div>
+                                    )}
+
+                                    <IssueDetails
+                                        issues={getQuestionIssues(
+                                            question,
+                                            null,
+                                            true
+                                        )}
+                                    />
 
                                 </div>
 
@@ -224,6 +336,8 @@ export default function ArchivedQuestionsTab() {
                             </div>
 
                         ))}
+
+                    </div>
 
                     </div>
 

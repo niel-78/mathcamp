@@ -4,6 +4,12 @@ import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 
+const reviewOptions = [
+    { value: "green", label: "Grön", className: "border-green-300 bg-green-50 text-green-800" },
+    { value: "yellow", label: "Gul", className: "border-yellow-300 bg-yellow-50 text-yellow-800" },
+    { value: "red", label: "Röd", className: "border-red-300 bg-red-50 text-red-800" }
+];
+
 export default function GroupResultsTab({ groupId }) {
 
     const [results, setResults] = useState([]);
@@ -54,6 +60,31 @@ export default function GroupResultsTab({ groupId }) {
                     ? "desc"
                     : "asc"
         }));
+    };
+
+    const updateReview = async (studentId, reviewStatus) => {
+        const response = await fetch(
+            `${API_URL}/api/groups/${groupId}/students/${studentId}/review`,
+            {
+                method: "PUT",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ review_status: reviewStatus })
+            }
+        );
+
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || "Kunde inte spara omdömet.");
+        }
+
+        setResults(currentResults => currentResults.map(result =>
+            result.id === studentId
+                ? { ...result, review_status: reviewStatus }
+                : result
+        ));
     };
 
     const sortedResults = [...results].sort((firstResult, secondResult) => {
@@ -144,6 +175,10 @@ export default function GroupResultsTab({ groupId }) {
                                         sortKey="correct_percentage"
                                     />
                                 </th>
+                                <th className="px-3 py-2">
+                                    <SortButton label="Förmågor" sortKey="mastery_average" />
+                                </th>
+                                <th className="px-3 py-2">Omdöme</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -156,6 +191,33 @@ export default function GroupResultsTab({ groupId }) {
                                         {result.correct_percentage === null
                                             ? "-"
                                             : `${result.correct_percentage}%`}
+                                    </td>
+                                            <td className="px-3 py-3">
+                                            {Number.isFinite(Number(result.mastery_average))
+                                                ? Number(result.mastery_average).toFixed(2)
+                                                : "-"}
+                                            </td>
+                                    <td className="px-3 py-3">
+                                        <select
+                                            value={result.review_status || "green"}
+                                            className={`rounded-md border px-2 py-1 text-xs font-medium ${
+                                                reviewOptions.find(option => option.value === (result.review_status || "green"))?.className
+                                            }`}
+                                            aria-label={`Omdöme för ${result.name}`}
+                                            onChange={async event => {
+                                                try {
+                                                    await updateReview(result.id, event.target.value);
+                                                } catch (updateError) {
+                                                    setError(updateError.message);
+                                                }
+                                            }}
+                                        >
+                                            {reviewOptions.map(option => (
+                                                <option key={option.value} value={option.value}>
+                                                    {option.label}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </td>
                                 </tr>
                             ))}

@@ -184,6 +184,7 @@ async function processBlockImportJob({
                 question.questionType,
                 question.seriesLevelId,
                 question.calculatorAllowed ? 1 : 0,
+                question.geogebraAllowed ? 1 : 0,
                 question.userId,
                 question.userId,
                 JSON.stringify(question.answerConfig)
@@ -197,6 +198,7 @@ async function processBlockImportJob({
                     question_type,
                     series_level_id,
                     calculator_allowed,
+                    geogebra_allowed,
                     created_by,
                     updated_by,
                     answer_config
@@ -322,6 +324,7 @@ async function hydrateLightBlocks(blocks) {
             q.level_id,
             q.answer_config,
             q.calculator_allowed,
+            q.geogebra_allowed,
             COALESCE(report_counts.report_count, 0) AS report_count
         FROM questions q
         LEFT JOIN (

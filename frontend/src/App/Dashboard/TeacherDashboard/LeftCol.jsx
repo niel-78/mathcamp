@@ -98,6 +98,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [renameAbilityDialog, setRenameAbilityDialog] = useState(null);
     const [deleteAbilityDialog, setDeleteAbilityDialog] = useState(null);
     const [archiveOpen, setArchiveOpen] = useState(false);
+    const [trashOpen, setTrashOpen] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [assessmentSettingsOpen, setAssessmentSettingsOpen] = useState(false);
     const [createLessonSeriesDialog, setCreateLessonSeriesDialog] = useState(null);
@@ -1267,47 +1268,48 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                             <li
                                 key={group.id}
-                                className="flex items-center gap-1"
                             >
 
-                                <Button
-                                    className="tree-node ml-4 flex-1 justify-start"
-                                    variant="ghost"
-                                    onClick={() => {
-                                        toggleFolder(group.id);
-                                        openTab({
-                                            id: `group-info-${group.id}`,
-                                            type: "group-info",
-                                            title: group.name,
-                                            groupId: group.id
-                                        });
-                                    }}
-                                    onContextMenu={(e) => {
+                                <div className="flex items-center gap-1">
 
-                                        e.preventDefault();
+                                    <Button
+                                        className="tree-node ml-4 flex-1 justify-start"
+                                        variant="ghost"
+                                        onClick={() => {
+                                            toggleFolder(group.id);
+                                            openTab({
+                                                id: `group-info-${group.id}`,
+                                                type: "group-info",
+                                                title: group.name,
+                                                groupId: group.id
+                                            });
+                                        }}
+                                        onContextMenu={(e) => {
 
-                                        setContextMenu({
-                                            type: "group",
-                                            groupId: group.id,
-                                            groupName: group.name,
-                                            groupBookId: group.book_id,
-                                            groupAbilitySeriesId: group.ability_series_id,
-                                            x: e.clientX,
-                                            y: e.clientY
-                                        });
+                                            e.preventDefault();
 
-                                    }}
-                                >
-                                    {expandedGroups[group.id]
-                                        ? "▼"
-                                        : "▶"}
+                                            setContextMenu({
+                                                type: "group",
+                                                groupId: group.id,
+                                                groupName: group.name,
+                                                groupBookId: group.book_id,
+                                                groupAbilitySeriesId: group.ability_series_id,
+                                                x: e.clientX,
+                                                y: e.clientY
+                                            });
 
-                                    {" "}
+                                        }}
+                                    >
+                                        {expandedGroups[group.id]
+                                            ? "▼"
+                                            : "▶"}
 
-                                    {group.name}
-                                </Button>
+                                        {" "}
 
-                                <DropdownMenu>
+                                        {group.name}
+                                    </Button>
+
+                                    <DropdownMenu>
 
                                     <DropdownMenuTrigger
                                         title="Byt gruppens f\u00e4rg"
@@ -1352,7 +1354,9 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                                     </DropdownMenuContent>
 
-                                </DropdownMenu>
+                                    </DropdownMenu>
+
+                                </div>
 
                                 {expandedGroups[group.id] && (
                                     <div className="ml-8 border-l border-border pl-4">
@@ -2694,12 +2698,12 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                 onClick={() =>
                                     openTab({
                                         id: "archived-students",
-                                        title: "Elever",
+                                        title: "Arkiverade elever",
                                         type: "archived-students"
                                     })
                                 }
                             >
-                                Elever
+                                Arkiverade elever
                             </div>
 
                             <div
@@ -2739,19 +2743,6 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                 }
                             >
                                 Prov
-                            </div>
-
-                            <div
-                                className="tree-file"
-                                onClick={() =>
-                                    openTab({
-                                        id: "trash-assessments",
-                                        title: "Papperskorg",
-                                        type: "trash-assessments"
-                                    })
-                                }
-                            >
-                                Papperskorg
                             </div>
 
                             <div
@@ -2825,6 +2816,42 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                     )}
 
+                </div>
+
+                <div className="mt-2">
+                    <div
+                        className="tree-folder"
+                        onClick={() => setTrashOpen(previous => !previous)}
+                    >
+                        <span>{trashOpen ? "▼" : "▶"}</span>
+                        <span>Papperskorg</span>
+                    </div>
+
+                    {trashOpen && (
+                        <div className="ml-6">
+                            {[
+                                ["Grupper", "trash-groups", "groups"],
+                                ["Elever i grupper", "trash-students", "students"],
+                                ["Block", "trash-blocks", "blocks"],
+                                ["Uppgifter", "trash-questions", "questions"],
+                                ["Prov", "trash-assessments", "assessments"],
+                                ["Presentationer", "trash-presentations", "presentations"]
+                            ].map(([title, id, kind]) => (
+                                <div
+                                    className="tree-file"
+                                    key={id}
+                                    onClick={() => openTab({
+                                        id,
+                                        title,
+                                        type: "trash",
+                                        kind
+                                    })}
+                                >
+                                    {title}
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
             </div>    

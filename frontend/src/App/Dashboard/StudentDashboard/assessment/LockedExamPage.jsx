@@ -128,7 +128,7 @@ export default function LockedExamPage({
                 max-w-lg
                 rounded-xl
                 border
-                bg-white
+                bg-card
                 p-8
                 text-center
                 shadow-sm

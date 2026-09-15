@@ -148,6 +148,12 @@ export default function QuestionCard({
             Boolean(question.calculator_allowed)
         );
 
+    const [geogebraAllowed,
+        setGeogebraAllowed] =
+        useState(
+            Boolean(question.geogebra_allowed)
+        );
+
     const [previewAnswer,
         setPreviewAnswer] =
         useState(
@@ -268,6 +274,7 @@ export default function QuestionCard({
                             answer_config: currentConfig,
                             level_id: levelId ?? question.level_id,
                             calculator_allowed: calculatorAllowed,
+                            geogebra_allowed: geogebraAllowed,
                             ...overrides
                         })
                     }
@@ -354,6 +361,19 @@ export default function QuestionCard({
 
             if (saved) {
                 toast.success("Miniräknarinställning sparad");
+            }
+        };
+
+    const changeGeoGebraPermission =
+        async (allowed) => {
+            setGeogebraAllowed(allowed);
+
+            const saved = await saveQuestion({
+                geogebra_allowed: allowed
+            });
+
+            if (saved) {
+                toast.success("GeoGebra-inställning sparad");
             }
         };
 
@@ -460,6 +480,14 @@ export default function QuestionCard({
         );
 
     }, [question.id, question.calculator_allowed]);
+
+    useEffect(() => {
+
+        setGeogebraAllowed(
+            Boolean(question.geogebra_allowed)
+        );
+
+    }, [question.id, question.geogebra_allowed]);
 
     useEffect(() => {
 
@@ -612,6 +640,22 @@ export default function QuestionCard({
                                         }
                                     />
                                     Miniräknare tillåten
+                                </label>
+
+                                <label
+                                    className="flex items-center gap-2 text-sm"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={geogebraAllowed}
+                                        disabled={savingQuestion}
+                                        onChange={(e) =>
+                                            changeGeoGebraPermission(
+                                                e.target.checked
+                                            )
+                                        }
+                                    />
+                                    GeoGebra CAS tillåten
                                 </label>
 
                             </CardContent>

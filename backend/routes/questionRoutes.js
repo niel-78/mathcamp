@@ -110,7 +110,8 @@ router.put("/:id", async (req, res) => {
             question_type,
             answer_config,
             level_id,
-            calculator_allowed
+            calculator_allowed,
+            geogebra_allowed
         } = req.body;
 
         const updates = [];
@@ -145,6 +146,11 @@ router.put("/:id", async (req, res) => {
         if (calculator_allowed !== undefined) {
             updates.push("calculator_allowed = ?");
             params.push(calculator_allowed ? 1 : 0);
+        }
+
+        if (geogebra_allowed !== undefined) {
+            updates.push("geogebra_allowed = ?");
+            params.push(geogebra_allowed ? 1 : 0);
         }
 
         updates.push("updated_at = NOW()");
@@ -422,9 +428,10 @@ router.post("/:id/duplicate",
                     updated_by,
                     level_id,
                     series_level_id,
-                    calculator_allowed
+                    calculator_allowed,
+                    geogebra_allowed
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `,
                 [
                     question.block_id,
@@ -437,7 +444,8 @@ router.post("/:id/duplicate",
                     req.user.id,
                     question.level_id,
                     question.series_level_id,
-                    question.calculator_allowed ? 1 : 0
+                    question.calculator_allowed ? 1 : 0,
+                    question.geogebra_allowed ? 1 : 0
                 ]
             );
 

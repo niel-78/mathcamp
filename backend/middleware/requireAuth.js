@@ -2,7 +2,8 @@ import db from "../db.js";
 
 const requireAuth = async (req, res, next) => {
     try {
-        const token = req.headers.authorization;
+        const authorization = req.headers.authorization;
+        const token = authorization?.replace(/^Bearer\s+/i, "");
 
         if (!token) {
             return res.status(401).json({

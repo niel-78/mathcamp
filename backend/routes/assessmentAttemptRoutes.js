@@ -14,6 +14,164 @@ const router = express.Router();
 router.use(requireAuth);
 router.use(requireRole("student", "teacher"));
 
+router.get("/:attemptId/geogebra/:questionId", async (req, res) => {
+    const { attemptId, questionId } = req.params;
+
+    try {
+        const [[construction]] = await db.query(
+            `
+            SELECT c.name, c.construction_xml, c.updated_at
+            FROM assessment_geogebra_constructions c
+            INNER JOIN assessment_attempts a
+                ON a.id = c.attempt_id
+            INNER JOIN attempt_questions aq
+                ON aq.attempt_id = c.attempt_id
+                AND aq.question_id = c.question_id
+            INNER JOIN questions q
+                ON q.id = c.question_id
+            WHERE c.attempt_id = ?
+                AND c.question_id = ?
+                AND a.user_id = ?
+                AND q.geogebra_allowed = 1
+            `,
+            [attemptId, questionId, req.user.id]
+        );
+
+        res.json({
+            construction: construction || null
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            error: "Kunde inte hämta GeoGebra-konstruktionen."
+        });
+    }
+});
+
+router.put("/:attemptId/geogebra/:questionId", async (req, res) => {
+    const { attemptId, questionId } = req.params;
+    const {
+        construction_xml: constructionXml,
+        name = "Provkonstruktion"
+    } = req.body;
+
+    if (typeof constructionXml !== "string" || constructionXml.length === 0) {
+        return res.status(400).json({
+            error: "En GeoGebra-konstruktion måste anges."
+        });
+    }
+
+    if (constructionXml.length > 16 * 1024 * 1024) {
+        return res.status(413).json({
+            error: "GeoGebra-konstruktionen är för stor."
+        });
+    }
+
+    if (typeof name !== "string" || name.trim().length === 0 || name.length > 255) {
+        return res.status(400).json({
+            error: "Ange ett namn på konstruktionen."
+        });
+    }
+
+    try {
+        const [[attempt]] = await db.query(
+            `
+            SELECT a.id
+            FROM assessment_attempts a
+            INNER JOIN attempt_questions aq
+                ON aq.attempt_id = a.id
+                AND aq.question_id = ?
+            INNER JOIN questions q
+                ON q.id = aq.question_id
+            WHERE a.id = ?
+                AND a.user_id = ?
+                AND a.status = 'in_progress'
+                AND q.geogebra_allowed = 1
+            `,
+            [questionId, attemptId, req.user.id]
+        );
+
+        if (!attempt) {
+            return res.status(403).json({
+                error: "Konstruktionen kan inte sparas för den här frågan."
+            });
+        }
+
+        await db.query(
+            `
+            INSERT INTO assessment_geogebra_constructions (
+                attempt_id,
+                question_id,
+                name,
+                construction_xml
+            )
+            VALUES (?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+                name = VALUES(name),
+                construction_xml = VALUES(construction_xml),
+                updated_at = CURRENT_TIMESTAMP
+            `,
+            [attemptId, questionId, name.trim(), constructionXml]
+        );
+
+        res.json({
+            success: true
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            error: "Kunde inte spara GeoGebra-konstruktionen."
+        });
+    }
+});
+
+router.delete("/:attemptId/geogebra/:questionId", async (req, res) => {
+    const { attemptId, questionId } = req.params;
+
+    try {
+        const [[attempt]] = await db.query(
+            `
+            SELECT a.id
+            FROM assessment_attempts a
+            INNER JOIN attempt_questions aq
+                ON aq.attempt_id = a.id
+                AND aq.question_id = ?
+            INNER JOIN questions q
+                ON q.id = aq.question_id
+            WHERE a.id = ?
+                AND a.user_id = ?
+                AND a.status = 'in_progress'
+                AND q.geogebra_allowed = 1
+            `,
+            [questionId, attemptId, req.user.id]
+        );
+
+        if (!attempt) {
+            return res.status(403).json({
+                error: "Konstruktionen kan inte raderas för den här frågan."
+            });
+        }
+
+        await db.query(
+            `
+            DELETE FROM assessment_geogebra_constructions
+            WHERE attempt_id = ?
+                AND question_id = ?
+            `,
+            [attemptId, questionId]
+        );
+
+        res.json({
+            success: true
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            error: "Kunde inte radera GeoGebra-konstruktionen."
+        });
+    }
+});
+
 router.post("/:id/question-reports", async (req, res) => {
 
     const { id: attemptId } = req.params;

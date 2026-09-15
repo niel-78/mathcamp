@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
     GRADING_MODES,
     QUESTION_TYPES,
+        ANSWER_FORMATS,
     getGradingModeLabel,
     getQuestionTypeLabel
 } from "@/constants/assessmentConstants";
@@ -92,6 +93,10 @@ export default function AnswerConfigEditor({
         config.order_independent ?? false
     );
 
+    const [answerFormat, setAnswerFormat] = useState(
+        config.answer_format ?? ANSWER_FORMATS.ALL.value
+    );
+
     useEffect(() => {
         const currentConfig = parseAnswerConfig(question.answer_config);
         setQuestionType(question.question_type);
@@ -104,6 +109,7 @@ export default function AnswerConfigEditor({
         setRequireSimplified(currentConfig.require_simplified ?? false);
         setAllowDecimal(currentConfig.allow_decimal ?? false);
         setOrderIndependent(currentConfig.order_independent ?? false);
+        setAnswerFormat(currentConfig.answer_format ?? ANSWER_FORMATS.ALL.value);
     }, [question]);
 
     const modeConfig =
@@ -148,7 +154,8 @@ export default function AnswerConfigEditor({
                     allow_decimal:
                         allowDecimal,
                     order_independent:
-                        orderIndependent
+                        orderIndependent,
+                    answer_format: answerFormat
                 }
             }
         );
@@ -212,6 +219,31 @@ export default function AnswerConfigEditor({
         return (
 
             <>
+                {(questionType === QUESTION_TYPES.NUMERIC_INPUT.value ||
+                    gradingMode === GRADING_MODES.NUMERIC.value ||
+                    gradingMode === GRADING_MODES.FRACTION.value) && (
+                    <Field label="Svar ska anges som">
+                        {!editing ? (
+                            <div>
+                                {Object.values(ANSWER_FORMATS).find(
+                                    format => format.value === answerFormat
+                                )?.label || ANSWER_FORMATS.ALL.label}
+                            </div>
+                        ) : (
+                            <select
+                                className="input-standard"
+                                value={answerFormat}
+                                onChange={event => setAnswerFormat(event.target.value)}
+                            >
+                                {Object.values(ANSWER_FORMATS).map(format => (
+                                    <option key={format.value} value={format.value}>
+                                        {format.label}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+                    </Field>
+                )}
 
                 {modeConfig?.settings.includes(
                     "default_answer"

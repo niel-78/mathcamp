@@ -3,6 +3,8 @@ import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 import { Button } from "@/components/ui/button";
+import ArchiveDates from "@/components/ui/ArchiveDates";
+import ArchiveToolbar from "@/components/ui/ArchiveToolbar";
 
 export default function ArchivedPresentationsTab({
     openTab
@@ -12,6 +14,8 @@ export default function ArchivedPresentationsTab({
         presentations,
         setPresentations
     ] = useState([]);
+    const [query, setQuery] = useState("");
+    const [sortBy, setSortBy] = useState("archived_at");
 
     const loadPresentations =
         async () => {
@@ -88,15 +92,31 @@ export default function ArchivedPresentationsTab({
 
         };
 
+        const visiblePresentations = presentations
+            .filter(presentation => (presentation.title || "")
+                .toLowerCase().includes(query.toLowerCase()))
+            .sort((first, second) =>
+                new Date(second[sortBy] || second.archived_at || second.created_at || 0) -
+                new Date(first[sortBy] || first.archived_at || first.created_at || 0)
+            );
+
     return (
 
         <BaseTabLayout
             title="Arkiverade presentationer"
         >
 
+            <ArchiveToolbar
+                query={query}
+                setQuery={setQuery}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+                showCourseBookFilters={false}
+            />
+
             <div className="space-y-2">
 
-                {presentations.map(
+                {visiblePresentations.map(
                     presentation => (
 
                         <div
@@ -129,6 +149,8 @@ export default function ArchivedPresentationsTab({
                                 >
                                     ID: {presentation.id}
                                 </div>
+
+                                <ArchiveDates item={presentation} />
 
                             </div>
 

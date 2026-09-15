@@ -1,15 +1,19 @@
 import { checkOptionValues } from "@/utils/checkOptionValues";
 
-export function getQuestionIssues(question, block = null) {
+export function getQuestionIssues(
+    question,
+    block = null,
+    includeInactive = false
+) {
     if (!question) return [];
 
     // Ignorera om blocket är raderat eller arkiverat
-    if (block && (block.deleted_at || block.archived_at)) {
+    if (!includeInactive && block && (block.deleted_at || block.archived_at)) {
         return [];
     }
 
     // Ignorera raderade eller arkiverade frågor
-    if (question.deleted_at || question.archived_at) {
+    if (!includeInactive && (question.deleted_at || question.archived_at)) {
         return [];
     }
 
@@ -94,19 +98,19 @@ export function getQuestionIssues(question, block = null) {
     return issues;
 }
 
-export function getBlockIssues(block) {
-    if (!block || block.deleted_at || block.archived_at) {
+export function getBlockIssues(block, includeInactive = false) {
+    if (!block || (!includeInactive && (block.deleted_at || block.archived_at))) {
         return [];
     }
 
     const issues = [];
     const questions = (block.questions || []).filter(
-        q => !q.deleted_at && !q.archived_at
+        q => includeInactive || (!q.deleted_at && !q.archived_at)
     );
 
     questions.forEach((q, idx) => {
         const questionNum = idx + 1;
-        const qIssues = getQuestionIssues(q, block);
+        const qIssues = getQuestionIssues(q, block, includeInactive);
         qIssues.forEach(issue => {
             issues.push({
                 ...issue,

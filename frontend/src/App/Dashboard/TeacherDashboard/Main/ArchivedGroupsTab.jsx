@@ -5,12 +5,16 @@ import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 import CardSection from "@/components/layouts/CardSection";
 import { Button } from "@/components/ui/button";
 import DeleteGroupDialog from "@/components/ui/DeleteGroupDialog";
+import ArchiveDates from "@/components/ui/ArchiveDates";
+import ArchiveToolbar from "@/components/ui/ArchiveToolbar";
 
 export default function ArchivedGroupsTab() {
 
     const [groups, setGroups] = useState([]);
     const [loading, setLoading] = useState(true);
     const [groupToDelete, setGroupToDelete] = useState(null);
+    const [query, setQuery] = useState("");
+    const [sortBy, setSortBy] = useState("archived_at");
 
     useEffect(() => {
 
@@ -81,6 +85,14 @@ export default function ArchivedGroupsTab() {
 
     };
 
+    const visibleGroups = groups
+        .filter(group => `${group.name} ${group.description || ""}`
+            .toLowerCase().includes(query.toLowerCase()))
+        .sort((first, second) =>
+            new Date(second[sortBy] || second.archived_at || second.created_at || 0) -
+            new Date(first[sortBy] || first.archived_at || first.created_at || 0)
+        );
+
     return (
         <>
             <BaseTabLayout
@@ -91,6 +103,14 @@ export default function ArchivedGroupsTab() {
                     title="Arkiverade grupper"
                     description="Grupper som du äger och har arkiverat."
                 >
+
+                    <ArchiveToolbar
+                        query={query}
+                        setQuery={setQuery}
+                        sortBy={sortBy}
+                        setSortBy={setSortBy}
+                        showCourseBookFilters={false}
+                    />
 
                     {loading && (
 
@@ -116,7 +136,7 @@ export default function ArchivedGroupsTab() {
 
                     <div className="space-y-4">
 
-                        {groups.map(group => (
+                        {visibleGroups.map(group => (
 
                             <div
                                 key={group.id}
@@ -153,6 +173,8 @@ export default function ArchivedGroupsTab() {
                                         </div>
 
                                     )}
+
+                                    <ArchiveDates item={group} />
 
                                 </div>
 

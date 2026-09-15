@@ -78,7 +78,7 @@ export default function WaitingRoomPage({
 
         <div className="flex min-h-screen items-center justify-center">
 
-            <div className="max-w-md rounded-xl border bg-white p-6 text-center shadow">
+            <div className="max-w-md rounded-xl border bg-card p-6 text-center shadow">
 
                 <h1 className="text-2xl font-bold">
                     {groupExam.assessment_title}

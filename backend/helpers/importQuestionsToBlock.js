@@ -65,11 +65,12 @@ export default async function importQuestionsToBlock({
                     question_type,
                     series_level_id,
                     calculator_allowed,
+                    geogebra_allowed,
                     created_by,
                     updated_by,
                     answer_config
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `,
                 [
                     blockId,
@@ -77,6 +78,7 @@ export default async function importQuestionsToBlock({
                     question.questionType,
                     question.seriesLevelId,
                     question.calculatorAllowed ? 1 : 0,
+                    question.geogebraAllowed ? 1 : 0,
                     userId,
                     userId,
                     JSON.stringify(question.answerConfig)

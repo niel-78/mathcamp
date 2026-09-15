@@ -216,7 +216,7 @@ export default function UserProfileDialog({
             }
         >
 
-            <DialogContent className="max-h-[90vh] overflow-y-auto">
+            <DialogContent className="z-[60] max-h-[90vh] overflow-y-auto">
 
                 <DialogHeader>
 

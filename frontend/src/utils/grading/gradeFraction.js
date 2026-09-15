@@ -1,8 +1,27 @@
+import {
+    compareNumeric,
+    isAnswerFormatAllowed
+} from "./gradeNumeric.js";
+
 export const gradeFraction = (
     studentAnswer,
     correctAnswer,
     config = {}
 ) => {
+
+    const answerFormat = config.answer_format ?? "all";
+
+    if (!isAnswerFormatAllowed(studentAnswer, answerFormat)) {
+        return false;
+    }
+
+    if (answerFormat !== "fraction") {
+        return compareNumeric(
+            studentAnswer,
+            correctAnswer,
+            config
+        );
+    }
 
     if (config.allow_decimal) {
 

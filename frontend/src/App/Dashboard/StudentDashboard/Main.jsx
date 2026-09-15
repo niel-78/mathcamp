@@ -10,7 +10,8 @@ export default function Main({
                 items-center
                 justify-center
                 p-6
-                bg-slate-50
+                bg-background
+                text-foreground
             "
         >
             {children}
