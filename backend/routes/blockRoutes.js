@@ -1107,16 +1107,22 @@ router.get("/", async (req, res) => {
     const schoolId =
         teacher?.school_id;
 
-    const [[schoolSettings]] =
-        await db.query(
-            `
-            SELECT
-                enable_block_copying
-            FROM school_settings
-            WHERE school_id = ?
-            `,
-            [schoolId]
-        );
+    let schoolSettings = null;
+
+    if (schoolId) {
+
+        [[schoolSettings]] =
+            await db.query(
+                `
+                SELECT
+                    enable_block_copying
+                FROM school_settings
+                WHERE school_id = ?
+                `,
+                [schoolId]
+            );
+
+    }
 
         let blocks;
 
@@ -1205,7 +1211,7 @@ router.get("/", async (req, res) => {
                 `,
                 [
                     req.user.id,
-                    schoolId
+                    schoolId ?? null
                 ]
             );
 
