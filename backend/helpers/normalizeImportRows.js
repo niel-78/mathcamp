@@ -123,6 +123,11 @@ export function normalizeImportRows({
             row["GeoGebra CAS tillåten"]
         );
 
+        const orderIndependent = parseBoolean(
+            row["Ordning spelar ingen roll"] ??
+            row.order_independent
+        );
+
         const imageUrl = String(
             row["Bild (URL)"] ??
             row["Bild"] ??
@@ -160,7 +165,8 @@ export function normalizeImportRows({
         if (questionType === "numeric_input") {
             answerConfig = {
                 grading_mode: "numeric_input",
-                default_answer: correctAnswers[0] || ""
+                default_answer: correctAnswers[0] || "",
+                order_independent: orderIndependent
             };
         }
 

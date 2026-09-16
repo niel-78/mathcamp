@@ -697,7 +697,8 @@ router.get("/import-template", async (req, res) => {
                 "Miniräknare tillåten": "Nej",
                 "GeoGebra tillåten": "Nej",
                 "Bild (URL)": "",
-                "Korrekta alternativ": "56"
+                "Korrekta alternativ": "56",
+                "Ordning spelar ingen roll": "Nej"
             },
             {
                 Fråga: "Vilket uttryck är lika med $x^2$?",
@@ -707,6 +708,7 @@ router.get("/import-template", async (req, res) => {
                 "GeoGebra tillåten": "Nej",
                 "Bild (URL)": "",
                 "Korrekta alternativ": "3",
+                "Ordning spelar ingen roll": "Nej",
                 "Alternativ 1": "$2x$",
                 "Alternativ 2": "$x+2$",
                 "Alternativ 3": "$x \\cdot x$",
@@ -720,19 +722,31 @@ router.get("/import-template", async (req, res) => {
                 "GeoGebra tillåten": "Ja",
                 "Bild (URL)": "https://example.com/diagram.png",
                 "Korrekta alternativ": "2,4",
+                "Ordning spelar ingen roll": "Nej",
                 "Alternativ 1": "$0$",
                 "Alternativ 2": "$5$",
                 "Alternativ 3": "$10$",
                 "Alternativ 4": "$-5$"
             },
             {
-                Fråga: "Lös ekvationen $2x + 4 = 10$. Svar: $x = {{input}}$",
+                Fråga: "Lös ekvationen $2x + 4 = 10$. Skriv $x = {{input}}$.",
                 Frågetyp: "numeric_input",
                 Nivå: 1,
                 "Miniräknare tillåten": "Ja",
                 "GeoGebra tillåten": "Ja",
                 "Bild (URL)": "",
-                "Korrekta alternativ": "3"
+                "Korrekta alternativ": "3",
+                "Ordning spelar ingen roll": "Nej"
+            },
+            {
+                Fråga: "Lös $x^2 = 25$. Skriv $x_1 = {{input}}$, $x_2 = {{input}}$.",
+                Frågetyp: "numeric_input",
+                Nivå: 2,
+                "Miniräknare tillåten": "Nej",
+                "GeoGebra tillåten": "Nej",
+                "Bild (URL)": "",
+                "Korrekta alternativ": "-5; 5",
+                "Ordning spelar ingen roll": "Ja"
             }
         ]);
 
@@ -769,12 +783,33 @@ router.get("/import-template", async (req, res) => {
             ["$\\sqrt{16}$"],
             ["$\\pi r^2$"],
             [],
-            ["text → skriv rätt svar i kolumnen 'Rätta svar'"],
+            ["text → skriv rätt svar i kolumnen 'Svar' eller 'Korrekta alternativ'"],
             ["single_choice → skriv numret på rätt alternativ, t.ex. 2"],
             ["multiple_choice → skriv flera nummer, t.ex. 1,3,4"],
-            ["numeric_input → skriv {{input}} där svarsrutan ska visas och ange rätt svar, t.ex. 3"],
-            ["numeric_input → använd semikolon mellan flera svar, t.ex. -2; 2. Decimaltal kan skrivas 2,5."],
-            ["numeric_input använder numerisk rättning och kan ha flera svarsrutor"]
+            [],
+            ["NUMERIC INPUT - steg för steg"],
+            ["1. Skriv numeric_input i kolumnen 'Frågetyp'."],
+            ["2. Skriv exakt {{input}} i frågetexten för varje svarsruta eleven ska se."],
+            ["3. Skriv rätt siffervärde i 'Korrekta alternativ'. Använd semikolon mellan flera svar."],
+            [],
+            ["Ett svar:"],
+            ["Fråga: Beräkna $7 + 5$. Svar: {{input}}"],
+            ["Korrekta alternativ: 12"],
+            ["Ordning spelar ingen roll: Nej"],
+            [],
+            ["Flera svar i bestämd ordning:"],
+            ["Fråga: Skriv $x = {{input}}$ och $y = {{input}}$."],
+            ["Korrekta alternativ: 3; -2"],
+            ["Ordning spelar ingen roll: Nej"],
+            [],
+            ["Flera svar i valfri ordning (t.ex. rötter):"],
+            ["Fråga: Skriv $x_1 = {{input}}$, $x_2 = {{input}}$."],
+            ["Korrekta alternativ: -5; 5"],
+            ["Ordning spelar ingen roll: Ja"],
+            ["Eleven kan då lägga till eller ta bort svarsrutor."],
+            [],
+            ["Decimaltal kan skrivas med komma eller punkt, t.ex. 2,5 eller 2.5."],
+            ["Använd inte {{input}} för text- eller svarsalternativsfrågor."]
         ]);
 
     XLSX.utils.book_append_sheet(

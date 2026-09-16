@@ -70,7 +70,6 @@ export const gradeNumericInput = (
     if (
         !Array.isArray(studentValues) ||
         !Array.isArray(correctAnswer) ||
-        studentValues.length !== correctAnswer.length ||
         correctAnswer.length === 0
     ) {
         return false;
@@ -78,6 +77,10 @@ export const gradeNumericInput = (
 
     if (config.order_independent) {
         return compareUnordered(studentValues, correctAnswer, config);
+    }
+
+    if (studentValues.length !== correctAnswer.length) {
+        return false;
     }
 
     return correctAnswer.every(

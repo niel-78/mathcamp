@@ -86,10 +86,11 @@ test("preserves decimal commas in numeric input answers", () => {
                 "Korrekta alternativ": "2,5"
             },
             {
-                Fråga: "Rötter: {{input}} och {{input}}",
+                Fråga: "Rötter: x_1 = {{input}} och x_2 = {{input}}",
                 Frågetyp: "numeric_input",
                 Nivå: 1,
-                "Korrekta alternativ": "-2; 2"
+                "Korrekta alternativ": "-2; 2",
+                "Ordning spelar ingen roll": "Ja"
             }
         ],
         blockId: 30,
@@ -103,6 +104,10 @@ test("preserves decimal commas in numeric input answers", () => {
     assert.deepEqual(
         result.questions[1].options.map(option => option.text),
         ["-2", "2"]
+    );
+    assert.equal(
+        result.questions[1].answerConfig.order_independent,
+        true
     );
 });
 
