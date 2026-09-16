@@ -14,7 +14,7 @@ async function migrate() {
 
         await connection.query(`
             CREATE TABLE IF NOT EXISTS assessment_question_image_notes (
-                attempt_id INT NOT NULL,
+                attempt_id VARCHAR(36) NOT NULL,
                 question_id INT NOT NULL,
                 media_id INT NOT NULL,
                 notes_data MEDIUMTEXT NOT NULL,

@@ -236,6 +236,7 @@ export default function FormulaSheetButton({ group = {}, title = "Formelblad" })
     const [penEnabled, setPenEnabled] = useState(false);
     const [eraseEnabled, setEraseEnabled] = useState(false);
     const [clearSignal, setClearSignal] = useState(0);
+    const [formulaPosition, setFormulaPosition] = useState({ x: 0, y: 0 });
     const formulaRef = useRef(null);
 
     const openFormula = () => {
@@ -248,8 +249,24 @@ export default function FormulaSheetButton({ group = {}, title = "Formelblad" })
         setEraseEnabled(false);
     };
 
+    const centerFormula = () => {
+        const width = Math.min(900, window.innerWidth - 32);
+        const height = Math.min(760, window.innerHeight - 32);
+
+        setFormulaPosition({
+            x: Math.max(0, (window.innerWidth - width) / 2 - 16),
+            y: Math.max(0, (window.innerHeight - height) / 2 - 64)
+        });
+    };
+
     const formulaPanel = activeFormula && createPortal(
-        <Draggable handle=".formula-sheet-drag-handle" cancel=".formula-sheet-controls" nodeRef={formulaRef}>
+        <Draggable
+            handle=".formula-sheet-drag-handle"
+            cancel=".formula-sheet-controls"
+            nodeRef={formulaRef}
+            position={formulaPosition}
+            onStop={(_event, data) => setFormulaPosition({ x: data.x, y: data.y })}
+        >
             <section
                 ref={formulaRef}
                 className="fixed left-4 top-16 z-[10001] w-[min(900px,calc(100vw-2rem))] rounded-lg border bg-background p-3 shadow-2xl"
@@ -304,7 +321,17 @@ export default function FormulaSheetButton({ group = {}, title = "Formelblad" })
                 className={activeFormula
                     ? "border-green-600 bg-green-600 text-white hover:bg-green-700 hover:text-white"
                     : "bg-white"}
-                onClick={() => activeFormula ? setActiveFormula(null) : openFormula()}
+                onClick={event => {
+                    if (event.detail !== 2) {
+                        activeFormula ? setActiveFormula(null) : openFormula();
+                    }
+                }}
+                onDoubleClick={() => {
+                    if (!activeFormula) {
+                        openFormula();
+                    }
+                    centerFormula();
+                }}
             >
                 <BookOpen className="h-4 w-4" />
                 {title}

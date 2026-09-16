@@ -95,12 +95,6 @@ export default function ResultPage({
                 Resultat
             </h1>
 
-            {diagnosticStatus?.complete === false && (
-                <div className="mb-6 border border-amber-500/70 bg-amber-500/10 p-4 text-amber-900 dark:text-amber-200">
-                    Diagnosen är inte klar. Eleven har besvarat {diagnosticStatus.answeredQuestionCount} av minst {diagnosticStatus.minimumQuestionCount} frågor.
-                </div>
-            )}
-
             <div className="rounded-lg border p-4 mb-6">
 
                 <h2 className="text-xl font-semibold">

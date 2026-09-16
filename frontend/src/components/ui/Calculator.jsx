@@ -18,6 +18,10 @@ const calculatorKeys = [
 const calculatorPositionStorageKey = "math-camp-calculator-position";
 const calculatorSizeStorageKey = "math-camp-calculator-size";
 const geogebraScriptUrl = "https://www.geogebra.org/apps/deployggb.js";
+const defaultGeoGebraSize = {
+    width: 720,
+    height: 520
+};
 
 function getSavedPosition() {
     try {
@@ -60,10 +64,7 @@ function getSavedSize() {
         // Ignore invalid saved size.
     }
 
-    return {
-        width: 720,
-        height: 520
-    };
+    return defaultGeoGebraSize;
 }
 
 function formatResult(value) {
@@ -93,6 +94,7 @@ export default function Calculator({
     const [expression, setExpression] = useState("");
     const [result, setResult] = useState("");
     const [geogebraSize, setGeogebraSize] = useState(savedSize.current);
+    const [panelPosition, setPanelPosition] = useState(savedPosition.current);
     const [geogebraReady, setGeogebraReady] = useState(false);
     const [geogebraName, setGeogebraName] = useState(
         attemptId && questionId
@@ -386,6 +388,38 @@ export default function Calculator({
         );
     };
 
+    const centerToolPanel = (tool, size) => {
+        const width = Math.min(size.width, window.innerWidth - 32);
+        const height = Math.min(size.height, window.innerHeight - 32);
+
+        savedPosition.current = { x: 0, y: 0 };
+        setPanelPosition(savedPosition.current);
+        setPanelAnchor({
+            top: Math.max(16, (window.innerHeight - height) / 2),
+            right: Math.max(16, (window.innerWidth - width) / 2)
+        });
+        localStorage.removeItem(calculatorPositionStorageKey);
+        setActiveTool(tool);
+        setOpen(true);
+    };
+
+    const resetGeoGebraWindow = () => {
+        savedSize.current = defaultGeoGebraSize;
+        setGeogebraSize(defaultGeoGebraSize);
+        geogebraAppletRef.current?.setSize?.(
+            defaultGeoGebraSize.width,
+            defaultGeoGebraSize.height
+        );
+
+        if (geogebraContainerRef.current) {
+            geogebraContainerRef.current.style.height = `${defaultGeoGebraSize.height}px`;
+            geogebraContainerRef.current.style.minHeight = `${defaultGeoGebraSize.height}px`;
+        }
+
+        localStorage.removeItem(calculatorSizeStorageKey);
+        centerToolPanel("geogebra", defaultGeoGebraSize);
+    };
+
     const closeModal = async () => {
         await saveGeoGebra(true);
         savedPosition.current = {
@@ -422,7 +456,15 @@ export default function Calculator({
                     className={open && activeTool === "calculator"
                         ? "border-green-600 bg-green-600 text-white hover:bg-green-700 hover:text-white"
                         : "bg-white"}
-                    onClick={() => toggleTool("calculator")}
+                    onClick={event => {
+                        if (event.detail !== 2) {
+                            toggleTool("calculator");
+                        }
+                    }}
+                    onDoubleClick={() => centerToolPanel("calculator", {
+                        width: 288,
+                        height: 300
+                    })}
                 >
                     <CalculatorIcon className="h-4 w-4" />
                     Miniräknare
@@ -436,7 +478,12 @@ export default function Calculator({
                     className={open && activeTool === "geogebra"
                         ? "border-green-600 bg-green-600 text-white hover:bg-green-700 hover:text-white"
                         : "bg-white"}
-                    onClick={() => toggleTool("geogebra")}
+                    onClick={event => {
+                        if (event.detail !== 2) {
+                            toggleTool("geogebra");
+                        }
+                    }}
+                    onDoubleClick={resetGeoGebraWindow}
                 >
                     <CalculatorIcon className="h-4 w-4" />
                     GeoGebra CAS
@@ -450,12 +497,13 @@ export default function Calculator({
             handle=".calculator-drag-handle"
             cancel=".calculator-controls"
             nodeRef={calculatorRef}
-            defaultPosition={savedPosition.current}
+            position={panelPosition}
             onStop={(_event, data) => {
                 savedPosition.current = {
                     x: data.x,
                     y: data.y
                 };
+                setPanelPosition(savedPosition.current);
 
                 localStorage.setItem(
                     calculatorPositionStorageKey,
