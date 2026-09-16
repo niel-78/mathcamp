@@ -294,6 +294,9 @@ cd ~/mathcamp
 git pull
 
 cd backend
+
+npm run migrate:assessment-image-notes
+
 pm2 restart mathcamp-api
 
 cd ../frontend

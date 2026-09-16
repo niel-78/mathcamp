@@ -1,4 +1,6 @@
 import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
 
 import publicRoutes from "./routes/publicRoutes.js";
 
@@ -64,6 +66,8 @@ import logSystemError from "./helpers/logSystemError.js"
 console.log("SERVER FILE START");
 
 const app = express();
+const backendDirectory = path.dirname(fileURLToPath(import.meta.url));
+const uploadsDirectory = path.join(backendDirectory, "uploads");
 
 const allowedOrigins = [
   "http://localhost:5173",
@@ -153,7 +157,12 @@ app.use("/api/events", eventRoutes);
 
 app.use(
   "/uploads",
-  express.static("uploads")
+  express.static(uploadsDirectory)
+);
+
+app.use(
+  "/api/uploads",
+  express.static(uploadsDirectory)
 );
 
 app.use(async (error, req, res, next) => {

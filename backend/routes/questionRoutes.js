@@ -3,6 +3,7 @@ import db from "../db.js";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { fileURLToPath } from "url";
 import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
 
@@ -10,13 +11,18 @@ import { getAppSettings } from "../utils/getAppSettings.js";
 import { autoFixQuestion, autoFixMultipleQuestions } from "../utils/autoFixQuestion.js";
 
 const router = express.Router();
+const uploadsDirectory = path.join(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "..",
+    "uploads"
+);
 
 router.use(requireAuth);
 router.use(requireRole("teacher","super"));
 
 
 const storage = multer.diskStorage({
-    destination: "uploads/",
+    destination: uploadsDirectory,
     filename: (req, file, cb) => {
         cb(
             null,

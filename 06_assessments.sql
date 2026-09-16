@@ -291,6 +291,39 @@ CREATE TABLE question_reports (
 );
 
 /* =====================================================
+   QUESTION IMAGE NOTES
+   ===================================================== */
+
+CREATE TABLE assessment_question_image_notes (
+    attempt_id VARCHAR(36) NOT NULL,
+    question_id INT NOT NULL,
+    media_id INT NOT NULL,
+
+    notes_data MEDIUMTEXT NOT NULL,
+
+    created_at DATETIME NOT NULL
+        DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at DATETIME NOT NULL
+        DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (attempt_id, media_id),
+
+    FOREIGN KEY (attempt_id)
+        REFERENCES assessment_attempts(id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (question_id)
+        REFERENCES questions(id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (media_id)
+        REFERENCES question_media(id)
+        ON DELETE CASCADE
+);
+
+/* =====================================================
    ATTEMPT EVENTS
    ===================================================== */
 

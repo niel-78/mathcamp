@@ -15,6 +15,8 @@ function getMediaUrl(mediaUrl) {
 
     return mediaUrl.startsWith("http")
         ? mediaUrl
+        : mediaUrl.startsWith("/uploads/")
+            ? `${API_URL}/api${mediaUrl}`
         : `${API_URL}${mediaUrl.startsWith("/") ? "" : "/"}${mediaUrl}`;
 }
 
