@@ -118,6 +118,8 @@ export default function ExamPage({
 
     const [dynamicQuestions, setDynamicQuestions] =
         useState([]);
+    const hasRestoredIndexRef =
+        useRef(false);
 
     const {
         attempt,
@@ -136,6 +138,56 @@ export default function ExamPage({
         );
 
     }, [questions]);
+
+    useEffect(() => {
+
+        if (
+            hasRestoredIndexRef.current ||
+            !attempt ||
+            !dynamicQuestions.length
+        ) {
+            return;
+        }
+
+        hasRestoredIndexRef.current = true;
+
+        const restoredIndex =
+            Math.min(
+                Math.max(
+                    0,
+                    Number(attempt.current_question_index) || 0
+                ),
+                dynamicQuestions.length - 1
+            );
+
+        setIndex(restoredIndex);
+
+    }, [attempt, dynamicQuestions]);
+
+    useEffect(() => {
+
+        if (
+            !attemptId ||
+            !hasRestoredIndexRef.current
+        ) {
+            return;
+        }
+
+        fetch(
+            `${API_URL}/api/assessment-attempts/${attemptId}/position`,
+            {
+                method: "PATCH",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    current_question_index: index
+                })
+            }
+        ).catch(() => {});
+
+    }, [attemptId, index]);
 
     useEffect(() => {
 
@@ -582,18 +634,18 @@ export default function ExamPage({
         };
 
     return (
-        <div className="min-h-screen">
+        <div className="min-h-screen min-w-0 overflow-x-hidden">
 
-            <div className="flex justify-center px-6 py-8">
+            <div className="flex min-w-0 justify-center px-2 py-3 sm:px-6 sm:py-8">
 
-                <Card className="w-full max-w-4xl">
+                <Card className="w-full min-w-0 max-w-4xl">
 
-                    <CardContent className="p-8 space-y-6">
+                    <CardContent className="min-w-0 space-y-6 p-3 sm:p-8">
 
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <UserProfile />
 
-                            <div className="flex flex-col items-end gap-2">
+                            <div className="flex min-w-0 flex-col items-stretch gap-2 sm:items-end">
                                 <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
                                     <FormulaSheetButton />
                                     <Calculator
@@ -670,27 +722,29 @@ export default function ExamPage({
 
                         )}
 
-                        <QuestionView
-                            question={current}
-                            attemptId={attemptId}
-                            answer={
-                                assessment_answers[
-                                    current.id
-                                ]
-                            }
-                            onTextAnswer={
-                                handleTextAnswer
-                            }
-                            onSingleChoice={
-                                handleSingleChoice
-                            }
-                            onMultiChoice={
-                                handleMultiChoice
-                            }
-                            questionTextClassName={
-                                questionTextSizeClassName
-                            }
-                        />
+                        <div className="min-w-0 break-words">
+                            <QuestionView
+                                question={current}
+                                attemptId={attemptId}
+                                answer={
+                                    assessment_answers[
+                                        current.id
+                                    ]
+                                }
+                                onTextAnswer={
+                                    handleTextAnswer
+                                }
+                                onSingleChoice={
+                                    handleSingleChoice
+                                }
+                                onMultiChoice={
+                                    handleMultiChoice
+                                }
+                                questionTextClassName={
+                                    questionTextSizeClassName
+                                }
+                            />
+                        </div>
 
                         <div className="flex justify-end">
                             <Button

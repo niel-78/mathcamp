@@ -113,19 +113,23 @@ export default function LockedExamPage({
 
         <div className="
             flex
-            min-h-screen
+            min-h-[100dvh]
+            min-w-0
             items-center
             justify-center
             bg-muted/20
-            p-6
+            p-3
+            sm:p-6
         ">
 
             <div className="
+                w-full
                 max-w-lg
                 rounded-xl
                 border
                 bg-card
-                p-8
+                p-5
+                sm:p-8
                 text-center
                 shadow-sm
             ">

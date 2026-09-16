@@ -53,12 +53,16 @@ export default function BaseTabLayout({
                     className="
                         text-lg
                         font-semibold
+                        min-w-0
+                        truncate
                     "
                 >
                     {title}
                 </h1>
 
-                {actions}
+                <div className="tab-actions">
+                    {actions}
+                </div>
 
             </div>
 

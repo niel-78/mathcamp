@@ -81,11 +81,8 @@ function isCorrectOption(option) {
 }
 
 export function syncNumericInputs(text, correctCount) {
-    if (correctCount <= 0) return text || "";
-
     const cleanText = (text || "").trim();
 
-    // Strip trailing input lines: e.g. "x = {{input}}", "x_1 = {{input}}", "x_2 = {{input}}", "{{input}}", "Svar: {{input}}"
     const lines = cleanText.split("\n");
     while (lines.length > 0) {
         const lastLine = lines[lines.length - 1].trim();
@@ -99,22 +96,14 @@ export function syncNumericInputs(text, correctCount) {
         }
     }
 
-    const basePrompt = lines.join("\n").trim();
-
-    const inputLines = [];
-    if (correctCount === 1) {
-        inputLines.push("x = {{input}}");
-    } else {
-        for (let i = 1; i <= correctCount; i++) {
-            inputLines.push(`x_${i} = {{input}}`);
-        }
-    }
-
-    if (!basePrompt) {
-        return inputLines.join("\n");
-    }
-
-    return `${basePrompt}\n${inputLines.join("\n")}`;
+    return lines
+        .join("\n")
+        .replace(/\s*Skriv\s+[^.!?\n]*\{\{input\}\}[^.!?\n]*[.!?]?/gi, "")
+        .replace(/\s*(?:Svar|Svara)\s*:\s*\{\{input\}\}\s*[.!?]?/gi, "")
+        .replace(/\{\{input\}\}/g, "")
+        .replace(/\s+([,.!?])/g, "$1")
+        .replace(/[ \t]{2,}/g, " ")
+        .trim();
 }
 
 export default function QuestionCard({
@@ -337,12 +326,12 @@ export default function QuestionCard({
     const changeQuestionType =
         async (newType) => {
 
-            let updatedQuestion = question.question;
-            if (newType === "numeric_input" && !question.question?.includes("{{input}}")) {
-                const targetCount = correctOptions.length || 1;
-                updatedQuestion = syncNumericInputs(question.question, targetCount);
-                setQuestionText(updatedQuestion);
-            }
+            const updatedQuestion =
+                newType === "numeric_input"
+                    ? syncNumericInputs(question.question, correctOptions.length || 1)
+                    : question.question;
+
+            setQuestionText(updatedQuestion);
 
             const saved =
                 await saveQuestion({
@@ -729,37 +718,6 @@ export default function QuestionCard({
 
                         <CardContent className="space-y-4">
 
-                            {question.question_type === "numeric_input" &&
-                                correctOptions.length > 0 &&
-                                (question.question?.match(/\{\{input\}\}/g) || []).length !== correctOptions.length && (
-                                <div className="bg-amber-500/10 border border-amber-500/30 text-amber-900 rounded-xl p-3 text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                                    <div>
-                                        <strong>Antal svarsrutor stämmer inte:</strong> Frågan har{" "}
-                                        {(question.question?.match(/\{\{input\}\}/g) || []).length} ruta/rutor (<code>{'{{input}}'}</code>)
-                                        men {correctOptions.length} rätta svar i facit.
-                                    </div>
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        type="button"
-                                        disabled={savingQuestion}
-                                        onClick={async () => {
-                                            const synced = syncNumericInputs(
-                                                question.question,
-                                                correctOptions.length
-                                            );
-                                            setQuestionText(synced);
-                                            const saved = await saveQuestion({ question: synced });
-                                            if (saved) {
-                                                toast.success("Svarsrutor synkroniserade");
-                                            }
-                                        }}
-                                    >
-                                        Synkronisera ({correctOptions.length === 1 ? "x = {{input}}" : `x_1..x_${correctOptions.length} = {{input}}`})
-                                    </Button>
-                                </div>
-                            )}
-
                             {!editingQuestion ? (
 
                                 <div className="space-y-2">
@@ -779,8 +737,9 @@ export default function QuestionCard({
                                     "
                                 >
 
+                                    {question.question_type === "numeric_input" && questionText.includes("{{input}}") && (
+
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <span className="text-xs text-muted-foreground font-medium">Snabbval:</span>
                                         {correctOptions.length > 0 && (
                                             <Button
                                                 type="button"
@@ -792,48 +751,12 @@ export default function QuestionCard({
                                                     )
                                                 }
                                             >
-                                                Anpassa efter facit ({correctOptions.length} st: {correctOptions.length === 1 ? "x" : `x_1..x_${correctOptions.length}`})
+                                                Ta bort gamla svarsrutemarkörer
                                             </Button>
                                         )}
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="xs"
-                                            onClick={() =>
-                                                setQuestionText(prev =>
-                                                    prev ? `${prev}\nx = {{input}}` : "x = {{input}}"
-                                                )
-                                            }
-                                        >
-                                            + x = {"{{input}}"}
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="xs"
-                                            onClick={() =>
-                                                setQuestionText(prev =>
-                                                    prev
-                                                        ? `${prev}\nx_1 = {{input}}\nx_2 = {{input}}`
-                                                        : "x_1 = {{input}}\nx_2 = {{input}}"
-                                                )
-                                            }
-                                        >
-                                            + x_1, x_2 = {"{{input}}"}
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="xs"
-                                            onClick={() =>
-                                                setQuestionText(prev =>
-                                                    prev ? `${prev} {{input}}` : "{{input}}"
-                                                )
-                                            }
-                                        >
-                                            + {"{{input}}"}
-                                        </Button>
                                     </div>
+
+                                    )}
 
                                     <Textarea
                                         rows={5}
@@ -989,10 +912,9 @@ export default function QuestionCard({
                                         mb-3
                                     "
                                 >
-                                    Lägg till ett alternativ per svarsruta
-                                    (markerat som korrekt), i samma ordning
-                                    som {"{{input}}"}-markeringarna i
-                                    frågetexten.
+                                    Lägg till ett korrekt alternativ per svar
+                                    eleven ska ange. Ordningen används för
+                                    fasta flersvarsfrågor.
                                 </p>
 
                             )}

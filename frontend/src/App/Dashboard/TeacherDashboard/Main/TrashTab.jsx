@@ -255,7 +255,7 @@ export default function TrashTab({ kind }) {
                             key={config.endpoint === "students"
                                 ? `${item.group_id}-${item.id}`
                                 : item.id}
-                            className="border rounded-lg p-4 flex items-center justify-between"
+                            className="border rounded-lg p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
                         >
                             <div>
                                 <div className="font-medium">

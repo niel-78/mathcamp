@@ -1,8 +1,41 @@
 import express from "express";
+import { execFileSync } from "node:child_process";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import db from "../db.js";
 import AssessmentEngine from "../services/AssessmentEngine.js";
 
 const router = express.Router();
+const repositoryDirectory = path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "../.."
+);
+
+function getAppVersion() {
+    if (process.env.APP_VERSION) {
+        return process.env.APP_VERSION;
+    }
+
+    try {
+        return execFileSync(
+            "git",
+            ["rev-parse", "--short=8", "HEAD"],
+            {
+                cwd: repositoryDirectory,
+                encoding: "utf8"
+            }
+        ).trim();
+    } catch {
+        return "development";
+    }
+}
+
+const appVersion = getAppVersion();
+
+router.get("/version", (req, res) => {
+    res.set("Cache-Control", "no-store");
+    res.json({ version: appVersion });
+});
 
 // GET /api/public/planning/:shareId
 router.get("/planning/:shareId",

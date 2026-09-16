@@ -227,7 +227,6 @@ export const scoreNumericInput = (
     if (
         !Array.isArray(studentValues) ||
         !Array.isArray(correctAnswer) ||
-        studentValues.length !== correctAnswer.length ||
         totalCount === 0
     ) {
         return {

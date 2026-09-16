@@ -18,10 +18,10 @@ export default function ExamNavigation({
     const isLast = index === total - 1;
 
     return (
-        <div className="mt-6">
+        <div className="mt-6 min-w-0">
 
             {canSubmitAnytime && (
-                <div className="flex justify-end mb-4">
+            <div className="mb-4 flex flex-wrap justify-end gap-2">
                     <Button
                         onClick={onSubmit}
                         variant="outline"
@@ -31,9 +31,9 @@ export default function ExamNavigation({
                 </div>
             )}
 
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
 
-                <div>
+                <div className="min-w-0">
                     {allowPrevious && (
                         <Button
                             onClick={onPrev}
@@ -45,7 +45,7 @@ export default function ExamNavigation({
                     )}
                 </div>
 
-                <div>
+                <div className="min-w-0">
                     {showReset && (
                         <Button
                             onClick={onReset}
@@ -56,7 +56,7 @@ export default function ExamNavigation({
                     )}
                 </div>
 
-                <div>
+                <div className="ml-auto min-w-0">
                     <Button
                         onClick={
                             isLast || timeExpired

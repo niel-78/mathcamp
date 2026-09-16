@@ -188,9 +188,11 @@ export default function AnswerConfigEditor({
             <div
                 className="
                     grid
-                    grid-cols-[140px_1fr]
+                    grid-cols-1
+                    sm:grid-cols-[140px_1fr]
                     items-start
-                    gap-4
+                    gap-2
+                    sm:gap-4
                 "
             >
 
@@ -782,12 +784,10 @@ export default function AnswerConfigEditor({
                         <>
 
                             <p className="text-sm text-muted-foreground">
-                                Skriv <code>{'{{input}}'}</code> i frågetexten
-                                där en svarsruta ska visas (en per fält).
-                                Lägg till facit under "Svarsalternativ" i
-                                samma ordning som svarsrutorna, markerade som
-                                korrekta. Alla rutor måste stämma för att
-                                frågan ska räknas som rätt.
+                                Lägg till facit under "Svarsalternativ",
+                                markerat som korrekt. Flera korrekta
+                                alternativ ger flera svarsrutor; alla rutor
+                                måste stämma för att frågan ska räknas som rätt.
                             </p>
 
                             {renderSettings()}

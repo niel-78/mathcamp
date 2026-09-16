@@ -81,6 +81,7 @@ export default function DraggableTab({
                 setActiveTab(tab.id)
             }
             className={`
+                draggable-tab
                 flex
                 items-center
                 gap-2

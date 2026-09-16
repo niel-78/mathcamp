@@ -77,8 +77,6 @@ export function checkOptionValues(options) {
 }
 
 export function syncNumericInputs(text, correctCount) {
-    if (correctCount <= 0) return text || "";
-
     const cleanText = (text || "").trim();
 
     const lines = cleanText.split("\n");
@@ -94,22 +92,14 @@ export function syncNumericInputs(text, correctCount) {
         }
     }
 
-    const basePrompt = lines.join("\n").trim();
-
-    const inputLines = [];
-    if (correctCount === 1) {
-        inputLines.push("x = {{input}}");
-    } else {
-        for (let i = 1; i <= correctCount; i++) {
-            inputLines.push(`x_${i} = {{input}}`);
-        }
-    }
-
-    if (!basePrompt) {
-        return inputLines.join("\n");
-    }
-
-    return `${basePrompt}\n${inputLines.join("\n")}`;
+    return lines
+        .join("\n")
+        .replace(/\s*Skriv\s+[^.!?\n]*\{\{input\}\}[^.!?\n]*[.!?]?/gi, "")
+        .replace(/\s*(?:Svar|Svara)\s*:\s*\{\{input\}\}\s*[.!?]?/gi, "")
+        .replace(/\{\{input\}\}/g, "")
+        .replace(/\s+([,.!?])/g, "$1")
+        .replace(/[ \t]{2,}/g, " ")
+        .trim();
 }
 
 export class Frac {
@@ -556,13 +546,12 @@ export async function autoFixQuestion(questionId, userId = 1) {
         }
     }
 
-    // C. Fix input_count_mismatch for numeric_input
+    // C. Clean up legacy numeric input markers
     if (question.question_type === "numeric_input") {
         const updatedCorrectCount = options.filter(o => o.is_correct).length;
-        const currentInputs = (question.question?.match(/\{\{input\}\}/g) || []).length;
+        const syncedText = syncNumericInputs(question.question, updatedCorrectCount);
 
-        if (updatedCorrectCount > 0 && currentInputs !== updatedCorrectCount) {
-            const syncedText = syncNumericInputs(question.question, updatedCorrectCount);
+        if (updatedCorrectCount > 0 && syncedText !== (question.question || "")) {
             let answerConfig = {};
             try {
                 answerConfig = typeof question.answer_config === "string"
@@ -588,7 +577,7 @@ export async function autoFixQuestion(questionId, userId = 1) {
                 [syncedText, JSON.stringify(answerConfig), userId, question.id]
             );
 
-            changes.push(`Synkroniserade svarsrutor till ${updatedCorrectCount} st (${updatedCorrectCount === 1 ? "x = {{input}}" : `x_1..x_${updatedCorrectCount} = {{input}}`}).`);
+            changes.push("Tog bort gamla svarsrutemarkörer från frågetexten.");
         }
     }
 

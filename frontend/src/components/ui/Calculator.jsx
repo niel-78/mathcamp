@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { evaluate } from "mathjs";
 import Draggable from "react-draggable";
-import { Calculator as CalculatorIcon, Delete, Grip, Minus } from "lucide-react";
+import { Calculator as CalculatorIcon, Delete, Grip, Minus, Sigma } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
@@ -78,6 +78,7 @@ function formatResult(value) {
 export default function Calculator({
     showCalculator = true,
     showGeoGebra = true,
+    compactLabels = false,
     attemptId = null,
     questionId = null
 }) {
@@ -237,7 +238,9 @@ export default function Calculator({
 
         return () => {
             cancelled = true;
-            geogebraAppletRef.current = null;
+                                    <span className={compactLabels ? "hidden sm:inline" : ""}>
+                                        Miniräknare
+                                    </span>
             setGeogebraReady(false);
         };
     }, [activeTool, attemptId, canPersistGeoGebra, geogebraContainerId, open, questionId]);
@@ -256,7 +259,9 @@ export default function Calculator({
             window.removeEventListener("scroll", updatePanelAnchor, true);
         };
     }, [open]);
-
+                                    <span className={compactLabels ? "hidden sm:inline" : ""}>
+                                        GeoGebra CAS
+                                    </span>
     useEffect(() => {
         if (!open || activeTool !== "geogebra" || !geogebraReady) {
             return undefined;
@@ -454,6 +459,8 @@ export default function Calculator({
                 <Button
                     type="button"
                     variant="outline"
+                    size={compactLabels ? "icon" : "default"}
+                    aria-label="Miniräknare"
                     className={open && activeTool === "calculator"
                         ? "border-green-600 bg-green-600 text-white hover:bg-green-700 hover:text-white"
                         : "bg-white"}
@@ -467,8 +474,12 @@ export default function Calculator({
                         height: 300
                     })}
                 >
-                    <CalculatorIcon className="h-4 w-4" />
-                    Miniräknare
+                    <Sigma className="h-4 w-4" />
+                    {!compactLabels && (
+                        <span>
+                            Miniräknare
+                        </span>
+                    )}
                 </Button>
             )}
 
@@ -476,6 +487,8 @@ export default function Calculator({
                 <Button
                     type="button"
                     variant="outline"
+                    size={compactLabels ? "icon" : "default"}
+                    aria-label="GeoGebra CAS"
                     className={open && activeTool === "geogebra"
                         ? "border-green-600 bg-green-600 text-white hover:bg-green-700 hover:text-white"
                         : "bg-white"}
@@ -487,7 +500,11 @@ export default function Calculator({
                     onDoubleClick={resetGeoGebraWindow}
                 >
                     <CalculatorIcon className="h-4 w-4" />
-                    GeoGebra CAS
+                    {!compactLabels && (
+                        <span>
+                            GeoGebra CAS
+                        </span>
+                    )}
                 </Button>
             )}
         </div>
@@ -648,7 +665,12 @@ export default function Calculator({
     );
 
     return (
-        <div ref={anchorRef} className="relative flex flex-col items-end gap-2">
+        <div
+            ref={anchorRef}
+            className={compactLabels
+                ? "relative flex flex-row items-center gap-2"
+                : "relative flex flex-col items-end gap-2"}
+        >
             {renderToolToggleRow()}
             {toolPanel}
         </div>

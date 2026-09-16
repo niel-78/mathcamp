@@ -154,7 +154,7 @@ export default function GroupInfoTab({ groupId }) {
                 <div>
                     <h1 className="text-2xl font-semibold">{group.name}</h1>
                     <p className="text-sm text-muted-foreground">Gruppinformation</p>
-                    <div className="mt-4 flex gap-2">
+                    <div className="mt-4 flex flex-wrap gap-2">
                         <Button onClick={() => setView("info")}>Information</Button>
                         <Button variant="ghost" onClick={() => setView("results")}>
                             Resultat

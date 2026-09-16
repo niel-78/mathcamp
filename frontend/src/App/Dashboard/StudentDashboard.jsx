@@ -322,11 +322,11 @@ const StudentDashboard = () => {
         );
 
         return (
-            <div className="h-screen flex flex-col">
+            <div className="flex min-h-[100dvh] min-w-0 flex-col">
                 <Header groups={groups} />
-                <main className="flex-1 overflow-y-auto bg-background p-6 text-foreground">
-                    <div className="w-full max-w-6xl mx-auto space-y-4">
-                        <div className="flex items-center justify-between">
+                <main className="min-w-0 flex-1 overflow-y-auto bg-background p-3 text-foreground sm:p-6">
+                    <div className="mx-auto w-full min-w-0 max-w-6xl space-y-4">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
                             <Button
                                 variant="ghost"
                                 onClick={() => setView("start")}
@@ -342,7 +342,7 @@ const StudentDashboard = () => {
                             )}
                         </div>
 
-                        <div className="rounded-xl border bg-card p-6 shadow-sm space-y-4">
+                        <div className="space-y-4 rounded-xl border bg-card p-4 shadow-sm sm:p-6">
                             <h2 className="text-2xl font-bold">
                                 Gruppens planering
                             </h2>
@@ -363,15 +363,15 @@ const StudentDashboard = () => {
 
     if (view === "result") {
         return (
-            <div className="h-screen flex flex-col">
+            <div className="flex min-h-[100dvh] min-w-0 flex-col">
                 <Header groups={groups} />
-                <main className="flex-1 overflow-y-auto bg-background p-6 text-foreground">
-                    <div className="w-full max-w-4xl mx-auto space-y-4">
+                <main className="min-w-0 flex-1 overflow-y-auto bg-background p-3 text-foreground sm:p-6">
+                    <div className="mx-auto w-full min-w-0 max-w-4xl space-y-4">
                         <Button variant="ghost" onClick={() => setView("start")} className="gap-2">
                             <ArrowLeft className="h-4 w-4" /> Tillbaka till start
                         </Button>
 
-                        <div className="flex gap-2 rounded-xl border bg-card p-2 shadow-sm">
+                        <div className="flex flex-wrap gap-2 rounded-xl border bg-card p-2 shadow-sm">
                             <Button
                                 variant={
                                     resultTab === "results"
@@ -400,7 +400,7 @@ const StudentDashboard = () => {
                         </div>
 
                         {resultTab === "results" && resultAttempts.length > 0 && (
-                            <div className="rounded-xl border bg-card p-4 shadow-sm space-y-2">
+                            <div className="space-y-2 rounded-xl border bg-card p-4 shadow-sm">
                                 <Label htmlFor="resultAttempt">
                                     Resultat
                                 </Label>
@@ -437,7 +437,7 @@ const StudentDashboard = () => {
                         )}
 
                         {resultTab === "abilities" && (
-                            <div className="rounded-xl border bg-card p-6 shadow-sm space-y-4">
+                            <div className="space-y-4 rounded-xl border bg-card p-4 shadow-sm sm:p-6">
                                 <h2 className="text-2xl font-bold">
                                     Förmågor
                                 </h2>
@@ -452,7 +452,7 @@ const StudentDashboard = () => {
                                     {resultAbilities.map(ability => (
                                         <div
                                             key={ability.id}
-                                            className="flex items-center justify-between gap-4 rounded-lg border px-4 py-3"
+                                            className="flex min-w-0 flex-wrap items-start justify-between gap-4 rounded-lg border px-4 py-3"
                                         >
                                             <div className="space-y-1">
                                                 <div className="font-medium">
@@ -509,14 +509,14 @@ const StudentDashboard = () => {
 
     if (view === "investments") {
         return (
-            <div className="h-screen flex flex-col">
+            <div className="flex min-h-[100dvh] min-w-0 flex-col">
                 <Header groups={groups} />
-                <div className="p-4 bg-muted/20 border-b">
+                <div className="border-b bg-muted/20 p-3 sm:p-4">
                     <Button variant="ghost" onClick={() => setView("start")} className="gap-2 text-xs">
                         <ArrowLeft className="h-4 w-4" /> Tillbaka till huvudmeny
                     </Button>
                 </div>
-                <div className="flex-1 overflow-auto">
+                <div className="min-w-0 flex-1 overflow-auto">
                     <CompetitionTab
                         groupId={selectedGroupId}
                     /> 
@@ -527,10 +527,10 @@ const StudentDashboard = () => {
 
     if (view === "key-entry") {
         return (
-            <div className="h-screen flex flex-col">
+            <div className="flex min-h-[100dvh] min-w-0 flex-col">
                 <Header groups={groups} />
                 <Main>
-                    <div className="w-full max-w-md rounded-xl border bg-card p-6 shadow-sm space-y-4">
+                    <div className="w-full max-w-md space-y-4 rounded-xl border bg-card p-4 shadow-sm sm:p-6">
                         <Button variant="ghost" onClick={() => setView("start")} className="gap-2 -ml-2 text-muted-foreground">
                             <ArrowLeft className="h-4 w-4" /> Tillbaka
                         </Button>
@@ -563,13 +563,13 @@ const StudentDashboard = () => {
 
     // HUVUDMENY (START-VYN)
     return (
-        <div className="h-screen flex flex-col">
+        <div className="flex min-h-[100dvh] min-w-0 flex-col">
             <Header groups={groups} />
 
             <Main>
-                <div className="w-full max-w-lg rounded-xl border bg-white p-8 shadow-sm space-y-6 text-center">
+            <div className="w-full max-w-lg space-y-6 rounded-xl border bg-white p-4 text-center shadow-sm sm:p-8">
                     <div>
-                        <h2 className="text-3xl font-extrabold text-foreground">Välkommen!</h2>
+                        <h2 className="text-2xl font-extrabold text-foreground sm:text-3xl">Välkommen!</h2>
                         <p className="text-sm text-muted-foreground mt-1">
                             Välj vad du vill göra härnäst.
                         </p>
@@ -618,13 +618,13 @@ const StudentDashboard = () => {
                             {/* Skriv prov */}
                             <Button
                                 variant="outline"
-                                className="w-full h-auto p-4 flex items-center justify-start gap-4 border-2 hover:border-primary hover:bg-primary/5 transition"
+                                className="h-auto w-full items-start justify-start gap-3 border-2 p-3 transition hover:border-primary hover:bg-primary/5 sm:items-center sm:gap-4 sm:p-4"
                                 onClick={() => setView("key-entry")}
                             >
-                                <div className="p-3 rounded-lg bg-primary/10 text-primary">
+                                <div className="shrink-0 rounded-lg bg-primary/10 p-2 text-primary sm:p-3">
                                     <KeyRound className="h-6 w-6" />
                                 </div>
-                                <div className="text-left">
+                                <div className="min-w-0 text-left break-words">
                                     <div className="font-bold text-base">Skriv prov</div>
                                     <div className="text-xs text-muted-foreground">Anslut med provnyckel från din lärare</div>
                                 </div>
@@ -633,14 +633,14 @@ const StudentDashboard = () => {
                             {/* Mina resultat */}
                             <Button
                                 variant="outline"
-                                className="w-full h-auto p-4 flex items-center justify-start gap-4 border-2 hover:border-blue-500/80 hover:bg-blue-500/5 transition"
+                                className="h-auto w-full items-start justify-start gap-3 border-2 p-3 transition hover:border-blue-500/80 hover:bg-blue-500/5 sm:items-center sm:gap-4 sm:p-4"
                                 onClick={openSelectedGroupResults}
                                 disabled={loadingResults}
                             >
-                                <div className="p-3 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                                <div className="shrink-0 rounded-lg bg-blue-500/10 p-2 text-blue-600 sm:p-3 dark:text-blue-400">
                                     <ClipboardList className="h-6 w-6" />
                                 </div>
-                                <div className="text-left">
+                                <div className="min-w-0 text-left break-words">
                                     <div className="font-bold text-base">
                                         {loadingResults
                                             ? "Hämtar resultat..."
@@ -653,14 +653,14 @@ const StudentDashboard = () => {
                             {/* Gruppens planering */}
                             <Button
                                 variant="outline"
-                                className="w-full h-auto p-4 flex items-center justify-start gap-4 border-2 hover:border-amber-500/80 hover:bg-amber-500/5 transition"
+                                className="h-auto w-full items-start justify-start gap-3 border-2 p-3 transition hover:border-amber-500/80 hover:bg-amber-500/5 sm:items-center sm:gap-4 sm:p-4"
                                 onClick={openSelectedGroupPlanning}
                                 disabled={loadingPlanning}
                             >
-                                <div className="p-3 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                                <div className="shrink-0 rounded-lg bg-amber-500/10 p-2 text-amber-600 sm:p-3 dark:text-amber-400">
                                     <CalendarDays className="h-6 w-6" />
                                 </div>
-                                <div className="text-left">
+                                <div className="min-w-0 text-left break-words">
                                     <div className="font-bold text-base">
                                         {loadingPlanning
                                             ? "Hämtar planering..."
@@ -687,13 +687,13 @@ const StudentDashboard = () => {
                             {/* Investeringar & Tävling */}
                             <Button
                                 variant="outline"
-                                className="w-full h-auto p-4 flex items-center justify-start gap-4 border-2 hover:border-emerald-500/80 hover:bg-emerald-500/5 transition"
+                                className="h-auto w-full items-start justify-start gap-3 border-2 p-3 transition hover:border-emerald-500/80 hover:bg-emerald-500/5 sm:items-center sm:gap-4 sm:p-4"
                                 onClick={() => setView("investments")}
                             >
-                                <div className="p-3 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                                <div className="shrink-0 rounded-lg bg-emerald-500/10 p-2 text-emerald-600 sm:p-3 dark:text-emerald-400">
                                     <Trophy className="h-6 w-6" />
                                 </div>
-                                <div className="text-left">
+                                <div className="min-w-0 text-left break-words">
                                     <div className="font-bold text-base">Investeringar & Tävling</div>
                                     <div className="text-xs text-muted-foreground">Handla aktier, fonder och se portföljen</div>
                                 </div>

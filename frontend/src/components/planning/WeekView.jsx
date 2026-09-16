@@ -88,10 +88,12 @@ export default function WeekView({
 
                 <div
                     className="
+                        planning-week-grid
                         flex
                         gap-4
                         items-start
-                        w-full
+                        w-max
+                        min-w-full
                     "
                 >
 
@@ -111,8 +113,8 @@ export default function WeekView({
                                 <div
                                     key={weekday}
                                     className="
-                                        flex-1
-                                        min-w-0
+                                        w-[13rem]
+                                        shrink-0
                                         space-y-3
                                     "
                                 >

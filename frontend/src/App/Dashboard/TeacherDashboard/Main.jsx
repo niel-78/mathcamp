@@ -96,6 +96,7 @@ export default function Main({
             className={`
                 h-full
                 transition-all
+                min-w-0
             `}
         >
 
@@ -121,8 +122,9 @@ export default function Main({
                 <div
                     className="
                         flex-1
-                        overflow-hidden
+                        overflow-auto
                         min-h-0
+                        min-w-0
                     "
                 >
                     {currentTab?.type === "home" && (

@@ -148,7 +148,7 @@ export default function ActionRequiredTab({
                         size="sm"
                         disabled={fixingAll || loading}
                         onClick={() => setConfirmDialogOpen(true)}
-                        className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+                        className="hidden gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm sm:inline-flex"
                     >
                         {fixingAll ? (
                             <Loader2 size={16} className="animate-spin" />
@@ -160,9 +160,9 @@ export default function ActionRequiredTab({
                 )
             }
         >
-            <div className="space-y-6 max-w-5xl">
+            <div className="space-y-6 max-w-5xl min-w-0">
                 <div className="flex flex-wrap items-center justify-between gap-3 bg-muted/30 p-4 rounded-2xl border">
-                    <div>
+                    <div className="min-w-0">
                         <h2 className="text-lg font-semibold flex items-center gap-2">
                             <AlertCircle className="text-destructive size-5" />
                             Uppgifter som kräver åtgärd
@@ -172,7 +172,7 @@ export default function ActionRequiredTab({
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         {questionsWithIssues.length > 0 && (
                             <Button
                                 variant="default"

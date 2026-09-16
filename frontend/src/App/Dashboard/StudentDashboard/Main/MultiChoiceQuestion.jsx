@@ -19,7 +19,7 @@ export default function MultiChoiceQuestion({
                 className={questionTextClassName}
             />
 
-            <div className="assessment_answers">
+            <div className="assessment_answers flex flex-wrap gap-2">
 
                 {question.options?.map(opt => (
 

@@ -5,6 +5,7 @@ import formatDateTime from "../utils/formatDateTime.js";
 import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
 import { buildExamSession } from "../utils/buildExamSession.js";
+import { resolveGroupAssessmentLifecycleState } from "../utils/groupAssessmentState.js";
 import getAssessmentTypeSettings from "../utils/getAssessmentTypeSettings.js";
 import generateUniqueGroupExamKey from "../utils/generateUniqueGroupExamKey.js";
 
@@ -829,13 +830,21 @@ router.post("/:id/open", async (req, res) => {
 
     try {
 
+        const state = resolveGroupAssessmentLifecycleState("open");
+
         await db.query(
             `
             UPDATE group_assessments
-            SET assessment_status = 'open'
+            SET
+                status = ?,
+                waiting_room_open = ?
             WHERE id = ?
             `,
-            [req.params.id]
+            [
+                state.status,
+                state.waiting_room_open,
+                req.params.id
+            ]
         );
 
         res.json({
@@ -860,13 +869,21 @@ router.post("/:id/close", async (req, res) => {
 
     try {
 
+        const state = resolveGroupAssessmentLifecycleState("close");
+
         await db.query(
             `
             UPDATE group_assessments
-            SET status = 'closed'
+            SET
+                status = ?,
+                waiting_room_open = ?
             WHERE id = ?
             `,
-            [req.params.id]
+            [
+                state.status,
+                state.waiting_room_open,
+                req.params.id
+            ]
         );
 
         res.json({

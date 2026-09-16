@@ -4,8 +4,15 @@ import { formatMathText } from "@/utils/formatMathText";
 import { Input } from "@/components/ui/input";
 import { NUMERIC_INPUT_MARKER } from "@/constants/assessmentConstants";
 
-// Splits the question text on the {{input}} marker and renders a numeric input
-// box at each marker position (with the surrounding text as prefix/suffix).
+function isCorrectOption(option) {
+    return (
+        option?.is_correct === true ||
+        Number(option?.is_correct) === 1 ||
+        option?.isCorrect === true ||
+        Number(option?.isCorrect) === 1
+    );
+}
+
 export default function NumericInputQuestion({
     question,
     value,
@@ -13,15 +20,10 @@ export default function NumericInputQuestion({
     onBlur
 }) {
 
+    const rawQuestion = question.question || "";
     const segments =
-        (question.question || "")
+        rawQuestion
             .split(NUMERIC_INPUT_MARKER);
-
-    const fieldCount =
-        Math.max(
-            segments.length - 1,
-            0
-        );
 
     let answerConfig = {};
 
@@ -35,6 +37,50 @@ export default function NumericInputQuestion({
     }
 
     const orderIndependent = Boolean(answerConfig.order_independent);
+    const markerCount = Math.max(segments.length - 1, 0);
+    const correctAnswerCount = Math.max(
+        (question.options || []).filter(isCorrectOption).length,
+        Array.isArray(answerConfig.correctAnswers)
+            ? answerConfig.correctAnswers.filter(answer => String(answer ?? "").trim() !== "").length
+            : 0,
+        answerConfig.default_answer !== undefined &&
+            answerConfig.default_answer !== null &&
+            String(answerConfig.default_answer).trim() !== ""
+            ? 1
+            : 0
+    );
+    const fieldCount = Math.max(markerCount, correctAnswerCount, 1);
+    const hasInlineMarkers = markerCount > 0;
+
+    const renderInput = (index) => (
+        <Input
+            type="text"
+            inputMode="decimal"
+            className="answer-input inline-block w-24 mx-1 align-middle"
+            value={values[index] ?? ""}
+            onChange={e => {
+
+                updateValue(
+                    index,
+                    e.target.value
+                );
+
+            }}
+            onBlur={e => {
+
+                const updated =
+                    updateValue(
+                        index,
+                        e.target.value
+                    );
+
+                onBlur(
+                    JSON.stringify(updated)
+                );
+
+            }}
+        />
+    );
 
     const parseValues = (raw) => {
 
@@ -179,7 +225,7 @@ export default function NumericInputQuestion({
                         </div>
                     </>
 
-                ) : segments.map((segment, index) => (
+                ) : hasInlineMarkers ? segments.map((segment, index) => (
 
                     // plain inline flow (no flexbox) so multi-line prefix text
                     // doesn't vertically center the input against its own height
@@ -197,39 +243,41 @@ export default function NumericInputQuestion({
 
                         {index < fieldCount && (
 
-                            <Input
-                                type="text"
-                                inputMode="decimal"
-                                className="answer-input inline-block w-24 mx-1 align-middle"
-                                value={values[index] ?? ""}
-                                onChange={e => {
-
-                                    updateValue(
-                                        index,
-                                        e.target.value
-                                    );
-
-                                }}
-                                onBlur={e => {
-
-                                    const updated =
-                                        updateValue(
-                                            index,
-                                            e.target.value
-                                        );
-
-                                    onBlur(
-                                        JSON.stringify(updated)
-                                    );
-
-                                }}
-                            />
+                            renderInput(index)
 
                         )}
 
                     </span>
 
-                ))}
+                )) : (
+
+                    <>
+
+                        <span
+                            dangerouslySetInnerHTML={{
+                                __html: formatMathText(rawQuestion.trim())
+                            }}
+                        />
+
+                        <div className="mt-2 space-y-2">
+
+                            {Array.from({ length: fieldCount }, (_, index) => (
+
+                                <label
+                                    key={index}
+                                    className="block"
+                                >
+                                    {fieldCount === 1 ? "Svar" : `Svar ${index + 1}`}:
+                                    {renderInput(index)}
+                                </label>
+
+                            ))}
+
+                        </div>
+
+                    </>
+
+                )}
 
                 {orderIndependent && fieldCount > 1 && (
 

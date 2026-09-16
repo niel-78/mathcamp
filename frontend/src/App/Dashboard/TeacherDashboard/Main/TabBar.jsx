@@ -25,6 +25,7 @@ export default function TabBar({
         <div
             ref={setNodeRef}
             className={`
+                teacher-tab-bar
                 flex
                 gap-2
                 overflow-x-auto

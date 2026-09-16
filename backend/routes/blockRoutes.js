@@ -789,27 +789,27 @@ router.get("/import-template", async (req, res) => {
             [],
             ["NUMERIC INPUT - steg för steg"],
             ["1. Skriv numeric_input i kolumnen 'Frågetyp'."],
-            ["2. Skriv exakt {{input}} i frågetexten för varje svarsruta eleven ska se."],
-            ["3. Skriv rätt siffervärde i 'Korrekta alternativ'. Använd semikolon mellan flera svar."],
+            ["2. Skriv rätt siffervärde i 'Korrekta alternativ'. Använd semikolon mellan flera svar."],
+            ["3. En svarsruta skapas automatiskt per korrekt svar."],
             [],
             ["Ett svar:"],
-            ["Fråga: Beräkna $7 + 5$. Svar: {{input}}"],
+            ["Fråga: Beräkna $7 + 5$."],
             ["Korrekta alternativ: 12"],
             ["Ordning spelar ingen roll: Nej"],
             [],
             ["Flera svar i bestämd ordning:"],
-            ["Fråga: Skriv $x = {{input}}$ och $y = {{input}}$."],
+            ["Fråga: Bestäm x och y."],
             ["Korrekta alternativ: 3; -2"],
             ["Ordning spelar ingen roll: Nej"],
             [],
             ["Flera svar i valfri ordning (t.ex. rötter):"],
-            ["Fråga: Skriv $x_1 = {{input}}$, $x_2 = {{input}}$."],
+            ["Fråga: Lös ekvationen $x^2 = 25$."],
             ["Korrekta alternativ: -5; 5"],
             ["Ordning spelar ingen roll: Ja"],
             ["Eleven kan då lägga till eller ta bort svarsrutor."],
             [],
             ["Decimaltal kan skrivas med komma eller punkt, t.ex. 2,5 eller 2.5."],
-            ["Använd inte {{input}} för text- eller svarsalternativsfrågor."]
+            ["{{input}} behövs inte längre i frågetexten."]
         ]);
 
     XLSX.utils.book_append_sheet(

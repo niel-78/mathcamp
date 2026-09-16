@@ -21,6 +21,11 @@ import ExamPage from "@/App/Dashboard/StudentDashboard/Main/ExamPage";
 export default function TeacherDashboard() {
 
     const [splitView, setSplitView] = useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [isMobile, setIsMobile] = useState(() =>
+        typeof window !== "undefined" &&
+        window.matchMedia("(max-width: 767px)").matches
+    );
     const [activeBlock, setActiveBlock] = useState(null);
     const [activeDragType, setActiveDragType] = useState(null);
     const [hoverTarget, setHoverTarget] = useState(null);
@@ -34,6 +39,23 @@ export default function TeacherDashboard() {
             .then(response => response.ok ? response.json() : [])
             .then(data => setTeacherGroups(data || []))
             .catch(() => setTeacherGroups([]));
+    }, []);
+
+    useEffect(() => {
+        const mediaQuery = window.matchMedia("(max-width: 767px)");
+        const syncMobileLayout = () => {
+            setIsMobile(mediaQuery.matches);
+
+            if (mediaQuery.matches) {
+                setSplitView(false);
+            }
+        };
+
+        syncMobileLayout();
+        mediaQuery.addEventListener("change", syncMobileLayout);
+
+        return () =>
+            mediaQuery.removeEventListener("change", syncMobileLayout);
     }, []);
 
     const bumpBlockRefresh = () =>
@@ -742,40 +764,74 @@ export default function TeacherDashboard() {
                 }}
             >
 
-                <div className="h-screen">
+                <div className="teacher-dashboard h-screen">
+
+                    {sidebarOpen && (
+                        <button
+                            type="button"
+                            className="teacher-sidebar-backdrop"
+                            aria-label="Stäng meny"
+                            onClick={() => setSidebarOpen(false)}
+                        />
+                    )}
+
+                    <aside
+                        className={`teacher-sidebar-drawer ${sidebarOpen ? "is-open" : ""}`}
+                    >
+                        <LeftCol
+                            tabs={leftTabs}
+                            openTab={(tab, area) => {
+                                openTab(tab, area);
+                                setSidebarOpen(false);
+                            }}
+                            setTabs={setLeftTabs}
+                            setActiveTab={setActiveLeftTab}
+                            hoverTarget={hoverTarget}
+                        />
+                    </aside>
 
                     <ResizablePanelGroup
                         direction="horizontal"
-                        className="h-full w-full"
+                        className="teacher-dashboard-panels h-full w-full"
                     >
 
-                        <ResizablePanel
-                            defaultSize={20}
-                        >
+                        {!isMobile && (
 
-                            <div
-                                className="
-                                    h-full
-                                    overflow-y-auto
-                                "
-                            >
+                            <>
 
-                                <LeftCol
-                                    tabs={leftTabs}
-                                    openTab={openTab}
-                                    setTabs={setLeftTabs}
-                                    setActiveTab={setActiveLeftTab}
-                                    hoverTarget={hoverTarget}
-                                />
+                                <ResizablePanel
+                                    defaultSize={20}
+                                    className="teacher-sidebar-panel"
+                                >
 
-                            </div>
+                                    <div
+                                        className="
+                                            h-full
+                                            overflow-y-auto
+                                        "
+                                    >
 
-                        </ResizablePanel>
+                                        <LeftCol
+                                            tabs={leftTabs}
+                                            openTab={openTab}
+                                            setTabs={setLeftTabs}
+                                            setActiveTab={setActiveLeftTab}
+                                            hoverTarget={hoverTarget}
+                                        />
 
-                        <ResizableHandle />
+                                    </div>
+
+                                </ResizablePanel>
+
+                                <ResizableHandle />
+
+                            </>
+
+                        )}
 
                         <ResizablePanel
                             defaultSize={80}
+                            className="teacher-main-panel"
                         >
 
                             <div
@@ -789,14 +845,15 @@ export default function TeacherDashboard() {
 
                                 <div
                                     className="
-                                        p-2
                                         border-b
+                                        border-border
                                     "
                                 >
 
                                     <AppHeader
                                         splitView={splitView}
                                         setSplitView={setSplitView}
+                                        onOpenSidebar={() => setSidebarOpen(true)}
                                         activeTab={
                                             (lastActiveArea === "right"
                                                 ? rightTabs.find(tab => tab.id === activeRightTab)
@@ -814,10 +871,11 @@ export default function TeacherDashboard() {
                                         flex-1
                                         overflow-hidden
                                         min-h-0
+                                        bg-background
                                     "
                                 >
 
-                                    {!splitView ? (
+                                    {!splitView || isMobile ? (
 
                                         <Main
                                             area="left"

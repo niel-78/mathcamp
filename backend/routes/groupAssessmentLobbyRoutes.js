@@ -168,6 +168,15 @@ router.post("/join", async (req, res) => {
 
     }
 
+    if (groupExam.assessment_status === "closed") {
+
+        return res.status(403).json({
+            error:
+                "Provet är stängt."
+        });
+
+    }
+
     if (!groupExam.waiting_room_open) {
 
         return res.status(403).json({

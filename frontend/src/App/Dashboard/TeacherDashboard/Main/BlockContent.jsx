@@ -550,10 +550,6 @@ export default function BlockContent({
         }
     };
 
-    // Bulk-marks every question in the block as an equation: numeric_input question
-    // type with one answer box per root (unlabeled "x = " for a single root, subscripted
-    // "x_1 = " / "x_2 = " ... for two or more), and order-independent grading (so a
-    // double root only needs to be entered once, and root order doesn't matter).
     const applyEquationsPreset = () => {
 
         setEquationsConfirmOpen(true);
@@ -577,51 +573,8 @@ export default function BlockContent({
                 (question.options || [])
                     .filter(isCorrectOption).length;
 
-            const currentInputCount =
-                (
-                    (question.question || "")
-                        .match(/{{input}}/g) || []
-                ).length;
-
-            const missingInputCount =
-                Math.max(
-                    correctAnswerCount - currentInputCount,
-                    0
-                );
-
-            // If this now needs 2+ roots, relabel a lone unlabeled "x = {{input}}"
-            // (from an earlier single-root version of the question) to "x_1 = {{input}}"
-            // so it doesn't end up mismatched with the newly appended "x_2 = {{input}}" etc.
-            let questionText = question.question || "";
-
-            if (correctAnswerCount >= 2) {
-                questionText = questionText.replace(
-                    /x\s*=\s*\{\{input\}\}/,
-                    "x_1 = {{input}}"
-                );
-            }
-
-            const additionalLines = [];
-
-            for (let i = 0; i < missingInputCount; i++) {
-
-                const rootNumber = currentInputCount + i + 1;
-
-                const label =
-                    correctAnswerCount === 1
-                        ? "x"
-                        : `x_${rootNumber}`;
-
-                additionalLines.push(
-                    `${label} = {{input}}`
-                );
-
-            }
-
             const updatedQuestionText =
-                additionalLines.length === 0
-                    ? questionText
-                    : `${questionText}\n${additionalLines.join("\n")}`.trim();
+                syncNumericInputs(question.question, correctAnswerCount);
 
             const response = await fetch(
                 `${API_URL}/api/questions/${question.id}`,
@@ -869,24 +822,6 @@ export default function BlockContent({
                                             Ej automatiskt kontrollerad
                                         </span>
                                     )}
-
-                                    {question.question_type === "numeric_input" && (() => {
-                                        const correctCount = (question.options || []).filter(isCorrectOption).length;
-                                        const inputCount = (question.question?.match(/\{\{input\}\}/g) || []).length;
-                                        if (correctCount > 0 && inputCount !== correctCount) {
-                                            return (
-                                                <Button
-                                                    size="xs"
-                                                    variant="outline"
-                                                    className="text-amber-800 bg-amber-50 border-amber-300 hover:bg-amber-100 font-medium"
-                                                    onClick={() => syncSingleQuestionInputs(question)}
-                                                >
-                                                    Synkronisera svarsrutor ({correctCount === 1 ? "x" : `x_1..x_${correctCount}`})
-                                                </Button>
-                                            );
-                                        }
-                                        return null;
-                                    })()}
 
                                     {question.options?.length > 1 && (() => {
                                         const optionCheck = checkOptionValues(
@@ -1298,9 +1233,8 @@ export default function BlockContent({
                 title="Markera alla uppgifter som ekvationer?"
                 description={
                     `Markera alla ${(currentBlock?.questions || []).length} uppgifter i blocket som ekvationer? ` +
-                    "Detta sätter frågetyp till numeriska svarsrutor och lägger till en svarsruta per rätt " +
-                    "svarsalternativ som saknas i frågetexten (\"x = {{input}}\" vid en rot, \"x_1 = {{input}}\", " +
-                    "\"x_2 = {{input}}\" osv vid flera), samt aktiverar \"Svarsordning saknar betydelse\"."
+                    "Detta sätter frågetyp till numeriska svarsrutor, använder rätta svarsalternativ som facit " +
+                    "och aktiverar \"Svarsordning saknar betydelse\" vid flera rötter."
                 }
                 confirmLabel="Markera"
                 onConfirm={runEquationsPreset}

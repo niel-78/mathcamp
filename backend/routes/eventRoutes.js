@@ -77,12 +77,45 @@ router.post("/", async (req, res) => {
 
         };
 
+        // Kräv upprepade händelser innan låsning för att undvika att en enstaka
+        // ofrivillig fönsterbytning/högerklick låser provet i onödan.
+        const violationThresholds = {
+            tab_hidden: 3,
+            window_blur: 3,
+            context_menu: 3,
+            page_unload: 1,
+            page_refresh: 1
+        };
+
         const configKey =
             eventLockMap[event_type];
-        
-        const shouldLock =
+
+        const isMonitoredEvent =
             configKey &&
             config.monitoring?.[configKey];
+
+        let shouldLock = false;
+
+        if (isMonitoredEvent) {
+
+            const [[{ occurrences }]] =
+                await db.query(
+                    `
+                    SELECT COUNT(*) AS occurrences
+                    FROM assessment_events
+                    WHERE
+                        attempt_id = ?
+                        AND event_type = ?
+                    `,
+                    [attempt_id, event_type]
+                );
+
+            const threshold =
+                violationThresholds[event_type] ?? 1;
+
+            shouldLock = occurrences >= threshold;
+
+        }
 
         if (shouldLock) {
 

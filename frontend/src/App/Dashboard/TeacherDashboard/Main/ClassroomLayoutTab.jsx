@@ -229,6 +229,7 @@ export default function ClassroomLayoutTab({
                 <div
                     className="
                         relative
+                        overflow-auto
                         bg-slate-50
                         border
                         rounded-lg
@@ -236,6 +237,7 @@ export default function ClassroomLayoutTab({
                         h-[700px]
                     "
                 >
+                    <div className="relative h-full min-w-[900px]">
                     {seats.length === 0 && (
 
                         <div
@@ -261,6 +263,7 @@ export default function ClassroomLayoutTab({
                         />
 
                     ))}
+                    </div>
 
                 </div>
 

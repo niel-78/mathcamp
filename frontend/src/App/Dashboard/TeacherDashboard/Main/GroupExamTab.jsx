@@ -243,6 +243,12 @@ export default function GroupExamTab({
 
             setTesting(true);
 
+            const savedBeforeTest = await save();
+
+            if (!savedBeforeTest) {
+                return;
+            }
+
             const testResponse = await fetch(
                 `${API_URL}/api/group-assessments/${groupExamId}/test`,
                 {
@@ -365,7 +371,7 @@ export default function GroupExamTab({
             toast.error(
                 "Minsta antal frågor måste vara minst 0 och högst lika med högsta antal frågor."
             );
-            return;
+            return false;
         }
 
         setSaving(true);
@@ -409,7 +415,7 @@ export default function GroupExamTab({
                     "Kunde inte spara provtillfället"
                 );
 
-                return;
+                return false;
 
             }
 
@@ -419,6 +425,8 @@ export default function GroupExamTab({
                 "Provtillfället har sparats"
             );
 
+            return true;
+
         } catch (error) {
 
             console.error(error);
@@ -426,6 +434,8 @@ export default function GroupExamTab({
             toast.error(
                 "Kunde inte spara provtillfället"
             );
+
+            return false;
 
         } finally {
 
@@ -458,9 +468,11 @@ export default function GroupExamTab({
             <div
                 className="
                     grid
-                    grid-cols-[180px_1fr]
+                    grid-cols-1
+                    sm:grid-cols-[180px_1fr]
                     items-center
-                    gap-4
+                    gap-2
+                    sm:gap-4
                 "
             >
 

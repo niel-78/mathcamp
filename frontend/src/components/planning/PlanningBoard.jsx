@@ -222,9 +222,9 @@ export default function PlanningBoard({
 
     return (
 
-        <div className="space-y-4">
+        <div className="planning-board space-y-4">
 
-            <div className="flex gap-2">
+            <div className="planning-board-period flex gap-2">
 
                 <Button
                     variant="outline"
@@ -271,7 +271,7 @@ export default function PlanningBoard({
                 "
             >
 
-                <div className="flex gap-2">
+                <div className="planning-board-view-modes flex gap-2">
 
                     <Button
                         variant={

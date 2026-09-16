@@ -402,6 +402,7 @@ router.get("/:id", async (req, res) => {
                 ea.status,
                 ea.mode,
                 ea.teacher_end_mode,
+                ea.current_question_index,
 
                 a.id AS assessment_id,
                 a.type AS assessment_type,
@@ -549,6 +550,8 @@ router.get("/:id", async (req, res) => {
                     !!parsedAttemptConfig
                         ?.navigation
                         ?.allowGoToPreviousQuestion,
+                current_question_index:
+                    attempt.current_question_index,
                 started_at: attempt.started_at,
                 submitted_at: attempt.submitted_at,
                 config: attempt.config,
@@ -580,6 +583,52 @@ router.get("/:id", async (req, res) => {
     } finally {
         connection.release();
     }
+});
+
+// PATCH /api/assessment-attempts/:id/position
+router.patch("/:id/position", async (req, res) => {
+
+    const { id } = req.params;
+    const index = Number(req.body.current_question_index);
+
+    if (!Number.isInteger(index) || index < 0) {
+        return res.status(400).json({
+            error: "Ogiltigt frågeindex."
+        });
+    }
+
+    const [[attempt]] = await db.query(
+        `
+        SELECT user_id
+        FROM assessment_attempts
+        WHERE id = ?
+        `,
+        [id]
+    );
+
+    if (!attempt) {
+        return res.status(404).json({
+            error: "Provförsöket hittades inte."
+        });
+    }
+
+    if (attempt.user_id !== req.user.id) {
+        return res.status(403).json({
+            error: "Åtkomst nekad."
+        });
+    }
+
+    await db.query(
+        `
+        UPDATE assessment_attempts
+        SET current_question_index = ?
+        WHERE id = ?
+        `,
+        [index, id]
+    );
+
+    res.sendStatus(204);
+
 });
 
 // PUT /api/assessment-attempts/:id

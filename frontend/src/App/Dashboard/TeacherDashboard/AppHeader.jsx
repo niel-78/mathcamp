@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { Moon, Sun, Columns2, PanelLeft, BookOpen } from "lucide-react";
+import { Moon, Sun, Columns2, PanelLeft, BookOpen, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Calculator from "@/components/ui/Calculator";
 import Draggable from "react-draggable";
@@ -28,6 +28,7 @@ function formulaUrl(group) {
 export default function AppHeader({
     splitView,
     setSplitView,
+    onOpenSidebar,
     activeTab,
     groups = []
 }) {
@@ -82,13 +83,17 @@ export default function AppHeader({
     return (
         <div
             className="
-                relative z-[9998] h-12
+                relative z-[9998]
+                min-h-14
 
                 flex
                 items-center
                 justify-between
+                gap-3
 
-                px-4
+                px-3
+                sm:px-4
+                py-2
 
                 bg-sidebar
                 text-sidebar-foreground
@@ -98,26 +103,44 @@ export default function AppHeader({
             "
         >
 
-            <h1>m a t h c a m p - o n e</h1>
+            <div className="flex min-w-0 items-center gap-2">
+                <Button
+                    variant="outline"
+                    size="icon"
+                    className="teacher-sidebar-toggle"
+                    onClick={onOpenSidebar}
+                    aria-label="Öppna meny"
+                >
+                    <Menu className="h-4 w-4" />
+                </Button>
 
-            <div className="flex items-center gap-2">
+                <h1 className="teacher-brand-title truncate text-sm font-semibold tracking-wide sm:text-base">
+                    m a t h c a m p - o n e
+                </h1>
+            </div>
 
+            <div className="teacher-header-actions">
+
+                {group && (
                 <Button
                     variant="outline"
                     onClick={() => setFormulaOpen(value => !value)}
-                    disabled={!group}
+                    className="whitespace-nowrap"
                 >
                     <BookOpen className="h-4 w-4" />
-                    Formelblad
+                    <span className="hidden sm:inline">Formelblad</span>
                 </Button>
+                )}
 
                 <Calculator
                     showCalculator={true}
                     showGeoGebra={true}
+                    compactLabels={true}
                 />
 
                 <Button
                     variant="outline"
+                    className="hidden md:inline-flex"
                     onClick={() =>
                         setSplitView(
                             v => !v
@@ -132,10 +155,12 @@ export default function AppHeader({
                 <Button
                     variant="outline"
                     onClick={toggleTheme}
+                    size="icon"
+                    aria-label="Byt tema"
                 >
                     {darkMode
-                        ? <Sun />
-                        : <Moon />}
+                        ? <Sun className="h-4 w-4" />
+                        : <Moon className="h-4 w-4" />}
                 </Button>
 
             </div>

@@ -19,9 +19,9 @@ export default function Header({ groups = [] }) {
     }, [darkMode]);
 
     return (
-        <header className="relative z-[9998] min-h-16 border-b px-6 flex items-center justify-between gap-4">
+        <header className="relative z-[9998] flex min-h-16 min-w-0 flex-wrap items-center justify-between gap-3 border-b px-3 py-2 sm:gap-4 sm:px-6 sm:py-0">
             <UserProfile />
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
                 <FormulaSheetButton group={groups[0] || {}} />
                 <Calculator showCalculator={true} showGeoGebra={true} />
                 <Button

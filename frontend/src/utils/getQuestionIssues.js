@@ -81,21 +81,15 @@ export function getQuestionIssues(
         }
     }
 
-    // 3. Fel i antalet svarsrutor
+    // 3. Numeriska uppgifter behöver ett facit. Svarsrutor skapas från facit;
+    // {{input}} är en valfri äldre inline-markör.
     if (question.question_type === "numeric_input") {
-        const inputCount = (question.question?.match(/\{\{input\}\}/g) || []).length;
         const expectedCount = correctOptions.length || configuredCorrectAnswers.length || (hasDefaultAnswer ? 1 : 0);
-        if (expectedCount > 0 && inputCount !== expectedCount) {
+        if (expectedCount === 0) {
             issues.push({
                 type: "input_count_mismatch",
                 questionId: question.id,
-                message: `Fel i antalet svarsrutor (${inputCount} st finns, ${expectedCount} st förväntas)`
-            });
-        } else if (expectedCount === 0 && inputCount === 0) {
-            issues.push({
-                type: "input_count_mismatch",
-                questionId: question.id,
-                message: "Saknar svarsruta ({{input}})"
+                message: "Saknar facit för numerisk svarsruta"
             });
         }
     }

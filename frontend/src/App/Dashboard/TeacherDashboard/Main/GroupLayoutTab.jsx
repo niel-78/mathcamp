@@ -605,6 +605,7 @@ export default function GroupLayoutTab({
                             `
                             : `
                                 relative
+                                overflow-auto
                                 bg-slate-50
                                 border
                                 rounded-lg
@@ -624,6 +625,7 @@ export default function GroupLayoutTab({
                                 : `
                                     relative
                                     w-full
+                                    min-w-[900px]
                                     h-full
                                 `
                         }

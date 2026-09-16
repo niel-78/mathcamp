@@ -14,7 +14,7 @@ import CardSection from "@/components/layouts/CardSection";
 
 import { useAuth } from "@/contexts/AuthContext";
 
-import { API_URL } from "@/config";
+import { API_URL, APP_VERSION } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 
 import { toast } from "sonner";
@@ -31,6 +31,7 @@ export default function UserProfileDialog({
     } = useAuth();
 
     const [sessions, setSessions] = useState([]);
+    const [backendVersion, setBackendVersion] = useState(null);
 
     const [currentPassword, setCurrentPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
@@ -58,6 +59,11 @@ export default function UserProfileDialog({
         )
             .then(res => res.json())
             .then(setSessions);
+
+        fetch(`${API_URL}/api/public/version`, { cache: "no-store" })
+            .then(response => response.ok ? response.json() : null)
+            .then(data => setBackendVersion(data?.version || null))
+            .catch(() => setBackendVersion(null));
 
     }, [open, user]);
 
@@ -360,6 +366,10 @@ export default function UserProfileDialog({
 
                     </Button>
 
+                </div>
+
+                <div className="text-center font-mono text-xs text-muted-foreground">
+                    Webb {APP_VERSION} · API {backendVersion || "okänd"}
                 </div>
 
             </DialogContent>

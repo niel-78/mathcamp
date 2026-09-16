@@ -89,7 +89,7 @@ export default function ResultPage({
 
     return (
 
-        <div className="max-w-4xl mx-auto p-6">
+        <div className="mx-auto w-full min-w-0 max-w-4xl p-3 sm:p-6">
 
             <h1 className="text-3xl font-bold mb-6">
                 Resultat
@@ -116,10 +116,10 @@ export default function ResultPage({
                             key={
                                 result.question_id
                             }
-                            className="rounded-lg border p-4"
+                            className="min-w-0 rounded-lg border p-3 sm:p-4"
                         >
 
-                            <div className="flex justify-between mb-4">
+                            <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
 
                                 <h3 className="font-semibold">
                                     Fråga {index + 1}
@@ -220,6 +220,8 @@ export default function ResultPage({
                                             (result.question || "")
                                                 .split(NUMERIC_INPUT_MARKER);
 
+                                        const markerCount = Math.max(segments.length - 1, 0);
+
                                         let studentValues = [];
 
                                         try {
@@ -240,6 +242,56 @@ export default function ResultPage({
                                                 result.correct_options.map(o => o.text),
                                                 config
                                             );
+
+                                        if (markerCount === 0) {
+                                            const displayValues = Array.from(
+                                                {
+                                                    length: Math.max(
+                                                        studentValues.length,
+                                                        result.correct_options.length,
+                                                        1
+                                                    )
+                                                },
+                                                (_, index) => studentValues[index] || ""
+                                            );
+
+                                            return (
+                                                <>
+                                                    <span
+                                                        dangerouslySetInnerHTML={{
+                                                            __html: formatMathText(result.question || "")
+                                                        }}
+                                                    />
+
+                                                    <div className="mt-2 space-y-2">
+                                                        {displayValues.map((value, index) => (
+                                                            <div key={index}>
+                                                                <span className="mr-2">
+                                                                    {displayValues.length === 1 ? "Svar" : `Svar ${index + 1}`}:
+                                                                </span>
+                                                                <strong
+                                                                    className={`
+                                                                        inline-block
+                                                                        mx-1
+                                                                        px-2
+                                                                        py-0.5
+                                                                        rounded-md
+                                                                        border-2
+                                                                        ${
+                                                                            fieldMatches[index]
+                                                                                ? "border-green-600 bg-green-50"
+                                                                                : "border-red-600 bg-red-50"
+                                                                        }
+                                                                    `}
+                                                                >
+                                                                    {value || "–"}
+                                                                </strong>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </>
+                                            );
+                                        }
 
                                         return segments.map((segment, index) => (
 
