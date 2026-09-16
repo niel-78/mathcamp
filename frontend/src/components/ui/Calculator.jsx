@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { evaluate } from "mathjs";
 import Draggable from "react-draggable";
-import { Calculator as CalculatorIcon, Delete, Grip } from "lucide-react";
+import { Calculator as CalculatorIcon, Delete, Grip, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
@@ -350,9 +350,15 @@ export default function Calculator({
         }
     }
 
-    const resizeGeoGebra = () => {
-        const nextWidth = Math.min(1400, savedSize.current.width + 80);
-        const nextHeight = Math.min(1000, savedSize.current.height + 60);
+    const resizeGeoGebra = (widthChange, heightChange) => {
+        const nextWidth = Math.min(
+            1400,
+            Math.max(320, savedSize.current.width + widthChange)
+        );
+        const nextHeight = Math.min(
+            1000,
+            Math.max(320, savedSize.current.height + heightChange)
+        );
 
         savedSize.current = {
             width: nextWidth,
@@ -499,13 +505,24 @@ export default function Calculator({
                 {activeTool === "geogebra" ? (
                     <div className="relative overflow-hidden rounded-md">
                         <div className="calculator-drag-handle absolute right-2 top-2 z-10 flex cursor-move items-center rounded-md bg-background/90 p-1 shadow">
+                            <Grip className="mx-1 h-4 w-4 text-muted-foreground" aria-label="Flytta GeoGebra" />
                             <div className="calculator-controls flex items-center gap-1">
-                                <Grip className="mx-1 h-4 w-4 text-muted-foreground" aria-label="Flytta GeoGebra" />
                                 <Button
                                     type="button"
                                     variant="outline"
                                     size="sm"
-                                    onClick={resizeGeoGebra}
+                                    className="h-8 w-8 p-0"
+                                    onClick={() => resizeGeoGebra(-80, -60)}
+                                    aria-label="Minska GeoGebra-fönstret"
+                                >
+                                    <Minus className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 w-8 p-0"
+                                    onClick={() => resizeGeoGebra(80, 60)}
                                     aria-label="Öka GeoGebra-fönstret"
                                 >
                                     +
