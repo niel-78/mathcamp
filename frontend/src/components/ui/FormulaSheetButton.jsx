@@ -240,6 +240,7 @@ export default function FormulaSheetButton({ group = {}, title = "Formelblad" })
     const formulaRef = useRef(null);
 
     const openFormula = () => {
+        setFormulaPosition({ x: 0, y: 0 });
         setActiveFormula({
             name: group?.name || "Matematik",
             course: getCourseLabel(group) || "Matematik",

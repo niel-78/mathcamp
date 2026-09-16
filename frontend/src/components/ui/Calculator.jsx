@@ -426,6 +426,7 @@ export default function Calculator({
             x: 0,
             y: 0
         };
+        setPanelPosition(savedPosition.current);
         localStorage.removeItem(calculatorPositionStorageKey);
         setOpen(false);
     };
