@@ -745,6 +745,10 @@ export default function LessonAssessmentDialog({
                                 </TabsTrigger>
                             </TabsList>
 
+                            <div className="mt-3 rounded-md border bg-muted/30 px-3 py-2 text-sm font-medium">
+                                Basedel: {totalSeedQuestions} uppgifter totalt
+                            </div>
+
                             <div className="max-h-[55vh] overflow-y-auto pr-1">
                                 <TabsContent value="sections" className="mt-4 space-y-4">
 
@@ -928,13 +932,8 @@ export default function LessonAssessmentDialog({
 
                         {selectedAbilities.length > 0 && (
                             <div className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <div className="font-medium">
-                                        Antal uppgifter per förmåga
-                                    </div>
-                                    <div className="text-xs text-muted-foreground">
-                                        Totalt {totalSeedQuestions} uppgifter i basdelen
-                                    </div>
+                                <div className="font-medium">
+                                    Antal uppgifter per förmåga
                                 </div>
 
                                 <div className="text-xs text-muted-foreground">

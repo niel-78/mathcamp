@@ -73,6 +73,7 @@ function getSavedShowCountdown() {
 
 export default function ExamPage({
     attemptId,
+    formulaGroup = {},
     onExit,
     onLocked
 }) {
@@ -634,7 +635,7 @@ export default function ExamPage({
 
                             <div className="flex min-w-0 flex-col items-stretch gap-2 sm:items-end">
                                 <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
-                                    <FormulaSheetButton />
+                                    <FormulaSheetButton group={formulaGroup} />
                                     <Calculator
                                         key={current.id}
                                         attemptId={attemptId}

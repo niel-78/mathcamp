@@ -15,6 +15,7 @@ import CompetitionTab from "@/components/addons/CompetitionTab";
 import PlanningBoard from "@/components/planning/PlanningBoard";
 import { toast } from "sonner";
 import { logEvent } from "@/utils/logEvent";
+import { resolveFormulaSheetGroup } from "@/utils/formulaSheetGroup";
 import {
     KeyRound,
     Trophy,
@@ -43,6 +44,12 @@ const StudentDashboard = () => {
     const [resultTab, setResultTab] = useState("results");
 
     const [groupExam, setGroupExam] = useState(null);
+
+    const formulaGroup = resolveFormulaSheetGroup({
+        groups,
+        selectedGroupId,
+        groupExam
+    });
 
     useEffect(() => {
 
@@ -301,6 +308,7 @@ const StudentDashboard = () => {
             <ExamPage
                 attemptId={attemptId}
                 assessmentConfig={assessmentConfig}
+                formulaGroup={formulaGroup}
                 onExit={() => setView("result")}
                 onLocked={() => setView("locked")}
             />
