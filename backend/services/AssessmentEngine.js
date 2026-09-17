@@ -975,7 +975,8 @@ export default class AssessmentEngine {
             pointsFraction = correct ? 1 : 0;
 
         } else if (
-            question.question_type === "numeric_input"
+            question.question_type === "numeric_input" ||
+            question.question_type === "equation"
         ) {
 
             const [correctOptions] =
@@ -1810,9 +1811,14 @@ export default class AssessmentEngine {
                     await db.query(
                         `
                         SELECT
-                            q.*
+                            q.*,
+                            gqp.question_id IS NOT NULL AS is_priority
 
                         FROM questions q
+
+                        LEFT JOIN group_question_priorities gqp
+                            ON gqp.question_id = q.id
+                            AND gqp.group_id = ?
 
                         WHERE q.block_id = ?
                         AND q.series_level_id = ?
@@ -1820,6 +1826,11 @@ export default class AssessmentEngine {
                         AND q.archived_at IS NULL
                         AND q.deleted_at IS NULL
                         AND q.excluded_from_assessments = 0
+                        AND NOT EXISTS (
+                            SELECT 1
+                            FROM question_reports qr
+                            WHERE qr.question_id = q.id
+                        )
 
                         AND (
                             ? IS NULL
@@ -1831,11 +1842,14 @@ export default class AssessmentEngine {
                             )
                         )
 
-                        ORDER BY ${useDifferentQuestionsInBlock ? "RAND()" : "q.id"}
+                        ORDER BY
+                            is_priority DESC,
+                            ${useDifferentQuestionsInBlock ? "RAND()" : "q.id"}
 
                         LIMIT ?
                         `,
                         [
+                            lesson.group_id,
                             block.id,
                             firstLevel.id,
                             userId,
@@ -1848,9 +1862,14 @@ export default class AssessmentEngine {
                     [selectedQuestions] = await db.query(
                         `
                         SELECT
-                            q.*
+                            q.*,
+                            gqp.question_id IS NOT NULL AS is_priority
 
                         FROM questions q
+
+                        LEFT JOIN group_question_priorities gqp
+                            ON gqp.question_id = q.id
+                            AND gqp.group_id = ?
 
                         WHERE q.block_id = ?
                         AND q.series_level_id = ?
@@ -1858,12 +1877,20 @@ export default class AssessmentEngine {
                         AND q.archived_at IS NULL
                         AND q.deleted_at IS NULL
                         AND q.excluded_from_assessments = 0
+                        AND NOT EXISTS (
+                            SELECT 1
+                            FROM question_reports qr
+                            WHERE qr.question_id = q.id
+                        )
 
-                        ORDER BY ${useDifferentQuestionsInBlock ? "RAND()" : "q.id"}
+                        ORDER BY
+                            is_priority DESC,
+                            ${useDifferentQuestionsInBlock ? "RAND()" : "q.id"}
 
                         LIMIT ?
                         `,
                         [
+                            lesson.group_id,
                             block.id,
                             firstLevel.id,
                             limit

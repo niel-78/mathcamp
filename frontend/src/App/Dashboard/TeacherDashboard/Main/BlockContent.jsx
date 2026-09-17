@@ -62,7 +62,9 @@ export default function BlockContent({
     block,
     area,
     openTab,
-    blockRefreshKey
+    blockRefreshKey,
+    groupId,
+    groupName
 }) {
 
     const [currentBlock, setCurrentBlock] = useState(block);    
@@ -94,12 +96,12 @@ export default function BlockContent({
 
     useEffect(() => {
         loadBlock();
-    }, [block.id, blockRefreshKey]);
+    }, [block.id, blockRefreshKey, groupId]);
 
     const loadBlock = async () => {
 
         const response = await fetch(
-            `${API_URL}/api/blocks/${block.id}/`,
+            `${API_URL}/api/blocks/${block.id}/${groupId ? `?groupId=${groupId}` : ""}`,
             {
                 headers: authHeaders()
             }
@@ -260,6 +262,44 @@ export default function BlockContent({
                 allowed
                     ? "GeoGebra tillåten för uppgiften"
                     : "GeoGebra inte tillåten för uppgiften"
+            );
+        };
+
+    const setQuestionPriority =
+        async (question, priority) => {
+
+            if (!groupId) {
+                toast.error(
+                    "Prioritering kan bara ändras när blocket öppnas via en grupp."
+                );
+                return;
+            }
+
+            const response = await fetch(
+                `${API_URL}/api/questions/${question.id}/priority`,
+                {
+                    method: "PUT",
+                    headers: {
+                        ...authHeaders(),
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        group_id: groupId,
+                        priority
+                    })
+                }
+            );
+
+            if (!response.ok) {
+                toast.error("Kunde inte uppdatera prioriteringen");
+                return;
+            }
+
+            await loadBlock();
+            toast.success(
+                priority
+                    ? `Uppgiften prioriteras${groupName ? ` för ${groupName}` : ""}`
+                    : `Uppgiften prioriteras inte längre${groupName ? ` för ${groupName}` : ""}`
             );
         };
 
@@ -586,7 +626,7 @@ export default function BlockContent({
                     },
                     body: JSON.stringify({
                         question: updatedQuestionText,
-                        question_type: "numeric_input",
+                        question_type: "equation",
                         level_id: question.level_id,
                         answer_config: {
                             ...config,
@@ -856,6 +896,22 @@ export default function BlockContent({
                                         </span>
                                     )}
 
+                                    {question.question_type === "numeric_input" && (() => {
+                                        const correctCount = (question.options || [])
+                                            .filter(isCorrectOption).length;
+                                        const markerCount = (question.question.match(/\{\{input\}\}/g) || []).length;
+
+                                        return correctCount !== markerCount ? (
+                                            <button
+                                                type="button"
+                                                className="text-sm text-amber-700 underline underline-offset-2"
+                                                onClick={() => syncSingleQuestionInputs(question)}
+                                            >
+                                                Antalet svarsrutor matchar inte antalet korrekta svar.
+                                            </button>
+                                        ) : null;
+                                    })()}
+
                                 </div>
 
                                 {getDisplayedOptions(question).length > 0 && (
@@ -942,6 +998,31 @@ export default function BlockContent({
                                     />
                                     GeoGebra
                                 </label>
+
+                                {groupId && (
+
+                                    <label
+                                        className="flex items-center gap-1 text-sm whitespace-nowrap"
+                                        title={
+                                            groupName
+                                                ? `Prioritera uppgiften för ${groupName} (används i första hand tills eleven gjort alla prioriterade uppgifter i blocket)`
+                                                : "Prioritera uppgiften för gruppen"
+                                        }
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={Boolean(question.is_priority)}
+                                            onChange={(e) =>
+                                                setQuestionPriority(
+                                                    question,
+                                                    e.target.checked
+                                                )
+                                            }
+                                        />
+                                        Prioriterad
+                                    </label>
+
+                                )}
 
                                 <Button
                                     size="sm"
@@ -1089,7 +1170,7 @@ export default function BlockContent({
                         variant="outline"
                         onClick={synchronizeBlockAnswerOptions}
                     >
-                        Synkronisera svarsalternativ
+                        Synkronisera svarsalternativ för alla frågor i blocket
                     </Button>
 
                     <DialogFooter>
@@ -1245,7 +1326,7 @@ export default function BlockContent({
                 onOpenChange={(open) => {
                     if (!open) setEquationsConfirmOpen(false);
                 }}
-                title="Synkronisera svarsalternativ i blocket?"
+                title="Synkronisera svarsalternativ för alla frågor i blocket?"
                 description="Felmarkerade alternativ tas bort från alla numeriska uppgifter i blocket och svarsrutorna synkroniseras med kvarvarande rätta svar. Vanliga flervalsfrågor påverkas inte."
                 confirmLabel="Synkronisera"
                 onConfirm={runSynchronizeBlockAnswerOptions}

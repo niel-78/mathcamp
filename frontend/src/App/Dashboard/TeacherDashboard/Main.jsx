@@ -209,6 +209,8 @@ export default function Main({
                             openTab={openTab}
                             closeTab={closeTab}
                             blockRefreshKey={blockRefreshKey}
+                            groupId={currentTab.groupId}
+                            groupName={currentTab.groupName}
                         />
 
                     )}

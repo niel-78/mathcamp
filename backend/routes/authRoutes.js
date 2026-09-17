@@ -19,7 +19,7 @@ router.post("/login", async (req, res) => {
 
     try {
 
-        const { username, password } = req.body || {};
+        const { username, password, program_version } = req.body || {};
 
         if (!username || !password) {
             return res.status(400).json({
@@ -61,11 +61,12 @@ router.post("/login", async (req, res) => {
             `
             INSERT INTO user_sessions (
                 user_id,
-                session_token
+                session_token,
+                program_version
             )
-            VALUES (?, ?)
+            VALUES (?, ?, ?)
             `,
-            [user.id, token]
+            [user.id, token, program_version || null]
         );
 
         const [[school]] = await db.query(
@@ -191,7 +192,8 @@ router.get("/sessions", requireAuth,
                     DATE_FORMAT(
                         logged_out_at,
                         '%Y-%m-%dT%H:%i:%s.000Z'
-                    ) AS logged_out_at
+                    ) AS logged_out_at,
+                    program_version
                 FROM user_sessions
                 WHERE user_id = ?
                 ORDER BY logged_in_at DESC

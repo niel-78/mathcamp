@@ -11,6 +11,7 @@ import CreateBlockFromExcelDialog from "@/components/ui/CreateBlockFromExcelDial
 
 export default function SectionTab({
     sectionId,
+    groupId,
     groupName,
     groupAbilitySeriesId,
     openTab,
@@ -281,6 +282,8 @@ export default function SectionTab({
                             ? `Förmågor från ${groupName}`
                             : "Gruppens förmågor"
                     }
+                    groupId={groupId}
+                    groupName={groupName}
                 />
 
             </BaseTabLayout>
@@ -305,7 +308,9 @@ export default function SectionTab({
                         id: `block-${block.id}`,
                         title: `Block #${block.id}`,
                         type: "block",
-                        block
+                        block,
+                        groupId,
+                        groupName
                     });
 
                     setImportOpen(false);

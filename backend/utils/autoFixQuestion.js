@@ -459,7 +459,11 @@ export async function autoFixQuestion(questionId, userId = 1) {
                 targetOpt.text = newText;
                 targetOpt.is_correct = 1;
                 changes.push(`Ersatte alternativ med korrekt svar: ${newText}.`);
-            } else if (question.question_type === "numeric_input" || question.question_type === "text") {
+            } else if (
+                question.question_type === "numeric_input" ||
+                question.question_type === "equation" ||
+                question.question_type === "text"
+            ) {
                 const newText = calculatedCorrectFrac.toDisplay();
                 const [res] = await db.query(
                     `INSERT INTO options (question_id, text, is_correct, created_by, updated_by) VALUES (?, ?, 1, ?, ?)`,

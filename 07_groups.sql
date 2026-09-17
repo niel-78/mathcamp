@@ -104,3 +104,37 @@ CREATE TABLE group_students (
         REFERENCES `groups`(id)
         ON DELETE CASCADE
 );
+
+/* =====================================================
+   GROUP QUESTION PRIORITIES
+
+   Marks a question as "priority" for a specific group.
+   Priority questions in a block are used first for that
+   group's students; once a student has answered all
+   priority questions in the block, the remaining
+   (non-priority) questions are used.
+   ===================================================== */
+
+CREATE TABLE group_question_priorities (
+    group_id INT NOT NULL,
+
+    question_id INT NOT NULL,
+
+    created_at DATETIME NOT NULL
+        DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (
+        group_id,
+        question_id
+    ),
+
+    CONSTRAINT fk_group_question_priorities_group
+        FOREIGN KEY (group_id)
+        REFERENCES `groups`(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_group_question_priorities_question
+        FOREIGN KEY (question_id)
+        REFERENCES questions(id)
+        ON DELETE CASCADE
+);

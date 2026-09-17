@@ -135,6 +135,49 @@ test("accepts Svar as the answer key column for numeric input rows", () => {
     assert.equal(result.questions[0].calculatorAllowed, true);
 });
 
+test("accepts zero as an equation answer", () => {
+    const result = normalizeImportRows({
+        rows: [
+            {
+                Fråga: "$x + 4 = 4$",
+                Frågetyp: "equation",
+                Nivå: 2,
+                Svar: 0
+            }
+        ],
+        blockId: 42,
+        userId: 66
+    });
+
+    assert.equal(result.questions[0].answerConfig.default_answer, "0");
+    assert.deepEqual(
+        result.questions[0].options.map(option => [option.text, option.isCorrect]),
+        [["0", 1]]
+    );
+});
+
+test("normalizes equation rows as dynamic unordered numeric answers", () => {
+    const result = normalizeImportRows({
+        rows: [
+            {
+                Fråga: "Lös x^2 = 25",
+                Frågetyp: "equation",
+                Nivå: 1,
+                Svar: "-5; 5"
+            }
+        ],
+        blockId: 45,
+        userId: 66
+    });
+
+    assert.equal(result.questions[0].questionType, "equation");
+    assert.equal(result.questions[0].answerConfig.order_independent, true);
+    assert.deepEqual(
+        result.questions[0].options.map(option => option.text),
+        ["-5", "5"]
+    );
+});
+
 test("stores Svar as a correct option for text rows", () => {
     const result = normalizeImportRows({
         rows: [
@@ -152,6 +195,26 @@ test("stores Svar as a correct option for text rows", () => {
     assert.deepEqual(
         result.questions[0].options.map(option => [option.text, option.isCorrect]),
         [["y=4x-7", 1]]
+    );
+});
+
+test("preserves decimal commas in text answer keys", () => {
+    const result = normalizeImportRows({
+        rows: [
+            {
+                Fråga: "Förenkla: $2x+0,5-0,9x+0,1$",
+                Frågetyp: "text",
+                Nivå: 2,
+                Svar: "$1,1x+0,6$"
+            }
+        ],
+        blockId: 52,
+        userId: 66
+    });
+
+    assert.deepEqual(
+        result.questions[0].options.map(option => [option.text, option.isCorrect]),
+        [["$1,1x+0,6$", 1]]
     );
 });
 

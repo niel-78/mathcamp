@@ -59,7 +59,11 @@ export function getQuestionIssues(
                 message: "Saknar korrekt lösning"
             });
         }
-    } else if (question.question_type === "numeric_input" || question.question_type === "text") {
+    } else if (
+        question.question_type === "numeric_input" ||
+        question.question_type === "equation" ||
+        question.question_type === "text"
+    ) {
         if (correctOptions.length === 0) {
             issues.push({
                 type: "missing_correct",
@@ -83,7 +87,10 @@ export function getQuestionIssues(
 
     // 3. Numeriska uppgifter behöver ett facit. Svarsrutor skapas från facit;
     // {{input}} är en valfri äldre inline-markör.
-    if (question.question_type === "numeric_input") {
+    if (
+        question.question_type === "numeric_input" ||
+        question.question_type === "equation"
+    ) {
         const expectedCount = correctOptions.length || configuredCorrectAnswers.length || (hasDefaultAnswer ? 1 : 0);
         if (expectedCount === 0) {
             issues.push({

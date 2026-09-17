@@ -2170,7 +2170,10 @@ router.get("/:id/results", async (req, res) => {
 
                 points = correct ? 1 : 0;
 
-            } else if (question.question_type === "numeric_input") {
+            } else if (
+                question.question_type === "numeric_input" ||
+                question.question_type === "equation"
+            ) {
 
                 const score =
                     scoreNumericInput(
@@ -2370,7 +2373,8 @@ router.get("/:id/status", async (req, res) => {
                 id,
                 status,
                 submitted_at,
-                teacher_end_mode
+                teacher_end_mode,
+                config
             FROM assessment_attempts
             WHERE id = ?
             `,

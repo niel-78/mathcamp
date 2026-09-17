@@ -474,7 +474,7 @@ export default function Calculator({
                         height: 300
                     })}
                 >
-                    <Sigma className="h-4 w-4" />
+                    <CalculatorIcon className="h-4 w-4" />
                     {!compactLabels && (
                         <span>
                             Miniräknare
@@ -499,7 +499,7 @@ export default function Calculator({
                     }}
                     onDoubleClick={resetGeoGebraWindow}
                 >
-                    <CalculatorIcon className="h-4 w-4" />
+                    <Sigma className="h-4 w-4" />
                     {!compactLabels && (
                         <span>
                             GeoGebra CAS

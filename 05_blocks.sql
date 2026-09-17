@@ -74,7 +74,8 @@ CREATE TABLE questions (
         'text',
         'single_choice',
         'multiple_choice',
-        'numeric_input'
+        'numeric_input',
+        'equation'
     ),
 
     level_id INT NULL,

@@ -16,6 +16,8 @@ export default function BlockLibrary({
     deleteLabel = "Ta bort block"
     ,abilityOptions = []
     ,abilitySourceLabel = "Förmågor"
+    ,groupId = null
+    ,groupName = null
 }) {
 
 
@@ -164,6 +166,8 @@ export default function BlockLibrary({
                             point
                         })
                     }
+                    groupId={groupId}
+                    groupName={groupName}
                 />
 
             ))}

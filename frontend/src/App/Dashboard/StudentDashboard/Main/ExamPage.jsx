@@ -30,6 +30,7 @@ import FormulaSheetButton from "@/components/ui/FormulaSheetButton";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { MessageSquareWarning, Settings } from "lucide-react";
+import { getSavedShowQuestionInfo } from "@/utils/questionSettings";
 
 const questionTextSizeStorageKey = "math-camp-question-text-size";
 const showQuestionInfoStorageKey = "math-camp-show-question-info";
@@ -54,20 +55,6 @@ function getSavedQuestionTextSize() {
     }
 
     return "normal";
-}
-
-function getSavedShowQuestionInfo() {
-    try {
-        const saved = localStorage.getItem(showQuestionInfoStorageKey);
-
-        if (saved === "false") {
-            return false;
-        }
-    } catch {
-        // Use the default when localStorage is unavailable.
-    }
-
-    return true;
 }
 
 function getSavedShowCountdown() {
@@ -108,7 +95,7 @@ export default function ExamPage({
     const [questionTextSize, setQuestionTextSize] =
         useState(getSavedQuestionTextSize);
     const [showQuestionInfo, setShowQuestionInfo] =
-        useState(getSavedShowQuestionInfo);
+        useState(() => getSavedShowQuestionInfo());
     const [showCountdown, setShowCountdown] =
         useState(getSavedShowCountdown);
     const [reportedQuestionIds, setReportedQuestionIds] =

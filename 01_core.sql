@@ -65,6 +65,8 @@ CREATE TABLE user_sessions (
     logged_in_at DATETIME NOT NULL
         DEFAULT CURRENT_TIMESTAMP,
 
+    program_version VARCHAR(64) NULL,
+
     logged_out_at DATETIME NULL,
 
     FOREIGN KEY (user_id)

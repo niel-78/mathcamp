@@ -112,6 +112,11 @@ export async function buildExamSession(
                     AND deleted_at IS NULL
                     AND archived_at IS NULL
                     AND excluded_from_assessments = 0
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM question_reports qr
+                        WHERE qr.question_id = questions.id
+                    )
                 `,
                 [block.id]
             );

@@ -1,5 +1,7 @@
-import { normalizeAnswer }
-    from "../normalizeAnswer.js";
+import { gradeText as gradeTextWithAlgebra }
+    from "../../../shared/grading/gradeText.js";
+import { gradeAlgebra }
+    from "./gradeAlgebra.js";
 
 
 export const gradeText = (
@@ -7,8 +9,9 @@ export const gradeText = (
     correctAnswer
 ) => {
 
-    return (
-        normalizeAnswer(studentAnswer) ===
-        normalizeAnswer(correctAnswer)
+    return gradeTextWithAlgebra(
+        studentAnswer,
+        correctAnswer,
+        gradeAlgebra
     );
 };

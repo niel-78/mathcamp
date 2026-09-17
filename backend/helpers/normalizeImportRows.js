@@ -19,6 +19,7 @@ function validateImportQuestion({
 
     if (
         questionType === "numeric_input" ||
+        questionType === "equation" ||
         questionType === "text"
     ) {
         if (correctAnswers.length === 0) {
@@ -62,7 +63,11 @@ function parseBoolean(value) {
 
 function parseCorrectAnswers(value, questionType) {
     const delimiter =
-        questionType === "numeric_input" ? ";" : ",";
+        questionType === "numeric_input" ||
+        questionType === "equation" ||
+        questionType === "text"
+            ? ";"
+            : ",";
 
     return String(value ?? "")
         .split(delimiter)
@@ -137,12 +142,12 @@ export function normalizeImportRows({
         ).trim();
 
         const correctAnswers = parseCorrectAnswers(
-            row["Korrekta alternativ"] ||
-            row["Rätta svar"] ||
-            row["Svar"] ||
-            row.svar ||
-            row.Answer ||
-            row.answer ||
+            row["Korrekta alternativ"] ??
+            row["Rätta svar"] ??
+            row["Svar"] ??
+            row.svar ??
+            row.Answer ??
+            row.answer ??
             "",
             questionType
         );
@@ -162,11 +167,15 @@ export function normalizeImportRows({
             answerConfig = { correctAnswers };
         }
 
-        if (questionType === "numeric_input") {
+        if (
+            questionType === "numeric_input" ||
+            questionType === "equation"
+        ) {
             answerConfig = {
                 grading_mode: "numeric_input",
                 default_answer: correctAnswers[0] || "",
-                order_independent: orderIndependent
+                order_independent:
+                    questionType === "equation" || orderIndependent
             };
         }
 
@@ -200,7 +209,10 @@ export function normalizeImportRows({
             }
         }
 
-        if (questionType === "numeric_input") {
+        if (
+            questionType === "numeric_input" ||
+            questionType === "equation"
+        ) {
             for (const correctAnswer of correctAnswers) {
                 options.push({
                     text: correctAnswer,

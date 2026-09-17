@@ -32,6 +32,7 @@ export const gradeAnswer = ({
             );
 
         case "numeric_input":
+        case "equation":
             return gradeNumericInput(
                 studentAnswer,
                 correctAnswer,

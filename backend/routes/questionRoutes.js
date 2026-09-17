@@ -191,6 +191,51 @@ router.put("/:id", async (req, res) => {
     }
 });
 
+// PUT /api/questions/:id/priority
+// Marks/unmarks a question as priority for a specific group. Priority is
+// scoped per group, since the same question can be reused across groups.
+router.put("/:id/priority", async (req, res) => {
+    const questionId = req.params.id;
+    const { group_id, priority } = req.body;
+
+    if (!group_id) {
+        return res.status(400).json({
+            error: "group_id saknas."
+        });
+    }
+
+    try {
+        if (priority) {
+            await db.query(
+                `
+                INSERT IGNORE INTO group_question_priorities (
+                    group_id,
+                    question_id
+                )
+                VALUES (?, ?)
+                `,
+                [group_id, questionId]
+            );
+        } else {
+            await db.query(
+                `
+                DELETE FROM group_question_priorities
+                WHERE group_id = ?
+                AND question_id = ?
+                `,
+                [group_id, questionId]
+            );
+        }
+
+        res.sendStatus(204);
+    } catch (error) {
+        console.error("Error updating question priority:", error);
+        res.status(500).json({
+            error: error.message || "Kunde inte spara prioriteringen."
+        });
+    }
+});
+
 router.put("/:id/series-level", async (req, res) => {
     const { series_level_id } = req.body;
 

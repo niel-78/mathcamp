@@ -119,6 +119,10 @@ export default function AnswerConfigEditor({
                     mode.value === gradingMode
             );
 
+    const isNumericQuestionType =
+        questionType === QUESTION_TYPES.NUMERIC_INPUT.value ||
+        questionType === QUESTION_TYPES.EQUATION.value;
+
     const saveSettings = async () => {
 
         try {
@@ -154,6 +158,7 @@ export default function AnswerConfigEditor({
                     allow_decimal:
                         allowDecimal,
                     order_independent:
+                        questionType === QUESTION_TYPES.EQUATION.value ||
                         orderIndependent,
                     answer_format: answerFormat
                 }
@@ -221,7 +226,7 @@ export default function AnswerConfigEditor({
         return (
 
             <>
-                {(questionType === QUESTION_TYPES.NUMERIC_INPUT.value ||
+                {(isNumericQuestionType ||
                     gradingMode === GRADING_MODES.NUMERIC.value ||
                     gradingMode === GRADING_MODES.FRACTION.value) && (
                     <Field label="Svar ska anges som">
@@ -346,7 +351,7 @@ export default function AnswerConfigEditor({
 
                 {(modeConfig?.settings.includes(
                     "round_to"
-                ) || questionType === QUESTION_TYPES.NUMERIC_INPUT.value) && (
+                ) || isNumericQuestionType) && (
 
                     <Field
                         label="Avrunda till"
@@ -502,7 +507,7 @@ export default function AnswerConfigEditor({
 
                 {(modeConfig?.settings.includes(
                     "tolerance"
-                ) || questionType === QUESTION_TYPES.NUMERIC_INPUT.value) && (
+                ) || isNumericQuestionType) && (
 
                     <Field
                         label="Tolerans"
@@ -555,7 +560,7 @@ export default function AnswerConfigEditor({
 
                 {(modeConfig?.settings.includes(
                     "decimals"
-                ) || questionType === QUESTION_TYPES.NUMERIC_INPUT.value) && (
+                ) || isNumericQuestionType) && (
 
                     <Field
                         label="Decimaler"
@@ -655,12 +660,9 @@ export default function AnswerConfigEditor({
 
                     )}
 
-                    {questionType ===
-                        QUESTION_TYPES.NUMERIC_INPUT.value &&
-                        renderSettings()}
+                    {isNumericQuestionType && renderSettings()}
 
-                    {questionType ===
-                        QUESTION_TYPES.NUMERIC_INPUT.value && (
+                    {isNumericQuestionType && (
 
                         <Field label="">
                             <div>
@@ -778,16 +780,14 @@ export default function AnswerConfigEditor({
 
                     )}
 
-                    {questionType ===
-                        QUESTION_TYPES.NUMERIC_INPUT.value && (
+                    {isNumericQuestionType && (
 
                         <>
 
                             <p className="text-sm text-muted-foreground">
-                                Lägg till facit under "Svarsalternativ",
-                                markerat som korrekt. Flera korrekta
-                                alternativ ger flera svarsrutor; alla rutor
-                                måste stämma för att frågan ska räknas som rätt.
+                                {questionType === QUESTION_TYPES.EQUATION.value
+                                    ? "Lägg till facit under Svarsalternativ. Eleven väljer själv antal svarsrutor och svaren kan anges i valfri ordning."
+                                    : "Lägg till en svarsruta med {{input}} per svar. Flera markörer ger fasta svarsrutor i frågetexten."}
                             </p>
 
                             {renderSettings()}
@@ -814,8 +814,9 @@ export default function AnswerConfigEditor({
                                         }
                                     />
 
-                                    Ordning spelar ingen roll (t.ex. vid
-                                    dubbelrot räcker det att en rot anges)
+                                    {questionType === QUESTION_TYPES.EQUATION.value
+                                        ? "Ekvation använder alltid valfri ordning"
+                                        : "Ordning spelar ingen roll (t.ex. vid dubbelrot räcker det att en rot anges)"}
 
                                 </label>
 

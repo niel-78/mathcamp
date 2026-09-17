@@ -14,6 +14,10 @@ export const QUESTION_TYPES = {
     NUMERIC_INPUT: {
         value: "numeric_input",
         label: "Numerisk(a) svarsruta(or)"
+    },
+    EQUATION: {
+        value: "equation",
+        label: "Ekvation (valfritt antal svar)"
     }
 };
 

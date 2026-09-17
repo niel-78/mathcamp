@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth, clearUserScopedLocalStorage } from "@/contexts/AuthContext";
-import { API_URL } from "@/config";
+import { API_URL, APP_VERSION } from "@/config";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
@@ -18,7 +18,11 @@ export default function Login() {
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({
+                username,
+                password,
+                program_version: APP_VERSION
+            })
         });
 
         const data = await res.json();

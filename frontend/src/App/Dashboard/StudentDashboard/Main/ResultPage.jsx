@@ -210,7 +210,7 @@ export default function ResultPage({
                                 </div>
                             )}
 
-                            {result.question_type === "numeric_input" ? (
+                            {["numeric_input", "equation"].includes(result.question_type) ? (
 
                                 <div className="leading-8">
 
@@ -350,7 +350,7 @@ export default function ResultPage({
 
                             )}
 
-                            {result.question_type !== "numeric_input" && (
+                            {!['numeric_input', 'equation'].includes(result.question_type) && (
 
                             <div className="mt-4">
 

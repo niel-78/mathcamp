@@ -60,7 +60,7 @@ function getNumericDefaultAnswer(question) {
     const answerConfig = parseAnswerConfig(question.answer_config);
 
     if (
-        question.question_type !== "numeric_input" ||
+        !["numeric_input", "equation"].includes(question.question_type) ||
         question.options?.length > 0 ||
         answerConfig?.default_answer === undefined ||
         answerConfig.default_answer === ""
@@ -82,6 +82,7 @@ function isCorrectOption(option) {
 
 export function syncNumericInputs(text, correctCount) {
     const cleanText = (text || "").trim();
+    const inputCount = Math.max(Number(correctCount) || 1, 1);
 
     const lines = cleanText.split("\n");
     while (lines.length > 0) {
@@ -99,11 +100,19 @@ export function syncNumericInputs(text, correctCount) {
     return lines
         .join("\n")
         .replace(/\s*Skriv\s+[^.!?\n]*\{\{input\}\}[^.!?\n]*[.!?]?/gi, "")
-        .replace(/\s*(?:Svar|Svara)\s*:\s*\{\{input\}\}\s*[.!?]?/gi, "")
+        .replace(/\s*(?:Svar|Svara)(?:\s+\d+)?\s*:\s*\{\{input\}\}\s*[.!?]?/gi, "")
         .replace(/\{\{input\}\}/g, "")
         .replace(/\s+([,.!?])/g, "$1")
         .replace(/[ \t]{2,}/g, " ")
-        .trim();
+        .trim()
+        .concat(
+            inputCount === 1
+                ? " Svar: {{input}}"
+                : Array.from(
+                    { length: inputCount },
+                    (_, index) => ` Svar ${index + 1}: {{input}}`
+                ).join("")
+        );
 }
 
 export default function QuestionCard({
@@ -182,11 +191,16 @@ export default function QuestionCard({
 
     const correctOptions =
         question.options?.filter(isCorrectOption) || [];
+    const numericInputMarkerCount =
+        (questionText.match(/\{\{input\}\}/g) || []).length;
+    const needsNumericInputSync =
+        question.question_type === "numeric_input" &&
+        numericInputMarkerCount !== correctOptions.length;
 
     const hasPreviewAnswer =
         question.question_type === "multiple_choice"
             ? Array.isArray(previewAnswer) && previewAnswer.length > 0
-            : question.question_type === "numeric_input"
+            : ["numeric_input", "equation"].includes(question.question_type)
                 ? (() => {
 
                     try {
@@ -207,7 +221,7 @@ export default function QuestionCard({
 
         const config = parseAnswerConfig(question.answer_config);
 
-        if (question.question_type === "numeric_input") {
+        if (["numeric_input", "equation"].includes(question.question_type)) {
 
             const score = scoreNumericInput(
                 previewAnswer,
@@ -319,6 +333,22 @@ export default function QuestionCard({
                     "Frågetext sparad"
                 );
 
+            }
+
+        };
+
+    const synchronizeQuestionInputs =
+        async () => {
+
+            const updatedQuestion = syncNumericInputs(
+                questionText,
+                correctOptions.length
+            );
+
+            setQuestionText(updatedQuestion);
+
+            if (await saveQuestion({ question: updatedQuestion })) {
+                toast.success("Svarsrutor synkroniserade");
             }
 
         };
@@ -737,22 +767,17 @@ export default function QuestionCard({
                                     "
                                 >
 
-                                    {question.question_type === "numeric_input" && questionText.includes("{{input}}") && (
+                                    {question.question_type === "numeric_input" && correctOptions.length > 0 && (
 
                                     <div className="flex flex-wrap items-center gap-2">
-                                        {correctOptions.length > 0 && (
-                                            <Button
+                                        {needsNumericInputSync && (
+                                            <button
                                                 type="button"
-                                                variant="secondary"
-                                                size="xs"
-                                                onClick={() =>
-                                                    setQuestionText(prev =>
-                                                        syncNumericInputs(prev, correctOptions.length)
-                                                    )
-                                                }
+                                                className="text-sm text-amber-700 underline underline-offset-2"
+                                                onClick={synchronizeQuestionInputs}
                                             >
-                                                Ta bort gamla svarsrutemarkörer
-                                            </Button>
+                                                Antalet svarsrutor matchar inte antalet korrekta svar.
+                                            </button>
                                         )}
                                     </div>
 
@@ -902,8 +927,7 @@ export default function QuestionCard({
 
                         <CardContent>
 
-                            {question.question_type ===
-                                "numeric_input" && (
+                            {["numeric_input", "equation"].includes(question.question_type) && (
 
                                 <p
                                     className="
@@ -912,9 +936,9 @@ export default function QuestionCard({
                                         mb-3
                                     "
                                 >
-                                    Lägg till ett korrekt alternativ per svar
-                                    eleven ska ange. Ordningen används för
-                                    fasta flersvarsfrågor.
+                                    {question.question_type === "equation"
+                                        ? "Lägg till korrekta svar. Eleven väljer själv antal svarsrutor."
+                                        : "Lägg till ett korrekt alternativ per {{input}}-markör i frågan."}
                                 </p>
 
                             )}

@@ -739,8 +739,18 @@ router.get("/import-template", async (req, res) => {
                 "Ordning spelar ingen roll": "Nej"
             },
             {
-                Fråga: "Lös $x^2 = 25$. Skriv $x_1 = {{input}}$, $x_2 = {{input}}$.",
+                Fråga: "Bestäm koordinaterna: $x = {{input}}$, $y = {{input}}$.",
                 Frågetyp: "numeric_input",
+                Nivå: 2,
+                "Miniräknare tillåten": "Nej",
+                "GeoGebra tillåten": "Nej",
+                "Bild (URL)": "",
+                "Korrekta alternativ": "3; -2",
+                "Ordning spelar ingen roll": "Nej"
+            },
+            {
+                Fråga: "Lös $x^2 = 25$.",
+                Frågetyp: "equation",
                 Nivå: 2,
                 "Miniräknare tillåten": "Nej",
                 "GeoGebra tillåten": "Nej",
@@ -765,6 +775,7 @@ router.get("/import-template", async (req, res) => {
             ["single_choice"],
             ["multiple_choice"],
             ["numeric_input"],
+            ["equation"],
             [],
             ["Nivå"],
             ["Ange nivånummer i serien."],
@@ -789,8 +800,9 @@ router.get("/import-template", async (req, res) => {
             [],
             ["NUMERIC INPUT - steg för steg"],
             ["1. Skriv numeric_input i kolumnen 'Frågetyp'."],
-            ["2. Skriv rätt siffervärde i 'Korrekta alternativ'. Använd semikolon mellan flera svar."],
-            ["3. En svarsruta skapas automatiskt per korrekt svar."],
+            ["2. Skriv exakt en {{input}}-markör i frågetexten för varje fast svarsruta."],
+            ["3. Skriv rätt svar i samma ordning i 'Korrekta alternativ'. Använd semikolon mellan flera svar."],
+            ["4. numeric_input har alltid fasta svarsrutor; eleven kan inte lägga till eller ta bort rutor."],
             [],
             ["Ett svar:"],
             ["Fråga: Beräkna $7 + 5$."],
@@ -798,18 +810,22 @@ router.get("/import-template", async (req, res) => {
             ["Ordning spelar ingen roll: Nej"],
             [],
             ["Flera svar i bestämd ordning:"],
-            ["Fråga: Bestäm x och y."],
+            ["Fråga: Bestäm $x = {{input}}$ och $y = {{input}}$."],
             ["Korrekta alternativ: 3; -2"],
             ["Ordning spelar ingen roll: Nej"],
             [],
-            ["Flera svar i valfri ordning (t.ex. rötter):"],
+            ["EQUATION - valfritt antal svar (t.ex. rötter):"],
+            ["1. Skriv equation i kolumnen 'Frågetyp'."],
+            ["2. Frågetexten ska inte innehålla {{input}}."],
+            ["3. Skriv alla godkända svar separerade med semikolon."],
+            ["4. Sätt 'Ordning spelar ingen roll' till Ja."],
             ["Fråga: Lös ekvationen $x^2 = 25$."],
             ["Korrekta alternativ: -5; 5"],
             ["Ordning spelar ingen roll: Ja"],
             ["Eleven kan då lägga till eller ta bort svarsrutor."],
             [],
-            ["Decimaltal kan skrivas med komma eller punkt, t.ex. 2,5 eller 2.5."],
-            ["{{input}} behövs inte längre i frågetexten."]
+            ["Frågetyp: equation. Frågetexten behöver inte innehålla {{input}}."],
+            ["Decimaltal kan skrivas med komma eller punkt, t.ex. 2,5 eller 2.5."]
         ]);
 
     XLSX.utils.book_append_sheet(
@@ -1123,7 +1139,7 @@ router.get("/:blockId/", async (req, res) => {
     );
 
     const hydratedBlocks =
-        await hydrateBlocks(blocks);
+        await hydrateBlocks(blocks, req.query.groupId);
 
     if (!hydratedBlocks.length) {
 

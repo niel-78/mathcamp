@@ -483,7 +483,10 @@ router.get("/:id/results", async (req, res) => {
                     continue;
                 }
 
-                if (answer.question_type === "numeric_input") {
+                if (
+                    answer.question_type === "numeric_input" ||
+                    answer.question_type === "equation"
+                ) {
                     const correctValues = (answer.correct_text || "")
                         .split("||")
                         .filter(Boolean);

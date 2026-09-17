@@ -1,0 +1,151 @@
+Fråga,Frågetyp,Nivå,Svar,Miniräknare tillåten
+Bestäm värdet av $2x - 5$ då $x=1$. Svar: {{input}},numeric_input,1,-3,Nej
+Bestäm värdet av $-4 - 3x$ då $x=2$. Svar: {{input}},numeric_input,1,-10,Nej
+Bestäm värdet av $2x - 3$ då $x=3$. Svar: {{input}},numeric_input,1,3,Nej
+Bestäm värdet av $-2 - 3x$ då $x=4$. Svar: {{input}},numeric_input,1,-14,Nej
+Bestäm värdet av $2x - 1$ då $x=5$. Svar: {{input}},numeric_input,1,9,Nej
+Bestäm värdet av $0 - 3x$ då $x=1$. Svar: {{input}},numeric_input,1,-3,Nej
+Bestäm värdet av $2x + 1$ då $x=2$. Svar: {{input}},numeric_input,1,5,Nej
+Bestäm värdet av $2 - 3x$ då $x=3$. Svar: {{input}},numeric_input,1,-7,Nej
+Bestäm värdet av $2x + 3$ då $x=4$. Svar: {{input}},numeric_input,1,11,Nej
+Bestäm värdet av $4 - 3x$ då $x=5$. Svar: {{input}},numeric_input,1,-11,Nej
+Bestäm värdet av $2x + 5$ då $x=1$. Svar: {{input}},numeric_input,1,7,Nej
+Bestäm värdet av $-5 - 3x$ då $x=2$. Svar: {{input}},numeric_input,1,-11,Nej
+Bestäm värdet av $2x - 4$ då $x=3$. Svar: {{input}},numeric_input,1,2,Nej
+Bestäm värdet av $-3 - 3x$ då $x=4$. Svar: {{input}},numeric_input,1,-15,Nej
+Bestäm värdet av $2x - 2$ då $x=5$. Svar: {{input}},numeric_input,1,8,Nej
+Bestäm värdet av $-1 - 3x$ då $x=1$. Svar: {{input}},numeric_input,1,-4,Nej
+Bestäm värdet av $2x + 0$ då $x=2$. Svar: {{input}},numeric_input,1,4,Nej
+Bestäm värdet av $1 - 3x$ då $x=3$. Svar: {{input}},numeric_input,1,-8,Nej
+Bestäm värdet av $2x + 2$ då $x=4$. Svar: {{input}},numeric_input,1,10,Nej
+Bestäm värdet av $3 - 3x$ då $x=5$. Svar: {{input}},numeric_input,1,-12,Nej
+Bestäm värdet av $2x + 4$ då $x=1$. Svar: {{input}},numeric_input,1,6,Nej
+Bestäm värdet av $5 - 3x$ då $x=2$. Svar: {{input}},numeric_input,1,-1,Nej
+Bestäm värdet av $2x - 5$ då $x=3$. Svar: {{input}},numeric_input,1,1,Nej
+Bestäm värdet av $-4 - 3x$ då $x=4$. Svar: {{input}},numeric_input,1,-16,Nej
+Bestäm värdet av $2x - 3$ då $x=5$. Svar: {{input}},numeric_input,1,7,Nej
+Bestäm värdet av $-2 - 3x$ då $x=1$. Svar: {{input}},numeric_input,1,-5,Nej
+Bestäm värdet av $2x - 1$ då $x=2$. Svar: {{input}},numeric_input,1,3,Nej
+Bestäm värdet av $0 - 3x$ då $x=3$. Svar: {{input}},numeric_input,1,-9,Nej
+Bestäm värdet av $2x + 1$ då $x=4$. Svar: {{input}},numeric_input,1,9,Nej
+Bestäm värdet av $2 - 3x$ då $x=5$. Svar: {{input}},numeric_input,1,-13,Nej
+Bestäm värdet av $2x + 3$ då $x=1$. Svar: {{input}},numeric_input,1,5,Nej
+Bestäm värdet av $4 - 3x$ då $x=2$. Svar: {{input}},numeric_input,1,-2,Nej
+Bestäm värdet av $2x + 5$ då $x=3$. Svar: {{input}},numeric_input,1,11,Nej
+Bestäm värdet av $-5 - 3x$ då $x=4$. Svar: {{input}},numeric_input,1,-17,Nej
+Bestäm värdet av $2x - 4$ då $x=5$. Svar: {{input}},numeric_input,1,6,Nej
+Bestäm värdet av $-3 - 3x$ då $x=1$. Svar: {{input}},numeric_input,1,-6,Nej
+Bestäm värdet av $2x - 2$ då $x=2$. Svar: {{input}},numeric_input,1,2,Nej
+Bestäm värdet av $-1 - 3x$ då $x=3$. Svar: {{input}},numeric_input,1,-10,Nej
+Bestäm värdet av $2x + 0$ då $x=4$. Svar: {{input}},numeric_input,1,8,Nej
+Bestäm värdet av $1 - 3x$ då $x=5$. Svar: {{input}},numeric_input,1,-14,Nej
+Bestäm värdet av $2x + 2$ då $x=1$. Svar: {{input}},numeric_input,1,4,Nej
+Bestäm värdet av $3 - 3x$ då $x=2$. Svar: {{input}},numeric_input,1,-3,Nej
+Bestäm värdet av $2x + 4$ då $x=3$. Svar: {{input}},numeric_input,1,10,Nej
+Bestäm värdet av $5 - 3x$ då $x=4$. Svar: {{input}},numeric_input,1,-7,Nej
+Bestäm värdet av $2x - 5$ då $x=5$. Svar: {{input}},numeric_input,1,5,Nej
+Bestäm värdet av $-4 - 3x$ då $x=1$. Svar: {{input}},numeric_input,1,-7,Nej
+Bestäm värdet av $2x - 3$ då $x=2$. Svar: {{input}},numeric_input,1,1,Nej
+Bestäm värdet av $-2 - 3x$ då $x=3$. Svar: {{input}},numeric_input,1,-11,Nej
+Bestäm värdet av $2x - 1$ då $x=4$. Svar: {{input}},numeric_input,1,7,Nej
+Bestäm värdet av $0 - 3x$ då $x=5$. Svar: {{input}},numeric_input,1,-15,Nej
+Bestäm värdet av $2x - 5$ då $x=-1$. Svar: {{input}},numeric_input,2,-7,Nej
+Bestäm värdet av $-4 - 3x$ då $x=-2$. Svar: {{input}},numeric_input,2,2,Nej
+Bestäm värdet av $2x - 3$ då $x=-3$. Svar: {{input}},numeric_input,2,-9,Nej
+Bestäm värdet av $-2 - 3x$ då $x=-4$. Svar: {{input}},numeric_input,2,10,Nej
+Bestäm värdet av $2x - 1$ då $x=-5$. Svar: {{input}},numeric_input,2,-11,Nej
+Bestäm värdet av $0 - 3x$ då $x=-1$. Svar: {{input}},numeric_input,2,3,Nej
+Bestäm värdet av $2x + 1$ då $x=-2$. Svar: {{input}},numeric_input,2,-3,Nej
+Bestäm värdet av $2 - 3x$ då $x=-3$. Svar: {{input}},numeric_input,2,11,Nej
+Bestäm värdet av $2x + 3$ då $x=-4$. Svar: {{input}},numeric_input,2,-5,Nej
+Bestäm värdet av $4 - 3x$ då $x=-5$. Svar: {{input}},numeric_input,2,19,Nej
+Bestäm värdet av $2x + 5$ då $x=-1$. Svar: {{input}},numeric_input,2,3,Nej
+Bestäm värdet av $-5 - 3x$ då $x=-2$. Svar: {{input}},numeric_input,2,1,Nej
+Bestäm värdet av $2x - 4$ då $x=-3$. Svar: {{input}},numeric_input,2,-10,Nej
+Bestäm värdet av $-3 - 3x$ då $x=-4$. Svar: {{input}},numeric_input,2,9,Nej
+Bestäm värdet av $2x - 2$ då $x=-5$. Svar: {{input}},numeric_input,2,-12,Nej
+Bestäm värdet av $-1 - 3x$ då $x=-1$. Svar: {{input}},numeric_input,2,2,Nej
+Bestäm värdet av $2x + 0$ då $x=-2$. Svar: {{input}},numeric_input,2,-4,Nej
+Bestäm värdet av $1 - 3x$ då $x=-3$. Svar: {{input}},numeric_input,2,10,Nej
+Bestäm värdet av $2x + 2$ då $x=-4$. Svar: {{input}},numeric_input,2,-6,Nej
+Bestäm värdet av $3 - 3x$ då $x=-5$. Svar: {{input}},numeric_input,2,18,Nej
+Bestäm värdet av $2x + 4$ då $x=-1$. Svar: {{input}},numeric_input,2,2,Nej
+Bestäm värdet av $5 - 3x$ då $x=-2$. Svar: {{input}},numeric_input,2,11,Nej
+Bestäm värdet av $2x - 5$ då $x=-3$. Svar: {{input}},numeric_input,2,-11,Nej
+Bestäm värdet av $-4 - 3x$ då $x=-4$. Svar: {{input}},numeric_input,2,8,Nej
+Bestäm värdet av $2x - 3$ då $x=-5$. Svar: {{input}},numeric_input,2,-13,Nej
+Bestäm värdet av $-2 - 3x$ då $x=-1$. Svar: {{input}},numeric_input,2,1,Nej
+Bestäm värdet av $2x - 1$ då $x=-2$. Svar: {{input}},numeric_input,2,-5,Nej
+Bestäm värdet av $0 - 3x$ då $x=-3$. Svar: {{input}},numeric_input,2,9,Nej
+Bestäm värdet av $2x + 1$ då $x=-4$. Svar: {{input}},numeric_input,2,-7,Nej
+Bestäm värdet av $2 - 3x$ då $x=-5$. Svar: {{input}},numeric_input,2,17,Nej
+Bestäm värdet av $2x + 3$ då $x=-1$. Svar: {{input}},numeric_input,2,1,Nej
+Bestäm värdet av $4 - 3x$ då $x=-2$. Svar: {{input}},numeric_input,2,10,Nej
+Bestäm värdet av $2x + 5$ då $x=-3$. Svar: {{input}},numeric_input,2,-1,Nej
+Bestäm värdet av $-5 - 3x$ då $x=-4$. Svar: {{input}},numeric_input,2,7,Nej
+Bestäm värdet av $2x - 4$ då $x=-5$. Svar: {{input}},numeric_input,2,-14,Nej
+Bestäm värdet av $-3 - 3x$ då $x=-1$. Svar: {{input}},numeric_input,2,0,Nej
+Bestäm värdet av $2x - 2$ då $x=-2$. Svar: {{input}},numeric_input,2,-6,Nej
+Bestäm värdet av $-1 - 3x$ då $x=-3$. Svar: {{input}},numeric_input,2,8,Nej
+Bestäm värdet av $2x + 0$ då $x=-4$. Svar: {{input}},numeric_input,2,-8,Nej
+Bestäm värdet av $1 - 3x$ då $x=-5$. Svar: {{input}},numeric_input,2,16,Nej
+Bestäm värdet av $2x + 2$ då $x=-1$. Svar: {{input}},numeric_input,2,0,Nej
+Bestäm värdet av $3 - 3x$ då $x=-2$. Svar: {{input}},numeric_input,2,9,Nej
+Bestäm värdet av $2x + 4$ då $x=-3$. Svar: {{input}},numeric_input,2,-2,Nej
+Bestäm värdet av $5 - 3x$ då $x=-4$. Svar: {{input}},numeric_input,2,17,Nej
+Bestäm värdet av $2x - 5$ då $x=-5$. Svar: {{input}},numeric_input,2,-15,Nej
+Bestäm värdet av $-4 - 3x$ då $x=-1$. Svar: {{input}},numeric_input,2,-1,Nej
+Bestäm värdet av $2x - 3$ då $x=-2$. Svar: {{input}},numeric_input,2,-7,Nej
+Bestäm värdet av $-2 - 3x$ då $x=-3$. Svar: {{input}},numeric_input,2,7,Nej
+Bestäm värdet av $2x - 1$ då $x=-4$. Svar: {{input}},numeric_input,2,-9,Nej
+Bestäm värdet av $0 - 3x$ då $x=-5$. Svar: {{input}},numeric_input,2,15,Nej
+Bestäm värdet av $(ab)^2$ då $a=-2$ och $b=2$. Svar: {{input}},numeric_input,3,16,Nej
+Bestäm värdet av $a^2 + b$ då $a=-3$ och $b=-1$. Svar: {{input}},numeric_input,3,8,Nej
+Bestäm värdet av $2a - b$ då $a=-1$ och $b=4$. Svar: {{input}},numeric_input,3,-6,Nej
+Bestäm värdet av $ab + a$ då $a=2$ och $b=-3$. Svar: {{input}},numeric_input,3,-4,Nej
+Bestäm värdet av $a + 2b$ då $a=3$ och $b=2$. Svar: {{input}},numeric_input,3,7,Nej
+Bestäm värdet av $(ab)^2$ då $a=1$ och $b=-4$. Svar: {{input}},numeric_input,3,16,Nej
+Bestäm värdet av $a^2 + b$ då $a=-4$ och $b=1$. Svar: {{input}},numeric_input,3,17,Nej
+Bestäm värdet av $2a - b$ då $a=2$ och $b=2$. Svar: {{input}},numeric_input,3,2,Nej
+Bestäm värdet av $ab + a$ då $a=-2$ och $b=-2$. Svar: {{input}},numeric_input,3,2,Nej
+Bestäm värdet av $a + 2b$ då $a=4$ och $b=-1$. Svar: {{input}},numeric_input,3,2,Nej
+Bestäm värdet av $(ab)^2$ då $a=-2$ och $b=2$. Svar: {{input}},numeric_input,3,16,Nej
+Bestäm värdet av $a^2 + b$ då $a=-3$ och $b=-1$. Svar: {{input}},numeric_input,3,8,Nej
+Bestäm värdet av $2a - b$ då $a=-1$ och $b=4$. Svar: {{input}},numeric_input,3,-6,Nej
+Bestäm värdet av $ab + a$ då $a=2$ och $b=-3$. Svar: {{input}},numeric_input,3,-4,Nej
+Bestäm värdet av $a + 2b$ då $a=3$ och $b=2$. Svar: {{input}},numeric_input,3,7,Nej
+Bestäm värdet av $(ab)^2$ då $a=1$ och $b=-4$. Svar: {{input}},numeric_input,3,16,Nej
+Bestäm värdet av $a^2 + b$ då $a=-4$ och $b=1$. Svar: {{input}},numeric_input,3,17,Nej
+Bestäm värdet av $2a - b$ då $a=2$ och $b=2$. Svar: {{input}},numeric_input,3,2,Nej
+Bestäm värdet av $ab + a$ då $a=-2$ och $b=-2$. Svar: {{input}},numeric_input,3,2,Nej
+Bestäm värdet av $a + 2b$ då $a=4$ och $b=-1$. Svar: {{input}},numeric_input,3,2,Nej
+Bestäm värdet av $(ab)^2$ då $a=-2$ och $b=2$. Svar: {{input}},numeric_input,3,16,Nej
+Bestäm värdet av $a^2 + b$ då $a=-3$ och $b=-1$. Svar: {{input}},numeric_input,3,8,Nej
+Bestäm värdet av $2a - b$ då $a=-1$ och $b=4$. Svar: {{input}},numeric_input,3,-6,Nej
+Bestäm värdet av $ab + a$ då $a=2$ och $b=-3$. Svar: {{input}},numeric_input,3,-4,Nej
+Bestäm värdet av $a + 2b$ då $a=3$ och $b=2$. Svar: {{input}},numeric_input,3,7,Nej
+Bestäm värdet av $(ab)^2$ då $a=1$ och $b=-4$. Svar: {{input}},numeric_input,3,16,Nej
+Bestäm värdet av $a^2 + b$ då $a=-4$ och $b=1$. Svar: {{input}},numeric_input,3,17,Nej
+Bestäm värdet av $2a - b$ då $a=2$ och $b=2$. Svar: {{input}},numeric_input,3,2,Nej
+Bestäm värdet av $ab + a$ då $a=-2$ och $b=-2$. Svar: {{input}},numeric_input,3,2,Nej
+Bestäm värdet av $a + 2b$ då $a=4$ och $b=-1$. Svar: {{input}},numeric_input,3,2,Nej
+Bestäm värdet av $(ab)^2$ då $a=-2$ och $b=2$. Svar: {{input}},numeric_input,3,16,Nej
+Bestäm värdet av $a^2 + b$ då $a=-3$ och $b=-1$. Svar: {{input}},numeric_input,3,8,Nej
+Bestäm värdet av $2a - b$ då $a=-1$ och $b=4$. Svar: {{input}},numeric_input,3,-6,Nej
+Bestäm värdet av $ab + a$ då $a=2$ och $b=-3$. Svar: {{input}},numeric_input,3,-4,Nej
+Bestäm värdet av $a + 2b$ då $a=3$ och $b=2$. Svar: {{input}},numeric_input,3,7,Nej
+Bestäm värdet av $(ab)^2$ då $a=1$ och $b=-4$. Svar: {{input}},numeric_input,3,16,Nej
+Bestäm värdet av $a^2 + b$ då $a=-4$ och $b=1$. Svar: {{input}},numeric_input,3,17,Nej
+Bestäm värdet av $2a - b$ då $a=2$ och $b=2$. Svar: {{input}},numeric_input,3,2,Nej
+Bestäm värdet av $ab + a$ då $a=-2$ och $b=-2$. Svar: {{input}},numeric_input,3,2,Nej
+Bestäm värdet av $a + 2b$ då $a=4$ och $b=-1$. Svar: {{input}},numeric_input,3,2,Nej
+Bestäm värdet av $(ab)^2$ då $a=-2$ och $b=2$. Svar: {{input}},numeric_input,3,16,Nej
+Bestäm värdet av $a^2 + b$ då $a=-3$ och $b=-1$. Svar: {{input}},numeric_input,3,8,Nej
+Bestäm värdet av $2a - b$ då $a=-1$ och $b=4$. Svar: {{input}},numeric_input,3,-6,Nej
+Bestäm värdet av $ab + a$ då $a=2$ och $b=-3$. Svar: {{input}},numeric_input,3,-4,Nej
+Bestäm värdet av $a + 2b$ då $a=3$ och $b=2$. Svar: {{input}},numeric_input,3,7,Nej
+Bestäm värdet av $(ab)^2$ då $a=1$ och $b=-4$. Svar: {{input}},numeric_input,3,16,Nej
+Bestäm värdet av $a^2 + b$ då $a=-4$ och $b=1$. Svar: {{input}},numeric_input,3,17,Nej
+Bestäm värdet av $2a - b$ då $a=2$ och $b=2$. Svar: {{input}},numeric_input,3,2,Nej
+Bestäm värdet av $ab + a$ då $a=-2$ och $b=-2$. Svar: {{input}},numeric_input,3,2,Nej
+Bestäm värdet av $a + 2b$ då $a=4$ och $b=-1$. Svar: {{input}},numeric_input,3,2,Nej

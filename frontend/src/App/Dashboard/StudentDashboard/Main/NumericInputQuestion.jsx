@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Minus, Plus } from "lucide-react";
 import { formatMathText } from "@/utils/formatMathText";
 import { Input } from "@/components/ui/input";
 import { NUMERIC_INPUT_MARKER } from "@/constants/assessmentConstants";
+import MathKeyboard from "@/components/ui/MathKeyboard";
 
 function isCorrectOption(option) {
     return (
@@ -36,7 +37,9 @@ export default function NumericInputQuestion({
         answerConfig = {};
     }
 
-    const orderIndependent = Boolean(answerConfig.order_independent);
+    const isEquation = question.question_type === "equation";
+    const orderIndependent =
+        isEquation || Boolean(answerConfig.order_independent);
     const markerCount = Math.max(segments.length - 1, 0);
     const correctAnswerCount = Math.max(
         (question.options || []).filter(isCorrectOption).length,
@@ -49,15 +52,21 @@ export default function NumericInputQuestion({
             ? 1
             : 0
     );
-    const fieldCount = Math.max(markerCount, correctAnswerCount, 1);
+    const fieldCount = isEquation
+        ? Math.max(correctAnswerCount, 1)
+        : markerCount;
     const hasInlineMarkers = markerCount > 0;
 
     const renderInput = (index) => (
         <Input
+            ref={element => {
+                inputRefs.current[index] = element;
+            }}
             type="text"
             inputMode="decimal"
-            className="answer-input inline-block w-24 mx-1 align-middle"
+            className="answer-input inline-block w-24 mx-1 align-middle border border-slate-500 rounded-md bg-white"
             value={values[index] ?? ""}
+            onFocus={() => setActiveIndex(index)}
             onChange={e => {
 
                 updateValue(
@@ -86,7 +95,7 @@ export default function NumericInputQuestion({
 
         if (!raw) {
             return Array(
-                orderIndependent ? 1 : fieldCount
+                isEquation ? 1 : fieldCount
             ).fill("");
         }
 
@@ -100,7 +109,7 @@ export default function NumericInputQuestion({
                     {
                         length: Math.max(
                             fieldCount,
-                            orderIndependent ? parsed.length : 0
+                            isEquation ? parsed.length : fieldCount
                         )
                     },
                     (_, i) => parsed[i] ?? ""
@@ -113,13 +122,15 @@ export default function NumericInputQuestion({
         }
 
         return Array(
-            orderIndependent ? 1 : fieldCount
+            isEquation ? 1 : fieldCount
         ).fill("");
 
     };
 
     const [values, setValues] =
         useState(() => parseValues(value));
+    const [activeIndex, setActiveIndex] = useState(0);
+    const inputRefs = useRef([]);
 
     useEffect(() => {
 
@@ -165,7 +176,7 @@ export default function NumericInputQuestion({
 
             <div className={`leading-8 ${questionTextClassName}`}>
 
-                {orderIndependent ? (
+                {isEquation ? (
 
                     <>
                         <span
@@ -192,10 +203,14 @@ export default function NumericInputQuestion({
                                 >
                                     x<sub>{index + 1}</sub> =
                                     <Input
+                                        ref={element => {
+                                            inputRefs.current[index] = element;
+                                        }}
                                         type="text"
                                         inputMode="decimal"
                                         className="answer-input inline-block w-24 mx-1 align-middle"
                                         value={answer}
+                                        onFocus={() => setActiveIndex(index)}
                                         onChange={e => {
 
                                             updateValue(
@@ -279,7 +294,7 @@ export default function NumericInputQuestion({
 
                 )}
 
-                {orderIndependent && fieldCount > 1 && (
+                {isEquation && (
 
                     <div className="mt-2 flex items-center gap-2">
 
@@ -307,6 +322,17 @@ export default function NumericInputQuestion({
                     </div>
 
                 )}
+
+                <MathKeyboard
+                    value={values[activeIndex] ?? ""}
+                    inputRef={{
+                        current: inputRefs.current[activeIndex]
+                    }}
+                    onChange={newValue => {
+                        const updated = updateValue(activeIndex, newValue);
+                        onBlur(JSON.stringify(updated));
+                    }}
+                />
 
             </div>
         </>

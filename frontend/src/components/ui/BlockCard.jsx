@@ -29,6 +29,8 @@ export default function BlockCard({
     onEditPoint,
     canRemoveFromExam,
     orderNumber
+    ,groupId = null
+    ,groupName = null
 
 }) {
 
@@ -562,7 +564,9 @@ export default function BlockCard({
                             id: `block-${block.id}`,
                             title: `Block #${block.id}`,
                             type: "block",
-                            block
+                            block,
+                            groupId,
+                            groupName
                         })
                     }
                 >
