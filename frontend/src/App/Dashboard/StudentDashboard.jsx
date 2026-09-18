@@ -371,9 +371,9 @@ const StudentDashboard = () => {
 
     if (view === "result") {
         return (
-            <div className="flex min-h-[100dvh] min-w-0 flex-col">
+            <div className="flex h-[100dvh] min-w-0 flex-col">
                 <Header groups={groups} />
-                <main className="min-w-0 flex-1 overflow-y-auto bg-background p-3 text-foreground sm:p-6">
+                <main className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-background p-3 text-foreground sm:p-6">
                     <div className="mx-auto w-full min-w-0 max-w-4xl space-y-4">
                         <Button variant="ghost" onClick={() => setView("start")} className="gap-2">
                             <ArrowLeft className="h-4 w-4" /> Tillbaka till start

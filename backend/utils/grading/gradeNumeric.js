@@ -1,5 +1,5 @@
 // Accepts both "." and "," as decimal separator (e.g. "3,5" and "3.5" are equivalent)
-export const parseNumericAnswer = (value) => {
+export const parseNumericAnswer = (value, config = {}) => {
 
     if (
         typeof value !== "string" &&
@@ -8,10 +8,16 @@ export const parseNumericAnswer = (value) => {
         return NaN;
     }
 
-    const normalized =
-        String(value)
-            .trim()
-            .replace(",", ".");
+    let normalized = String(value).trim();
+
+    if (config.grading_mode === "equation") {
+        const equationAnswer = /^x\s*=\s*([-+]?\d+(?:[.,]\d+)?)$/i.exec(normalized);
+        if (equationAnswer) {
+            normalized = equationAnswer[1];
+        }
+    }
+
+    normalized = normalized.replace(",", ".");
 
     return Number(normalized);
 };
@@ -23,10 +29,10 @@ export const compareNumeric = (
 ) => {
 
     const student =
-        parseNumericAnswer(studentAnswer);
+        parseNumericAnswer(studentAnswer, config);
 
     const correct =
-        parseNumericAnswer(correctAnswer);
+        parseNumericAnswer(correctAnswer, config);
 
     if (
         Number.isNaN(student) ||

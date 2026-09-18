@@ -187,12 +187,13 @@ export default function ExamPage({
             attemptId,
             "question_view",
             {
+                question_id: dynamicQuestions[index]?.id,
                 question_number: index + 1,
                 total_questions: dynamicQuestions.length
             }
         );
 
-    }, [attemptId, index, dynamicQuestions.length]);
+    }, [attemptId, index, dynamicQuestions]);
 
     useEffect(() => {
 
@@ -353,21 +354,51 @@ export default function ExamPage({
 
             isSubmittingRef.current = true;
 
-            await logEvent(
-                attemptId,
-                "attempt_submitted"
-            );
+            try {
 
-            await fetch(
-                `${API_URL}/api/assessment-attempts/${attemptId}/submit`,
-                {
-                    method: "POST",
-                    headers:
-                        authHeaders()
+                await logEvent(
+                    attemptId,
+                    "attempt_submitted"
+                );
+
+                const response =
+                    await fetch(
+                        `${API_URL}/api/assessment-attempts/${attemptId}/submit`,
+                        {
+                            method: "POST",
+                            headers:
+                                authHeaders()
+                        }
+                    );
+
+                if (!response.ok) {
+
+                    const result =
+                        await response.json().catch(
+                            () => ({})
+                        );
+
+                    toast.error(
+                        result.error ||
+                        "Kunde inte lämna in provet."
+                    );
+                    return;
+
                 }
-            );
 
-            onExit();
+                onExit();
+
+            } catch {
+
+                toast.error(
+                    "Kunde inte lämna in provet."
+                );
+
+            } finally {
+
+                isSubmittingRef.current = false;
+
+            }
 
         };
 
@@ -784,7 +815,10 @@ export default function ExamPage({
                             }
                             canSubmitAnytime={
                                 isSoftEnded ||
-                                isTeacherTest
+                                isTeacherTest ||
+                                (isDiagnostic &&
+                                    currentQuestionNumber >=
+                                    initialSeedCount)
                             }
                             submitLabel={
                                 isTeacherTest

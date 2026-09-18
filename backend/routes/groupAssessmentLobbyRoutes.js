@@ -193,6 +193,7 @@ router.post("/join", async (req, res) => {
             FROM group_students
             WHERE group_id = ?
                 AND user_id = ?
+                AND deleted_at IS NULL
             `,
             [
                 groupExam.group_id,

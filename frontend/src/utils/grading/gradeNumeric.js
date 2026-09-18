@@ -17,7 +17,7 @@ export const isAnswerFormatAllowed = (value, answerFormat = "all") => {
 };
 
 // Accepts decimal point/comma, fractions and percentages (e.g. 50% = 0.5).
-export const parseNumericAnswer = (value) => {
+export const parseNumericAnswer = (value, config = {}) => {
 
     if (
         typeof value !== "string" &&
@@ -26,7 +26,15 @@ export const parseNumericAnswer = (value) => {
         return NaN;
     }
 
-    const raw = String(value).trim();
+    let raw = String(value).trim();
+
+    if (config.grading_mode === "equation") {
+        const equationAnswer = /^x\s*=\s*([-+]?\d+(?:[.,]\d+)?)$/i.exec(raw);
+        if (equationAnswer) {
+            raw = equationAnswer[1];
+        }
+    }
+
     const isPercent = raw.endsWith("%");
     const normalized =
         raw.replace(/%$/, "")
@@ -61,10 +69,10 @@ export const compareNumeric = (
     }
 
     const student =
-        parseNumericAnswer(studentAnswer);
+        parseNumericAnswer(studentAnswer, config);
 
     const correct =
-        parseNumericAnswer(correctAnswer);
+        parseNumericAnswer(correctAnswer, config);
 
     if (
         Number.isNaN(student) ||

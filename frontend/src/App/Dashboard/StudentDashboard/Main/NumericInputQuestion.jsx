@@ -201,7 +201,13 @@ export default function NumericInputQuestion({
                                     key={index}
                                     className="block"
                                 >
-                                    x<sub>{index + 1}</sub> =
+                                    {values.length === 1 ? (
+                                        "x ="
+                                    ) : (
+                                        <>
+                                            x<sub>{index + 1}</sub> =
+                                        </>
+                                    )}
                                     <Input
                                         ref={element => {
                                             inputRefs.current[index] = element;

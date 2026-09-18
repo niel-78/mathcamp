@@ -858,6 +858,29 @@ router.put("/:id", async (req, res) => {
                     [attempt.id]
                 );
 
+            const [[baseQuestionProgress]] =
+                await connection.query(
+                    `
+                    SELECT
+                        COUNT(*) AS question_count,
+                        SUM(answered_at IS NOT NULL) AS answered_count
+                    FROM attempt_questions
+                    WHERE attempt_id = ?
+                        AND sort_order <= ?
+                    `,
+                    [
+                        attempt.id,
+                        initialSeedCount
+                    ]
+                );
+
+            const baseSectionComplete =
+                initialSeedCount > 0 &&
+                Number(baseQuestionProgress.question_count) ===
+                    initialSeedCount &&
+                Number(baseQuestionProgress.answered_count) ===
+                    initialSeedCount;
+
             const adaptiveQuestionsCount =
                 Math.max(
                     0,
@@ -1791,6 +1814,7 @@ router.post("/:id/submit", async (req, res) => {
 
             if (
                 !attempt.teacher_end_mode &&
+                !baseSectionComplete &&
                 !timeExpired &&
                 !maxQuestionCountReached &&
                 !questionsExhausted
@@ -2078,10 +2102,61 @@ router.get("/:id/results", async (req, res) => {
                     aq.selection_reason,
                     aq.served_at,
                     aq.answered_at,
-                    TIMESTAMPDIFF(
-                        SECOND,
-                        aq.served_at,
-                        aq.answered_at
+                    COALESCE(
+                        (
+                            SELECT SUM(
+                                TIMESTAMPDIFF(
+                                    SECOND,
+                                    question_view.created_at,
+                                    COALESCE(
+                                        (
+                                            SELECT next_question_view.created_at
+                                            FROM assessment_events next_question_view
+                                            WHERE next_question_view.attempt_id = question_view.attempt_id
+                                                AND next_question_view.event_type = 'question_view'
+                                                AND (
+                                                    next_question_view.created_at > question_view.created_at
+                                                    OR (
+                                                        next_question_view.created_at = question_view.created_at
+                                                        AND next_question_view.id > question_view.id
+                                                    )
+                                                )
+                                            ORDER BY next_question_view.created_at, next_question_view.id
+                                            LIMIT 1
+                                        ),
+                                        ea.submitted_at
+                                    )
+                                )
+                            )
+                            FROM assessment_events question_view
+                            WHERE question_view.attempt_id = a.attempt_id
+                                AND question_view.event_type = 'question_view'
+                                AND (
+                                    CAST(
+                                        JSON_UNQUOTE(
+                                            JSON_EXTRACT(
+                                                question_view.event_data,
+                                                '$.question_id'
+                                            )
+                                        ) AS UNSIGNED
+                                    ) = q.id
+                                    OR (
+                                        JSON_EXTRACT(
+                                            question_view.event_data,
+                                            '$.question_id'
+                                        ) IS NULL
+                                        AND CAST(
+                                            JSON_UNQUOTE(
+                                                JSON_EXTRACT(
+                                                    question_view.event_data,
+                                                    '$.question_number'
+                                                )
+                                            ) AS UNSIGNED
+                                        ) = aq.sort_order
+                                    )
+                                )
+                        ),
+                        0
                     ) AS duration_seconds
                 FROM assessment_answers a
                 INNER JOIN questions q
