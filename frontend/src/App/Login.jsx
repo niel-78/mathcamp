@@ -11,6 +11,7 @@ export default function Login() {
     const [loading, setLoading] = useState(() =>
         Boolean(new URLSearchParams(window.location.search).get("login_token"))
     );
+    const [resetLoading, setResetLoading] = useState(false);
     const loginLinkAttempted = useRef(false);
 
     const completeLogin = useCallback((data) => {
@@ -118,6 +119,39 @@ export default function Login() {
         }
     };
 
+    const handleForgotPassword = async () => {
+        const trimmedUsername = username.trim();
+
+        if (!trimmedUsername) {
+            toast.error("Fyll i ditt användarnamn först.");
+            return;
+        }
+
+        setResetLoading(true);
+
+        try {
+            const res = await fetch(`${API_URL}/api/auth/forgot-password`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ username: trimmedUsername })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.error || "Kunde inte återställa lösenordet.");
+            }
+
+            toast.success(data.message || "Ett nytt lösenord har skickats till din e-post.");
+        } catch (error) {
+            toast.error(error.message || "Ett nätverksfel uppstod.");
+        } finally {
+            setResetLoading(false);
+        }
+    };
+
     return (
         <form
             onSubmit={handleLogin}
@@ -186,6 +220,16 @@ export default function Login() {
                 className="text-xs text-muted-foreground hover:text-foreground mt-2"
             >
                 {loading ? "Skickar..." : "Skicka inloggningslänk på mail"}
+            </Button>
+
+            <Button
+                type="button"
+                variant="ghost"
+                disabled={resetLoading}
+                onClick={handleForgotPassword}
+                className="text-xs text-muted-foreground hover:text-foreground"
+            >
+                {resetLoading ? "Skickar..." : "Glömt lösenord?"}
             </Button>
         </form>
     );
