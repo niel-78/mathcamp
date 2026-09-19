@@ -131,7 +131,6 @@ router.post("/request-login-link", async (req, res) => {
                 SELECT id, username, first_name, email
                 FROM users
                 WHERE username = ?
-                    AND role = 'student'
                     AND deleted_at IS NULL
                 LIMIT 1
                 `,
