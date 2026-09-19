@@ -11,7 +11,7 @@ import ResultPage from "@/App/Dashboard/StudentDashboard/Main/ResultPage";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { eventLabels } from "@/constants/eventLabels";
-import FormatDateTimeShort from "@/utils/FormatDateTimeShort";
+import FormatDateTimeShort from "@/utils/formatDateTimeShort";
 import {
     formatEventDuration,
     normalizeExamEvents,

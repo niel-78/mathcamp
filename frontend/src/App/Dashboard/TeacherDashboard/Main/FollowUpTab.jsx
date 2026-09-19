@@ -11,7 +11,7 @@ import { authHeaders } from "@/api/authHeaders";
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import FormatDateTimeShort from "@/utils/FormatDateTimeShort";
+import FormatDateTimeShort from "@/utils/formatDateTimeShort";
 import {
     Card,
     CardContent,
