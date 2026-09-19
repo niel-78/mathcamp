@@ -4,6 +4,7 @@ import crypto from "crypto";
 import db from "../db.js";
 import express from "express";
 import { sendEmail } from "../utils/sendEmail.js";
+import { getUserEmail, serializeAuthUser } from "../utils/authUser.js";
 
 const router = express.Router();
 
@@ -29,7 +30,16 @@ router.post("/login", async (req, res) => {
 
         const [rows] = await db.query(
             `
-            SELECT *
+            SELECT
+                *,
+                COALESCE(
+                    NULLIF(email, ''),
+                    CASE
+                        WHEN role = 'student'
+                            THEN CONCAT(username, '@elev.ga.dbgy.se')
+                        ELSE NULL
+                    END
+                ) AS delivery_email
             FROM users
             WHERE username = ?
             `,
@@ -85,20 +95,19 @@ router.post("/login", async (req, res) => {
 
         return res.json({
             token,
-            user: {
-                id: user.id,
-                username: user.username,
-                first_name: user.first_name,
-                last_name: user.last_name,
-                role: user.role,
-                school: school
+            user: serializeAuthUser(
+                {
+                    ...user,
+                    email: user.email || user.delivery_email || null
+                },
+                school
                     ? {
                         id: school.id,
                         name: school.name,
                         is_admin: !!school.is_admin
                     }
                     : null
-            }
+            )
         });
 
     } catch (err) {
@@ -252,13 +261,17 @@ router.post("/login-with-link", async (req, res) => {
 
         res.json({
             token: sessionToken,
-            user: {
-                id: loginToken.user_id,
-                username: loginToken.username,
-                first_name: loginToken.first_name,
-                last_name: loginToken.last_name,
-                role: loginToken.role
-            }
+            user: serializeAuthUser(
+                {
+                    id: loginToken.user_id,
+                    username: loginToken.username,
+                    first_name: loginToken.first_name,
+                    last_name: loginToken.last_name,
+                    role: loginToken.role,
+                    email: loginToken.email || null
+                },
+                null
+            )
         });
     } catch (error) {
         await connection.rollback();
@@ -313,23 +326,25 @@ router.get("/me", requireAuth,
                 [req.user.id]
             );
 
-        res.json({
-
-            id: req.user.id,
-            username: req.user.username,
-            first_name: req.user.first_name,
-            last_name: req.user.last_name,
-            role: req.user.role,
-
-            school: school
-                ? {
-                    id: school.id,
-                    name: school.name,
-                    is_admin: !!school.is_admin
-                }
-                : null
-
-        });
+        res.json(
+            serializeAuthUser(
+                {
+                    id: req.user.id,
+                    username: req.user.username,
+                    first_name: req.user.first_name,
+                    last_name: req.user.last_name,
+                    role: req.user.role,
+                    email: req.user.email || null
+                },
+                school
+                    ? {
+                        id: school.id,
+                        name: school.name,
+                        is_admin: !!school.is_admin
+                    }
+                    : null
+            )
+        );
 
     }
 );
@@ -392,8 +407,9 @@ router.post("/forgot-password", async (req, res) => {
         }
 
         const user = rows[0];
+        const email = getUserEmail(user);
 
-        if (!user.email) {
+        if (!email) {
             return res.status(400).json({
                 error: "Ingen e-postadress är registrerad på detta konto"
             });
@@ -404,6 +420,12 @@ router.post("/forgot-password", async (req, res) => {
         const password_hash = await bcrypt.hash(newPassword, 10);
 
         // Uppdatera lösenordet i databasen
+        await sendEmail(
+            email,
+            "Ditt nya tillfälliga lösenord",
+            `Hej ${user.first_name},\n\nDitt nya tillfälliga lösenord är: ${newPassword}\n\nLogga in och byt det i din profil.`
+        );
+
         await db.query(
             `
             UPDATE users
@@ -411,12 +433,6 @@ router.post("/forgot-password", async (req, res) => {
             WHERE id = ?
             `,
             [password_hash, user.id]
-        );
-
-        await sendEmail(
-            user.email,
-            "Ditt nya tillfälliga lösenord",
-            `Hej ${user.first_name},\n\nDitt nya tillfälliga lösenord är: ${newPassword}\n\nLogga in och byt det i din profil.`
         );
 
         console.log(`Nytt lösenord för ${username}: ${newPassword}`);

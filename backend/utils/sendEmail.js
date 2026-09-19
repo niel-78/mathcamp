@@ -1,5 +1,10 @@
-import "dotenv/config";
+import dotenv from "dotenv";
 import nodemailer from "nodemailer";
+import { fileURLToPath } from "url";
+
+dotenv.config({
+    path: fileURLToPath(new URL("../.env", import.meta.url))
+});
 
 const getSmtpConfig = () => {
     const host = process.env.SMTP_HOST;

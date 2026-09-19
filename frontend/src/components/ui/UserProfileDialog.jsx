@@ -244,7 +244,14 @@ export default function UserProfileDialog({
 
                     </div>
 
-                    
+                    <div>
+
+                        <strong>E-post:</strong>
+                        {" "}
+                        {user.email || "Ingen e-postadress tillgänglig"}
+
+                    </div>
+
                     {user.school && (
 
                         <CardSection title="Skola">
