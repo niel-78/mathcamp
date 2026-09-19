@@ -1,6 +1,6 @@
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { useState } from "react";
-import { AlertCircle, BookOpen, GraduationCap, GripVertical, Plus, X } from "lucide-react";
+import { AlertCircle, BookOpen, GraduationCap, GripVertical, Plus, Star, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import MathContent from "@/components/ui/MathContent";
@@ -79,6 +79,9 @@ export default function BlockCard({
     const [showPoints, setShowPoints] = useState(false);
     const [showExport, setShowExport] = useState(false);
     const questionCount = block.question_count ?? block.questions?.length ?? 0;
+    const priorityQuestionCount = block.priority_question_count ?? block.questions?.filter(
+        question => Boolean(question.is_priority)
+    ).length ?? 0;
     const pointsCount = block.point_count ?? block.points?.length ?? 0;
 
     const books = block.books?.length > 0
@@ -238,13 +241,24 @@ export default function BlockCard({
                 )}
 
                 <div className="mt-2 flex items-center justify-between gap-2">
-                    <p className="text-sm text-muted-foreground">
-                        {questionCount}
-                        {" "}
-                        {questionCount === 1
-                            ? "fråga"
-                            : "frågor"}
-                    </p>
+                    <div className="flex items-center gap-2">
+                        <p className="text-sm text-muted-foreground">
+                            {questionCount}
+                            {" "}
+                            {questionCount === 1
+                                ? "fråga"
+                                : "frågor"}
+                        </p>
+
+                        <Badge
+                            variant="secondary"
+                            className="gap-1 text-xs"
+                            title="Antal prioriterade uppgifter i blocket"
+                        >
+                            <Star size={12} />
+                            Prioriterade: {priorityQuestionCount}
+                        </Badge>
+                    </div>
 
                     {issues.length > 0 && (
                         <Badge variant="destructive" className="gap-1 text-xs">

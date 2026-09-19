@@ -10,11 +10,9 @@ export const parseNumericAnswer = (value, config = {}) => {
 
     let normalized = String(value).trim();
 
-    if (config.grading_mode === "equation") {
-        const equationAnswer = /^x\s*=\s*([-+]?\d+(?:[.,]\d+)?)$/i.exec(normalized);
-        if (equationAnswer) {
-            normalized = equationAnswer[1];
-        }
+    const equationAnswer = /^x\s*=\s*([-+]?\d+(?:[.,]\d+)?)$/i.exec(normalized);
+    if (equationAnswer) {
+        normalized = equationAnswer[1];
     }
 
     normalized = normalized.replace(",", ".");

@@ -31,10 +31,13 @@ import GroupLayoutTab from "./Main/GroupLayoutTab";
 import TeacherCalendarTab from "@/components/tabs/TeacherCalenderTab";
 import ArchivedPresentationsTab from "./Main/ArchivedPresentationsTab";
 import StudentTab from "./Main/StudentTab";
+import StudentProfileTab from "./Main/StudentProfileTab";
 import AssessmentSettingsTab from "./Main/AssessmentSettingsTab";
 import GroupAddonsTab from "@/components/addons/GroupAddonsTab";
 import CompetitionTab from "@/components/addons/CompetitionTab";
 import ActionRequiredTab from "./Main/ActionRequiredTab";
+import FollowUpTab from "./Main/FollowUpTab";
+import UnsubmittedTab from "./Main/UnsubmittedTab";
 
 
 export default function Main({
@@ -149,6 +152,16 @@ export default function Main({
 
                         <StudentTab
                             studentId={currentTab.studentId}
+                            initialGroupId={currentTab.groupId}
+                            initialAttemptId={currentTab.attemptId}
+                        />
+
+                    )}
+
+                    {currentTab?.type === "student-profile" && (
+
+                        <StudentProfileTab
+                            student={currentTab.student}
                         />
 
                     )}
@@ -197,8 +210,27 @@ export default function Main({
                             openTab={(tab) =>
                                 openTab(tab, area)
                             }
+                            onBlockChanged={onBlockChanged}
                         />
 
+                    )}
+
+                    {currentTab?.type === "follow-up" && (
+
+                        <FollowUpTab
+                            openTab={(tab) =>
+                                openTab(tab, area)
+                            }
+                        />
+
+                    )}
+
+                    {currentTab?.type === "unsubmitted" && (
+                        <UnsubmittedTab
+                            openTab={(tab) =>
+                                openTab(tab, area)
+                            }
+                        />
                     )}
 
                     {currentTab?.type === "block" && (
@@ -223,6 +255,8 @@ export default function Main({
                             }
                             tabId={currentTab.id}
                             closeTab={closeTab}
+                            blockRefreshKey={blockRefreshKey}
+                            groupId={currentTab.groupId}
                             onQuestionChanged={onBlockChanged}
                         />
 

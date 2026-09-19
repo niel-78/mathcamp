@@ -62,6 +62,7 @@ export function getQuestionIssues(
     } else if (
         question.question_type === "numeric_input" ||
         question.question_type === "equation" ||
+        question.question_type === "expression" ||
         question.question_type === "text"
     ) {
         if (correctOptions.length === 0) {
@@ -98,6 +99,17 @@ export function getQuestionIssues(
                 questionId: question.id,
                 message: "Saknar facit för numerisk svarsruta"
             });
+        }
+
+        if (question.question_type === "numeric_input") {
+            const markerCount = (question.question.match(/\{\{input\}\}/g) || []).length;
+            if (correctOptions.length !== markerCount) {
+                issues.push({
+                    type: "input_count_mismatch",
+                    questionId: question.id,
+                    message: "Antalet svarsrutor matchar inte antalet korrekta svar."
+                });
+            }
         }
     }
 

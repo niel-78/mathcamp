@@ -1,4 +1,4 @@
-import { gradeText } from "./gradeText.js";
+import { gradePlainText, gradeText } from "./gradeText.js";
 import { gradeNumeric } from "./gradeNumeric.js";
 import { gradeAlgebra } from "./gradeAlgebra.js";
 import { gradeVariables } from "./gradeVariables.js";
@@ -8,17 +8,25 @@ import { gradeNumericInput } from "./gradeNumericInput.js";
 export const gradeAnswer = ({
     studentAnswer,
     correctAnswer,
+    questionType,
     config
 }) => {
 
     config = config || {};
 
-    const mode =
-        config?.grading_mode || "text";
+    const mode = questionType === "expression"
+        ? "expression"
+        : config?.grading_mode || "text";
 
     switch (mode) {
 
         case "text":
+            return gradePlainText(
+                studentAnswer,
+                correctAnswer
+            );
+
+        case "expression":
             return gradeText(
                 studentAnswer,
                 correctAnswer

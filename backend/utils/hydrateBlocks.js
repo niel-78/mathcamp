@@ -15,7 +15,13 @@ export default async function hydrateBlocks(blocks, groupId = null) {
                     report_counts.report_count,
                     0
                 ) AS report_count,
-                gqp.question_id IS NOT NULL AS is_priority
+                COALESCE(
+                    gqp.priority,
+                    IF(bqp.question_id IS NOT NULL, 1, 0),
+                    0
+                ) AS is_priority,
+                IF(bqp.question_id IS NOT NULL, 1, 0) AS block_is_priority,
+                gqp.priority AS group_priority_override
             FROM questions q
             LEFT JOIN question_levels ql
                 ON ql.id = q.level_id
@@ -31,6 +37,9 @@ export default async function hydrateBlocks(blocks, groupId = null) {
             LEFT JOIN group_question_priorities gqp
                 ON gqp.question_id = q.id
                 AND gqp.group_id = ?
+            LEFT JOIN block_question_priorities bqp
+                ON bqp.question_id = q.id
+                AND bqp.block_id = q.block_id
             WHERE q.block_id = ?
             AND q.deleted_at IS NULL
             AND q.archived_at IS NULL

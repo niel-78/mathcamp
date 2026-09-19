@@ -462,6 +462,7 @@ export async function autoFixQuestion(questionId, userId = 1) {
             } else if (
                 question.question_type === "numeric_input" ||
                 question.question_type === "equation" ||
+                question.question_type === "expression" ||
                 question.question_type === "text"
             ) {
                 const newText = calculatedCorrectFrac.toDisplay();

@@ -469,13 +469,17 @@ router.get("/:id/results", async (req, res) => {
                     ? JSON.parse(answer.answer_config || "{}")
                     : answer.answer_config || {};
 
-                if (answer.question_type === "text") {
+                if (
+                    answer.question_type === "expression" ||
+                    answer.question_type === "text"
+                ) {
                     const correctText = answer.correct_text
                         ?.split("||")[0];
 
                     if (gradeAnswer({
                         studentAnswer: answer.text_answer,
                         correctAnswer: correctText,
+                        questionType: answer.question_type,
                         config
                     })) {
                         correctCount += 1;
@@ -981,7 +985,7 @@ router.post("/:id/students", async (req, res) => {
         const [[existingUser]] =
             await db.query(
                 `
-                SELECT id
+                    SELECT id, email
                 FROM users
                 WHERE username = ?
                 `,
@@ -992,6 +996,17 @@ router.post("/:id/students", async (req, res) => {
 
             userId =
                 existingUser.id;
+
+            if (!existingUser.email) {
+                await db.query(
+                    `
+                    UPDATE users
+                    SET email = CONCAT(username, '@elev.ga.dbgy.se')
+                    WHERE id = ?
+                    `,
+                    [userId]
+                );
+            }
 
         } else {
 
@@ -1012,21 +1027,24 @@ router.post("/:id/students", async (req, res) => {
                         password_hash,
                         role,
                         first_name,
-                        last_name
+                        last_name,
+                        email
                     )
                     VALUES (
                         ?,
                         ?,
                         'student',
                         ?,
-                        ?
+                        ?,
+                        CONCAT(?, '@elev.ga.dbgy.se')
                     )
                     `,
                     [
                         username,
                         password_hash,
                         first_name,
-                        last_name
+                        last_name,
+                        username
                     ]
                 );
 
@@ -1290,7 +1308,8 @@ router.post("/:id/import-students",
                         `
                         SELECT
                             id,
-                            username
+                            username,
+                            email
                         FROM users
                         WHERE username = ?
                         LIMIT 1
@@ -1299,6 +1318,17 @@ router.post("/:id/import-students",
                     );
 
                 if (existingUser) {
+
+                    if (!existingUser.email) {
+                        await db.query(
+                            `
+                            UPDATE users
+                            SET email = CONCAT(username, '@elev.ga.dbgy.se')
+                            WHERE id = ?
+                            `,
+                            [existingUser.id]
+                        );
+                    }
 
                     await db.query(
                         `
@@ -1353,7 +1383,8 @@ router.post("/:id/import-students",
                             last_name,
                             full_name,
                             display_name,
-                            user_key
+                            user_key,
+                            email
                         )
                         VALUES (
                             ?,
@@ -1363,7 +1394,8 @@ router.post("/:id/import-students",
                             ?,
                             ?,
                             ?,
-                            ?
+                            ?,
+                            CONCAT(?, '@elev.ga.dbgy.se')
                         )
                         `,
                         [
@@ -1373,7 +1405,8 @@ router.post("/:id/import-students",
                             lastName,
                             fullName,
                             displayName,
-                            userKey
+                            userKey,
+                            username
                         ]
                     );
 

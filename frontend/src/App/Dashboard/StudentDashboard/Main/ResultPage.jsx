@@ -358,7 +358,7 @@ export default function ResultPage({
                                     Ditt svar
                                 </strong>
 
-                                {result.question_type === "text" ? (
+                                {["expression", "text"].includes(result.question_type) ? (
 
                                     <div
                                         className={`

@@ -52,6 +52,11 @@ export default function NumericInputQuestion({
             ? 1
             : 0
     );
+    const correctAnswers = Array.isArray(answerConfig.correctAnswers)
+        ? answerConfig.correctAnswers
+        : (question.options || [])
+            .filter(isCorrectOption)
+            .map(option => option.text);
     const fieldCount = isEquation
         ? Math.max(correctAnswerCount, 1)
         : markerCount;
@@ -64,7 +69,13 @@ export default function NumericInputQuestion({
             }}
             type="text"
             inputMode="decimal"
-            className="answer-input inline-block w-24 mx-1 align-middle border border-slate-500 rounded-md bg-white"
+            className={`answer-input inline-block ${segments[index]?.split("\n").at(-1).trim() ? "ml-1" : ""} mr-1 align-middle border border-slate-500 rounded-md bg-white`}
+            style={{
+                width: `${Math.max(
+                    6,
+                    String(correctAnswers[index] ?? answerConfig.default_answer ?? "").length + 2
+                )}ch`
+            }}
             value={values[index] ?? ""}
             onFocus={() => setActiveIndex(index)}
             onChange={e => {
@@ -174,7 +185,7 @@ export default function NumericInputQuestion({
                 Fråga {question.sort_order}
             </h2>
 
-            <div className={`leading-8 ${questionTextClassName}`}>
+            <div className={`leading-8 ${questionTextClassName} text-left`}>
 
                 {isEquation ? (
 
@@ -213,7 +224,9 @@ export default function NumericInputQuestion({
                                             inputRefs.current[index] = element;
                                         }}
                                         type="text"
-                                        inputMode="decimal"
+                                        inputMode="text"
+                                        autoCapitalize="none"
+                                        autoCorrect="off"
                                         className="answer-input inline-block w-24 mx-1 align-middle"
                                         value={answer}
                                         onFocus={() => setActiveIndex(index)}
@@ -248,13 +261,12 @@ export default function NumericInputQuestion({
 
                 ) : hasInlineMarkers ? segments.map((segment, index) => (
 
-                    // plain inline flow (no flexbox) so multi-line prefix text
-                    // doesn't vertically center the input against its own height
-                    <span key={index}>
+                    <span key={index} className="text-left">
 
                         {segment && (
 
                             <span
+                                className="text-left"
                                 dangerouslySetInnerHTML={{
                                     __html: formatMathText(segment)
                                 }}
@@ -275,6 +287,7 @@ export default function NumericInputQuestion({
                     <>
 
                         <span
+                            className="block text-left"
                             dangerouslySetInnerHTML={{
                                 __html: formatMathText(rawQuestion.trim())
                             }}

@@ -17,6 +17,15 @@ export default function TextQuestion({
     const inputRef = useRef(null);
     const segments = (question.question || "").split(NUMERIC_INPUT_MARKER);
     const hasInlineMarker = segments.length > 1;
+    const correctAnswer = (question.options || []).find(option =>
+        option.is_correct === true ||
+        Number(option.is_correct) === 1 ||
+        option.isCorrect === true ||
+        Number(option.isCorrect) === 1
+    )?.text || "";
+    const answerInputStyle = {
+        width: `${Math.max(6, String(correctAnswer).length + 2)}ch`
+    };
 
     useEffect(() => {
         setText(value || "");
@@ -44,7 +53,8 @@ export default function TextQuestion({
                                 <Input
                                     ref={inputRef}
                                     type="text"
-                                    className="answer-input inline-block w-24 mx-1 align-middle border border-slate-500 rounded-md bg-white"
+                                    className="answer-input inline-block mx-1 align-middle border border-slate-500 rounded-md bg-white"
+                                    style={answerInputStyle}
                                     value={text}
                                     onChange={e => setText(e.target.value)}
                                     onBlur={e => onBlur(e.target.value)}
@@ -67,6 +77,7 @@ export default function TextQuestion({
                     ref={inputRef}
                     type="text"
                     className="answer-input"
+                    style={answerInputStyle}
                     value={text}
                     onChange={e =>
                         setText(e.target.value)

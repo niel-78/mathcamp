@@ -4,10 +4,349 @@ import bcrypt from "bcrypt";
 import generatePassword from "../utils/generatePassword.js";
 import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
+import {
+    normalizeExamEvents,
+    summarizeSuspiciousExamBehavior
+} from "../../shared/examEvents.js";
 
 const router = express.Router();
 
 router.use(requireAuth);
+
+router.get(
+    "/follow-up-assessments",
+    requireRole("teacher", "super"),
+    async (req, res) => {
+        const [rows] = await db.query(
+            `
+            SELECT
+                ee.id AS event_id,
+                ee.event_type,
+                ee.created_at,
+                ea.id AS attempt_id,
+                ea.user_id AS student_id,
+                ea.started_at,
+                ea.submitted_at,
+                GREATEST(
+                    ea.started_at,
+                    COALESCE(
+                        (
+                            SELECT MAX(student_event.created_at)
+                            FROM assessment_events student_event
+                            WHERE student_event.attempt_id = ea.id
+                                AND student_event.event_type IN (
+                                    'attempt_started',
+                                    'question_view',
+                                    'tab_hidden',
+                                    'tab_visible',
+                                    'window_blur',
+                                    'window_focus',
+                                    'context_menu',
+                                    'page_refresh',
+                                    'page_unload',
+                                    'attempt_submitted',
+                                    'attempt_resumed_after_lock'
+                                )
+                        ),
+                        ea.started_at
+                    ),
+                    COALESCE(
+                        (
+                            SELECT MAX(aq.answered_at)
+                            FROM attempt_questions aq
+                            WHERE aq.attempt_id = ea.id
+                        ),
+                        ea.started_at
+                    )
+                ) AS last_student_activity_at,
+                ga.group_id,
+                assessment.title AS assessment_title,
+                g.name AS group_name,
+                student.first_name,
+                student.last_name
+            FROM assessment_events ee
+            INNER JOIN assessment_attempts ea
+                ON ea.id = ee.attempt_id
+            INNER JOIN group_assessments ga
+                ON ga.id = ea.group_assessment_id
+            INNER JOIN assessments assessment
+                ON assessment.id = ga.assessment_id
+            INNER JOIN \`groups\` g
+                ON g.id = ga.group_id
+            INNER JOIN users student
+                ON student.id = ea.user_id
+            LEFT JOIN group_permissions gp
+                ON gp.group_id = ga.group_id
+                AND gp.user_id = ?
+            LEFT JOIN school_teachers st
+                ON st.school_id = g.school_id
+                AND st.teacher_id = ?
+            WHERE ea.status IN ('submitted', 'graded')
+                AND ea.mode != 'test'
+                AND ee.event_type IN (
+                    'tab_hidden',
+                    'tab_visible',
+                    'window_blur',
+                    'window_focus',
+                    'context_menu',
+                    'page_refresh',
+                    'page_unload',
+                    'attempt_locked'
+                )
+                AND (
+                    ? = 'super'
+                    OR gp.user_id IS NOT NULL
+                    OR st.is_admin = TRUE
+                )
+            ORDER BY
+                ea.id,
+                ee.created_at,
+                ee.id
+            `,
+            [
+                req.user.id,
+                req.user.id,
+                req.user.role
+            ]
+        );
+
+        const attempts = new Map();
+
+        rows.forEach(row => {
+            if (!attempts.has(row.attempt_id)) {
+                attempts.set(row.attempt_id, {
+                    attempt_id: row.attempt_id,
+                    student_id: row.student_id,
+                    student_name: `${row.first_name} ${row.last_name}`,
+                    group_id: row.group_id,
+                    group_name: row.group_name,
+                    assessment_title: row.assessment_title,
+                    started_at: row.started_at,
+                    last_student_activity_at:
+                        row.last_student_activity_at,
+                    submitted_at: row.submitted_at,
+                    events: []
+                });
+            }
+
+            attempts.get(row.attempt_id).events.push({
+                id: row.event_id,
+                event_type: row.event_type,
+                created_at: row.created_at
+            });
+        });
+
+        const followUps = [...attempts.values()]
+            .map(attempt => ({
+                ...attempt,
+                behavior: summarizeSuspiciousExamBehavior(
+                    normalizeExamEvents(attempt.events)
+                )
+            }))
+            .filter(attempt => attempt.behavior.suspicious)
+            .map(({ events, ...attempt }) => attempt)
+            .sort((first, second) =>
+                new Date(second.last_student_activity_at) -
+                new Date(first.last_student_activity_at)
+            );
+
+        res.json(followUps);
+    }
+);
+
+router.get(
+    "/unsubmitted-assessments",
+    requireRole("teacher", "super"),
+    async (req, res) => {
+        try {
+            const [rows] = await db.query(
+                `
+                SELECT
+                    ea.id AS attempt_id,
+                    ea.status,
+                    ea.created_at,
+                    ea.started_at,
+                    assessment.id AS assessment_id,
+                    assessment.type AS assessment_type,
+                    assessment.title AS assessment_title,
+                    ga.group_id,
+                    g.name AS group_name,
+                    student.id AS student_id,
+                    student.first_name,
+                    student.last_name
+                FROM assessment_attempts ea
+                INNER JOIN group_assessments ga
+                    ON ga.id = ea.group_assessment_id
+                INNER JOIN assessments assessment
+                    ON assessment.id = ga.assessment_id
+                INNER JOIN \`groups\` g
+                    ON g.id = ga.group_id
+                INNER JOIN users student
+                    ON student.id = ea.user_id
+                LEFT JOIN group_permissions gp
+                    ON gp.group_id = ga.group_id
+                    AND gp.user_id = ?
+                LEFT JOIN school_teachers st
+                    ON st.school_id = g.school_id
+                    AND st.teacher_id = ?
+                WHERE ea.status NOT IN ('submitted', 'graded')
+                    AND assessment.deleted_at IS NULL
+                    AND ga.deleted_at IS NULL
+                    AND NOT (
+                        assessment.type = 'diagnostic'
+                        AND ea.mode = 'test'
+                    )
+                    AND (
+                        ? = 'super'
+                        OR gp.user_id IS NOT NULL
+                        OR st.is_admin = TRUE
+                    )
+                ORDER BY
+                    COALESCE(ea.started_at, ea.created_at) DESC,
+                    ea.created_at DESC
+                `,
+                [
+                    req.user.id,
+                    req.user.id,
+                    req.user.role
+                ]
+            );
+
+            res.json(rows);
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({
+                error: "Kunde inte hämta ej inlämnade prov."
+            });
+        }
+    }
+);
+
+router.post(
+    "/unsubmitted-assessments/:attemptId/submit",
+    requireRole("teacher", "super"),
+    async (req, res) => {
+        const connection = await db.getConnection();
+
+        try {
+            const { attemptId } = req.params;
+
+            await connection.beginTransaction();
+
+            const [[attempt]] = await connection.query(
+                `
+                SELECT
+                    ea.id,
+                    ea.group_assessment_id,
+                    ea.user_id,
+                    ea.status,
+                    ga.group_id,
+                    g.school_id
+                FROM assessment_attempts ea
+                INNER JOIN group_assessments ga
+                    ON ga.id = ea.group_assessment_id
+                INNER JOIN \`groups\` g
+                    ON g.id = ga.group_id
+                WHERE ea.id = ?
+                    AND ea.status NOT IN ('submitted', 'graded')
+                    AND ga.deleted_at IS NULL
+                `,
+                [attemptId]
+            );
+
+            if (!attempt) {
+                await connection.rollback();
+                return res.status(404).json({
+                    error: "Det ej inlämnade provet hittades inte."
+                });
+            }
+
+            if (req.user.role !== "super") {
+                const [[access]] = await connection.query(
+                    `
+                    SELECT 1
+                    FROM group_permissions gp
+                    WHERE gp.group_id = ?
+                        AND gp.user_id = ?
+                    UNION ALL
+                    SELECT 1
+                    FROM school_teachers st
+                    WHERE st.school_id = ?
+                        AND st.teacher_id = ?
+                        AND st.is_admin = TRUE
+                    LIMIT 1
+                    `,
+                    [
+                        attempt.group_id,
+                        req.user.id,
+                        attempt.school_id,
+                        req.user.id
+                    ]
+                );
+
+                if (!access) {
+                    await connection.rollback();
+                    return res.status(403).json({
+                        error: "Saknar behörighet."
+                    });
+                }
+            }
+
+            await connection.query(
+                `
+                UPDATE assessment_attempts
+                SET
+                    status = 'submitted',
+                    submitted_at = NOW(),
+                    teacher_end_mode = 'hard'
+                WHERE id = ?
+                    AND status NOT IN ('submitted', 'graded')
+                `,
+                [attempt.id]
+            );
+
+            await connection.query(
+                `
+                DELETE FROM assessment_waiting_room
+                WHERE group_assessment_id = ?
+                    AND user_id = ?
+                `,
+                [attempt.group_assessment_id, attempt.user_id]
+            );
+
+            await connection.query(
+                `
+                INSERT INTO assessment_events (
+                    attempt_id,
+                    event_type,
+                    event_data
+                )
+                VALUES (?, 'terminated_by_teacher', ?)
+                `,
+                [
+                    attempt.id,
+                    JSON.stringify({
+                        source: "unsubmitted_assessments"
+                    })
+                ]
+            );
+
+            await connection.commit();
+
+            res.json({
+                success: true
+            });
+        } catch (error) {
+            await connection.rollback();
+            console.error(error);
+            res.status(500).json({
+                error: "Kunde inte lämna in provet."
+            });
+        } finally {
+            connection.release();
+        }
+    }
+);
 
 router.get("/me/groups", async (req, res) => {
 
@@ -543,6 +882,7 @@ GET    /api/students/:id
 PUT    /api/students/:id
 DELETE /api/students/:id
 
+GET    /api/students/:id/groups
 GET    /api/students/:id/attempts
 GET    /api/students/:id/results
 GET    /api/students/:id/abilities
@@ -671,28 +1011,132 @@ router.put("/:studentId/password",
     }
 );
 
+// GET /api/students/:id/groups
+router.get("/:studentId/groups", async (req, res) => {
+
+    const [rows] = await db.query(
+        `
+        SELECT
+            g.id,
+            g.name,
+            l.name AS course_name
+        FROM group_students gs
+        INNER JOIN \`groups\` g
+            ON g.id = gs.group_id
+        LEFT JOIN levels l
+            ON l.id = g.level_id
+        LEFT JOIN group_permissions gp
+            ON gp.group_id = g.id
+            AND gp.user_id = ?
+        LEFT JOIN school_teachers st
+            ON st.school_id = g.school_id
+            AND st.teacher_id = ?
+        WHERE gs.user_id = ?
+            AND gs.deleted_at IS NULL
+            AND g.archived_at IS NULL
+            AND g.deleted_at IS NULL
+            AND (
+                ? = 'super'
+                OR gp.user_id IS NOT NULL
+                OR st.is_admin = TRUE
+            )
+        ORDER BY g.name
+        `,
+        [
+            req.user.id,
+            req.user.id,
+            req.params.studentId,
+            req.user.role
+        ]
+    );
+
+    res.json(rows);
+
+});
+
 // GET /api/students/:id/attempts
 router.get("/:studentId/attempts", async (req, res) => {
+
+    const groupId =
+        Number(req.query.groupId);
+
+    if (!Number.isInteger(groupId)) {
+        return res.status(400).json({
+            error: "Ogiltigt grupp-id."
+        });
+    }
 
     const [rows] = await db.query(
         `
         SELECT
             ea.id,
+            ea.started_at,
             ea.submitted_at,
+            GREATEST(
+                ea.started_at,
+                COALESCE(
+                    (
+                        SELECT MAX(student_event.created_at)
+                        FROM assessment_events student_event
+                        WHERE student_event.attempt_id = ea.id
+                            AND student_event.event_type IN (
+                                'attempt_started',
+                                'question_view',
+                                'tab_hidden',
+                                'tab_visible',
+                                'window_blur',
+                                'window_focus',
+                                'context_menu',
+                                'page_refresh',
+                                'page_unload',
+                                'attempt_submitted',
+                                'attempt_resumed_after_lock'
+                            )
+                    ),
+                    ea.started_at
+                ),
+                COALESCE(
+                    (
+                        SELECT MAX(aq.answered_at)
+                        FROM attempt_questions aq
+                        WHERE aq.attempt_id = ea.id
+                    ),
+                    ea.started_at
+                )
+            ) AS last_student_activity_at,
             a.title
         FROM assessment_attempts ea
         INNER JOIN group_assessments ga
             ON ga.id = ea.group_assessment_id
         INNER JOIN assessments a
             ON a.id = ga.assessment_id
-        INNER JOIN group_permissions gp
+        LEFT JOIN group_permissions gp
             ON gp.group_id = ga.group_id
-        WHERE ea.user_id = ?
-            AND ea.status = 'submitted'
             AND gp.user_id = ?
-        ORDER BY ea.submitted_at DESC
+        LEFT JOIN school_teachers st
+            ON st.school_id = (
+                SELECT school_id
+                FROM \`groups\`
+                WHERE id = ga.group_id
+            )
+            AND st.teacher_id = ?
+        WHERE ea.user_id = ?
+            AND ea.status IN ('submitted', 'graded')
+            AND ga.group_id = ?
+            AND (
+                ? = 'super'
+                OR gp.user_id IS NOT NULL
+                OR st.is_admin = TRUE
+            )
+        ORDER BY last_student_activity_at DESC
         `,
-        [req.params.studentId, req.user.id]
+        [
+            req.user.id,
+            req.user.id,
+            req.params.studentId,
+            groupId,
+            req.user.role
+        ]
     );
 
     res.json(rows);
@@ -701,6 +1145,29 @@ router.get("/:studentId/attempts", async (req, res) => {
 
 // GET /api/students/:id/abilities
 router.get("/:studentId/abilities", async (req, res) => {
+
+    const groupId = req.query.groupId != null && req.query.groupId !== ""
+        ? Number(req.query.groupId)
+        : null;
+
+    if (groupId !== null && !Number.isInteger(groupId)) {
+        return res.status(400).json({
+            error: "Ogiltigt grupp-id."
+        });
+    }
+
+    let groupBookId = null;
+    if (groupId !== null) {
+        const [[group]] = await db.query(
+            `
+            SELECT book_id
+            FROM \`groups\`
+            WHERE id = ?
+            `,
+            [groupId]
+        );
+        groupBookId = group?.book_id ?? null;
+    }
 
     const [rows] = await db.query(
         `
@@ -732,12 +1199,15 @@ router.get("/:studentId/abilities", async (req, res) => {
         WHERE gs.user_id = ?
             AND gs.deleted_at IS NULL
             AND a.deleted_at IS NULL
+            ${groupId !== null ? "AND gs.group_id = ?" : ""}
         ORDER BY
             asr.name,
             a.sort_order,
             a.name
         `,
-        [req.params.studentId, req.params.studentId, req.params.studentId]
+        groupId !== null
+            ? [req.params.studentId, req.params.studentId, req.params.studentId, groupId]
+            : [req.params.studentId, req.params.studentId, req.params.studentId]
     );
 
     const [[lastDiagnosticAttempt]] =
@@ -900,6 +1370,8 @@ router.get("/:studentId/abilities", async (req, res) => {
         }
     }
 
+    const filteredRows = [];
+
     for (const ability of rows) {
 
         const previousScore =
@@ -933,7 +1405,14 @@ router.get("/:studentId/abilities", async (req, res) => {
         ability.next_level = nextLevelName;
         ability.next_level_id = nextLevelId;
 
-        const abilitySections = sectionsByAbility.get(ability.id) || [];
+        let abilitySections = sectionsByAbility.get(ability.id) || [];
+        if (groupBookId != null) {
+            abilitySections = abilitySections.filter(s => s.book_id === groupBookId);
+            if (abilitySections.length === 0) {
+                continue;
+            }
+        }
+
         const formattedPageRanges = [];
         const seenRanges = new Set();
 
@@ -963,9 +1442,11 @@ router.get("/:studentId/abilities", async (req, res) => {
             end_page: s.end_page ?? s.page_number
         }));
 
+        filteredRows.push(ability);
+
     }
 
-    res.json(rows);
+    res.json(filteredRows);
 
 });
 
@@ -974,8 +1455,22 @@ router.get("/:studentId/abilities", async (req, res) => {
 // GET /api/students/:studentId/events
 router.get("/:studentId/events", async (req, res) => {
 
-    const [rows] = await db.query(
-        `
+    const groupId = req.query.groupId != null && req.query.groupId !== ""
+        ? Number(req.query.groupId)
+        : null;
+
+    if (groupId !== null && !Number.isInteger(groupId)) {
+        return res.status(400).json({
+            error: "Ogiltigt grupp-id."
+        });
+    }
+
+    const params = [
+        req.params.studentId,
+        req.user.id
+    ];
+
+    let sql = `
         SELECT
             ee.id,
             ee.event_type,
@@ -994,13 +1489,16 @@ router.get("/:studentId/events", async (req, res) => {
             ON gp.group_id = ga.group_id
         WHERE ea.user_id = ?
             AND gp.user_id = ?
-        ORDER BY ee.created_at DESC
-        `,
-        [
-            req.params.studentId,
-            req.user.id
-        ]
-    );
+    `;
+
+    if (groupId !== null) {
+        sql += "AND ga.group_id = ?\n";
+        params.push(groupId);
+    }
+
+    sql += "ORDER BY ee.created_at DESC";
+
+    const [rows] = await db.query(sql, params);
 
     res.json(rows);
 

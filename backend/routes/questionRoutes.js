@@ -57,14 +57,27 @@ router.get("/:id", async (req, res) => {
             `
             SELECT
                 q.*,
-                ql.name AS level_name
+                ql.name AS level_name,
+                COALESCE(
+                    gqp.priority,
+                    IF(bqp.question_id IS NOT NULL, 1, 0),
+                    0
+                ) AS is_priority,
+                IF(bqp.question_id IS NOT NULL, 1, 0) AS block_is_priority,
+                gqp.priority AS group_priority_override
             FROM questions q
             LEFT JOIN question_levels ql
                 ON ql.id = q.level_id
+            LEFT JOIN group_question_priorities gqp
+                ON gqp.question_id = q.id
+                AND gqp.group_id = ?
+            LEFT JOIN block_question_priorities bqp
+                ON bqp.question_id = q.id
+                AND bqp.block_id = q.block_id
             WHERE q.id = ?
                 AND q.deleted_at IS NULL
             `,
-            [questionId]
+            [req.query.groupId ? Number(req.query.groupId) : null, questionId]
         );
 
     if (!question) {
@@ -192,39 +205,57 @@ router.put("/:id", async (req, res) => {
 });
 
 // PUT /api/questions/:id/priority
-// Marks/unmarks a question as priority for a specific group. Priority is
-// scoped per group, since the same question can be reused across groups.
+// Updates the block default, or an explicit group override when group_id is set.
 router.put("/:id/priority", async (req, res) => {
     const questionId = req.params.id;
-    const { group_id, priority } = req.body;
+    const { block_id, group_id, priority } = req.body;
 
-    if (!group_id) {
+    if (!block_id && !group_id) {
         return res.status(400).json({
-            error: "group_id saknas."
+            error: "block_id eller group_id saknas."
         });
     }
 
     try {
-        if (priority) {
+        if (group_id) {
             await db.query(
                 `
-                INSERT IGNORE INTO group_question_priorities (
+                INSERT INTO group_question_priorities (
                     group_id,
-                    question_id
+                    question_id,
+                    priority
                 )
-                VALUES (?, ?)
+                VALUES (?, ?, ?)
+                ON DUPLICATE KEY UPDATE priority = VALUES(priority)
                 `,
-                [group_id, questionId]
+                [group_id, questionId, priority ? 1 : 0]
             );
         } else {
             await db.query(
                 `
-                DELETE FROM group_question_priorities
-                WHERE group_id = ?
-                AND question_id = ?
+                INSERT INTO block_question_priorities (
+                    block_id,
+                    question_id
+                )
+                SELECT ?, q.id
+                FROM questions q
+                WHERE q.id = ?
+                    AND q.block_id = ?
+                ON DUPLICATE KEY UPDATE question_id = VALUES(question_id)
                 `,
-                [group_id, questionId]
+                [block_id, questionId, block_id]
             );
+
+            if (!priority) {
+                await db.query(
+                    `
+                    DELETE FROM block_question_priorities
+                    WHERE block_id = ?
+                        AND question_id = ?
+                    `,
+                    [block_id, questionId]
+                );
+            }
         }
 
         res.sendStatus(204);

@@ -694,6 +694,7 @@ router.get("/:id/monitor", async (req, res) => {
                 AND wr.user_id = gs.user_id
 
             WHERE ge.id = ?
+                AND gs.deleted_at IS NULL
 
             ORDER BY
 

@@ -8,6 +8,8 @@
     "start": "node server.js",
     "dev": "node server.js",
     "migrate:assessment-image-notes": "node migrations/add-assessment-question-image-notes.js",
+    "migrate:login-link-tokens": "node migrations/add-login-link-tokens.js",
+    "migrate:student-email-addresses": "node migrations/add-student-email-addresses.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

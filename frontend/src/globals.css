@@ -69,6 +69,18 @@ body {
     overflow-y: hidden;
 }
 
+.katex-display {
+    margin: 0.75rem 0.5rem;
+}
+
+.katex {
+    margin: 0 0.125rem;
+}
+
+.katex-display .katex {
+    margin: 0;
+}
+
 .math-preview {
     @apply
         bg-blue-50

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth, clearUserScopedLocalStorage } from "@/contexts/AuthContext";
 import { API_URL, APP_VERSION } from "@/config";
 import { toast } from "sonner";
@@ -8,7 +8,57 @@ export default function Login() {
     const { setUser } = useAuth();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(() =>
+        Boolean(new URLSearchParams(window.location.search).get("login_token"))
+    );
+    const loginLinkAttempted = useRef(false);
+
+    const completeLogin = useCallback((data) => {
+        clearUserScopedLocalStorage();
+        const token = data.token.replace(/^Bearer\s+/i, "");
+        localStorage.setItem("token", token);
+        sessionStorage.setItem("token", token);
+        setUser(data.user);
+        toast.success("Inloggning lyckades");
+    }, [setUser]);
+
+    useEffect(() => {
+        const loginToken = new URLSearchParams(window.location.search)
+            .get("login_token");
+
+        if (!loginToken) {
+            return;
+        }
+
+        if (loginLinkAttempted.current) {
+            return;
+        }
+
+        loginLinkAttempted.current = true;
+
+        fetch(`${API_URL}/api/auth/login-with-link`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                token: loginToken,
+                program_version: APP_VERSION
+            })
+        })
+            .then(async res => {
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.error || "Länken kunde inte användas.");
+                }
+
+                completeLogin(data);
+                window.history.replaceState({}, "", window.location.pathname);
+            })
+            .catch(error => toast.error(error.message))
+            .finally(() => setLoading(false));
+    }, [completeLogin]);
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -32,25 +82,21 @@ export default function Login() {
             return;
         }
 
-        clearUserScopedLocalStorage();
-        const token = data.token.replace(/^Bearer\s+/i, "");
-        localStorage.setItem("token", token);
-        sessionStorage.setItem("token", token);
-        setUser(data.user);
-        toast.success("Inloggning lyckades");
+        completeLogin(data);
     };
 
-    const handleForgotPassword = async () => {
+    const handleLoginLink = async () => {
         const trimmedUsername = username.trim();
 
         if (!trimmedUsername) {
-            toast.error("Fyll i ditt användarnamn ovan först.");
+            toast.error("Fyll i ditt användarnamn först.");
             return;
         }
 
         setLoading(true);
+
         try {
-            const res = await fetch(`${API_URL}/api/auth/forgot-password`, {
+            const res = await fetch(`${API_URL}/api/auth/request-login-link`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -61,13 +107,12 @@ export default function Login() {
             const data = await res.json();
 
             if (!res.ok) {
-                toast.error(data.error || "Kunde inte skicka ny kod.");
-                return;
+                throw new Error(data.error || "Kunde inte skicka länken.");
             }
 
-            toast.success("Ett nytt lösenord/kod har skickats till din e-post!");
+            toast.success(data.message);
         } catch (error) {
-            toast.error("Ett nätverksfel uppstod.");
+            toast.error(error.message || "Ett nätverksfel uppstod.");
         } finally {
             setLoading(false);
         }
@@ -133,15 +178,15 @@ export default function Login() {
                 Logga in
             </Button>
 
-            {/* <Button
+            <Button
                 type="button"
                 variant="ghost"
                 disabled={loading}
-                onClick={handleForgotPassword}
+                onClick={handleLoginLink}
                 className="text-xs text-muted-foreground hover:text-foreground mt-2"
             >
-                {loading ? "Skickar..." : "Glömt lösenord? Skicka nytt på mail"}
-            </Button> */}
+                {loading ? "Skickar..." : "Skicka inloggningslänk på mail"}
+            </Button>
         </form>
     );
 }

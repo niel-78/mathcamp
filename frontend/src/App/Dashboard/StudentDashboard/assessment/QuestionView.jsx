@@ -12,6 +12,7 @@ export default function QuestionView({
 
     switch (question.question_type) {
 
+        case 'expression':
         case 'text':
             return (
                 <TextQuestion

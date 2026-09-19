@@ -285,6 +285,15 @@ export default function ExamPage({
 
     const currentQuestionNumber = index + 1;
     const isSeedPhase = currentQuestionNumber <= initialSeedCount;
+    const currentAnswer = assessment_answers[current.id];
+    const hasCurrentAnswer =
+        Array.isArray(currentAnswer)
+            ? currentAnswer.length > 0
+            : currentAnswer !== undefined &&
+                currentAnswer !== null &&
+                String(currentAnswer).trim() !== "" &&
+                currentAnswer !== "[]" &&
+                currentAnswer !== '[""]';
     const calculatorOverride =
         attemptConfig?.teacher_overrides?.calculator_allowed;
     const calculatorAllowed =
@@ -347,6 +356,19 @@ export default function ExamPage({
 
     const submitExam =
         async () => {
+
+            if (
+                isDiagnostic &&
+                !isTeacherTest &&
+                !isSoftEnded &&
+                !timeExpired &&
+                !hasCurrentAnswer
+            ) {
+                toast.error(
+                    "Svara på uppgiften innan du lämnar in."
+                );
+                return;
+            }
 
             if (isSubmittingRef.current) {
                 return;
@@ -549,6 +571,18 @@ export default function ExamPage({
         };
 
     const next = () => {
+
+        if (
+            isDiagnostic &&
+            !isTeacherTest &&
+            !isSoftEnded &&
+            !hasCurrentAnswer
+        ) {
+            toast.error(
+                "Svara på uppgiften innan du går vidare."
+            );
+            return;
+        }
 
         if (
             index <
@@ -814,11 +848,10 @@ export default function ExamPage({
                                 submitExam
                             }
                             canSubmitAnytime={
-                                isSoftEnded ||
-                                isTeacherTest ||
-                                (isDiagnostic &&
-                                    currentQuestionNumber >=
-                                    initialSeedCount)
+                                (isSoftEnded || isTeacherTest) &&
+                                currentQuestionNumber <
+                                    dynamicQuestions.length &&
+                                !timeExpired
                             }
                             submitLabel={
                                 isTeacherTest

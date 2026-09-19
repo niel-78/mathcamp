@@ -10,6 +10,11 @@ import StudentMonitorCard from "@/components/ui/StudentMonitorCard";
 import CardSection from "@/components/layouts/CardSection";
 import FormatTime from "@/utils/formatTime";
 import {
+    formatEventDuration,
+    normalizeExamEvents,
+    summarizeExamAbsences
+} from "@/utils/normalizeExamEvents";
+import {
     AlertDialog,
     AlertDialogAction,
     AlertDialogCancel,
@@ -41,6 +46,11 @@ export default function GroupExamMonitorTab({
 
     const [events, setEvents] =
         useState([]);
+
+    const normalizedEvents =
+        normalizeExamEvents(events);
+    const absenceSummary =
+        summarizeExamAbsences(normalizedEvents);
 
     const [terminateAllOpen,
         setTerminateAllOpen] =
@@ -497,10 +507,10 @@ return (
                         </CardSection>
 
                         <CardSection
-                            title={`Händelser (${events.length})`}
+                            title={`Händelser (${normalizedEvents.length})`}
                         >
 
-                            {!events.length ? (
+                            {!normalizedEvents.length ? (
 
                                 <p className="text-muted-foreground">
                                     Inga händelser registrerade.
@@ -510,7 +520,18 @@ return (
 
                                 <div className="space-y-2">
 
-                                    {events.map(event => (
+                                    {absenceSummary.count > 0 && (
+                                        <div className="rounded-lg border bg-slate-50 p-3 text-sm text-muted-foreground">
+                                            Utanför provfönstret {absenceSummary.count} gånger
+                                            {": totalt "}
+                                            {formatEventDuration(absenceSummary.total_seconds)}
+                                            {", längst "}
+                                            {formatEventDuration(absenceSummary.longest_seconds)}
+                                            {absenceSummary.has_ongoing && " • Ett tillfälle pågår"}
+                                        </div>
+                                    )}
+
+                                    {normalizedEvents.map(event => (
 
                                         <div
                                             key={event.id}
@@ -546,6 +567,12 @@ return (
                                                 />
 
                                             </div>
+
+                                            {event.event_type === "exam_left" && (
+                                                <div className="text-xs text-muted-foreground">
+                                                    Varaktighet: {formatEventDuration(event.duration_seconds)}
+                                                </div>
+                                            )}
 
                                         </div>
 

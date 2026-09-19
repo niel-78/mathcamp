@@ -108,17 +108,17 @@ CREATE TABLE group_students (
 /* =====================================================
    GROUP QUESTION PRIORITIES
 
-   Marks a question as "priority" for a specific group.
-   Priority questions in a block are used first for that
-   group's students; once a student has answered all
-   priority questions in the block, the remaining
-   (non-priority) questions are used.
+    Stores an explicit group override for a question's block
+    default. A value of 1 prioritizes it and 0 disables the
+    block default for this group.
    ===================================================== */
 
 CREATE TABLE group_question_priorities (
     group_id INT NOT NULL,
 
     question_id INT NOT NULL,
+
+    priority TINYINT(1) NOT NULL DEFAULT 1,
 
     created_at DATETIME NOT NULL
         DEFAULT CURRENT_TIMESTAMP,

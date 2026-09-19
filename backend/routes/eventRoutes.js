@@ -124,6 +124,7 @@ router.post("/", async (req, res) => {
                 UPDATE assessment_attempts
                 SET status = 'locked'
                 WHERE id = ?
+                    AND status = 'in_progress'
                 `,
                 [attempt_id]
             );

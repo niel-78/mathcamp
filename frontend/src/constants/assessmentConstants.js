@@ -1,7 +1,11 @@
 export const QUESTION_TYPES = {
+    EXPRESSION: {
+        value: "expression",
+        label: "Uttryckssvar"
+    },
     TEXT: {
         value: "text",
-        label: "Textsvar"
+        label: "Ren text"
     },
     SINGLE_CHOICE: {
         value: "single_choice",

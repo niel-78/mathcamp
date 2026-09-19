@@ -10,7 +10,7 @@ import MathContent from "@/components/ui/MathContent";
 import QuestionImagePreview from "@/components/ui/QuestionImagePreview";
 import { checkOptionValues } from "@/utils/checkOptionValues";
 import { checkBlockAnswerKeys } from "@/utils/checkAnswerKey";
-import { syncNumericInputs } from "@/components/ui/QuestionCard";
+import { syncNumericInputs } from "@/utils/syncNumericInputs";
 import {
     Dialog,
     DialogContent,
@@ -268,13 +268,6 @@ export default function BlockContent({
     const setQuestionPriority =
         async (question, priority) => {
 
-            if (!groupId) {
-                toast.error(
-                    "Prioritering kan bara ändras när blocket öppnas via en grupp."
-                );
-                return;
-            }
-
             const response = await fetch(
                 `${API_URL}/api/questions/${question.id}/priority`,
                 {
@@ -284,7 +277,8 @@ export default function BlockContent({
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        group_id: groupId,
+                        block_id: currentBlock.id,
+                        ...(groupId ? { group_id: groupId } : {}),
                         priority
                     })
                 }
@@ -415,6 +409,54 @@ export default function BlockContent({
                     : "GeoGebra borttagen för alla uppgifter"
             );
 
+        };
+
+    const prioritizeAllQuestions =
+        async () => {
+            const questions = currentBlock?.questions || [];
+
+            if (questions.length === 0) {
+                toast.info("Blocket innehåller inga uppgifter");
+                return;
+            }
+
+            let failedCount = 0;
+
+            for (const question of questions) {
+                const response = await fetch(
+                    `${API_URL}/api/questions/${question.id}/priority`,
+                    {
+                        method: "PUT",
+                        headers: {
+                            ...authHeaders(),
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            block_id: currentBlock.id,
+                            ...(groupId ? { group_id: groupId } : {}),
+                            priority: true
+                        })
+                    }
+                );
+
+                if (!response.ok) {
+                    failedCount++;
+                }
+            }
+
+            await loadBlock();
+            setOperationsDialogOpen(false);
+
+            if (failedCount > 0) {
+                toast.error(`${failedCount} uppgifter kunde inte prioriteras`);
+                return;
+            }
+
+            toast.success(
+                groupId
+                    ? "Alla uppgifter prioriteras för gruppen"
+                    : "Alla uppgifter prioriteras i blocket"
+            );
         };
 
     const duplicateQuestion =
@@ -795,20 +837,6 @@ export default function BlockContent({
                         </Button>
 
                         <Button
-                            variant="outline"
-                            onClick={toggleCalculatorForAllQuestions}
-                        >
-                            Miniräknare
-                        </Button>
-
-                        <Button
-                            variant="outline"
-                            onClick={toggleGeoGebraForAllQuestions}
-                        >
-                            GeoGebra
-                        </Button>
-
-                        <Button
                             onClick={createQuestion}
                         >
                             Ny uppgift
@@ -999,14 +1027,14 @@ export default function BlockContent({
                                     GeoGebra
                                 </label>
 
-                                {groupId && (
-
-                                    <label
+                                <label
                                         className="flex items-center gap-1 text-sm whitespace-nowrap"
                                         title={
-                                            groupName
+                                            groupId && groupName
                                                 ? `Prioritera uppgiften för ${groupName} (används i första hand tills eleven gjort alla prioriterade uppgifter i blocket)`
-                                                : "Prioritera uppgiften för gruppen"
+                                                : groupId
+                                                ? "Prioritera uppgiften för gruppen"
+                                                : "Prioritera uppgiften som standard i blocket"
                                         }
                                     >
                                         <input
@@ -1022,8 +1050,6 @@ export default function BlockContent({
                                         Prioriterad
                                     </label>
 
-                                )}
-
                                 <Button
                                     size="sm"
                                     disabled={!question.id}
@@ -1033,7 +1059,9 @@ export default function BlockContent({
                                                 id: `question-${question.id}`,
                                                 type: "question",
                                                 title: `Uppgift #${question.id}`,
-                                                questionId: question.id
+                                                questionId: question.id,
+                                                groupId,
+                                                groupName
                                             },
                                             area
                                         )
@@ -1151,6 +1179,27 @@ export default function BlockContent({
                         </DialogDescription>
 
                     </DialogHeader>
+
+                    <Button
+                        variant="outline"
+                        onClick={prioritizeAllQuestions}
+                    >
+                        Prioritera alla uppgifter
+                    </Button>
+
+                    <Button
+                        variant="outline"
+                        onClick={toggleCalculatorForAllQuestions}
+                    >
+                        Miniräknare för alla uppgifter
+                    </Button>
+
+                    <Button
+                        variant="outline"
+                        onClick={toggleGeoGebraForAllQuestions}
+                    >
+                        GeoGebra för alla uppgifter
+                    </Button>
 
                     <Button
                         variant="outline"

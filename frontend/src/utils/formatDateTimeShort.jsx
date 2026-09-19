@@ -1,3 +1,5 @@
+import { parseDatabaseDate } from "@/utils/parseDatabaseDate";
+
 export default function FormatDateTimeShort({
     value,
     showDate = true
@@ -8,7 +10,7 @@ export default function FormatDateTimeShort({
     }
 
     const date =
-        new Date(value);
+        parseDatabaseDate(value);
 
     return (
         <>

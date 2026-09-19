@@ -111,6 +111,164 @@ router.post("/login", async (req, res) => {
 
 });
 
+// POST /api/auth/request-login-link
+router.post("/request-login-link", async (req, res) => {
+    try {
+        const username = req.body?.username?.trim();
+
+        if (username) {
+            const [[user]] = await db.query(
+                `
+                SELECT id, username, first_name, email
+                FROM users
+                WHERE username = ?
+                    AND role = 'student'
+                    AND deleted_at IS NULL
+                LIMIT 1
+                `,
+                [username]
+            );
+
+            if (user?.email) {
+                const rawToken = crypto.randomBytes(32).toString("hex");
+                const tokenHash = crypto
+                    .createHash("sha256")
+                    .update(rawToken)
+                    .digest("hex");
+
+                await db.query(
+                    `
+                    DELETE FROM login_link_tokens
+                    WHERE user_id = ?
+                        AND used_at IS NULL
+                    `,
+                    [user.id]
+                );
+
+                await db.query(
+                    `
+                    INSERT INTO login_link_tokens (
+                        user_id,
+                        token_hash,
+                        expires_at
+                    )
+                    VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 15 MINUTE))
+                    `,
+                    [user.id, tokenHash]
+                );
+
+                const appUrl = process.env.APP_URL || "https://mathcamp.one";
+
+                await sendEmail(
+                    user.email,
+                    "Din inloggningslänk till MathCamp",
+                    `Hej ${user.first_name || user.username},\n\nÖppna länken för att logga in på MathCamp:\n\n${appUrl}/?login_token=${rawToken}\n\nLänken gäller i 15 minuter och kan bara användas en gång.`
+                );
+            }
+        }
+
+        res.json({
+            message: "Om kontot har en registrerad emailadress skickas en inloggningslänk dit."
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            error: "Kunde inte skicka inloggningslänk."
+        });
+    }
+});
+
+// POST /api/auth/login-with-link
+router.post("/login-with-link", async (req, res) => {
+    const rawToken = req.body?.token;
+
+    if (!rawToken || typeof rawToken !== "string") {
+        return res.status(400).json({ error: "Ogiltig inloggningslänk." });
+    }
+
+    const tokenHash = crypto
+        .createHash("sha256")
+        .update(rawToken)
+        .digest("hex");
+
+    const connection = await db.getConnection();
+
+    try {
+        await connection.beginTransaction();
+
+        const [[loginToken]] = await connection.query(
+            `
+            SELECT
+                llt.id,
+                llt.user_id,
+                u.username,
+                u.first_name,
+                u.last_name,
+                u.role
+            FROM login_link_tokens llt
+            INNER JOIN users u
+                ON u.id = llt.user_id
+            WHERE llt.token_hash = ?
+                AND llt.used_at IS NULL
+                AND llt.expires_at > NOW()
+                AND u.deleted_at IS NULL
+            LIMIT 1
+            FOR UPDATE
+            `,
+            [tokenHash]
+        );
+
+        if (!loginToken) {
+            await connection.rollback();
+            return res.status(401).json({
+                error: "Länken är ogiltig eller har gått ut."
+            });
+        }
+
+        await connection.query(
+            `
+            UPDATE login_link_tokens
+            SET used_at = NOW()
+            WHERE id = ?
+            `,
+            [loginToken.id]
+        );
+
+        const sessionToken = crypto.randomUUID();
+
+        await connection.query(
+            `
+            INSERT INTO user_sessions (
+                user_id,
+                session_token,
+                program_version
+            )
+            VALUES (?, ?, ?)
+            `,
+            [loginToken.user_id, sessionToken, req.body?.program_version || null]
+        );
+
+        await connection.commit();
+
+        res.json({
+            token: sessionToken,
+            user: {
+                id: loginToken.user_id,
+                username: loginToken.username,
+                first_name: loginToken.first_name,
+                last_name: loginToken.last_name,
+                role: loginToken.role
+            }
+        });
+    } catch (error) {
+        await connection.rollback();
+        console.error(error);
+        res.status(500).json({ error: "Kunde inte logga in med länken." });
+    } finally {
+        connection.release();
+    }
+});
+
 //POST /api/auth/logout
 router.post("/logout",
     requireAuth,

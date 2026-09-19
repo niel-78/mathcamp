@@ -8,6 +8,7 @@ export default function BaseTabLayout({
 }) {
 
     const contentRef = useRef(null);
+    const childrenRef = useRef(null);
     const storageKey = scrollKey ? `tab-scroll:${scrollKey}` : null;
 
     useEffect(() => {
@@ -35,6 +36,9 @@ export default function BaseTabLayout({
 
         const observer = new ResizeObserver(restorePosition);
         observer.observe(content);
+        if (childrenRef.current) {
+            observer.observe(childrenRef.current);
+        }
 
         return () => {
             savePosition();
@@ -67,7 +71,9 @@ export default function BaseTabLayout({
             </div>
 
             <div ref={contentRef} className="tab-content">
-                {children}
+                <div ref={childrenRef}>
+                    {children}
+                </div>
             </div>
 
         </div>

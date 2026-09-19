@@ -14,7 +14,8 @@ import ArchiveQuestionDialog from "@/components/ui/ArchiveQuestionDialog";
 import { AlertCircle, ExternalLink, Loader2, RefreshCw, Sparkles, Wand2 } from "lucide-react";
 
 export default function ActionRequiredTab({
-    openTab
+    openTab,
+    onBlockChanged
 }) {
     const [blocks, setBlocks] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -129,6 +130,7 @@ export default function ActionRequiredTab({
 
             toast.success(`Klart! Åtgärdade ${totalFixed} av ${total} uppgifter.`);
             await loadBlocks();
+            await onBlockChanged?.();
         } catch (error) {
             console.error(error);
             toast.error(error.message || "Ett fel uppstod vid åtgärdande av frågor.");

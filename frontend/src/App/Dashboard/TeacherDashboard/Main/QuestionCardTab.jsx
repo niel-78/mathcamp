@@ -10,7 +10,9 @@ export default function QuestionCardTab({
     questionId,
     tabId,
     closeTab,
-    onQuestionChanged
+    blockRefreshKey,
+    onQuestionChanged,
+    groupId
 }) {
 
     const [question,
@@ -21,14 +23,14 @@ export default function QuestionCardTab({
 
         loadQuestion();
 
-    }, [questionId]);
+    }, [questionId, blockRefreshKey]);
 
     const loadQuestion = async () => {
 
         try {
 
             const response = await fetch(
-                `${API_URL}/api/questions/${questionId}`,
+                `${API_URL}/api/questions/${questionId}${groupId ? `?groupId=${groupId}` : ""}`,
                 {
                     headers: authHeaders()
                 }
@@ -66,6 +68,7 @@ export default function QuestionCardTab({
 
             <QuestionCard
                 question={question}
+                groupId={groupId}
                 onChanged={async () => {
                     await loadQuestion();
                     onQuestionChanged?.();

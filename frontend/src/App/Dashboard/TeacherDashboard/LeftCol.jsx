@@ -141,6 +141,8 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [printLoginsGroup, setPrintLoginsGroup] = useState(null);
     const [schoolStaff, setSchoolStaff] = useState({});
     const [expandedSchoolStaff, setExpandedSchoolStaff] = useState({});
+    const [schoolStudents, setSchoolStudents] = useState({});
+    const [expandedSchoolStudents, setExpandedSchoolStudents] = useState({});
     const [createStaffOpen, setCreateStaffOpen] = useState(false);
     const [selectedSchoolForStaff, setSelectedSchoolForStaff] = useState(null);
 
@@ -512,6 +514,36 @@ export default function LeftCol( {openTab, hoverTarget} ) {
             await loadSchoolStaff(schoolId);
         }
         setExpandedSchoolStaff(prev => ({
+            ...prev,
+            [schoolId]: !prev[schoolId]
+        }));
+    };
+
+    const loadSchoolStudents = async (schoolId) => {
+        const response = await fetch(
+            `${API_URL}/api/schools/${schoolId}/students`,
+            {
+                headers: authHeaders()
+            }
+        );
+
+        if (!response.ok) {
+            return;
+        }
+
+        const data = await response.json();
+        setSchoolStudents(prev => ({
+            ...prev,
+            [schoolId]: data
+        }));
+    };
+
+    const toggleSchoolStudents = async (schoolId) => {
+        if (!schoolStudents[schoolId]) {
+            await loadSchoolStudents(schoolId);
+        }
+
+        setExpandedSchoolStudents(prev => ({
             ...prev,
             [schoolId]: !prev[schoolId]
         }));
@@ -1516,7 +1548,8 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                                         id: `student-${student.id}`,
                                                                         type: "student",
                                                                         title: `${student.first_name} ${student.last_name}`,
-                                                                        studentId: student.id
+                                                                        studentId: student.id,
+                                                                        groupId: group.id
                                                                     })
                                                                 }
                                                                 onContextMenu={(e) => {
@@ -2455,6 +2488,48 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                                 }}
                                                             >
                                                                 {staffMember.first_name} {staffMember.last_name}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {canManageSchool(school) && (
+                                            <div>
+                                                <div
+                                                    className="tree-folder"
+                                                    onClick={() =>
+                                                        toggleSchoolStudents(
+                                                            school.id
+                                                        )
+                                                    }
+                                                >
+                                                    {expandedSchoolStudents[
+                                                        school.id
+                                                    ] ? "▼" : "▶"} Elever
+                                                </div>
+
+                                                {expandedSchoolStudents[
+                                                    school.id
+                                                ] && (
+                                                    <div className="ml-4">
+                                                        {(schoolStudents[
+                                                            school.id
+                                                        ] || []).map(student => (
+                                                            <div
+                                                                key={student.id}
+                                                                className="tree-file cursor-pointer"
+                                                                onClick={() =>
+                                                                    openTab({
+                                                                        id: `student-profile-${student.id}`,
+                                                                        type: "student-profile",
+                                                                        title: `${student.first_name} ${student.last_name}`,
+                                                                        student: student
+                                                                    })
+                                                                }
+                                                            >
+                                                                {student.first_name} {student.last_name}
                                                             </div>
                                                         ))}
                                                     </div>

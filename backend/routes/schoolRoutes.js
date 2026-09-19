@@ -117,6 +117,73 @@ router.get("/:schoolId/staff",
     }
 );
 
+router.get("/:schoolId/students",
+    requireAuth,
+    async (req, res) => {
+
+        const schoolId =
+            Number(req.params.schoolId);
+
+        if (!Number.isInteger(schoolId)) {
+            return res.status(400).json({
+                error: "Ogiltigt skol-id."
+            });
+        }
+
+        if (!await canManageSchoolStaff(req.user, schoolId)) {
+            return res.status(403).json({
+                error: "Access denied"
+            });
+        }
+
+        const [students] = await db.query(
+            `
+            SELECT DISTINCT
+                u.id,
+                u.username,
+                u.first_name,
+                u.last_name,
+                u.display_name,
+                COALESCE(
+                    NULLIF(u.email, ''),
+                    CONCAT(u.username, '@elev.ga.dbgy.se')
+                ) AS email,
+                GROUP_CONCAT(
+                    DISTINCT g.name
+                    ORDER BY g.name
+                    SEPARATOR ', '
+                ) AS group_name
+            FROM group_students gs
+            INNER JOIN \`groups\` g
+                ON g.id = gs.group_id
+            INNER JOIN users u
+                ON u.id = gs.user_id
+            WHERE g.school_id = ?
+                AND g.archived_at IS NULL
+                AND g.deleted_at IS NULL
+                AND gs.deleted_at IS NULL
+                AND u.role = 'student'
+                AND u.deleted_at IS NULL
+            GROUP BY
+                u.id,
+                u.username,
+                u.first_name,
+                u.last_name,
+                u.display_name,
+                u.email
+            ORDER BY
+                u.last_name,
+                u.first_name,
+                u.username
+            `,
+            [schoolId]
+        );
+
+        res.json(students);
+
+    }
+);
+
 router.post("/:schoolId/staff",
     requireAuth,
     async (req, res) => {

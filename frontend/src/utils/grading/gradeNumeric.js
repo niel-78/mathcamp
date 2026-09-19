@@ -28,11 +28,9 @@ export const parseNumericAnswer = (value, config = {}) => {
 
     let raw = String(value).trim();
 
-    if (config.grading_mode === "equation") {
-        const equationAnswer = /^x\s*=\s*([-+]?\d+(?:[.,]\d+)?)$/i.exec(raw);
-        if (equationAnswer) {
-            raw = equationAnswer[1];
-        }
+    const equationAnswer = /^x\s*=\s*([-+]?\d+(?:[.,]\d+)?)$/i.exec(raw);
+    if (equationAnswer) {
+        raw = equationAnswer[1];
     }
 
     const isPercent = raw.endsWith("%");

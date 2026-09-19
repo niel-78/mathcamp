@@ -37,3 +37,8 @@ export const gradeText = (
         String(correctAnswer).replace(/\$/g, "")
     );
 };
+
+export const gradePlainText = (
+    studentAnswer,
+    correctAnswer
+) => String(studentAnswer ?? "").trim() === String(correctAnswer ?? "").trim();

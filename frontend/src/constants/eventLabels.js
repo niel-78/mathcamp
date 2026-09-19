@@ -3,6 +3,9 @@ export const eventLabels = {
     attempt_started:
         "Startade provet",
 
+    question_view:
+        "Visade fråga",
+
     tab_hidden:
         "Lämnade fliken",
 
@@ -14,6 +17,9 @@ export const eventLabels = {
 
     window_focus:
         "Fick fokus",
+
+    exam_left:
+        "Utanför provfönstret",
 
     context_menu:
         "Försökte högerklicka",

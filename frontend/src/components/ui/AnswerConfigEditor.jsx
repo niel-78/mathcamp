@@ -637,8 +637,7 @@ export default function AnswerConfigEditor({
                         </div>
                     </Field>
 
-                    {questionType ===
-                        QUESTION_TYPES.TEXT.value && (
+                    {questionType === QUESTION_TYPES.EXPRESSION.value && (
 
                         <>
 
@@ -736,8 +735,7 @@ export default function AnswerConfigEditor({
 
                     </Field>
 
-                    {questionType ===
-                        QUESTION_TYPES.TEXT.value && (
+                    {questionType === QUESTION_TYPES.EXPRESSION.value && (
 
                         <>
 

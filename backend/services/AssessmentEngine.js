@@ -6,6 +6,33 @@ import { scoreNumericInput } from "../utils/grading/gradeNumericInput.js";
 
 export default class AssessmentEngine {
 
+    static async filterActiveBlockIds(connection, blockIds) {
+
+        const uniqueIds = [...new Set(
+            (Array.isArray(blockIds) ? blockIds : [])
+                .map(id => Number(id))
+                .filter(id => Number.isInteger(id) && id > 0)
+        )];
+
+        if (uniqueIds.length === 0) {
+            return [];
+        }
+
+        const [rows] = await connection.query(
+            `
+            SELECT id
+            FROM blocks
+            WHERE id IN (?)
+            AND archived_at IS NULL
+            AND deleted_at IS NULL
+            `,
+            [uniqueIds]
+        );
+
+        return rows.map(row => Number(row.id));
+
+    }
+
     static buildSelectionReason({
         sectionName,
         abilityName,
@@ -88,7 +115,12 @@ export default class AssessmentEngine {
                     : diag.config || {};
 
             if (Array.isArray(diagConfig.selected_block_ids)) {
-                for (const bId of diagConfig.selected_block_ids) {
+                const activeSelectedBlockIds =
+                    await this.filterActiveBlockIds(
+                        connection,
+                        diagConfig.selected_block_ids
+                    );
+                for (const bId of activeSelectedBlockIds) {
                     previousBlockIds.add(Number(bId));
                 }
             }
@@ -112,7 +144,11 @@ export default class AssessmentEngine {
                     ON aq.attempt_id = aa.id
                 INNER JOIN questions q
                     ON q.id = aq.question_id
+                INNER JOIN blocks b
+                    ON b.id = q.block_id
                 WHERE aa.group_assessment_id IN (?)
+                  AND b.deleted_at IS NULL
+                  AND b.archived_at IS NULL
                 `,
                 [previousDiagnostics.map(d => d.id)]
             );
@@ -318,7 +354,12 @@ export default class AssessmentEngine {
                 await connection.query(
                     `
                     SELECT DISTINCT
-                        q.*
+                        q.*,
+                        COALESCE(
+                            gqp.priority,
+                            IF(bqp.question_id IS NOT NULL, 1, 0),
+                            0
+                        ) AS is_priority
 
                     FROM questions q
 
@@ -327,6 +368,14 @@ export default class AssessmentEngine {
 
                     INNER JOIN block_abilities ba
                         ON ba.block_id = q.block_id
+
+                    LEFT JOIN group_question_priorities gqp
+                        ON gqp.question_id = q.id
+                        AND gqp.group_id = ?
+
+                    LEFT JOIN block_question_priorities bqp
+                        ON bqp.question_id = q.id
+                        AND bqp.block_id = q.block_id
 
                     WHERE ba.ability_id = ?
                     AND q.series_level_id = ?
@@ -337,6 +386,20 @@ export default class AssessmentEngine {
                     AND b.deleted_at IS NULL
                     AND q.excluded_from_assessments = 0
 
+                    AND EXISTS (
+
+                        SELECT 1
+                        FROM block_sections eligible_bs
+                        INNER JOIN lesson_sections eligible_ls
+                            ON eligible_ls.section_id = eligible_bs.section_id
+                        INNER JOIN lessons eligible_l
+                            ON eligible_l.id = eligible_ls.lesson_id
+                        WHERE eligible_bs.block_id = q.block_id
+                            AND eligible_l.group_id = ?
+                            AND DATE(eligible_l.starts_at) < CURDATE()
+
+                    )
+
                     AND NOT EXISTS (
 
                         SELECT 1
@@ -346,13 +409,15 @@ export default class AssessmentEngine {
 
                     )
 
-                    ORDER BY RAND()
+                    ORDER BY is_priority DESC, RAND()
 
                     LIMIT 1
                     `,
                     [
+                        groupId,
                         abilityId,
                         currentLevelId,
+                        groupId,
                         userId
                     ]
                 );
@@ -464,7 +529,12 @@ export default class AssessmentEngine {
                 await connection.query(
                     `
                     SELECT DISTINCT
-                        q.*
+                        q.*,
+                        COALESCE(
+                            gqp.priority,
+                            IF(bqp.question_id IS NOT NULL, 1, 0),
+                            0
+                        ) AS is_priority
 
                     FROM questions q
 
@@ -473,6 +543,14 @@ export default class AssessmentEngine {
 
                     INNER JOIN block_abilities ba
                         ON ba.block_id = q.block_id
+
+                    LEFT JOIN group_question_priorities gqp
+                        ON gqp.question_id = q.id
+                        AND gqp.group_id = ?
+
+                    LEFT JOIN block_question_priorities bqp
+                        ON bqp.question_id = q.id
+                        AND bqp.block_id = q.block_id
 
                     WHERE ba.ability_id = ?
                     AND q.series_level_id = ?
@@ -483,6 +561,20 @@ export default class AssessmentEngine {
                     AND b.deleted_at IS NULL
                     AND q.excluded_from_assessments = 0
 
+                    AND EXISTS (
+
+                        SELECT 1
+                        FROM block_sections eligible_bs
+                        INNER JOIN lesson_sections eligible_ls
+                            ON eligible_ls.section_id = eligible_bs.section_id
+                        INNER JOIN lessons eligible_l
+                            ON eligible_l.id = eligible_ls.lesson_id
+                        WHERE eligible_bs.block_id = q.block_id
+                            AND eligible_l.group_id = ?
+                            AND DATE(eligible_l.starts_at) < CURDATE()
+
+                    )
+
                     AND NOT EXISTS (
 
                         SELECT 1
@@ -492,13 +584,15 @@ export default class AssessmentEngine {
 
                     )
 
-                    ORDER BY RAND()
+                    ORDER BY is_priority DESC, RAND()
 
                     LIMIT 1
                     `,
                     [
+                        groupId,
                         ability.ability_id,
                         currentLevelId,
+                        groupId,
                         userId
                     ]
                 );
@@ -942,6 +1036,7 @@ export default class AssessmentEngine {
         let masteryMultiplier = null;
 
         if (
+            question.question_type === "expression" ||
             question.question_type === "text"
         ) {
 
@@ -969,6 +1064,7 @@ export default class AssessmentEngine {
                     answer.text_answer,
                 correctAnswer:
                     correctOption?.text,
+                questionType: question.question_type,
                 config
             });
 
@@ -1471,16 +1567,22 @@ export default class AssessmentEngine {
         const selectedBlockIdSet =
             Array.isArray(selectedBlockIds)
                 ? new Set(
-                    selectedBlockIds.map(Number)
+                    await this.filterActiveBlockIds(
+                        db,
+                        selectedBlockIds
+                    )
                 )
                 : null;
+
+        if (selectedBlockIdSet && selectedBlockIdSet.size === 0) {
+            selectedBlockIdSet.clear();
+        }
 
         const [[lesson]] =
             await db.query(
                 `
                 SELECT
-                    group_id,
-                    starts_at
+                    group_id
                 FROM lessons
                 WHERE id = ?
                 `,
@@ -1562,7 +1664,12 @@ export default class AssessmentEngine {
                     : diag.config || {};
 
             if (Array.isArray(diagConfig.selected_block_ids)) {
-                for (const bId of diagConfig.selected_block_ids) {
+                const activeSelectedBlockIds =
+                    await this.filterActiveBlockIds(
+                        db,
+                        diagConfig.selected_block_ids
+                    );
+                for (const bId of activeSelectedBlockIds) {
                     previousBlockIdsSet.add(Number(bId));
                 }
             }
@@ -1677,7 +1784,7 @@ export default class AssessmentEngine {
                     ON a.id = ba.ability_id
 
                 WHERE l.group_id = ?
-                AND l.starts_at <= ?
+                AND DATE(l.starts_at) < CURDATE()
                 AND b.deleted_at IS NULL
                 AND b.archived_at IS NULL
 
@@ -1686,10 +1793,7 @@ export default class AssessmentEngine {
                     b.id,
                     a.name
                 `,
-                [
-                    lesson.group_id,
-                    lesson.starts_at
-                ]
+                [lesson.group_id]
             );
 
         const questions = [];
@@ -1812,20 +1916,38 @@ export default class AssessmentEngine {
                         `
                         SELECT
                             q.*,
-                            gqp.question_id IS NOT NULL AS is_priority
+                            COALESCE(
+                                gqp.priority,
+                                IF(bqp.question_id IS NOT NULL, 1, 0),
+                                0
+                            ) AS is_priority
 
                         FROM questions q
+
+                        INNER JOIN blocks b
+                            ON b.id = q.block_id
 
                         LEFT JOIN group_question_priorities gqp
                             ON gqp.question_id = q.id
                             AND gqp.group_id = ?
+
+                        LEFT JOIN block_question_priorities bqp
+                            ON bqp.question_id = q.id
+                            AND bqp.block_id = q.block_id
 
                         WHERE q.block_id = ?
                         AND q.series_level_id = ?
 
                         AND q.archived_at IS NULL
                         AND q.deleted_at IS NULL
+                        AND b.archived_at IS NULL
+                        AND b.deleted_at IS NULL
                         AND q.excluded_from_assessments = 0
+                        AND COALESCE(
+                            gqp.priority,
+                            IF(bqp.question_id IS NOT NULL, 1, 0),
+                            0
+                        ) = 1
                         AND NOT EXISTS (
                             SELECT 1
                             FROM question_reports qr
@@ -1863,19 +1985,32 @@ export default class AssessmentEngine {
                         `
                         SELECT
                             q.*,
-                            gqp.question_id IS NOT NULL AS is_priority
+                            COALESCE(
+                                gqp.priority,
+                                IF(bqp.question_id IS NOT NULL, 1, 0),
+                                0
+                            ) AS is_priority
 
                         FROM questions q
+
+                        INNER JOIN blocks b
+                            ON b.id = q.block_id
 
                         LEFT JOIN group_question_priorities gqp
                             ON gqp.question_id = q.id
                             AND gqp.group_id = ?
+
+                        LEFT JOIN block_question_priorities bqp
+                            ON bqp.question_id = q.id
+                            AND bqp.block_id = q.block_id
 
                         WHERE q.block_id = ?
                         AND q.series_level_id = ?
 
                         AND q.archived_at IS NULL
                         AND q.deleted_at IS NULL
+                        AND b.archived_at IS NULL
+                        AND b.deleted_at IS NULL
                         AND q.excluded_from_assessments = 0
                         AND NOT EXISTS (
                             SELECT 1

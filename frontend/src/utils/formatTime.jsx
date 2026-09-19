@@ -1,3 +1,5 @@
+import { parseDatabaseDate } from "@/utils/parseDatabaseDate";
+
 export default function FormatTime({
     value
 }) {
@@ -6,7 +8,7 @@ export default function FormatTime({
         return "-";
     }
 
-    const date = new Date(value);
+    const date = parseDatabaseDate(value);
 
     return (
         <>

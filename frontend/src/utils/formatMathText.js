@@ -90,8 +90,6 @@ export const formatMathText = (text) => {
         return String(text ?? "");
     }
 
-    text = text.trim();
-
     if (!text) {
         return "—";
     }

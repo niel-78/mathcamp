@@ -13,7 +13,7 @@ const parseJson = value =>
 async function gradeStoredAnswer(connection, question, answer) {
     const config = parseJson(question.answer_config);
 
-    if (question.question_type === "text") {
+    if (["expression", "text"].includes(question.question_type)) {
         const [[correctOption]] = await connection.query(
             `
             SELECT text
@@ -29,6 +29,7 @@ async function gradeStoredAnswer(connection, question, answer) {
         return gradeAnswer({
             studentAnswer: answer?.text_answer,
             correctAnswer: correctOption?.text,
+            questionType: question.question_type,
             config
         });
     }

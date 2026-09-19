@@ -1,10 +1,15 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
+import { API_URL } from "@/config";
+import { authHeaders } from "@/api/authHeaders";
 import { logEvent } from "@/utils/logEvent";
 
 export default function useExamActivityLogging(
     attemptId
 ) {
+
+    const isAwayRef = useRef(false);
+    const blurTimerRef = useRef(null);
 
     useEffect(() => {
 
@@ -14,19 +19,29 @@ export default function useExamActivityLogging(
 
         const handleBlur = () => {
 
-            logEvent(
-                attemptId,
-                "window_blur"
-            );
+            blurTimerRef.current = window.setTimeout(() => {
+                if (!isAwayRef.current) {
+                    isAwayRef.current = true;
+                    logEvent(
+                        attemptId,
+                        "window_blur"
+                    );
+                }
+            }, 100);
 
         };
 
         const handleFocus = () => {
 
-            logEvent(
-                attemptId,
-                "window_focus"
-            );
+            window.clearTimeout(blurTimerRef.current);
+
+            if (isAwayRef.current) {
+                isAwayRef.current = false;
+                logEvent(
+                    attemptId,
+                    "window_focus"
+                );
+            }
 
         };
 
@@ -34,17 +49,25 @@ export default function useExamActivityLogging(
 
             if (document.hidden) {
 
-                logEvent(
-                    attemptId,
-                    "tab_hidden"
-                );
+                window.clearTimeout(blurTimerRef.current);
+
+                if (!isAwayRef.current) {
+                    isAwayRef.current = true;
+                    logEvent(
+                        attemptId,
+                        "tab_hidden"
+                    );
+                }
 
             } else {
 
-                logEvent(
-                    attemptId,
-                    "tab_visible"
-                );
+                if (isAwayRef.current) {
+                    isAwayRef.current = false;
+                    logEvent(
+                        attemptId,
+                        "tab_visible"
+                    );
+                }
 
             }
 
@@ -69,6 +92,21 @@ export default function useExamActivityLogging(
                 attemptId,
                 "page_unload"
             );
+
+            fetch(
+                `${API_URL}/api/assessment-attempts/${attemptId}/submit`,
+                {
+                    method: "POST",
+                    headers: {
+                        ...authHeaders(),
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        auto_submit: true
+                    }),
+                    keepalive: true
+                }
+            ).catch(() => {});
 
         };
 
@@ -98,6 +136,9 @@ export default function useExamActivityLogging(
         );
 
         return () => {
+
+            window.clearTimeout(blurTimerRef.current);
+            isAwayRef.current = false;
 
             window.removeEventListener(
                 "blur",

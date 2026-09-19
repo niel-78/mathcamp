@@ -38,6 +38,8 @@ import DeleteMediaDialog
 import QuestionView
     from "@/App/Dashboard/StudentDashboard/Main/QuestionView";
 
+import { syncNumericInputs } from "@/utils/syncNumericInputs";
+
 import {
     QUESTION_TYPES
 } from "@/constants/assessmentConstants";
@@ -80,44 +82,10 @@ function isCorrectOption(option) {
     );
 }
 
-export function syncNumericInputs(text, correctCount) {
-    const cleanText = (text || "").trim();
-    const inputCount = Math.max(Number(correctCount) || 1, 1);
-
-    const lines = cleanText.split("\n");
-    while (lines.length > 0) {
-        const lastLine = lines[lines.length - 1].trim();
-        if (
-            lastLine === "{{input}}" ||
-            /^(?:svar:\s*)?(?:[a-zA-Z](?:_\d+)?\s*=\s*)?\{\{input\}\}\s*$/i.test(lastLine)
-        ) {
-            lines.pop();
-        } else {
-            break;
-        }
-    }
-
-    return lines
-        .join("\n")
-        .replace(/\s*Skriv\s+[^.!?\n]*\{\{input\}\}[^.!?\n]*[.!?]?/gi, "")
-        .replace(/\s*(?:Svar|Svara)(?:\s+\d+)?\s*:\s*\{\{input\}\}\s*[.!?]?/gi, "")
-        .replace(/\{\{input\}\}/g, "")
-        .replace(/\s+([,.!?])/g, "$1")
-        .replace(/[ \t]{2,}/g, " ")
-        .trim()
-        .concat(
-            inputCount === 1
-                ? " Svar: {{input}}"
-                : Array.from(
-                    { length: inputCount },
-                    (_, index) => ` Svar ${index + 1}: {{input}}`
-                ).join("")
-        );
-}
-
 export default function QuestionCard({
     question,
-    onChanged
+    onChanged,
+    groupId
 }) {
 
     if (!question) {
@@ -159,6 +127,12 @@ export default function QuestionCard({
         setGeogebraAllowed] =
         useState(
             Boolean(question.geogebra_allowed)
+        );
+
+    const [priority,
+        setPriority] =
+        useState(
+            Boolean(question.is_priority)
         );
 
     const [previewAnswer,
@@ -236,11 +210,15 @@ export default function QuestionCard({
 
         }
 
-        if (question.question_type === "text") {
+        if (
+            question.question_type === "expression" ||
+            question.question_type === "text"
+        ) {
 
             const correct = gradeAnswer({
                 studentAnswer: previewAnswer,
                 correctAnswer: correctOptions[0]?.text,
+                questionType: question.question_type,
                 config
             });
 
@@ -405,6 +383,39 @@ export default function QuestionCard({
             }
         };
 
+    const changePriority =
+        async (enabled) => {
+            setPriority(enabled);
+
+            try {
+                const response = await fetch(
+                    `${API_URL}/api/questions/${question.id}/priority`,
+                    {
+                        method: "PUT",
+                        headers: {
+                            ...authHeaders(),
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            block_id: question.block_id,
+                            ...(groupId ? { group_id: groupId } : {}),
+                            priority: enabled
+                        })
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error("Kunde inte spara prioriteringen");
+                }
+
+                await onChanged?.();
+                toast.success("Prioriteringsinställning sparad");
+            } catch (error) {
+                setPriority(!enabled);
+                toast.error(error.message);
+            }
+        };
+
     const deleteMedia =
         async () => {
             if (!mediaToDelete) return;
@@ -516,6 +527,10 @@ export default function QuestionCard({
         );
 
     }, [question.id, question.geogebra_allowed]);
+
+    useEffect(() => {
+        setPriority(Boolean(question.is_priority));
+    }, [question.id, question.is_priority]);
 
     useEffect(() => {
 
@@ -684,6 +699,22 @@ export default function QuestionCard({
                                         }
                                     />
                                     GeoGebra CAS tillåten
+                                </label>
+
+                                <label
+                                    className="flex items-center gap-2 text-sm"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={priority}
+                                        disabled={savingQuestion}
+                                        onChange={(e) =>
+                                            changePriority(
+                                                e.target.checked
+                                            )
+                                        }
+                                    />
+                                    Prioriterad
                                 </label>
 
                             </CardContent>
@@ -995,7 +1026,10 @@ export default function QuestionCard({
                             >
 
                                 <QuestionView
-                                    question={question}
+                                    question={{
+                                        ...question,
+                                        question: questionText
+                                    }}
                                     answer={previewAnswer}
                                     onTextAnswer={handlePreviewTextAnswer}
                                     onSingleChoice={handlePreviewSingleChoice}

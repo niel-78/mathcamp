@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
-import { ArrowUp, ArrowDown, Minus } from "lucide-react";
+import {
+    ArrowUp,
+    ArrowDown,
+    Minus
+} from "lucide-react";
 
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
@@ -7,9 +11,17 @@ import ResultPage from "@/App/Dashboard/StudentDashboard/Main/ResultPage";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { eventLabels } from "@/constants/eventLabels";
+import FormatDateTimeShort from "@/utils/FormatDateTimeShort";
+import {
+    formatEventDuration,
+    normalizeExamEvents,
+    summarizeExamAbsences
+} from "@/utils/normalizeExamEvents";
 
 export default function StudentTab({
-    studentId
+    studentId,
+    initialGroupId,
+    initialAttemptId
 }) {
 
     const formatEventData = (eventData) => {
@@ -44,7 +56,7 @@ export default function StudentTab({
                 })
                 .join(" • ");
 
-        } catch (error) {
+        } catch {
 
             return null;
 
@@ -54,6 +66,9 @@ export default function StudentTab({
     const [attempts, setAttempts] = useState([]);
     const [selectedAttemptId, setSelectedAttemptId] =
         useState(null);
+    const [groups, setGroups] = useState([]);
+    const [selectedGroupId, setSelectedGroupId] =
+        useState("");
     const [loading, setLoading] = useState(true);
 
     const [abilities, setAbilities] = useState([]);
@@ -77,16 +92,23 @@ export default function StudentTab({
         });
 
         return groups;
-    }, []);
+    }, []).map(group => ({
+        ...group,
+        events: normalizeExamEvents(group.events)
+    }));
 
     useEffect(() => {
+
+        if (!selectedGroupId) {
+            return;
+        }
 
         const loadAbilities = async () => {
 
             try {
 
                 const response = await fetch(
-                    `${API_URL}/api/students/${studentId}/abilities`,
+                    `${API_URL}/api/students/${studentId}/abilities?groupId=${selectedGroupId}`,
                     {
                         headers: authHeaders()
                     }
@@ -103,22 +125,27 @@ export default function StudentTab({
             } catch (error) {
 
                 console.error(error);
+                setAbilities([]);
 
             }
         };
 
         loadAbilities();
 
-    }, [studentId]);
+    }, [selectedGroupId, studentId]);
 
     useEffect(() => {
+
+        if (!selectedGroupId) {
+            return;
+        }
 
         const loadStudentEvents = async () => {
 
             try {
 
                 const response = await fetch(
-                    `${API_URL}/api/students/${studentId}/events`,
+                    `${API_URL}/api/students/${studentId}/events?groupId=${selectedGroupId}`,
                     {
                         headers: authHeaders()
                     }
@@ -135,22 +162,23 @@ export default function StudentTab({
             } catch (error) {
 
                 console.error(error);
+                setStudentEvents([]);
 
             }
         };
 
         loadStudentEvents();
 
-    }, [studentId]);
+    }, [selectedGroupId, studentId]);
 
     useEffect(() => {
 
-        const loadAttempts = async () => {
+        const loadGroups = async () => {
 
             try {
 
                 const response = await fetch(
-                    `${API_URL}/api/students/${studentId}/attempts`,
+                    `${API_URL}/api/students/${studentId}/groups`,
                     {
                         headers: authHeaders()
                     }
@@ -162,8 +190,18 @@ export default function StudentTab({
                     throw new Error(data.error);
                 }
 
-                setAttempts(data);
-                setSelectedAttemptId(data[0]?.id || null);
+                setGroups(data);
+                const requestedGroup = data.find(group =>
+                    String(group.id) === String(initialGroupId)
+                );
+
+                setSelectedGroupId(
+                    requestedGroup?.id
+                        ? String(requestedGroup.id)
+                        : data[0]?.id
+                            ? String(data[0].id)
+                            : ""
+                );
 
             } catch (error) {
 
@@ -176,10 +214,54 @@ export default function StudentTab({
             }
         };
 
-        setLoading(true);
+        loadGroups();
+
+    }, [initialGroupId, studentId]);
+
+    useEffect(() => {
+
+        if (!selectedGroupId) {
+            return;
+        }
+
+        const loadAttempts = async () => {
+
+            try {
+
+                const response = await fetch(
+                    `${API_URL}/api/students/${studentId}/attempts?groupId=${selectedGroupId}`,
+                    {
+                        headers: authHeaders()
+                    }
+                );
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error);
+                }
+
+                setAttempts(data);
+                const requestedAttempt = data.find(attempt =>
+                    String(attempt.id) === String(initialAttemptId)
+                );
+
+                setSelectedAttemptId(
+                    requestedAttempt?.id || data[0]?.id || null
+                );
+
+            } catch (error) {
+
+                console.error(error);
+                setAttempts([]);
+                setSelectedAttemptId(null);
+
+            }
+        };
+
         loadAttempts();
 
-    }, [studentId]);
+    }, [initialAttemptId, selectedGroupId, studentId]);
 
     if (loading) {
         return <p className="p-6 bg-white h-full">Laddar resultat...</p>;
@@ -188,6 +270,39 @@ export default function StudentTab({
     return (
         <div className="h-full overflow-y-auto bg-slate-50 p-6">
             <div className="w-full max-w-4xl mx-auto space-y-4">
+
+                <div className="rounded-xl border bg-white p-4 shadow-sm space-y-2">
+                    <Label htmlFor="student-group">
+                        Grupp
+                    </Label>
+
+                    <select
+                        className="input-standard w-full"
+                        id="student-group"
+                        value={selectedGroupId}
+                        onChange={event =>
+                            setSelectedGroupId(event.target.value)
+                        }
+                    >
+                        {!groups.length && (
+                            <option value="">
+                                Inga grupper tillgängliga
+                            </option>
+                        )}
+
+                        {groups.map(group => (
+                            <option
+                                key={group.id}
+                                value={group.id}
+                            >
+                                {group.name}
+                                {group.course_name
+                                    ? ` (${group.course_name})`
+                                    : ""}
+                            </option>
+                        ))}
+                    </select>
+                </div>
 
                 <div className="flex gap-2 rounded-xl border bg-white p-2 shadow-sm flex-wrap">
                     <Button
@@ -224,43 +339,51 @@ export default function StudentTab({
                     </Button>
                 </div>
 
-                {resultTab === "results" && !attempts.length && (
-                    <p className="rounded-xl border bg-white p-6 shadow-sm">
-                        Eleven har inga inlämnade prov.
-                    </p>
-                )}
-
-                {resultTab === "results" && attempts.length > 0 && (
+                {resultTab === "results" && (
                     <>
-                        <div className="rounded-xl border bg-white p-4 shadow-sm space-y-2">
-                            <Label htmlFor="student-attempt">
-                                Resultat
-                            </Label>
+                        {!attempts.length && selectedGroupId && (
+                            <p className="rounded-xl border bg-white p-6 shadow-sm">
+                                Eleven har inga inlämnade prov i den här gruppen.
+                            </p>
+                        )}
 
-                            <select
-                                className="input-standard w-full"
-                                id="student-attempt"
-                                value={selectedAttemptId || ""}
-                                onChange={event =>
-                                    setSelectedAttemptId(event.target.value)
-                                }
-                            >
-                                {attempts.map(attempt => (
-                                    <option
-                                        key={attempt.id}
-                                        value={attempt.id}
+                        {attempts.length > 0 && (
+                            <>
+                                <div className="rounded-xl border bg-white p-4 shadow-sm space-y-2">
+                                    <Label htmlFor="student-attempt">
+                                        Resultat
+                                    </Label>
+
+                                    <select
+                                        className="input-standard w-full"
+                                        id="student-attempt"
+                                        value={selectedAttemptId || ""}
+                                        onChange={event =>
+                                            setSelectedAttemptId(event.target.value)
+                                        }
                                     >
-                                        {attempt.title || "Namnlöst prov"}
-                                        {" - "}
-                                        {new Date(
-                                            attempt.submitted_at
-                                        ).toLocaleString("sv-SE")}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                                        {attempts.map(attempt => (
+                                            <option
+                                                key={attempt.id}
+                                                value={attempt.id}
+                                            >
+                                                {attempt.title || "Namnlöst prov"}
+                                                {" - "}
+                                                <FormatDateTimeShort
+                                                    value={attempt.started_at}
+                                                />
+                                                {" – "}
+                                                <FormatDateTimeShort
+                                                    value={attempt.last_student_activity_at}
+                                                />
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
 
-                        <ResultPage attemptId={selectedAttemptId} />
+                                <ResultPage attemptId={selectedAttemptId} />
+                            </>
+                        )}
                     </>
                 )}
 
@@ -353,6 +476,17 @@ export default function StudentTab({
                                             {group.title}
                                         </div>
 
+                                        {summarizeExamAbsences(group.events).count > 0 && (
+                                            <div className="border-b px-4 py-3 text-xs text-muted-foreground">
+                                                Utanför provfönstret {summarizeExamAbsences(group.events).count} gånger
+                                                {": totalt "}
+                                                {formatEventDuration(summarizeExamAbsences(group.events).total_seconds)}
+                                                {", längst "}
+                                                {formatEventDuration(summarizeExamAbsences(group.events).longest_seconds)}
+                                                {summarizeExamAbsences(group.events).has_ongoing && " • Ett tillfälle pågår"}
+                                            </div>
+                                        )}
+
                                         <div className="relative pl-6 pr-4 py-4">
                                             <div className="absolute left-3 top-0 bottom-0 w-px bg-slate-200" />
 
@@ -369,12 +503,17 @@ export default function StudentTab({
                                                         </div>
 
                                                         <div className="text-[11px] text-muted-foreground whitespace-nowrap">
-                                                            {new Date(event.created_at).toLocaleString("sv-SE", {
-                                                                dateStyle: "medium",
-                                                                timeStyle: "short"
-                                                            })}
+                                                            <FormatDateTimeShort
+                                                                value={event.created_at}
+                                                            />
                                                         </div>
                                                     </div>
+
+                                                    {event.event_type === "exam_left" && (
+                                                        <div className="mt-1 text-xs text-muted-foreground">
+                                                            Varaktighet: {formatEventDuration(event.duration_seconds)}
+                                                        </div>
+                                                    )}
 
                                                     {formatEventData(event.event_data) && (
                                                         <div className="mt-1 text-xs text-muted-foreground break-all">

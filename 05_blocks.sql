@@ -71,6 +71,7 @@ CREATE TABLE questions (
     block_id INT,
 
     question_type ENUM(
+        'expression',
         'text',
         'single_choice',
         'multiple_choice',
@@ -116,6 +117,35 @@ CREATE TABLE questions (
 ) ENGINE=InnoDB
 CHARACTER SET utf8mb4
 COLLATE utf8mb4_unicode_ci;
+
+/* =====================================================
+   BLOCK QUESTION PRIORITIES
+
+   Default priority for questions in a block. Group-level
+   priorities may override this value.
+   ===================================================== */
+
+CREATE TABLE block_question_priorities (
+    block_id INT NOT NULL,
+
+    question_id INT NOT NULL,
+
+    created_at DATETIME NOT NULL
+        DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (
+        block_id,
+        question_id
+    ),
+
+    FOREIGN KEY (block_id)
+        REFERENCES blocks(id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (question_id)
+        REFERENCES questions(id)
+        ON DELETE CASCADE
+);
 
 /* =====================================================
    QUESTION MEDIA

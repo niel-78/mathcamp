@@ -5,12 +5,14 @@ import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 import { getQuestionIssues } from "@/utils/getQuestionIssues";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, ClipboardX, ListChecks } from "lucide-react";
 
 export default function StartPage({
     openTab
 }) {
     const [issueCount, setIssueCount] = useState(0);
+    const [followUpCount, setFollowUpCount] = useState(0);
+    const [unsubmittedCount, setUnsubmittedCount] = useState(0);
 
     useEffect(() => {
         const fetchIssues = async () => {
@@ -42,6 +44,50 @@ export default function StartPage({
         };
 
         fetchIssues();
+    }, []);
+
+    useEffect(() => {
+        const fetchUnsubmitted = async () => {
+            try {
+                const response = await fetch(
+                    `${API_URL}/api/students/unsubmitted-assessments`,
+                    {
+                        headers: authHeaders()
+                    }
+                );
+
+                if (response.ok) {
+                    const attempts = await response.json();
+                    setUnsubmittedCount(attempts.length);
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        };
+
+        fetchUnsubmitted();
+    }, []);
+
+    useEffect(() => {
+        const fetchFollowUps = async () => {
+            try {
+                const response = await fetch(
+                    `${API_URL}/api/students/follow-up-assessments`,
+                    {
+                        headers: authHeaders()
+                    }
+                );
+
+                if (response.ok) {
+                    const followUps = await response.json();
+                    setFollowUpCount(followUps.length);
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        };
+
+        fetchFollowUps();
     }, []);
 
     return (
@@ -101,6 +147,49 @@ export default function StartPage({
                     {issueCount > 0 && (
                         <Badge variant="secondary" className="px-1.5 py-0 text-xs font-bold bg-white text-destructive">
                             {issueCount}
+                        </Badge>
+                    )}
+                </Button>
+
+                <Button
+                    variant="outline"
+                    className={followUpCount > 0
+                        ? "gap-2 border-amber-400 bg-amber-50 text-amber-950 hover:bg-amber-100"
+                        : "gap-2"
+                    }
+                    onClick={() =>
+                        openTab({
+                            id: "follow-up",
+                            title: `Följ upp (${followUpCount})`,
+                            type: "follow-up"
+                        })
+                    }
+                >
+                    <ListChecks size={16} />
+                    <span>Följ upp</span>
+                    {followUpCount > 0 && (
+                        <Badge className="bg-amber-700 px-1.5 py-0 text-xs font-bold text-white">
+                            {followUpCount}
+                        </Badge>
+                    )}
+                </Button>
+
+                <Button
+                    variant={unsubmittedCount > 0 ? "destructive" : "outline"}
+                    className="gap-2"
+                    onClick={() =>
+                        openTab({
+                            id: "unsubmitted",
+                            title: `Ej inlämnade (${unsubmittedCount})`,
+                            type: "unsubmitted"
+                        })
+                    }
+                >
+                    <ClipboardX size={16} />
+                    <span>Ej inlämnade</span>
+                    {unsubmittedCount > 0 && (
+                        <Badge variant="secondary" className="px-1.5 py-0 text-xs font-bold bg-white text-destructive">
+                            {unsubmittedCount}
                         </Badge>
                     )}
                 </Button>

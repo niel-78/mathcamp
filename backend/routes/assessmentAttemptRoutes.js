@@ -386,6 +386,7 @@ router.get("/:id", async (req, res) => {
 
     try {
         const { id } = req.params;
+        const autoSubmit = req.body?.auto_submit === true;
 
         /*
          * Hämta provförsöket
@@ -1746,7 +1747,8 @@ router.post("/:id/submit", async (req, res) => {
             });
         }
 
-        if (
+            if (
+                !autoSubmit &&
             attempt.assessment_type === "diagnostic" &&
             attempt.mode !== "test"
         ) {
@@ -1777,6 +1779,43 @@ router.post("/:id/submit", async (req, res) => {
                 Number(
                     attemptConfig?.attempt?.initialSeedQuestionCount
                 ) || 0;
+
+            const [[baseQuestionProgress]] =
+                await connection.query(
+                    `
+                    SELECT
+                        COUNT(*) AS question_count,
+                        SUM(answered_at IS NOT NULL) AS answered_count
+                    FROM attempt_questions
+                    WHERE attempt_id = ?
+                        AND sort_order <= ?
+                    `,
+                    [
+                        attempt.id,
+                        initialSeedCount
+                    ]
+                );
+
+            const baseSectionComplete =
+                initialSeedCount > 0 &&
+                Number(baseQuestionProgress.question_count) ===
+                    initialSeedCount &&
+                Number(baseQuestionProgress.answered_count) ===
+                    initialSeedCount;
+
+            const [[unansweredQuestionCount]] =
+                await connection.query(
+                    `
+                    SELECT COUNT(*) AS value
+                    FROM attempt_questions
+                    WHERE attempt_id = ?
+                        AND answered_at IS NULL
+                    `,
+                    [attempt.id]
+                );
+
+            const allQuestionsAnswered =
+                Number(unansweredQuestionCount.value) === 0;
 
             const [[questionCount]] =
                 await connection.query(
@@ -1811,6 +1850,19 @@ router.post("/:id/submit", async (req, res) => {
 
             const questionsExhausted =
                 !nextQuestion;
+
+            if (
+                !attempt.teacher_end_mode &&
+                !timeExpired &&
+                !allQuestionsAnswered
+            ) {
+                await connection.rollback();
+
+                return res.status(400).json({
+                    error:
+                        "Svara på alla frågor innan du lämnar in diagnosen."
+                });
+            }
 
             if (
                 !attempt.teacher_end_mode &&
@@ -2231,7 +2283,10 @@ router.get("/:id/results", async (req, res) => {
             let correct = false;
             let points = 0;
 
-            if (question.question_type === "text") {
+            if (
+                question.question_type === "expression" ||
+                question.question_type === "text"
+            ) {
 
                 correct =
                     gradeAnswer({
@@ -2239,6 +2294,7 @@ router.get("/:id/results", async (req, res) => {
                             question.text_answer,
                         correctAnswer:
                             correctOptions[0]?.text,
+                        questionType: question.question_type,
                         config:
                             question.answer_config
                     });

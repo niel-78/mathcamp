@@ -120,6 +120,7 @@ DROP TABLE IF EXISTS assessments;
 DROP TABLE IF EXISTS block_points;
 DROP TABLE IF EXISTS block_abilities;
 DROP TABLE IF EXISTS block_sections;
+DROP TABLE IF EXISTS block_question_priorities;
 DROP TABLE IF EXISTS options;
 DROP TABLE IF EXISTS question_media;
 DROP TABLE IF EXISTS questions;

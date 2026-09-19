@@ -14,3 +14,8 @@ export const gradeText = (
         gradeAlgebra
     );
 };
+
+export const gradePlainText = (
+    studentAnswer,
+    correctAnswer
+) => String(studentAnswer ?? "").trim() === String(correctAnswer ?? "").trim();

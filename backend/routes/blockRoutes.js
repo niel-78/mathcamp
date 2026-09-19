@@ -346,8 +346,12 @@ async function hydrateLightBlocks(blocks) {
             q.answer_config,
             q.calculator_allowed,
             q.geogebra_allowed,
+            bqp.question_id IS NOT NULL AS is_priority,
             COALESCE(report_counts.report_count, 0) AS report_count
         FROM questions q
+        LEFT JOIN block_question_priorities bqp
+            ON bqp.question_id = q.id
+            AND bqp.block_id = q.block_id
         LEFT JOIN (
             SELECT
                 question_id,
@@ -659,6 +663,9 @@ async function hydrateLightBlocks(blocks) {
 
         block.questions = blockQuestions;
         block.question_count = blockQuestions.length;
+        block.priority_question_count = blockQuestions.filter(
+            question => Boolean(question.is_priority)
+        ).length;
 
         const pointsCount = pointCountByBlock.get(blockId) || 0;
         block.points = pointsCount
