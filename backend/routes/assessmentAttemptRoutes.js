@@ -386,7 +386,6 @@ router.get("/:id", async (req, res) => {
 
     try {
         const { id } = req.params;
-        const autoSubmit = req.body?.auto_submit === true;
 
         /*
          * Hämta provförsöket
@@ -467,6 +466,7 @@ router.get("/:id", async (req, res) => {
 
         let options = [];
         let media = [];
+        let savedAnswers = [];
 
         if (questionIds.length > 0) {
             const [optionRows] = await connection.query(
@@ -503,6 +503,22 @@ router.get("/:id", async (req, res) => {
             );
 
             media = mediaRows;
+
+            const [answerRows] = await connection.query(
+                `
+                SELECT
+                    aa.question_id,
+                    aa.text_answer,
+                    ao.option_id
+                FROM assessment_answers aa
+                LEFT JOIN answer_options ao
+                    ON ao.answer_id = aa.id
+                WHERE aa.attempt_id = ?
+                `,
+                [id]
+            );
+
+            savedAnswers = answerRows;
         }
 
         /*
@@ -517,6 +533,22 @@ router.get("/:id", async (req, res) => {
                 mediaItem => mediaItem.question_id === question.id
             )
         }));
+
+        const answers = {};
+        for (const answer of savedAnswers) {
+            if (!answers[answer.question_id]) {
+                answers[answer.question_id] = {
+                    text_answer: answer.text_answer,
+                    selected_option_ids: []
+                };
+            }
+
+            if (answer.option_id !== null) {
+                answers[answer.question_id].selected_option_ids.push(
+                    answer.option_id
+                );
+            }
+        }
 
         const parsedAttemptConfig =
             typeof attempt.config === "string"
@@ -570,7 +602,8 @@ router.get("/:id", async (req, res) => {
                             : attempt.assessment_config
                 }
             },
-            questions: questionsWithOptions
+            questions: questionsWithOptions,
+            answers
         });
 
     } catch (error) {
@@ -1692,6 +1725,7 @@ router.post("/:id/submit", async (req, res) => {
     try {
 
         const { id } = req.params;
+        const autoSubmit = req.body?.auto_submit === true;
 
         await connection.beginTransaction();
 
@@ -1940,7 +1974,7 @@ router.post("/:id/terminate",
                 ? "soft"
                 : "hard";
 
-        await db.query(
+        const [result] = await db.query(
             `
             UPDATE assessment_attempts
             SET
@@ -1949,9 +1983,16 @@ router.post("/:id/terminate",
                     ? ", status = 'submitted', submitted_at = NOW()"
                     : ""}
             WHERE id = ?
+                AND status = 'in_progress'
             `,
             [endMode, attemptId]
         );
+
+        if (result.affectedRows === 0) {
+            return res.status(409).json({
+                error: "Provet är inte längre aktivt."
+            });
+        }
 
         const [check] = await db.query(
             `

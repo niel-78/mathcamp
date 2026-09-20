@@ -978,7 +978,8 @@ router.post("/:id/group-assessments",
             completion_questions_per_ability = null,
             training_questions_per_ability = null,
             include_completion = null,
-            include_training = null
+            include_training = null,
+            allow_submit_after_seed = null
         } = req.body;
 
         const connection =
@@ -1066,36 +1067,6 @@ router.post("/:id/group-assessments",
 
             }
 
-            const [existing] =
-                await connection.query(
-                    `
-                    SELECT
-                        lga.group_assessment_id
-                    FROM lesson_group_assessments lga
-                    INNER JOIN group_assessments ga
-                        ON ga.id = lga.group_assessment_id
-                    WHERE lga.lesson_id = ?
-                    AND ga.mode != 'test'
-                    AND ga.deleted_at IS NULL
-                    LIMIT 1
-                    `,
-                    [lessonId]
-                );
-
-            if (
-                existing.length > 0 &&
-                mode !== "test"
-            ) {
-
-                await connection.rollback();
-
-                return res.status(409).json({
-                    error:
-                        "Lektionen har redan ett provtillfälle."
-                });
-
-            }
-
             const typeSettings =
                 await getAssessmentTypeSettings(
                     type
@@ -1160,6 +1131,9 @@ router.post("/:id/group-assessments",
                                     : {}),
                                 ...(typeof include_training === "boolean"
                                     ? { includeTraining: include_training }
+                                    : {}),
+                                ...(typeof allow_submit_after_seed === "boolean"
+                                    ? { allowSubmitAfterSeed: allow_submit_after_seed }
                                     : {}),
                                 ...(Object.keys(normalizedAbilityQuestionCounts).length > 0
                                     ? {

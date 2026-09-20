@@ -117,6 +117,65 @@ router.get("/:schoolId/staff",
     }
 );
 
+router.put("/:schoolId/staff/:staffId/password",
+    requireAuth,
+    async (req, res) => {
+        const schoolId = Number(req.params.schoolId);
+        const staffId = Number(req.params.staffId);
+
+        if (!Number.isInteger(schoolId) || !Number.isInteger(staffId)) {
+            return res.status(400).json({
+                error: "Ogiltigt skol- eller personal-id."
+            });
+        }
+
+        if (!await canManageSchoolStaff(req.user, schoolId)) {
+            return res.status(403).json({
+                error: "Access denied"
+            });
+        }
+
+        const [[staff]] = await db.query(
+            `
+            SELECT u.id
+            FROM school_teachers st
+            INNER JOIN users u
+                ON u.id = st.teacher_id
+            WHERE st.school_id = ?
+                AND st.teacher_id = ?
+                AND u.role = 'teacher'
+                AND u.deleted_at IS NULL
+            `,
+            [schoolId, staffId]
+        );
+
+        if (!staff) {
+            return res.status(404).json({
+                error: "Personalen finns inte i skolan."
+            });
+        }
+
+        let { password } = req.body || {};
+
+        if (!password?.trim()) {
+            password = generatePassword();
+        }
+
+        const passwordHash = await bcrypt.hash(password, 12);
+
+        await db.query(
+            `
+            UPDATE users
+            SET password_hash = ?
+            WHERE id = ?
+            `,
+            [passwordHash, staffId]
+        );
+
+        res.json({ password });
+    }
+);
+
 router.get("/:schoolId/students",
     requireAuth,
     async (req, res) => {

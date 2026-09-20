@@ -47,12 +47,14 @@ router.get("/student-import-template",
                 {
                     Efternamn: "Andersson",
                     Förnamn: "Anna",
+                    "E-post": "anna.andersson@example.com",
                     Visningsnamn: "",
                     Användarnamn: ""
                 },
                 {
                     Efternamn: "Svensson",
                     Förnamn: "Karl",
+                    "E-post": "karl.svensson@example.com",
                     Visningsnamn: "Kalle",
                     Användarnamn: "kalle"
                 }
@@ -968,6 +970,54 @@ router.put("/:id/students/:studentId/review", async (req, res) => {
         connection.release();
     }
 });
+// POST /api/groups/:id/students/bulk
+router.post("/:id/students/bulk", async (req, res) => {
+    try {
+        const studentIds = [
+            ...new Set(
+                (Array.isArray(req.body?.student_ids)
+                    ? req.body.student_ids
+                    : []
+                )
+                    .map(Number)
+                    .filter(Number.isInteger)
+            )
+        ];
+
+        if (!studentIds.length) {
+            return res.status(400).json({
+                error: "Minst en elev måste väljas."
+            });
+        }
+
+        const placeholders = studentIds.map(() => "?").join(", ");
+
+        await db.query(
+            `
+            INSERT IGNORE INTO group_students (
+                group_id,
+                user_id
+            )
+            SELECT ?, id
+            FROM users
+            WHERE id IN (${placeholders})
+                AND role = 'student'
+                AND deleted_at IS NULL
+            `,
+            [req.params.id, ...studentIds]
+        );
+
+        res.status(201).json({
+            imported_count: studentIds.length
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({
+            error: "Kunde inte importera eleverna."
+        });
+    }
+});
+
 // POST /api/groups/:id/students
 router.post("/:id/students", async (req, res) => {
 
@@ -976,8 +1026,11 @@ router.post("/:id/students", async (req, res) => {
         const {
             username,
             first_name,
-            last_name
+            last_name,
+            email
         } = req.body;
+
+        const normalizedEmail = email?.trim() || null;
 
         let userId = null;
         let password = null;
@@ -997,14 +1050,14 @@ router.post("/:id/students", async (req, res) => {
             userId =
                 existingUser.id;
 
-            if (!existingUser.email) {
+            if (normalizedEmail || !existingUser.email) {
                 await db.query(
                     `
                     UPDATE users
-                    SET email = CONCAT(username, '@elev.ga.dbgy.se')
+                    SET email = COALESCE(?, CONCAT(username, '@elev.ga.dbgy.se'))
                     WHERE id = ?
                     `,
-                    [userId]
+                    [normalizedEmail, userId]
                 );
             }
 
@@ -1036,7 +1089,7 @@ router.post("/:id/students", async (req, res) => {
                         'student',
                         ?,
                         ?,
-                        CONCAT(?, '@elev.ga.dbgy.se')
+                        COALESCE(?, CONCAT(?, '@elev.ga.dbgy.se'))
                     )
                     `,
                     [
@@ -1044,6 +1097,7 @@ router.post("/:id/students", async (req, res) => {
                         password_hash,
                         first_name,
                         last_name,
+                        normalizedEmail,
                         username
                     ]
                 );
@@ -1222,14 +1276,15 @@ router.post("/:id/import-students",
 
         try {
 
-            if (!req.file) {
+            if (!req.file && !req.body?.csvText?.trim()) {
                 return res.status(400).json({
-                    error: "Ingen fil uppladdad"
+                    error: "Ingen fil eller CSV-text angiven"
                 });
             }
 
-            const workbook =
-                XLSX.read(req.file.buffer);
+            const workbook = req.file
+                ? XLSX.read(req.file.buffer)
+                : XLSX.read(req.body.csvText, { type: "string" });
 
             const sheet =
                 workbook.Sheets[
@@ -1285,6 +1340,11 @@ router.post("/:id/import-students",
                     row.Visningsnamn?.trim()
                     || null;
 
+                const email =
+                    row["E-post"]?.trim()
+                    || row.Email?.trim()
+                    || null;
+
                 let username =
                     row.Användarnamn?.trim();
 
@@ -1319,14 +1379,14 @@ router.post("/:id/import-students",
 
                 if (existingUser) {
 
-                    if (!existingUser.email) {
+                    if (email || !existingUser.email) {
                         await db.query(
                             `
                             UPDATE users
-                            SET email = CONCAT(username, '@elev.ga.dbgy.se')
+                            SET email = COALESCE(?, CONCAT(username, '@elev.ga.dbgy.se'))
                             WHERE id = ?
                             `,
-                            [existingUser.id]
+                            [email, existingUser.id]
                         );
                     }
 
@@ -1395,7 +1455,7 @@ router.post("/:id/import-students",
                             ?,
                             ?,
                             ?,
-                            CONCAT(?, '@elev.ga.dbgy.se')
+                            COALESCE(?, CONCAT(?, '@elev.ga.dbgy.se'))
                         )
                         `,
                         [
@@ -1406,6 +1466,7 @@ router.post("/:id/import-students",
                             fullName,
                             displayName,
                             userKey,
+                            email,
                             username
                         ]
                     );

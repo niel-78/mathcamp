@@ -6,6 +6,46 @@ const router = express.Router();
 
 router.use(requireAuth);
 
+async function canManageClassroom(user, classroomId) {
+    if (user.role === "super") {
+        return true;
+    }
+
+    const [[membership]] = await db.query(
+        `
+        SELECT st.is_admin
+        FROM classrooms c
+        INNER JOIN school_teachers st
+            ON st.school_id = c.school_id
+        WHERE c.id = ?
+            AND st.teacher_id = ?
+        `,
+        [classroomId, user.id]
+    );
+
+    return !!membership?.is_admin;
+}
+
+async function canAccessClassroom(user, classroomId) {
+    if (user.role === "super") {
+        return true;
+    }
+
+    const [[membership]] = await db.query(
+        `
+        SELECT st.teacher_id
+        FROM classrooms c
+        INNER JOIN school_teachers st
+            ON st.school_id = c.school_id
+        WHERE c.id = ?
+            AND st.teacher_id = ?
+        `,
+        [classroomId, user.id]
+    );
+
+    return !!membership;
+}
+
 router.get("/", async (req, res) => {
 
     const [classrooms] = await db.query(
@@ -167,6 +207,12 @@ router.get("/:id", async (req, res) => {
 // PUT /api/classrooms/:id
 router.put("/:id", async (req, res) => {
 
+    if (!await canManageClassroom(req.user, req.params.id)) {
+        return res.status(403).json({
+            error: "Endast skolans administratör får ändra klassrum."
+        });
+    }
+
     const {
         name,
         description
@@ -193,6 +239,12 @@ router.put("/:id", async (req, res) => {
 
 // DELETE /api/classrooms/:id
 router.delete("/:id", async (req, res) => {
+
+    if (!await canManageClassroom(req.user, req.params.id)) {
+        return res.status(403).json({
+            error: "Endast skolans administratör får ändra klassrum."
+        });
+    }
 
     await db.query(
         `
@@ -227,6 +279,12 @@ router.get("/:id/layouts",
 
 // POST /api/classrooms/:id/layouts
 router.post("/:id/layouts", async (req, res) => {
+
+    if (!await canAccessClassroom(req.user, req.params.id)) {
+        return res.status(403).json({
+            error: "Du saknar behörighet till klassrummet."
+        });
+    }
 
     const {
         name,

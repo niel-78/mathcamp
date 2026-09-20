@@ -664,6 +664,26 @@ router.get("/:id/monitor", async (req, res) => {
                     LIMIT 1
                 ) AS total_question_count,
 
+                CAST(
+                    JSON_UNQUOTE(
+                        JSON_EXTRACT(ea.config, '$.attempt.initialSeedQuestionCount')
+                    ) AS UNSIGNED
+                ) AS initial_seed_question_count,
+
+                (
+                    SELECT COUNT(*)
+                    FROM assessment_answers aa
+                    WHERE aa.attempt_id = ea.id
+                        AND (
+                            aa.text_answer IS NOT NULL
+                            OR EXISTS (
+                                SELECT 1
+                                FROM answer_options ao
+                                WHERE ao.answer_id = aa.id
+                            )
+                        )
+                ) AS answered_question_count,
+
                 JSON_UNQUOTE(
                     JSON_EXTRACT(
                         ea.config,
@@ -936,18 +956,43 @@ router.post("/:id/admit-student",
 // POST /api/group-assessments/:id/admit-all
 router.post("/:id/admit-all", async (req, res) => {
 
-    await db.query(
-        `
-        UPDATE group_assessments
-        SET status = 'open'
-        WHERE id = ?
-        `,
-        [req.params.id]
-    );
+    const connection = await db.getConnection();
 
-    res.json({
-        success: true
-    });
+    try {
+        await connection.beginTransaction();
+
+        await connection.query(
+            `
+            UPDATE group_assessments
+            SET status = 'open'
+            WHERE id = ?
+            `,
+            [req.params.id]
+        );
+
+        await connection.query(
+            `
+            UPDATE assessment_waiting_room
+            SET admitted_at = COALESCE(admitted_at, NOW())
+            WHERE group_assessment_id = ?
+            `,
+            [req.params.id]
+        );
+
+        await connection.commit();
+
+        res.json({
+            success: true
+        });
+    } catch (error) {
+        await connection.rollback();
+        console.error(error);
+        res.status(500).json({
+            error: "Kunde inte släppa in eleverna."
+        });
+    } finally {
+        connection.release();
+    }
 
 });
 

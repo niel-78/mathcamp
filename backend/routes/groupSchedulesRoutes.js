@@ -16,6 +16,24 @@ const upload = multer({
 router.use(requireAuth);
 router.use(requireRole("student", "teacher", "super"));
 
+async function canManageSchoolScheduleExceptions(user, schoolId) {
+    if (user.role === "super") {
+        return true;
+    }
+
+    const [[membership]] = await db.query(
+        `
+        SELECT is_admin
+        FROM school_teachers
+        WHERE school_id = ?
+            AND teacher_id = ?
+        `,
+        [schoolId, user.id]
+    );
+
+    return !!membership?.is_admin;
+}
+
 // GET /api/group-schedules
 router.get("/",
     async (req, res) => {
@@ -420,6 +438,12 @@ router.post("/exceptions", async (req, res) => {
         groupIds = []
     } = req.body;
 
+    if (!await canManageSchoolScheduleExceptions(req.user, school_id)) {
+        return res.status(403).json({
+            error: "Endast skolans administratör får ändra schemabrytande dagar."
+        });
+    }
+
     const [result] =
         await db.query(
             `
@@ -479,6 +503,27 @@ router.post("/exceptions", async (req, res) => {
 
 router.put("/exceptions/:id",
     async (req, res) => {
+
+        const [[exception]] = await db.query(
+            `
+            SELECT school_id
+            FROM school_schedule_exceptions
+            WHERE id = ?
+            `,
+            [req.params.id]
+        );
+
+        if (!exception) {
+            return res.status(404).json({
+                error: "Schemabrytande dagen hittades inte."
+            });
+        }
+
+        if (!await canManageSchoolScheduleExceptions(req.user, exception.school_id)) {
+            return res.status(403).json({
+                error: "Endast skolans administratör får ändra schemabrytande dagar."
+            });
+        }
 
         const {
             date,
@@ -554,6 +599,27 @@ router.put("/exceptions/:id",
 router.delete("/exceptions/:id",
     async (req, res) => {
 
+        const [[exception]] = await db.query(
+            `
+            SELECT school_id
+            FROM school_schedule_exceptions
+            WHERE id = ?
+            `,
+            [req.params.id]
+        );
+
+        if (!exception) {
+            return res.status(404).json({
+                error: "Schemabrytande dagen hittades inte."
+            });
+        }
+
+        if (!await canManageSchoolScheduleExceptions(req.user, exception.school_id)) {
+            return res.status(403).json({
+                error: "Endast skolans administratör får ändra schemabrytande dagar."
+            });
+        }
+
         await db.query(
             `
             DELETE
@@ -581,6 +647,12 @@ router.post("/exceptions/import",
 
             const schoolId =
                 req.body.schoolId;
+
+            if (!await canManageSchoolScheduleExceptions(req.user, schoolId)) {
+                return res.status(403).json({
+                    error: "Endast skolans administratör får ändra schemabrytande dagar."
+                });
+            }
 
             const workbook =
                 XLSX.read(

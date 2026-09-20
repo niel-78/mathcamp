@@ -97,7 +97,7 @@ router.get("/:id/status", async (req, res) => {
                 attempt_status:
                     attempt?.status || null
 
-            });o
+            });
     }
 );
 
@@ -256,6 +256,7 @@ router.post("/find", async (req, res) => {
                 ge.status AS assessment_status,
                 ge.available_from,
                 ge.available_until,
+                ge.config,
 
                 e.title AS assessment_title,
                 g.name AS group_name
@@ -279,6 +280,33 @@ router.post("/find", async (req, res) => {
                 error: "Ogiltig assessment key."
             });
 
+        }
+
+        const groupExamConfig =
+            typeof groupExam.config === "string"
+                ? JSON.parse(groupExam.config || "{}")
+                : groupExam.config || {};
+        const abilityIds = Object.keys(
+            groupExamConfig.abilityQuestionCounts || {}
+        )
+            .map(Number)
+            .filter(Number.isInteger);
+        let testAbilitySeries = null;
+
+        if (abilityIds.length > 0) {
+            [[testAbilitySeries]] = await db.query(
+                `
+                SELECT DISTINCT
+                    a.series_id AS ability_series_id,
+                    asr.name AS ability_series_name
+                FROM abilities a
+                INNER JOIN ability_series asr
+                    ON asr.id = a.series_id
+                WHERE a.id IN (?)
+                LIMIT 1
+                `,
+                [abilityIds]
+            );
         }
 
         if (!groupExam.waiting_room_open) {
@@ -322,10 +350,13 @@ router.post("/find", async (req, res) => {
         res.json({
             group_assessment_id: groupExam.id,
             assessment_id: groupExam.assessment_id,
+            group_id: groupExam.group_id,
             assessment_title: groupExam.assessment_title,
             group_name: groupExam.group_name,
             assessment_status: groupExam.assessment_status,
             waiting_room_open: groupExam.waiting_room_open,
+            ability_series_id: testAbilitySeries?.ability_series_id || null,
+            ability_series_name: testAbilitySeries?.ability_series_name || null,
             available_from: groupExam.available_from,
             available_until: groupExam.available_until
         });

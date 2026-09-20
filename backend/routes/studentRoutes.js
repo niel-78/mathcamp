@@ -579,6 +579,39 @@ router.get("/me/groups/:groupId/abilities", async (req, res) => {
         });
     }
 
+    const attemptId = req.query.attemptId
+        ? Number(req.query.attemptId)
+        : null;
+    let testAbilityIds = null;
+
+    if (attemptId && Number.isInteger(attemptId)) {
+        const [[attemptConfig]] = await db.query(
+            `
+            SELECT aa.config
+            FROM assessment_attempts aa
+            INNER JOIN group_assessments ga
+                ON ga.id = aa.group_assessment_id
+            WHERE aa.id = ?
+                AND aa.user_id = ?
+                AND ga.group_id = ?
+            `,
+            [attemptId, req.user.id, groupId]
+        );
+
+        const parsedConfig = typeof attemptConfig?.config === "string"
+            ? JSON.parse(attemptConfig.config || "{}")
+            : attemptConfig?.config || {};
+        const configuredIds = Object.keys(
+            parsedConfig.abilityQuestionCounts || {}
+        )
+            .map(Number)
+            .filter(Number.isInteger);
+
+        if (configuredIds.length > 0) {
+            testAbilityIds = configuredIds;
+        }
+    }
+
     const [[membership]] = await db.query(
         `
         SELECT 1
@@ -623,10 +656,10 @@ router.get("/me/groups/:groupId/abilities", async (req, res) => {
         FROM group_students gs
         INNER JOIN \`groups\` g
             ON g.id = gs.group_id
-        INNER JOIN ability_series asr
-            ON asr.id = g.ability_series_id
         INNER JOIN abilities a
-            ON a.series_id = asr.id
+            ON 1 = 1
+        INNER JOIN ability_series asr
+            ON asr.id = a.series_id
         LEFT JOIN student_ability_mastery sam
             ON sam.ability_id = a.id
             AND sam.user_id = ?
@@ -639,6 +672,7 @@ router.get("/me/groups/:groupId/abilities", async (req, res) => {
             AND gs.group_id = ?
             AND gs.deleted_at IS NULL
             AND a.deleted_at IS NULL
+            AND ${testAbilityIds ? "a.id IN (?)" : "a.series_id = g.ability_series_id"}
         ORDER BY
             a.sort_order,
             a.name
@@ -647,7 +681,8 @@ router.get("/me/groups/:groupId/abilities", async (req, res) => {
             req.user.id,
             req.user.id,
             req.user.id,
-            groupId
+            groupId,
+            ...(testAbilityIds ? [testAbilityIds] : [])
         ]
     );
 

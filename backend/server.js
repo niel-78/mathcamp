@@ -71,7 +71,11 @@ const uploadsDirectory = path.join(backendDirectory, "uploads");
 
 const allowedOrigins = [
   "http://localhost:5173",
+  "http://localhost:5174",
+  "http://127.0.0.1:5173",
+  "http://127.0.0.1:5174",
   "http://192.168.1.115:5173",
+  "http://192.168.1.116:5173",
 
   "http://85.190.97.203",
   "https://85.190.97.203",
@@ -83,9 +87,11 @@ const allowedOrigins = [
   "https://www.mathcamp.one"
 ];
 
+const isLocalNetworkOrigin = (origin) => /^(https?:\/\/)(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+):517[34]$/.test(origin);
+
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.includes(origin) || isLocalNetworkOrigin(origin)) {
       callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));

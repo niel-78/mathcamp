@@ -18,10 +18,6 @@ router.get("/student/my-competitions", async (req, res) => {
         ? Number(req.query.groupId)
         : null;
 
-    if (req.user?.role !== "student") {
-        return res.status(403).send("Access denied");
-    }
-
     if (
         req.query.groupId &&
         !Number.isInteger(groupId)
@@ -31,29 +27,39 @@ router.get("/student/my-competitions", async (req, res) => {
 
     try {
 
-        const [groups] = await db.query(
-            `
-            SELECT
-                g.id,
-                g.name
-            FROM group_students gs
-            INNER JOIN \`groups\` g
-                ON g.id = gs.group_id
-            WHERE gs.user_id = ?
-                AND gs.deleted_at IS NULL
-                AND g.archived_at IS NULL
-                AND g.deleted_at IS NULL
-                AND (? IS NULL OR g.id = ?)
-            ORDER BY
-                gs.joined_at DESC,
-                g.name
-            `,
-            [
-                userId,
-                groupId,
-                groupId
-            ]
-        );
+        const [groups] = req.user?.role === "student"
+            ? await db.query(
+                `
+                SELECT g.id, g.name
+                FROM group_students gs
+                INNER JOIN \`groups\` g ON g.id = gs.group_id
+                WHERE gs.user_id = ?
+                    AND gs.deleted_at IS NULL
+                    AND g.archived_at IS NULL
+                    AND g.deleted_at IS NULL
+                    AND (? IS NULL OR g.id = ?)
+                ORDER BY gs.joined_at DESC, g.name
+                `,
+                [userId, groupId, groupId]
+            )
+            : await db.query(
+                `
+                SELECT DISTINCT g.id, g.name
+                FROM \`groups\` g
+                LEFT JOIN group_permissions gp
+                    ON gp.group_id = g.id
+                    AND gp.user_id = ?
+                LEFT JOIN school_teachers st
+                    ON st.school_id = g.school_id
+                    AND st.teacher_id = ?
+                WHERE g.archived_at IS NULL
+                    AND g.deleted_at IS NULL
+                    AND (gp.user_id IS NOT NULL OR st.teacher_id IS NOT NULL)
+                    AND (? IS NULL OR g.id = ?)
+                ORDER BY g.name
+                `,
+                [userId, userId, groupId, groupId]
+            );
 
         const result = [];
 
@@ -69,20 +75,21 @@ router.get("/student/my-competitions", async (req, res) => {
                     end_date,
                     starting_budget,
                     is_open,
-                    schedule_type
+                    schedule_type,
+                    is_visible
                 FROM competitions
                 WHERE group_id = ?
+                    AND (? <> 'student' OR is_visible = 1)
                     AND (
-                        is_open = 1
+                        COALESCE(competition_start_date, start_date) IS NULL
                         OR (
-                            schedule_type = 'scheduled'
-                            AND start_date <= NOW()
-                            AND end_date >= NOW()
+                            COALESCE(competition_start_date, start_date) <= NOW()
+                            AND COALESCE(competition_end_date, end_date) >= NOW()
                         )
                     )
                 ORDER BY created_at DESC
                 `,
-                [group.id]
+                [group.id, req.user?.role]
             );
 
             result.push({
@@ -143,6 +150,10 @@ router.get("/:id", async (req, res) => {
         }
 
         const competition = compRows[0];
+
+        if (req.user?.role === "student" && !competition.is_visible) {
+            return res.status(404).send("Tävlingen hittades inte");
+        }
 
         // 1. Kontrollera om användaren är deltagare
         const [partRows] = await db.query(
@@ -212,6 +223,8 @@ router.post("/", async (req, res) => {
         groupId,
         title,
         description,
+        competitionStartDate,
+        competitionEndDate,
         startDate,
         endDate,
         startingBudget,
@@ -229,6 +242,10 @@ router.post("/", async (req, res) => {
         return res.status(400).send("Obligatoriska fält saknas (Titel eller Grupp-ID saknas)");
     }
 
+    if (!competitionStartDate || !competitionEndDate) {
+        return res.status(400).send("Tävlingsperiodens start och slut krävs");
+    }
+
     if (scheduleType === "single" && (!startDate || !endDate)) {
         return res.status(400).send("Start- och slutdatum krävs för engångsperiod");
     }
@@ -236,12 +253,14 @@ router.post("/", async (req, res) => {
     try {
         const [result] = await db.query(
             `INSERT INTO competitions 
-                (group_id, title, description, start_date, end_date, starting_budget, max_stock_weight, trading_fee, schedule_type, recur_interval, recur_start_time, recur_end_time, is_open, require_reasoning) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                (group_id, title, description, competition_start_date, competition_end_date, start_date, end_date, starting_budget, max_stock_weight, trading_fee, schedule_type, recur_interval, recur_start_time, recur_end_time, is_open, require_reasoning)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 groupId,
                 title,
                 description || null,
+                competitionStartDate,
+                competitionEndDate,
                 startDate || null,
                 endDate || null,
                 startingBudget ?? 100000.0,
@@ -267,6 +286,93 @@ router.post("/", async (req, res) => {
 });
 
 /**
+ * PATCH /api/competitions/:id
+ * Uppdaterar en investeringstävling
+ */
+router.patch("/:id", async (req, res) => {
+    const {
+        title,
+        description,
+        competitionStartDate,
+        competitionEndDate,
+        startDate,
+        endDate,
+        startingBudget,
+        maxStockWeight,
+        tradingFee,
+        scheduleType,
+        recurInterval,
+        recurStartTime,
+        recurEndTime,
+        isOpen,
+        requireReasoning
+    } = req.body;
+
+    if (!title) {
+        return res.status(400).send("Titel saknas");
+    }
+
+    if (!competitionStartDate || !competitionEndDate) {
+        return res.status(400).send("Tävlingsperiodens start och slut krävs");
+    }
+
+    if (scheduleType === "single" && (!startDate || !endDate)) {
+        return res.status(400).send("Start- och slutdatum krävs för engångsperiod");
+    }
+
+    try {
+        const [result] = await db.query(
+            `
+            UPDATE competitions
+            SET title = ?,
+                description = ?,
+                competition_start_date = ?,
+                competition_end_date = ?,
+                start_date = ?,
+                end_date = ?,
+                starting_budget = ?,
+                max_stock_weight = ?,
+                trading_fee = ?,
+                schedule_type = ?,
+                recur_interval = ?,
+                recur_start_time = ?,
+                recur_end_time = ?,
+                is_open = ?,
+                require_reasoning = ?
+            WHERE id = ?
+            `,
+            [
+                title,
+                description || null,
+                competitionStartDate,
+                competitionEndDate,
+                startDate || null,
+                endDate || null,
+                startingBudget ?? 100000,
+                maxStockWeight ?? 0.2,
+                tradingFee ?? 0,
+                scheduleType || "single",
+                recurInterval || null,
+                recurStartTime || null,
+                recurEndTime || null,
+                isOpen ? 1 : 0,
+                requireReasoning ? 1 : 0,
+                req.params.id
+            ]
+        );
+
+        if (!result.affectedRows) {
+            return res.status(404).send("Tävlingen hittades inte");
+        }
+
+        res.json({ message: "Tävlingen uppdaterades framgångsrikt" });
+    } catch (error) {
+        console.error("Fel vid uppdatering av tävling:", error);
+        res.status(500).send("Kunde inte uppdatera tävlingen");
+    }
+});
+
+/**
  * PATCH /api/competitions/:id/toggle-open
  * Växlar manuellt om handeln är öppen eller stängd
  */
@@ -288,6 +394,35 @@ router.patch("/:id/toggle-open", async (req, res) => {
 });
 
 /**
+ * PATCH /api/competitions/:id/toggle-visibility
+ * Visar eller döljer tävlingen för gruppens elever
+ */
+router.patch("/:id/toggle-visibility", async (req, res) => {
+    const { id } = req.params;
+    const { isVisible } = req.body;
+
+    if (!["teacher", "admin"].includes(req.user?.role)) {
+        return res.status(403).send("Access denied");
+    }
+
+    try {
+        const [result] = await db.query(
+            "UPDATE competitions SET is_visible = ? WHERE id = ?",
+            [isVisible ? 1 : 0, id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).send("Tävlingen hittades inte");
+        }
+
+        res.json({ message: "Synlighet uppdaterad" });
+    } catch (error) {
+        console.error("Fel vid uppdatering av synlighet:", error);
+        res.status(500).send("Kunde inte uppdatera synlighet");
+    }
+});
+
+/**
  * POST /api/competitions/:id/join
  * Gå med i en tävling som deltagare
  */
@@ -298,7 +433,7 @@ router.post("/:id/join", async (req, res) => {
 
     try {
         const [compRows] = await db.query(
-            "SELECT starting_budget FROM competitions WHERE id = ?",
+            "SELECT starting_budget, is_visible FROM competitions WHERE id = ?",
             [competitionId]
         );
 
@@ -306,8 +441,12 @@ router.post("/:id/join", async (req, res) => {
             return res.status(404).send("Tävlingen hittades inte");
         }
 
+        if (userRole === "student" && !compRows[0].is_visible) {
+            return res.status(404).send("Tävlingen hittades inte");
+        }
+
         const startingBudget = compRows[0].starting_budget;
-        const isTeacher = userRole === "teacher" || userRole === "admin" ? 1 : 0;
+        const isTeacher = ["teacher", "admin", "super"].includes(userRole) ? 1 : 0;
 
         await db.query(
             `INSERT INTO competition_participants 
