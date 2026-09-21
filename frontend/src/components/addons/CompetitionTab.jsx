@@ -13,6 +13,8 @@ import {
     TrendingDown, 
     ArrowUpRight, 
     ArrowDownRight,
+    ArrowLeft,
+    ArrowRight,
     PieChart,
     Building2,
     Wallet,
@@ -192,7 +194,10 @@ export default function CompetitionTab({ competitionId, groupId, title }) {
                                                     </div>
                                                     <div className="flex justify-between items-center text-xs font-medium pt-2 border-t text-gray-600">
                                                         <span>Startkapital: {Number(comp.starting_budget).toLocaleString("sv-SE")} kr</span>
-                                                        <span className="text-primary font-bold">Öppna tävling →</span>
+                                                        <span className="inline-flex items-center text-primary font-bold">
+                                                            Öppna tävling
+                                                            <ArrowRight className="ml-1 h-4 w-4" aria-hidden="true" />
+                                                        </span>
                                                     </div>
                                                 </div>
                                             ))}
@@ -286,7 +291,8 @@ export default function CompetitionTab({ competitionId, groupId, title }) {
                                 onClick={() => { setActiveId(null); setCompetition(null); }}
                                 className="order-last text-xs text-gray-600 sm:order-first"
                             >
-                                ← Tillbaka till alla tävlingar
+                                <ArrowLeft className="mr-1 h-4 w-4" aria-hidden="true" />
+                                Tillbaka till alla tävlingar
                             </Button>
                         )}
                         {isParticipant ? (

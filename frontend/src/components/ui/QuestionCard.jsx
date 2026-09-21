@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { Check, Circle, X } from "lucide-react";
 
 import DetailLayout
     from "@/components/layouts/DetailLayout";
@@ -1053,13 +1054,20 @@ export default function QuestionCard({
                                     `}
                                 >
 
-                                    {
-                                        previewResult.correct
-                                            ? "✓ Rätt"
+                                    <span className="inline-flex items-center gap-1">
+                                        {previewResult.correct ? (
+                                            <Check className="h-4 w-4" aria-hidden="true" />
+                                        ) : previewResult.pointsFraction > 0 ? (
+                                            <Circle className="h-3 w-3" aria-hidden="true" />
+                                        ) : (
+                                            <X className="h-4 w-4" aria-hidden="true" />
+                                        )}
+                                        {previewResult.correct
+                                            ? "Rätt"
                                             : previewResult.pointsFraction > 0
-                                                ? `◐ Delvis rätt (${Math.round(previewResult.pointsFraction * 100) / 100} p)`
-                                                : "✗ Fel"
-                                    }
+                                                ? `Delvis rätt (${Math.round(previewResult.pointsFraction * 100) / 100} p)`
+                                                : "Fel"}
+                                    </span>
 
                                 </div>
 

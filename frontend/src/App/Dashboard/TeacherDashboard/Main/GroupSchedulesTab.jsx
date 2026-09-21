@@ -5,7 +5,7 @@ import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 import CardSection from "@/components/layouts/CardSection";
 import { Button } from "@/components/ui/button";
 import EditGroupScheduleDialog from "./EditGroupScheduleDialog";
-import { Trash2 } from "lucide-react";
+import { ArrowRight, Trash2 } from "lucide-react";
 
 export default function GroupSchedulesTab({
     groupId
@@ -138,7 +138,7 @@ export default function GroupSchedulesTab({
                                             "
                                         >
                                             {schedule.valid_from}
-                                            {" → "}
+                                            <ArrowRight className="mx-1 inline-block h-3 w-3" aria-hidden="true" />
                                             {schedule.valid_to}
                                         </div>
 

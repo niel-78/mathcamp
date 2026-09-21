@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import LessonCard from "./LessonCard";
 
 export default function ListView({
@@ -11,6 +12,7 @@ export default function ListView({
     isPublic = false,
     hideCompletions = false
 }) {
+    const listRef = useRef(null);
 
     const sortedLessons =
         [...lessons].sort(
@@ -19,26 +21,57 @@ export default function ListView({
                 new Date(b.starts_at)
         );
 
+    useEffect(() => {
+        if (!listRef.current || sortedLessons.length === 0) {
+            return;
+        }
+
+        const frame = requestAnimationFrame(() => {
+            const completedLesson = [...sortedLessons]
+                .reverse()
+                .find(lesson => !!lesson.ends_at && new Date(lesson.ends_at) < new Date());
+
+            const targetSelector = completedLesson
+                ? `[data-lesson-id="${completedLesson.id}"]`
+                : ".card:last-of-type";
+
+            const targetElement = listRef.current?.querySelector(targetSelector);
+
+            if (targetElement) {
+                targetElement.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start"
+                });
+            }
+        });
+
+        return () => cancelAnimationFrame(frame);
+    }, [sortedLessons]);
+
     return (
 
-        <div className="space-y-4">
+        <div ref={listRef} className="space-y-4">
 
             {sortedLessons.map(
                 lesson => (
 
-                    <LessonCard
+                    <div
                         key={lesson.id}
-                        lesson={lesson}
-                        openTab={openTab}
-                        onEditLesson={onEditLesson}
-                        onCancelLesson={onCancelLesson}
-                        onDeleteLesson={onDeleteLesson}
-                        startDiagnosticTest={startDiagnosticTest}
-                        readOnly={readOnly}
-                        isPublic={isPublic}
-                        hideCompletions={hideCompletions}
-                        deferAssessments={true}
-                    />
+                        data-lesson-id={lesson.id}
+                    >
+                        <LessonCard
+                            lesson={lesson}
+                            openTab={openTab}
+                            onEditLesson={onEditLesson}
+                            onCancelLesson={onCancelLesson}
+                            onDeleteLesson={onDeleteLesson}
+                            startDiagnosticTest={startDiagnosticTest}
+                            readOnly={readOnly}
+                            isPublic={isPublic}
+                            hideCompletions={hideCompletions}
+                            deferAssessments={true}
+                        />
+                    </div>
 
                 )
             )}

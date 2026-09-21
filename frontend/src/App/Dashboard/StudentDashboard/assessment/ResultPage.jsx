@@ -4,6 +4,7 @@ import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 
 import MathContent from "@/components/ui/MathContent";
+import { Check, X } from "lucide-react";
 
 export default function ResultPage({
     attemptId
@@ -105,9 +106,14 @@ export default function ResultPage({
                                             : "text-red-600"
                                     }
                                 >
-                                    {result.correct
-                                        ? "✓ Rätt"
-                                        : "✗ Fel"}
+                                    <span className="inline-flex items-center gap-1">
+                                        {result.correct ? (
+                                            <Check className="h-4 w-4" aria-hidden="true" />
+                                        ) : (
+                                            <X className="h-4 w-4" aria-hidden="true" />
+                                        )}
+                                        {result.correct ? "Rätt" : "Fel"}
+                                    </span>
                                 </span>
 
                             </div>

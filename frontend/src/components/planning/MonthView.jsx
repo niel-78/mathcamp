@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import dayjs from "dayjs";
 import { getGroupColor } from "@/utils/groupColors";
 
@@ -7,8 +8,34 @@ export default function MonthView({
     events = [],
     showEvents,
     selectedDate,
-    lessonAssessments = {}
+    lessonAssessments = {},
+    onDeleteLesson,
+    readOnly = false
 }) {
+
+    const weekdayLabels = ["Mån", "Tis", "Ons", "Tor", "Fre"];
+    const [contextMenu, setContextMenu] = useState(null);
+
+    useEffect(() => {
+        if (!contextMenu) {
+            return;
+        }
+
+        const closeContextMenu = () => setContextMenu(null);
+        const closeOnEscape = event => {
+            if (event.key === "Escape") {
+                closeContextMenu();
+            }
+        };
+
+        document.addEventListener("click", closeContextMenu);
+        document.addEventListener("keydown", closeOnEscape);
+
+        return () => {
+            document.removeEventListener("click", closeContextMenu);
+            document.removeEventListener("keydown", closeOnEscape);
+        };
+    }, [contextMenu]);
 
     const { days, lessonsByDate, eventsByDate } = useMemo(() => {
         const currentMonth = dayjs(selectedDate);
@@ -43,7 +70,11 @@ export default function MonthView({
                 lessonIndex[key] = [];
             }
 
-            lessonIndex[key].push(lesson);
+            const existingLesson = lessonIndex[key].find(item => item.id === lesson.id);
+
+            if (!existingLesson) {
+                lessonIndex[key].push(lesson);
+            }
         }
 
         const eventIndex = {};
@@ -55,7 +86,11 @@ export default function MonthView({
                 eventIndex[key] = [];
             }
 
-            eventIndex[key].push(event);
+            const existingEvent = eventIndex[key].find(item => item.id === event.id);
+
+            if (!existingEvent) {
+                eventIndex[key].push(event);
+            }
         }
 
         return {
@@ -65,38 +100,76 @@ export default function MonthView({
         };
     }, [events, lessons, selectedDate]);
 
+    const openLessonContextMenu = (event, lesson) => {
+        if (readOnly || !onDeleteLesson) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        setContextMenu({
+            lesson,
+            x: event.clientX,
+            y: event.clientY
+        });
+    };
+
     return (
 
         <div className="space-y-2">
 
+            {contextMenu && createPortal(
+                <div
+                    className="fixed z-[100] min-w-40 rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+                    style={{
+                        left: contextMenu.x,
+                        top: contextMenu.y
+                    }}
+                    onClick={event => event.stopPropagation()}
+                >
+                    <button
+                        type="button"
+                        className="flex w-full items-center rounded-sm px-2 py-1.5 text-left text-sm text-destructive hover:bg-accent"
+                        onClick={() => {
+                            const lesson = contextMenu.lesson;
+                            setContextMenu(null);
+                            onDeleteLesson(lesson);
+                        }}
+                    >
+                        Ta bort lektion
+                    </button>
+                </div>,
+                document.body
+            )}
+
             <div
                 className="
                     grid
-                    grid-cols-7
+                    grid-cols-5
                     gap-2
                     font-medium
                     text-center
                 "
             >
-                <div>Mån</div>
-                <div>Tis</div>
-                <div>Ons</div>
-                <div>Tor</div>
-                <div>Fre</div>
-                <div>Lör</div>
-                <div>Sön</div>
+                {weekdayLabels.map(label => (
+                    <div key={label}>{label}</div>
+                ))}
             </div>
 
             <div
                 className="
                     grid
-                    grid-cols-7
+                    grid-cols-5
                     gap-2
                 "
             >
 
                 {days.map(
                     (day, index) => {
+
+                        if (day && (day.day() === 0 || day.day() === 6)) {
+                            return null;
+                        }
 
                         if (!day) {
 
@@ -171,8 +244,19 @@ export default function MonthView({
                                         lesson => (
 
                                             <div
-                                                key={
-                                                    lesson.id
+                                                key={lesson.id}
+                                                onMouseDown={event => {
+                                                    if (event.button === 2) {
+                                                        openLessonContextMenu(event, lesson);
+                                                    }
+                                                }}
+                                                onAuxClick={event => {
+                                                    if (event.button === 2) {
+                                                        openLessonContextMenu(event, lesson);
+                                                    }
+                                                }}
+                                                onContextMenu={event =>
+                                                    openLessonContextMenu(event, lesson)
                                                 }
                                                 className="
                                                     text-xs
@@ -190,83 +274,61 @@ export default function MonthView({
                                                     }
                                                     : undefined}
                                             >
-
                                                 <div
-                                                    key={lesson.id}
                                                     className="
-                                                        text-xs
-                                                        bg-blue-100
-                                                        text-blue-900
-                                                        rounded
-                                                        px-2
-                                                        py-1
+                                                        flex
+                                                        justify-between
+                                                        gap-2
                                                     "
-                                                    style={getGroupColor(lesson.group_id)
-                                                        ? {
-                                                            backgroundColor: getGroupColor(lesson.group_id).background,
-                                                            color: getGroupColor(lesson.group_id).text,
-                                                            borderLeft: `3px solid ${getGroupColor(lesson.group_id).border}`
-                                                        }
-                                                        : undefined}
                                                 >
-                                                    <div
+                                                    <span>
+                                                        {dayjs(lesson.starts_at).format("HH:mm")}
+                                                        -
+                                                        {dayjs(lesson.ends_at).format("HH:mm")}
+                                                    </span>
+
+                                                    <span
                                                         className="
-                                                            flex
-                                                            justify-between
-                                                            gap-2
+                                                            truncate
+                                                            font-medium
                                                         "
                                                     >
-                                                        <span>
-                                                            {dayjs(lesson.starts_at).format("HH:mm")}
-                                                            -
-                                                            {dayjs(lesson.ends_at).format("HH:mm")}
-                                                        </span>
-
-                                                        <span
-                                                            className="
-                                                                truncate
-                                                                font-medium
-                                                            "
-                                                        >
-                                                            {lesson.group_name}
-                                                        </span>
-                                                    </div>
-
-                                                    {lesson.sections?.length > 0 && (
-                                                        <div className="mt-1 space-y-0.5 text-[11px] text-blue-800/80">
-                                                            {lesson.sections.map(section => (
-                                                                <div
-                                                                    key={`section-${lesson.id}-${section.id}`}
-                                                                    className="truncate"
-                                                                >
-                                                                    <span>{section.title}</span>
-                                                                    {(section.page_number != null || section.end_page != null) && (
-                                                                        <span className="ml-1 text-blue-800/60">
-                                                                            ({section.page_number ?? "?"}
-                                                                            -
-                                                                            {section.end_page ?? section.page_number ?? "?"})
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    )}
-
-                                                    {lessonAssessments[lesson.id]?.map(assessment => (
-                                                        <div
-                                                            key={`assessment-${assessment.id}`}
-                                                            className={assessment.type === "diagnostic"
-                                                                ? "mt-1 truncate px-1 text-[11px] font-bold"
-                                                                : "mt-1 truncate rounded bg-emerald-100 px-1 text-[11px] text-emerald-900"}
-                                                        >
-                                                            {assessment.type === "diagnostic"
-                                                                ? "Diagnos"
-                                                                : assessment.title || assessment.type}
-                                                        </div>
-                                                    ))}
-                                                    
+                                                        {lesson.group_name}
+                                                    </span>
                                                 </div>
 
+                                                {lesson.sections?.length > 0 && (
+                                                    <div className="mt-1 space-y-0.5 text-[11px] text-blue-800/80">
+                                                        {lesson.sections.map(section => (
+                                                            <div
+                                                                key={`section-${lesson.id}-${section.id}`}
+                                                                className="truncate"
+                                                            >
+                                                                <span>{section.title}</span>
+                                                                {(section.page_number != null || section.end_page != null) && (
+                                                                    <span className="ml-1 text-blue-800/60">
+                                                                        ({section.page_number ?? "?"}
+                                                                        -
+                                                                        {section.end_page ?? section.page_number ?? "?"})
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                {lessonAssessments[lesson.id]?.map(assessment => (
+                                                    <div
+                                                        key={`assessment-${assessment.id}`}
+                                                        className={assessment.type === "diagnostic"
+                                                            ? "mt-1 truncate px-1 text-[11px] font-bold"
+                                                            : "mt-1 truncate rounded bg-emerald-100 px-1 text-[11px] text-emerald-900"}
+                                                    >
+                                                        {assessment.type === "diagnostic"
+                                                            ? "Diagnos"
+                                                            : assessment.title || assessment.type}
+                                                    </div>
+                                                ))}
                                             </div>
 
                                         )

@@ -11,7 +11,7 @@ import { autoFixQuestionApi, autoFixAllQuestionsApi } from "@/api/questionApi";
 import { toast } from "sonner";
 import AutoFixConfirmDialog from "@/components/ui/AutoFixConfirmDialog";
 import ArchiveQuestionDialog from "@/components/ui/ArchiveQuestionDialog";
-import { AlertCircle, ExternalLink, Loader2, RefreshCw, Sparkles, Wand2 } from "lucide-react";
+import { AlertCircle, Check, ExternalLink, Loader2, RefreshCw, Sparkles, Wand2, X } from "lucide-react";
 
 export default function ActionRequiredTab({
     openTab,
@@ -319,7 +319,11 @@ export default function ActionRequiredTab({
                                                     >
                                                         <MathContent value={opt.text} />
                                                         <span className="text-[10px] opacity-75">
-                                                            {opt.is_correct ? "✓ Korrekt" : "✗"}
+                                                            {opt.is_correct ? (
+                                                                <Check className="h-3 w-3" aria-label="Korrekt" />
+                                                            ) : (
+                                                                <X className="h-3 w-3" aria-label="Fel" />
+                                                            )}
                                                         </span>
                                                     </div>
                                                 ))}

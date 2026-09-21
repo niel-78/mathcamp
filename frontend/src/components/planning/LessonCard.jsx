@@ -5,6 +5,7 @@ import { authHeaders } from "@/api/authHeaders";
 import CardSection from "@/components/layouts/CardSection";
 import DropZone from "@/components/ui/DropZone";
 import FormatDateTimeShort from "@/utils/formatDateTimeShort";
+import { parseDatabaseDate } from "@/utils/parseDatabaseDate";
 import LessonSection from "./LessonSection";
 import LessonAssessments from "./LessonAssessments";
 import LessonAssessmentDialog from "./LessonAssessmentDialog";
@@ -38,6 +39,8 @@ export default function LessonCard({
     const [shouldLoadAssessments, setShouldLoadAssessments] =
         useState(!deferAssessments);
     const groupColor = getGroupColor(lesson.group_id, lesson.color_index);
+    const lessonDate = parseDatabaseDate(lesson.starts_at);
+    const isCompleted = !!lesson.ends_at && new Date(lesson.ends_at) < new Date();
 
     const [
         assessmentDialogOpen,
@@ -126,28 +129,32 @@ export default function LessonCard({
         return (
 
             <CardSection
+                className={isCompleted ? "bg-muted/40" : ""}
                 style={groupColor
                     ? { borderLeftColor: groupColor.border }
                     : undefined}
                 title={
-                    <div
-                        className="
-                            // text-sm
-                            // text-muted-foreground
-                        "
-                    >
-                        <FormatDateTimeShort
-                            value={lesson.starts_at}
-                            showDate={false}
-                        />
+                    <div className="space-y-1">
+                        <div className="text-sm text-muted-foreground">
+                            {lessonDate.toLocaleDateString("sv-SE", {
+                                weekday: "long",
+                                day: "numeric",
+                                month: "short"
+                            })}
+                        </div>
+                        <div>
+                            <FormatDateTimeShort
+                                value={lesson.starts_at}
+                                showDate={false}
+                            />
 
-                        {" - "}
+                            {" - "}
 
-                        <FormatDateTimeShort
-                            value={lesson.ends_at}
-                            showDate={false}
-                        />
-
+                            <FormatDateTimeShort
+                                value={lesson.ends_at}
+                                showDate={false}
+                            />
+                        </div>
                     </div>
                 }
             >
@@ -198,9 +205,17 @@ export default function LessonCard({
     return(
         <>
             <CardSection
+                className={isCompleted ? "bg-muted/40" : ""}
                 title={
-                        <div
-                        >
+                    <div className="space-y-1">
+                        <div className="text-sm text-muted-foreground">
+                            {lessonDate.toLocaleDateString("sv-SE", {
+                                weekday: "long",
+                                day: "numeric",
+                                month: "short"
+                            })}
+                        </div>
+                        <div>
                             <FormatDateTimeShort
                                 value={lesson.starts_at}
                                 showDate={false}
@@ -212,8 +227,8 @@ export default function LessonCard({
                                 value={lesson.ends_at}
                                 showDate={false}
                             />
-
                         </div>
+                    </div>
                 }
                 actions={
                     !readOnly && (

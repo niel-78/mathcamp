@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/button";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 export default function PresentationPlayerTab({
     presentationId
@@ -237,7 +238,7 @@ export default function PresentationPlayerTab({
                             )
                         }
                     >
-                        ←
+                        <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                     </Button>
 
                     <Button
@@ -252,7 +253,7 @@ export default function PresentationPlayerTab({
                             )
                         }
                     >
-                        →
+                        <ArrowRight className="h-4 w-4" aria-hidden="true" />
                     </Button>
 
                     <Button

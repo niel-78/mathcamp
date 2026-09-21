@@ -8,6 +8,7 @@ import { formatMathText } from "@/utils/formatMathText";
 import { NUMERIC_INPUT_MARKER } from "@/constants/assessmentConstants";
 import { getFieldMatches } from "@/utils/grading/gradeNumericInput";
 import { SavedQuestionImage } from "./MathQuestionMedia";
+import { Check, Circle, X } from "lucide-react";
 
 export default function ResultPage({
     attemptId
@@ -134,11 +135,20 @@ export default function ResultPage({
                                                 : "text-red-600 dark:text-red-400"
                                     }
                                 >
-                                    {result.correct
-                                        ? "✓ Rätt"
-                                        : result.points > 0
-                                            ? `◐ Delvis rätt (${Math.round(result.points * 100) / 100} p)`
-                                            : "✗ Fel"}
+                                    <span className="inline-flex items-center gap-1">
+                                        {result.correct ? (
+                                            <Check className="h-4 w-4" aria-hidden="true" />
+                                        ) : result.points > 0 ? (
+                                            <Circle className="h-3 w-3" aria-hidden="true" />
+                                        ) : (
+                                            <X className="h-4 w-4" aria-hidden="true" />
+                                        )}
+                                        {result.correct
+                                            ? "Rätt"
+                                            : result.points > 0
+                                                ? `Delvis rätt (${Math.round(result.points * 100) / 100} p)`
+                                                : "Fel"}
+                                    </span>
                                 </span>
 
                             </div>

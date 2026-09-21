@@ -6,6 +6,7 @@ import CompactWeekView from "./CompactWeekView";
 import ListView from "./ListView";
 import MonthView from "./MonthView";
 import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
     getWeekNumber
 } from "@/utils/planningDates";
@@ -31,12 +32,34 @@ export default function PlanningBoard({
 
     const [viewMode, setViewMode] = useState("week");
     const [isViewPending, startViewTransition] = useTransition();
+    const [isMobile, setIsMobile] = useState(() =>
+        typeof window !== "undefined" &&
+        window.matchMedia("(max-width: 767px)").matches
+    );
     const [selectedDate, setSelectedDate] = useState(new Date());
     const selectedWeek = getWeekNumber(selectedDate);
     const [events, setEvents] = useState(EMPTY_EVENTS);
+    const showCompactView = !isMobile;
+    const showMonthView = !isMobile;
     const [lessonAssessments, setLessonAssessments] = useState({});
     const [showEvents] = useState(true);
     const visibleEvents = isPublic ? initialEvents : events;
+
+    useEffect(() => {
+        const mediaQuery = window.matchMedia("(max-width: 767px)");
+        const syncMobileLayout = () => setIsMobile(mediaQuery.matches);
+
+        syncMobileLayout();
+        mediaQuery.addEventListener("change", syncMobileLayout);
+
+        return () => mediaQuery.removeEventListener("change", syncMobileLayout);
+    }, []);
+
+    useEffect(() => {
+        if (isMobile && (viewMode === "compact" || viewMode === "month")) {
+            setViewMode("week");
+        }
+    }, [isMobile, viewMode]);
 
     useEffect(() => {
         if (viewMode !== "month" || lessons.length === 0) {
@@ -229,8 +252,10 @@ export default function PlanningBoard({
                 <Button
                     variant="outline"
                     onClick={previousPeriod}
+                    aria-label="Föregående period"
+                    title="Föregående period"
                 >
-                    ◀
+                    <ChevronLeft className="h-4 w-4" aria-hidden="true" />
                 </Button>
 
                 <Button
@@ -257,8 +282,10 @@ export default function PlanningBoard({
                 <Button
                     variant="outline"
                     onClick={nextPeriod}
+                    aria-label="Nästa period"
+                    title="Nästa period"
                 >
-                    ▶
+                    <ChevronRight className="h-4 w-4" aria-hidden="true" />
                 </Button>
 
             </div>
@@ -289,21 +316,23 @@ export default function PlanningBoard({
                         Vecka
                     </Button>
 
-                    <Button
-                        variant={
-                            viewMode === "compact"
-                                ? "default"
-                                : "outline"
-                        }
-                        aria-pressed={viewMode === "compact"}
-                        onClick={() =>
-                            startViewTransition(() =>
-                                setViewMode("compact")
-                            )
-                        }
-                    >
-                        Slim
-                    </Button>
+                    {!isMobile && (
+                        <Button
+                            variant={
+                                viewMode === "compact"
+                                    ? "default"
+                                    : "outline"
+                            }
+                            aria-pressed={viewMode === "compact"}
+                            onClick={() =>
+                                startViewTransition(() =>
+                                    setViewMode("compact")
+                                )
+                            }
+                        >
+                            Slim
+                        </Button>
+                    )}
 
                     <Button
                         variant={
@@ -320,17 +349,19 @@ export default function PlanningBoard({
                     >
                         Lista
                     </Button>
-                    <Button
-                        variant={
-                            viewMode === "month"
-                                ? "default"
-                                : "outline"
-                        }
-                        aria-pressed={viewMode === "month"}
-                        onClick={() => setViewMode("month")}
-                    >
-                        Månad
-                    </Button>
+                    {!isMobile && (
+                        <Button
+                            variant={
+                                viewMode === "month"
+                                    ? "default"
+                                    : "outline"
+                            }
+                            aria-pressed={viewMode === "month"}
+                            onClick={() => setViewMode("month")}
+                        >
+                            Månad
+                        </Button>
+                    )}
 
                 </div>
 
@@ -360,7 +391,7 @@ export default function PlanningBoard({
                 />
             )}
 
-            {viewMode === "compact" && (
+            {showCompactView && viewMode === "compact" && (
                 <CompactWeekView
                     lessons={lessons}
                     events={visibleEvents}
@@ -394,13 +425,14 @@ export default function PlanningBoard({
                     hideCompletions={hideCompletions}
                 />
             )}
-            {viewMode === "month" && (
+            {showMonthView && viewMode === "month" && (
                 <MonthView
                     lessons={lessons}
                     events={visibleEvents}
                     showEvents={showEvents}
                     selectedDate={selectedDate}
                     lessonAssessments={lessonAssessments}
+                    onDeleteLesson={onDeleteLesson}
                     readOnly={readOnly}
                 />
             )}

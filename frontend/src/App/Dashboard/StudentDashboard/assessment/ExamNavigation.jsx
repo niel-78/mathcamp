@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { ArrowLeft, ArrowRight, RotateCcw } from "lucide-react";
 
 export default function ExamNavigation({
     index,
@@ -24,7 +25,8 @@ export default function ExamNavigation({
                         disabled={isFirst}
                         variant="outline"
                     >
-                        ← Föregående
+                        <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
+                        Föregående
                     </Button>
                 )}
             </div>
@@ -35,7 +37,8 @@ export default function ExamNavigation({
                         onClick={onReset}
                         variant="secondary"
                     >
-                        ↺ Återställ
+                        <RotateCcw className="mr-2 h-4 w-4" aria-hidden="true" />
+                        Återställ
                     </Button>
                 )}
             </div>
@@ -48,9 +51,14 @@ export default function ExamNavigation({
                             : onNext
                     }
                 >
-                    {isLast
-                        ? "Lämna in prov"
-                        : "Nästa →"}
+                    {isLast ? (
+                        "Lämna in prov"
+                    ) : (
+                        <>
+                            Nästa
+                            <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+                        </>
+                    )}
                 </Button>
             </div>
         </div>
