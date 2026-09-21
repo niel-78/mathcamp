@@ -246,6 +246,14 @@ export default function UserProfileDialog({
 
                     <div>
 
+                        <strong>Användarnamn:</strong>
+                        {" "}
+                        {user.username || "Inget användarnamn tillgängligt"}
+
+                    </div>
+
+                    <div>
+
                         <strong>E-post:</strong>
                         {" "}
                         {user.email || "Ingen e-postadress tillgänglig"}

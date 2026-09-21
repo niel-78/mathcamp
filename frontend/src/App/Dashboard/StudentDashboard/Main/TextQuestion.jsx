@@ -15,6 +15,8 @@ export default function TextQuestion({
 
     const [text, setText] = useState(value || "");
     const inputRef = useRef(null);
+    const isMobile = typeof window !== "undefined" &&
+        window.matchMedia("(max-width: 767px)").matches;
     const segments = (question.question || "").split(NUMERIC_INPUT_MARKER);
     const hasInlineMarker = segments.length > 1;
     const correctAnswer = (question.options || []).find(option =>
@@ -24,7 +26,12 @@ export default function TextQuestion({
         Number(option.isCorrect) === 1
     )?.text || "";
     const answerInputStyle = {
-        width: `${Math.max(6, String(correctAnswer).length + 2)}ch`
+        width: `${Math.max(
+            12,
+            String(correctAnswer).length + 2,
+            String(text).length + 2
+        )}ch`,
+        maxWidth: "none"
     };
 
     useEffect(() => {
@@ -53,6 +60,11 @@ export default function TextQuestion({
                                 <Input
                                     ref={inputRef}
                                     type="text"
+                                    inputMode="none"
+                                    readOnly={isMobile}
+                                    onTouchStart={event => {
+                                        if (isMobile) event.preventDefault();
+                                    }}
                                     className="answer-input inline-block mx-1 align-middle border border-slate-500 rounded-md bg-white"
                                     style={answerInputStyle}
                                     value={text}
@@ -69,13 +81,17 @@ export default function TextQuestion({
                     className={questionTextClassName}
                 />
             )}
-
             <MathPreview value={text} />
 
             {!hasInlineMarker && (
                 <Input
                     ref={inputRef}
                     type="text"
+                    inputMode="none"
+                    readOnly={isMobile}
+                    onTouchStart={event => {
+                        if (isMobile) event.preventDefault();
+                    }}
                     className="answer-input"
                     style={answerInputStyle}
                     value={text}

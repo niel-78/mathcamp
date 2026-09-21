@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 export function useExamAttempt(attemptId) {
+    const { logout } = useAuth();
 
     const [attempt, setAttempt] = useState(null);
     const [questions, setQuestions] = useState([]);
@@ -38,6 +40,15 @@ export function useExamAttempt(attemptId) {
                 }
 
                 setAttempt(data.attempt);
+                const restoredAnswers = Object.fromEntries(
+                    Object.entries(data.answers || {}).map(([questionId, answer]) => [
+                        questionId,
+                        answer.text_answer !== null && answer.text_answer !== undefined
+                            ? answer.text_answer
+                            : answer.selected_option_ids
+                    ])
+                );
+                setAnswers(restoredAnswers);
 
                 const normalizedQuestions =
                     (data.questions || []).map(
@@ -155,6 +166,11 @@ export function useExamAttempt(attemptId) {
 
             const data =
                 await res.json();
+
+            if (res.status === 401) {
+                await logout();
+                return null;
+            }
 
             if (!res.ok) {
 

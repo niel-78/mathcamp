@@ -26,7 +26,8 @@ const statusLabels = {
 };
 
 export default function UnsubmittedTab({
-    openTab
+    openTab,
+    onCountChanged
 }) {
     const [attempts, setAttempts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -60,6 +61,10 @@ export default function UnsubmittedTab({
     useEffect(() => {
         loadAttempts();
     }, []);
+
+    useEffect(() => {
+        onCountChanged?.(attempts.length);
+    }, [attempts.length, onCountChanged]);
 
     const submitAttempt = async (attemptId) => {
         setSubmittingAttemptId(attemptId);

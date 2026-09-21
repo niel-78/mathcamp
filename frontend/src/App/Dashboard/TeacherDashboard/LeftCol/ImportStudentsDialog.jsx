@@ -18,6 +18,8 @@ export default function ImportStudentsDialog({
     group
 }) {
     const [file, setFile] = useState(null);
+    const [importMode, setImportMode] = useState("file");
+    const [csvText, setCsvText] = useState("");
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
 
@@ -26,6 +28,8 @@ export default function ImportStudentsDialog({
         if (!open) {
 
             setFile(null);
+            setImportMode("file");
+            setCsvText("");
             setResult(null);
             setLoading(false);
 
@@ -33,9 +37,36 @@ export default function ImportStudentsDialog({
 
     }, [open]);
 
+    const downloadTemplate = async () => {
+        const response = await fetch(
+            `${API_URL}/api/groups/student-import-template`,
+            {
+                headers: authHeaders()
+            }
+        );
+
+        if (!response.ok) {
+            return;
+        }
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+
+        link.href = url;
+        link.download = "elever-mall.xlsx";
+        link.click();
+
+        URL.revokeObjectURL(url);
+    };
+
     const importStudents = async () => {
 
-        if (!file) {
+        if (importMode === "file" && !file) {
+            return;
+        }
+
+        if (importMode === "csv" && !csvText.trim()) {
             return;
         }
 
@@ -43,10 +74,11 @@ export default function ImportStudentsDialog({
 
         const formData = new FormData();
 
-        formData.append(
-            "file",
-            file
-        );
+        if (importMode === "csv") {
+            formData.append("csvText", csvText);
+        } else {
+            formData.append("file", file);
+        }
 
         const response = await fetch(
             `${API_URL}/api/groups/${group.groupId}/import-students`,
@@ -98,20 +130,51 @@ export default function ImportStudentsDialog({
 
                 </DialogHeader>
 
-                <input
-                    type="file"
-                    accept=".xlsx,.xls"
-                    onChange={(e) =>
-                        setFile(
-                            e.target.files?.[0]
-                        )
-                    }
-                />
+                <Button
+                    variant="outline"
+                    onClick={downloadTemplate}
+                >
+                    Ladda ner elevmall
+                </Button>
+
+                <div className="flex gap-2">
+                    <Button
+                        type="button"
+                        variant={importMode === "file" ? "default" : "outline"}
+                        onClick={() => setImportMode("file")}
+                    >
+                        Excel/CSV-fil
+                    </Button>
+                    <Button
+                        type="button"
+                        variant={importMode === "csv" ? "default" : "outline"}
+                        onClick={() => setImportMode("csv")}
+                    >
+                        Klistra in CSV-text
+                    </Button>
+                </div>
+
+                {importMode === "file" ? (
+                    <input
+                        type="file"
+                        accept=".xlsx,.xls,.csv"
+                        onChange={(e) => setFile(e.target.files?.[0])}
+                    />
+                ) : (
+                    <textarea
+                        value={csvText}
+                        onChange={(e) => setCsvText(e.target.value)}
+                        placeholder="Klistra in CSV-data (samma kolumner som elevmallen)"
+                        rows={10}
+                        className="w-full rounded border p-2 font-mono text-sm"
+                    />
+                )}
 
                 <Button
                     onClick={importStudents}
                     disabled={
-                        !file || loading
+                        loading ||
+                        (importMode === "file" ? !file : !csvText.trim())
                     }
                 >
                     {

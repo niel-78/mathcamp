@@ -14,7 +14,9 @@ import {
 export default function ResetPasswordDialog({
     student,
     open,
-    onOpenChange
+    onOpenChange,
+    passwordUrl,
+    entityLabel = "Elev"
 }) {
 
     const [newPassword, setNewPassword] =
@@ -28,13 +30,13 @@ export default function ResetPasswordDialog({
 
         if (!studentId) {
             toast.error(
-                "Elev saknas. Öppna eleven igen."
+                `${entityLabel} saknas. Öppna ${entityLabel.toLowerCase()} igen.`
             );
             return;
         }
 
         const response = await fetch(
-            `${API_URL}/api/students/${studentId}/password`,
+            passwordUrl || `${API_URL}/api/students/${studentId}/password`,
             {
                 method: "PUT",
                 headers: {

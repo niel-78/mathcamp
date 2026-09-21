@@ -30,6 +30,10 @@ export default function GroupBookDialog({
     const [bookId, setBookId] = useState("");
     const [saving, setSaving] = useState(false);
 
+    const selectedBook = books.find(
+        book => String(book.id) === String(bookId)
+    );
+
     useEffect(() => {
         setBookId(group?.bookId ? String(group.bookId) : "");
     }, [group]);
@@ -71,7 +75,9 @@ export default function GroupBookDialog({
 
                 <Select value={bookId} onValueChange={setBookId}>
                     <SelectTrigger className="w-full min-w-[300px]">
-                        <SelectValue placeholder="Välj bok" />
+                        <SelectValue placeholder="Välj bok">
+                            {selectedBook?.title}
+                        </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                         {books.map(book => (

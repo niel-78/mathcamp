@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
     DndContext,
     DragOverlay,
@@ -60,6 +60,33 @@ export default function TeacherDashboard() {
 
     const bumpBlockRefresh = () =>
         setBlockRefreshKey(prev => prev + 1);
+
+    const updateTabCount = useCallback((type, label, count) => {
+        const title = `${label} (${count})`;
+        const updateTabs = tabs => tabs.map(tab =>
+            tab.type === type
+                ? { ...tab, title }
+                : tab
+        );
+
+        setLeftTabs(updateTabs);
+        setRightTabs(updateTabs);
+    }, []);
+
+    const updateActionRequiredCount = useCallback(
+        count => updateTabCount("action-required", "Kräver åtgärd", count),
+        [updateTabCount]
+    );
+
+    const updateFollowUpCount = useCallback(
+        count => updateTabCount("follow-up", "Följ upp", count),
+        [updateTabCount]
+    );
+
+    const updateUnsubmittedCount = useCallback(
+        count => updateTabCount("unsubmitted", "Ej inlämnade", count),
+        [updateTabCount]
+    );
 
     const [darkMode, setDarkMode] =
     useState(
@@ -888,6 +915,9 @@ export default function TeacherDashboard() {
                                             openTab={openTab}
                                             blockRefreshKey={blockRefreshKey}
                                             onBlockChanged={bumpBlockRefresh}
+                                            onActionRequiredCountChanged={updateActionRequiredCount}
+                                            onFollowUpCountChanged={updateFollowUpCount}
+                                            onUnsubmittedCountChanged={updateUnsubmittedCount}
                                             startDiagnosticTest={setTestAttemptId}
                                         />
 
@@ -916,6 +946,9 @@ export default function TeacherDashboard() {
                                                     openTab={openTab}
                                                     blockRefreshKey={blockRefreshKey}
                                                     onBlockChanged={bumpBlockRefresh}
+                                                    onActionRequiredCountChanged={updateActionRequiredCount}
+                                                    onFollowUpCountChanged={updateFollowUpCount}
+                                                    onUnsubmittedCountChanged={updateUnsubmittedCount}
                                                     startDiagnosticTest={setTestAttemptId}
                                                 />
 
@@ -938,6 +971,9 @@ export default function TeacherDashboard() {
                                                     openTab={openTab}
                                                     blockRefreshKey={blockRefreshKey}
                                                     onBlockChanged={bumpBlockRefresh}
+                                                    onActionRequiredCountChanged={updateActionRequiredCount}
+                                                    onFollowUpCountChanged={updateFollowUpCount}
+                                                    onUnsubmittedCountChanged={updateUnsubmittedCount}
                                                 />
 
                                             </ResizablePanel>

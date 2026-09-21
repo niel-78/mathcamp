@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 export default function ClassroomMenu({
     onCreateLayout,
     onRename,
-    onDelete
+    onDelete,
+    canManage
 }) {
 
     return (
@@ -18,21 +19,25 @@ export default function ClassroomMenu({
                 Ny möblering!
             </Button>
 
-            <Button
-                className="context-menu-button"
-                variant="inline"
-                onClick={onRename}
-            >
-                Byt namn
-            </Button>
+            {canManage && (
+                <>
+                    <Button
+                        className="context-menu-button"
+                        variant="inline"
+                        onClick={onRename}
+                    >
+                        Byt namn
+                    </Button>
 
-            <Button
-                className="context-menu-button"
-                variant="inline"
-                onClick={onDelete}
-            >
-                Radera
-            </Button>
+                    <Button
+                        className="context-menu-button"
+                        variant="inline"
+                        onClick={onDelete}
+                    >
+                        Radera
+                    </Button>
+                </>
+            )}
 
         </div>
 

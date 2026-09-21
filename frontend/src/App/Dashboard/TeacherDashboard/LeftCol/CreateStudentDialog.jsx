@@ -21,6 +21,7 @@ export default function CreateStudentDialog({
     const [username, setUsername] = useState("");
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
+    const [email, setEmail] = useState("");
 
     const createStudent = async () => {
 
@@ -35,7 +36,8 @@ export default function CreateStudentDialog({
                 body: JSON.stringify({
                     username,
                     first_name: firstName,
-                    last_name: lastName
+                    last_name: lastName,
+                    email
                 })
             }
         );
@@ -65,6 +67,7 @@ export default function CreateStudentDialog({
         setUsername("");
         setFirstName("");
         setLastName("");
+        setEmail("");
 
         onOpenChange(false);
 
@@ -101,6 +104,23 @@ export default function CreateStudentDialog({
                         value={firstName}
                         onChange={(e) =>
                             setFirstName(
+                                e.target.value
+                            )
+                        }
+                    />
+
+                    <input
+                        className="
+                            w-full
+                            border
+                            rounded
+                            p-2
+                        "
+                        type="email"
+                        placeholder="E-post"
+                        value={email}
+                        onChange={(e) =>
+                            setEmail(
                                 e.target.value
                             )
                         }

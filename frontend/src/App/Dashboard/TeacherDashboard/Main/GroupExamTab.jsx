@@ -938,6 +938,36 @@ export default function GroupExamTab({
 
                         </Field>
 
+                        {isDiagnostic && (
+                            <Field label="Tillåt att lämna in efter basdel">
+                                <Switch
+                                    checked={!!groupExam.config?.attempt?.allowSubmitAfterSeed}
+                                    onCheckedChange={(checked) =>
+                                        updateConfig(
+                                            "attempt",
+                                            "allowSubmitAfterSeed",
+                                            checked
+                                        )
+                                    }
+                                />
+                            </Field>
+                        )}
+
+                        {isDiagnostic && (
+                            <Field label="Tillåt att gå tillbaka i adaptiv del">
+                                <Switch
+                                    checked={!!groupExam.config?.navigation?.allowGoToPreviousAdaptiveQuestion}
+                                    onCheckedChange={(checked) =>
+                                        updateConfig(
+                                            "navigation",
+                                            "allowGoToPreviousAdaptiveQuestion",
+                                            checked
+                                        )
+                                    }
+                                />
+                            </Field>
+                        )}
+
                     </div>
 
                 </CardSection>

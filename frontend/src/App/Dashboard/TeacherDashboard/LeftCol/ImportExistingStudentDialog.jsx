@@ -29,6 +29,14 @@ export default function ImportExistingStudentDialog({
     const [studentId, setStudentId] = useState("");
     const [loading, setLoading] = useState(false);
 
+    const selectedGroup = groups.find(
+        sourceGroup => String(sourceGroup.id) === String(sourceGroupId)
+    );
+
+    const selectedStudent = students.find(
+        student => String(student.id) === String(studentId)
+    );
+
     useEffect(() => {
         if (!open || !group?.schoolId) {
             return;
@@ -140,7 +148,9 @@ export default function ImportExistingStudentDialog({
                         onValueChange={setSourceGroupId}
                     >
                         <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Välj grupp" />
+                            <SelectValue placeholder="Välj grupp">
+                                {selectedGroup?.name}
+                            </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                             {groups.map(sourceGroup => (
@@ -160,7 +170,14 @@ export default function ImportExistingStudentDialog({
                         disabled={!sourceGroupId || students.length === 0}
                     >
                         <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Välj elev" />
+                            <SelectValue placeholder="Välj elev">
+                                {selectedStudent && (
+                                    <>
+                                        {selectedStudent.first_name} {selectedStudent.last_name}
+                                        {selectedStudent.username ? ` (${selectedStudent.username})` : ""}
+                                    </>
+                                )}
+                            </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                             {students.map(student => (

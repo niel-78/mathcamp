@@ -44,6 +44,10 @@ export default function CreateAbilitySeriesDialog({
     const [saving, setSaving] =
         useState(false);
 
+    const selectedSubject = subjects.find(
+        subject => String(subject.id) === String(subjectId)
+    );
+
     const handleSave = async () => {
 
         if (!name.trim() || !subjectId) {
@@ -136,7 +140,9 @@ export default function CreateAbilitySeriesDialog({
 
                             <SelectValue
                                 placeholder="Välj ämne"
-                            />
+                            >
+                                {selectedSubject?.name}
+                            </SelectValue>
 
                         </SelectTrigger>
 

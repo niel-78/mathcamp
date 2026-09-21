@@ -10,7 +10,9 @@ export default function ExamNavigation({
     onNext,
     onReset,
     onSubmit,
-    canSubmitAnytime,
+    softEnded = false,
+    allowSubmitAfterSeed = false,
+    isSeedPhase = false,
     submitLabel = "Lämna in prov"
 }) {
 
@@ -20,18 +22,7 @@ export default function ExamNavigation({
     return (
         <div className="mt-6 min-w-0">
 
-            {canSubmitAnytime && (
-            <div className="mb-4 flex flex-wrap justify-end gap-2">
-                    <Button
-                        onClick={onSubmit}
-                        variant="outline"
-                    >
-                        {submitLabel}
-                    </Button>
-                </div>
-            )}
-
-            <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="relative flex flex-wrap items-center justify-between gap-2">
 
                 <div className="min-w-0">
                     {allowPrevious && (
@@ -45,7 +36,7 @@ export default function ExamNavigation({
                     )}
                 </div>
 
-                <div className="min-w-0">
+                <div className="absolute left-1/2 min-w-0 -translate-x-1/2">
                     {showReset && (
                         <Button
                             onClick={onReset}
@@ -59,12 +50,12 @@ export default function ExamNavigation({
                 <div className="ml-auto min-w-0">
                     <Button
                         onClick={
-                            isLast || timeExpired
+                            isLast || timeExpired || softEnded || (allowSubmitAfterSeed && !isSeedPhase)
                                 ? onSubmit
                                 : onNext
                         }
                     >
-                        {isLast || timeExpired
+                        {isLast || timeExpired || softEnded || (allowSubmitAfterSeed && !isSeedPhase)
                             ? submitLabel
                             : "Nästa →"}
                     </Button>

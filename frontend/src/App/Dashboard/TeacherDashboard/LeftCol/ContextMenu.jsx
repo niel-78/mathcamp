@@ -31,6 +31,12 @@ export default function ContextMenu(props) {
         return null;
     }
 
+    const isAdmin =
+        user?.role === "super" ||
+        user?.school?.is_admin === true ||
+        user?.school?.is_admin === 1 ||
+        user?.school?.is_admin === "1";
+
     const renderMenu = () => {
         
         switch (contextMenu.type) {
@@ -159,18 +165,15 @@ export default function ContextMenu(props) {
                             setContextMenu(null);
                         }}
 
-                        onDownloadStudentTemplate={() => {
-                            props.onDownloadStudentTemplate?.();
-
-                            setContextMenu(null);
-                        }}
-                        onPrintLogins={() => {
-                            props.onPrintLogins?.(
-                                contextMenu.groupId,
-                                contextMenu.groupName
-                            );
-                            setContextMenu(null);
-                        }}
+                        {...(isAdmin && {
+                            onPrintLogins: () => {
+                                props.onPrintLogins?.(
+                                    contextMenu.groupId,
+                                    contextMenu.groupName
+                                );
+                                setContextMenu(null);
+                            }
+                        })}
                     />
                 );
 
@@ -438,6 +441,7 @@ export default function ContextMenu(props) {
             case "classroom":
                 return (
                     <ClassroomMenu
+                        canManage={contextMenu.canManage}
                         onCreateLayout={() => {
 
                             props.setSelectedClassroomId(
@@ -549,12 +553,23 @@ export default function ContextMenu(props) {
                     );
 
                 case "staff":
+                case "staff-member":
                     return (
                         <StaffMenu
+                            contextMenu={contextMenu.type === "staff-member" ? contextMenu : null}
                             onCreateStaff={() => {
                                 props.onCreateStaff?.(
                                     contextMenu.schoolId,
                                     contextMenu.schoolName
+                                );
+
+                                setContextMenu(null);
+                            }}
+                            onResetPassword={() => {
+                                props.onResetStaffPassword?.(
+                                    contextMenu.staffId,
+                                    `${contextMenu.firstName} ${contextMenu.lastName}`,
+                                    contextMenu.schoolId
                                 );
 
                                 setContextMenu(null);

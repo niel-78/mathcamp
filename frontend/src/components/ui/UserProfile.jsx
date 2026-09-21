@@ -22,6 +22,9 @@ export default function UserProfile() {
 
             <div
                 className="
+                    student-profile
+                    min-w-0
+                    shrink
                     border-b
                     p-4
                     cursor-pointer
@@ -48,9 +51,9 @@ export default function UserProfile() {
                         {user.last_name?.[0]}
                     </div>
 
-                    <div>
+                    <div className="min-w-0">
 
-                        <div className="font-semibold">
+                        <div className="truncate font-semibold">
                             {user.first_name}
                             {" "}
                             {user.last_name}

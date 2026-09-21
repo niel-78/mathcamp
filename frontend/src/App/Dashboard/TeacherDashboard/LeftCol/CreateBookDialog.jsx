@@ -46,6 +46,16 @@ export default function CreateBookDialog({
     const [saving, setSaving] =
         useState(false);
 
+    const selectedLevel = subjects
+        .flatMap(subject => subject.levels)
+        .find(level => String(level.id) === String(levelId));
+
+    const selectedSubject = subjects.find(subject =>
+        subject.levels.some(
+            level => String(level.id) === String(levelId)
+        )
+    );
+
     const handleSave = async () => {
 
         try {
@@ -170,7 +180,11 @@ export default function CreateBookDialog({
 
                             <SelectValue
                                 placeholder="Välj kurs"
-                            />
+                            >
+                                {selectedSubject && selectedLevel
+                                    ? `${selectedSubject.name} - ${selectedLevel.name}`
+                                    : undefined}
+                            </SelectValue>
 
                         </SelectTrigger>
 

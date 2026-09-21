@@ -48,6 +48,13 @@ export default function CreateScheduleExceptionDialog({
     const [scope, setScope] =
         useState("school");
 
+    const typeLabels = {
+        holiday: "Lovdag",
+        study_day: "Studiedag",
+        cancelled: "Inställd undervisning",
+        other: "Övrigt"
+    };
+
     const [groups, setGroups] =
         useState([]);
 
@@ -215,7 +222,9 @@ export default function CreateScheduleExceptionDialog({
                         >
 
                             <SelectTrigger className="w-full min-w-[300px]">
-                                <SelectValue />
+                                <SelectValue>
+                                    {typeLabels[type]}
+                                </SelectValue>
                             </SelectTrigger>
 
                             <SelectContent>

@@ -94,8 +94,23 @@ export default function CreateGroupDialog({
             subject => subject.id === subjectId
         );
 
+    const selectedSchool =
+        schools.find(
+            school => String(school.id) === String(schoolId)
+        );
+
     const levels =
         selectedSubject?.levels || [];
+
+    const selectedLevel =
+        levels.find(
+            level => String(level.id) === String(levelId)
+        );
+
+    const selectedBook =
+        books.find(
+            book => String(book.id) === String(bookId)
+        );
 
     const createGroup = async () => {
 
@@ -110,8 +125,8 @@ export default function CreateGroupDialog({
                 body: JSON.stringify({
                     name,
                     school_id: schoolId,
-                    level_id: levelId,
-                    book_id: bookId,
+                    level_id: levelId || null,
+                    book_id: bookId || null,
                 }),
             }
         );
@@ -163,7 +178,9 @@ export default function CreateGroupDialog({
                             }
                         >
                             <SelectTrigger className="w-full min-w-[300px]">
-                                <SelectValue placeholder="Välj skola" />
+                                <SelectValue placeholder="Välj skola">
+                                    {selectedSchool?.name}
+                                </SelectValue>
                             </SelectTrigger>
 
                             <SelectContent>
@@ -196,9 +213,7 @@ export default function CreateGroupDialog({
                                 if (
                                     e.key === "Enter" &&
                                     name &&
-                                    schoolId &&
-                                    levelId &&
-                                    bookId
+                                    schoolId
                                 ) {
                                     createGroup();
                                 }
@@ -226,7 +241,9 @@ export default function CreateGroupDialog({
                             }}
                         >
                             <SelectTrigger className="w-full min-w-[300px]">
-                                <SelectValue placeholder="Välj ämne" />
+                                <SelectValue placeholder="Välj ämne">
+                                    {selectedSubject?.name}
+                                </SelectValue>
                             </SelectTrigger>
 
                             <SelectContent>
@@ -264,7 +281,11 @@ export default function CreateGroupDialog({
                             }
                         >
                             <SelectTrigger className="w-full min-w-[300px]">
-                                <SelectValue placeholder="Välj nivå" />
+                                <SelectValue placeholder="Välj nivå">
+                                    {selectedLevel?.code
+                                        ? `${selectedLevel.code} - ${selectedLevel.name}`
+                                        : selectedLevel?.name}
+                                </SelectValue>
                             </SelectTrigger>
 
                             <SelectContent>
@@ -303,7 +324,9 @@ export default function CreateGroupDialog({
                             }
                         >
                             <SelectTrigger className="w-full min-w-[300px]">
-                                <SelectValue placeholder="Välj bok" />
+                                <SelectValue placeholder="Välj bok">
+                                    {selectedBook?.title}
+                                </SelectValue>
                             </SelectTrigger>
 
                             <SelectContent>
@@ -329,9 +352,7 @@ export default function CreateGroupDialog({
                         onClick={createGroup}
                         disabled={
                             !name ||
-                            !schoolId ||
-                            !levelId ||
-                            !bookId
+                            !schoolId
                         }
                     >
                         Skapa grupp

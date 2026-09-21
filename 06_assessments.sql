@@ -155,12 +155,8 @@ CREATE TABLE group_assessments (
 
     FOREIGN KEY (assessment_id)
         REFERENCES assessments(id)
-        ON DELETE CASCADE,
+        ON DELETE CASCADE
 
-    UNIQUE (
-        group_id,
-        assessment_id
-    )
 );
 
 /* =====================================================

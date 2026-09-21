@@ -1,13 +1,20 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { API_URL } from "@/config";
+import { authHeaders } from "@/api/authHeaders";
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 export default function AddStudentDialog({
     open,
@@ -16,38 +23,66 @@ export default function AddStudentDialog({
     onCreated
 }) {
 
-    const [firstName, setFirstName] = useState("");
-    const [lastName, setLastName] = useState("");
-    const [username, setUsername] = useState("");
-    const [createdStudent, setCreatedStudent] = useState(null);
+    const [students, setStudents] = useState([]);
+    const [studentIds, setStudentIds] = useState([]);
+    const [loading, setLoading] = useState(false);
 
-    const createStudent = async () => {
+    useEffect(() => {
+        if (!open) {
+            return;
+        }
+
+        const loadStudents = async () => {
+            const response = await fetch(
+                `${API_URL}/api/students`,
+                { headers: authHeaders() }
+            );
+
+            if (!response.ok) {
+                return;
+            }
+
+            const data = await response.json();
+            setStudents(
+                data.sort((firstStudent, secondStudent) =>
+                    `${firstStudent.last_name} ${firstStudent.first_name}`
+                        .localeCompare(
+                            `${secondStudent.last_name} ${secondStudent.first_name}`,
+                            "sv"
+                        )
+                )
+            );
+        };
+
+        loadStudents();
+    }, [open]);
+
+    const addStudents = async () => {
+        if (!studentIds.length) {
+            return;
+        }
+
+        setLoading(true);
 
         const response = await fetch(
-            `${API_URL}/api/groups/${groupId}/students`,
+            `${API_URL}/api/groups/${groupId}/students/bulk`,
             {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization:
-                        localStorage.getItem("token")
+                    ...authHeaders(),
                 },
-                body: JSON.stringify({
-                    email: username,
-                    first_name: firstName,
-                    last_name: lastName
-                })
+                body: JSON.stringify({ student_ids: studentIds })
             }
         );
 
-        const data = await response.json();
+        setLoading(false);
 
-        setCreatedStudent({
-            username: data.username,
-            password: data.password
-        });
-
-        onCreated();
+        if (response.ok) {
+            setStudentIds([]);
+            onCreated();
+            onOpenChange(false);
+        }
     };
 
     return (
@@ -58,101 +93,40 @@ export default function AddStudentDialog({
     >
         <DialogContent>
 
-            {!createdStudent ? (
+            <DialogHeader>
+                <DialogTitle>
+                    Lägg till elev
+                </DialogTitle>
+            </DialogHeader>
 
-                <>
+            <div className="space-y-4">
+                <Select
+                    multiple
+                    value={studentIds}
+                    onValueChange={setStudentIds}
+                >
+                    <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Välj elev" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {students.map(student => (
+                            <SelectItem
+                                key={student.id}
+                                value={String(student.id)}
+                            >
+                                {student.last_name}, {student.first_name}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
 
-                    <DialogHeader>
-                        <DialogTitle>
-                            Lägg till elev
-                        </DialogTitle>
-                    </DialogHeader>
-
-                    <div className="space-y-4">
-
-                        <Input
-                            placeholder="Förnamn"
-                            value={firstName}
-                            onChange={(e) =>
-                                setFirstName(e.target.value)
-                            }
-                        />
-
-                        <Input
-                            placeholder="Efternamn"
-                            value={lastName}
-                            onChange={(e) =>
-                                setLastName(e.target.value)
-                            }
-                        />
-
-                        <Input
-                            placeholder="Användarnamn"
-                            value={username}
-                            onChange={(e) =>
-                                setUsername(e.target.value)
-                            }
-                        />
-
-                        <Button
-                            onClick={createStudent}
-                        >
-                            Skapa elev
-                        </Button>
-
-                    </div>
-
-                </>
-
-            ) : (
-
-                <>
-
-                    <DialogHeader>
-                        <DialogTitle>
-                            Elev skapad
-                        </DialogTitle>
-                    </DialogHeader>
-
-                    <div className="space-y-2">
-
-                        <p>
-                            <strong>
-                                Användarnamn:
-                            </strong>
-                            {" "}
-                            {createdStudent.username}
-                        </p>
-
-                        <p>
-                            <strong>
-                                Lösenord:
-                            </strong>
-                            {" "}
-                            {createdStudent.password}
-                        </p>
-
-                    </div>
-
-                    <Button
-                        onClick={() => {
-
-                            setCreatedStudent(null);
-
-                            setUsername("");
-                            setFirstName("");
-                            setLastName("");
-
-                            setShowAddStudent(false);
-
-                        }}
-                    >
-                        Stäng
-                    </Button>
-
-                </>
-
-            )}
+                <Button
+                    onClick={addStudents}
+                    disabled={!studentIds.length || loading}
+                >
+                    {loading ? "Importerar..." : "Importera elever"}
+                </Button>
+            </div>
 
         </DialogContent>
     </Dialog>)

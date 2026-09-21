@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
@@ -193,25 +194,31 @@ export default function GroupExamMonitorTab({
     const terminateAttempt =
         async (attemptId, mode) => {
 
-            await fetch(
-                `${API_URL}/api/assessment-attempts/${attemptId}/terminate`,
-                {
-                    method: "POST",
-                    headers: {
-                        ...authHeaders(),
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ mode })
-                }
-            );
-
-            await load();
-
-            if (selectedStudent?.user_id) {
-
-                await loadEvents(
-                    selectedStudent.user_id
+            try {
+                const response = await fetch(
+                    `${API_URL}/api/assessment-attempts/${attemptId}/terminate`,
+                    {
+                        method: "POST",
+                        headers: {
+                            ...authHeaders(),
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ mode })
+                    }
                 );
+
+                if (!response.ok) {
+                    const data = await response.json().catch(() => ({}));
+                    throw new Error(data.error || "Kunde inte avsluta provet.");
+                }
+
+                await load();
+
+                if (selectedStudent?.user_id) {
+                    await loadEvents(selectedStudent.user_id);
+                }
+            } catch (error) {
+                toast.error(error.message || "Kunde inte avsluta provet.");
 
             }
 

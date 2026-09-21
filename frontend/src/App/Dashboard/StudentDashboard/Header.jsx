@@ -19,11 +19,13 @@ export default function Header({ groups = [] }) {
     }, [darkMode]);
 
     return (
-        <header className="relative z-[9998] flex min-h-16 min-w-0 flex-wrap items-center justify-between gap-3 border-b px-3 py-2 sm:gap-4 sm:px-6 sm:py-0">
-            <UserProfile />
-            <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
-                <FormulaSheetButton group={groups[0] || {}} />
-                <Calculator showCalculator={true} showGeoGebra={true} />
+        <header className="student-header relative z-[9998] flex min-h-16 min-w-0 flex-row flex-nowrap items-center gap-3 border-b px-3 py-2 sm:gap-4 sm:px-6 sm:py-0">
+            <div className="min-w-0 shrink">
+                <UserProfile />
+            </div>
+            <div className="ml-auto flex shrink-0 items-center justify-end gap-2">
+                <FormulaSheetButton group={groups[0] || {}} iconOnly />
+                <Calculator showCalculator={true} showGeoGebra={true} compactLabels />
                 <Button
                     type="button"
                     variant="outline"

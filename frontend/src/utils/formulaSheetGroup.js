@@ -5,6 +5,14 @@ export function resolveFormulaSheetGroup({
 } = {}) {
     const normalizedSelectedGroupId = String(selectedGroupId ?? "");
 
+    if (groupExam?.ability_series_id || groupExam?.ability_series_name) {
+        return {
+            ...groupExam,
+            level_name: groupExam.ability_series_name || groupExam.level_name,
+            level_code: groupExam.ability_series_name || groupExam.level_code
+        };
+    }
+
     const selectedGroup = groups.find(
         group => String(group?.id) === normalizedSelectedGroupId
     );

@@ -311,6 +311,52 @@ body {
         padding: 0.75rem;
     }
 
+    .tab-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .tab-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .student-profile {
+        padding: 0.25rem 0;
+        border-radius: 0;
+        border-bottom: 0;
+    }
+
+    .student-main {
+        padding: 0.25rem;
+        border-radius: 0;
+    }
+
+    .student-main > div {
+        margin: 0;
+        max-width: none;
+        padding: 0.75rem;
+        border-radius: 0;
+    }
+
+    .student-header {
+        gap: 0.5rem;
+        padding: 0.25rem 0.5rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .exam-shell {
+        padding-top: 0.25rem;
+    }
+
+    .exam-card-content {
+        padding-top: 0.25rem;
+    }
+
+    .competition-mobile-table {
+        min-width: 38rem;
+    }
+
     .tab-content .p-6 {
         padding: 1rem;
     }

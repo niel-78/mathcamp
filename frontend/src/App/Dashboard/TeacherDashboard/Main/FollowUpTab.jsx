@@ -45,7 +45,8 @@ function getActivityDuration(item) {
 }
 
 export default function FollowUpTab({
-    openTab
+    openTab,
+    onCountChanged
 }) {
     const [followUps, setFollowUps] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -78,6 +79,10 @@ export default function FollowUpTab({
     useEffect(() => {
         loadFollowUps();
     }, []);
+
+    useEffect(() => {
+        onCountChanged?.(followUps.length);
+    }, [followUps.length, onCountChanged]);
 
     return (
         <BaseTabLayout

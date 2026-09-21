@@ -8,7 +8,10 @@ import { getQuestionIssues } from "@/utils/getQuestionIssues";
 import { AlertCircle, ClipboardX, ListChecks } from "lucide-react";
 
 export default function StartPage({
-    openTab
+    openTab,
+    blockRefreshKey,
+    onFollowUpCountChanged,
+    onUnsubmittedCountChanged
 }) {
     const [issueCount, setIssueCount] = useState(0);
     const [followUpCount, setFollowUpCount] = useState(0);
@@ -44,7 +47,7 @@ export default function StartPage({
         };
 
         fetchIssues();
-    }, []);
+    }, [blockRefreshKey]);
 
     useEffect(() => {
         const fetchUnsubmitted = async () => {
@@ -66,7 +69,7 @@ export default function StartPage({
         };
 
         fetchUnsubmitted();
-    }, []);
+    }, [blockRefreshKey]);
 
     useEffect(() => {
         const fetchFollowUps = async () => {
@@ -88,7 +91,15 @@ export default function StartPage({
         };
 
         fetchFollowUps();
-    }, []);
+    }, [blockRefreshKey]);
+
+    useEffect(() => {
+        onFollowUpCountChanged?.(followUpCount);
+    }, [followUpCount, onFollowUpCountChanged]);
+
+    useEffect(() => {
+        onUnsubmittedCountChanged?.(unsubmittedCount);
+    }, [unsubmittedCount, onUnsubmittedCountChanged]);
 
     return (
         <BaseTabLayout

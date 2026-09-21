@@ -91,6 +91,8 @@ export default function ExamPage({
         useState("");
     const [reportSubmitting, setReportSubmitting] =
         useState(false);
+    const [emptyAnswerDialogOpen, setEmptyAnswerDialogOpen] =
+        useState(false);
     const [settingsOpen, setSettingsOpen] =
         useState(false);
     const [questionTextSize, setQuestionTextSize] =
@@ -285,6 +287,8 @@ export default function ExamPage({
 
     const currentQuestionNumber = index + 1;
     const isSeedPhase = currentQuestionNumber <= initialSeedCount;
+    const allowPreviousInAdaptive =
+        attemptConfig?.navigation?.allowGoToPreviousAdaptiveQuestion === true;
     const currentAnswer = assessment_answers[current.id];
     const hasCurrentAnswer =
         Array.isArray(currentAnswer)
@@ -571,19 +575,15 @@ export default function ExamPage({
         };
 
     const next = () => {
-
-        if (
-            isDiagnostic &&
-            !isTeacherTest &&
-            !isSoftEnded &&
-            !hasCurrentAnswer
-        ) {
-            toast.error(
-                "Svara på uppgiften innan du går vidare."
-            );
+        if (!hasCurrentAnswer) {
+            setEmptyAnswerDialogOpen(true);
             return;
         }
 
+        continueToNextQuestion();
+    };
+
+    const continueToNextQuestion = () => {
         if (
             index <
             dynamicQuestions.length - 1
@@ -687,52 +687,60 @@ export default function ExamPage({
         };
 
     return (
-        <div className="min-h-screen min-w-0 overflow-x-hidden">
+        <div className="h-[100dvh] min-w-0 overflow-x-hidden overflow-y-auto">
 
-            <div className="flex min-w-0 justify-center px-2 py-3 sm:px-6 sm:py-8">
+            <div className="exam-shell flex min-w-0 justify-center px-2 py-3 sm:px-6 sm:py-8">
 
                 <Card className="w-full min-w-0 max-w-4xl">
 
-                    <CardContent className="min-w-0 space-y-6 p-3 sm:p-8">
+                    <CardContent className="exam-card-content min-w-0 space-y-6 p-3 sm:p-8">
 
-                        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <UserProfile />
+                        <div className="student-header flex min-w-0 flex-row flex-nowrap items-center gap-3">
+                            <div className="min-w-0 shrink">
+                                <UserProfile />
+                            </div>
 
-                            <div className="flex min-w-0 flex-col items-stretch gap-2 sm:items-end">
+                            <div className="ml-auto flex min-w-0 shrink-0 flex-col items-end gap-2">
                                 <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
-                                    <FormulaSheetButton group={formulaGroup} />
+                                    <FormulaSheetButton group={formulaGroup} iconOnly />
                                     <Calculator
                                         key={current.id}
                                         attemptId={attemptId}
                                         questionId={current.id}
                                         showCalculator={calculatorAllowed}
                                         showGeoGebra={geogebraAllowed}
+                                        compactLabels
                                     />
                                     <Button
                                         type="button"
                                         variant="outline"
+                                        size="icon"
+                                        aria-label="Inställningar"
+                                        title="Inställningar"
                                         className={settingsOpen
                                             ? "border-green-600 bg-green-600 text-white hover:bg-green-700 hover:text-white"
                                             : "bg-white"}
                                         onClick={() => setSettingsOpen(true)}
                                     >
                                         <Settings className="h-4 w-4" />
-                                        Inställningar
                                     </Button>
                                 </div>
 
-                                {showClock && countdownMode !== "none" && (
-                                    <ExamTimer
-                                        attempt={attempt}
-                                        onExpire={() => {
-                                            if (countdownMode === "visible_lock") {
-                                                setTimeExpired(true);
-                                            }
-                                        }}
-                                    />
-                                )}
                             </div>
                         </div>
+
+                        {showClock && countdownMode !== "none" && (
+                            <div className="flex justify-start">
+                                <ExamTimer
+                                    attempt={attempt}
+                                    onExpire={() => {
+                                        if (countdownMode === "visible_lock") {
+                                            setTimeExpired(true);
+                                        }
+                                    }}
+                                />
+                            </div>
+                        )}
 
                         <ExamHeader
                         />
@@ -828,7 +836,7 @@ export default function ExamPage({
                             }
                             allowPrevious={
                                 !!attempt?.allow_go_to_previous_question &&
-                                (!isDiagnostic || isSeedPhase)
+                                (!isDiagnostic || isSeedPhase || allowPreviousInAdaptive)
                             }
                             showReset={
                                 answerConfig?.default_answer !==
@@ -839,6 +847,11 @@ export default function ExamPage({
                                     ""
                             }
                             timeExpired={timeExpired}
+                            softEnded={isSoftEnded}
+                            allowSubmitAfterSeed={
+                                attemptConfig?.attempt?.allowSubmitAfterSeed === true
+                            }
+                            isSeedPhase={isSeedPhase}
                             onPrev={prev}
                             onNext={next}
                             onReset={
@@ -846,12 +859,6 @@ export default function ExamPage({
                             }
                             onSubmit={
                                 submitExam
-                            }
-                            canSubmitAnytime={
-                                (isSoftEnded || isTeacherTest) &&
-                                currentQuestionNumber <
-                                    dynamicQuestions.length &&
-                                !timeExpired
                             }
                             submitLabel={
                                 isTeacherTest
@@ -902,6 +909,39 @@ export default function ExamPage({
                             onClick={submitQuestionReport}
                         >
                             Skicka anmälan
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog
+                open={emptyAnswerDialogOpen}
+                onOpenChange={setEmptyAnswerDialogOpen}
+            >
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Du har inte angett något svar</DialogTitle>
+                        <DialogDescription>
+                            Vill du fortsätta till nästa uppgift utan att svara?
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setEmptyAnswerDialogOpen(false)}
+                        >
+                            Avbryt
+                        </Button>
+                        <Button
+                            type="button"
+                            onClick={() => {
+                                setEmptyAnswerDialogOpen(false);
+                                continueToNextQuestion();
+                            }}
+                        >
+                            Fortsätt
                         </Button>
                     </DialogFooter>
                 </DialogContent>

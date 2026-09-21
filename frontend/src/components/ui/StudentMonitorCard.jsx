@@ -92,15 +92,16 @@ export default function StudentMonitorCard({
 
                 )}
 
-                {student.current_question_number &&
-                    student.total_question_count && (
+                {student.current_question_number && (
 
                     <div>
 
                         <strong>Uppgift:</strong>
                         {" "}
-                        {student.current_question_number}/
-                        {student.total_question_count}
+                        {student.initial_seed_question_count &&
+                        student.current_question_number <= student.initial_seed_question_count
+                            ? `${student.current_question_number}/${student.initial_seed_question_count}`
+                            : `Adaptiv del – ${student.answered_question_count || 0} gjorda`}
 
                     </div>
 
@@ -175,7 +176,7 @@ export default function StudentMonitorCard({
 
                                 <AlertDialogAction
                                     variant="destructive"
-                                    onClick={handleTerminate}
+                                    onClick={() => handleTerminate()}
                                 >
                                     Hård avslutning
                                 </AlertDialogAction>

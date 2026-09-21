@@ -15,7 +15,8 @@ import { AlertCircle, ExternalLink, Loader2, RefreshCw, Sparkles, Wand2 } from "
 
 export default function ActionRequiredTab({
     openTab,
-    onBlockChanged
+    onBlockChanged,
+    onIssueCountChanged
 }) {
     const [blocks, setBlocks] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -73,6 +74,10 @@ export default function ActionRequiredTab({
             }
         });
     });
+
+    useEffect(() => {
+        onIssueCountChanged?.(questionsWithIssues.length);
+    }, [questionsWithIssues.length, onIssueCountChanged]);
 
     const handleFixSingleQuestion = async (questionId) => {
         setFixingQuestionId(questionId);

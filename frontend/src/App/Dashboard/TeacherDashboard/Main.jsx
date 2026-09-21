@@ -47,6 +47,9 @@ export default function Main({
     setTabs,
     blockRefreshKey,
     onBlockChanged,
+    onActionRequiredCountChanged,
+    onFollowUpCountChanged,
+    onUnsubmittedCountChanged,
     openTab,
     area,
     activeDragType,
@@ -135,6 +138,9 @@ export default function Main({
                             openTab={(tab) =>
                                 openTab(tab, area)
                             }
+                            blockRefreshKey={blockRefreshKey}
+                            onFollowUpCountChanged={onFollowUpCountChanged}
+                            onUnsubmittedCountChanged={onUnsubmittedCountChanged}
                         />
                     )}
 
@@ -211,6 +217,7 @@ export default function Main({
                                 openTab(tab, area)
                             }
                             onBlockChanged={onBlockChanged}
+                            onIssueCountChanged={onActionRequiredCountChanged}
                         />
 
                     )}
@@ -221,6 +228,7 @@ export default function Main({
                             openTab={(tab) =>
                                 openTab(tab, area)
                             }
+                            onCountChanged={onFollowUpCountChanged}
                         />
 
                     )}
@@ -230,6 +238,7 @@ export default function Main({
                             openTab={(tab) =>
                                 openTab(tab, area)
                             }
+                            onCountChanged={onUnsubmittedCountChanged}
                         />
                     )}
 

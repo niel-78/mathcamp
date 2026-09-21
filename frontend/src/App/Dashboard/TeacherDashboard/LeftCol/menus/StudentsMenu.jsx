@@ -4,7 +4,6 @@ export default function StudentsMenu({
     onCreateStudent,
     onImportStudents,
     onImportExistingStudent,
-    onDownloadStudentTemplate,
     onPrintLogins
 }) {
 
@@ -36,20 +35,15 @@ export default function StudentsMenu({
                 Importera befintlig elev
             </Button>
 
-            <Button
-                className="context-menu-button"
-                variant="inline"
-                onClick={onDownloadStudentTemplate}
+            {onPrintLogins && (
+                <Button
+                    className="context-menu-button"
+                    variant="inline"
+                    onClick={onPrintLogins}
                 >
-                Ladda ner elevmall
-            </Button>
-            <Button
-                className="context-menu-button"
-                variant="inline"
-                onClick={onPrintLogins}
-            >
-                Nya elevlösenord
-            </Button>
+                    Nya elevlösenord
+                </Button>
+            )}
 
         </div>
 

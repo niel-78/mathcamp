@@ -1,8 +1,15 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle
+} from "@/components/ui/card";
 import { authHeaders } from "@/api/authHeaders";
 import { API_URL } from "@/config";
 import { toast } from "sonner";
+import { QUESTION_TYPES } from "@/constants/assessmentConstants";
 import ArchiveQuestionDialog from "@/components/ui/ArchiveQuestionDialog";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";    
@@ -73,11 +80,23 @@ export default function BlockContent({
 
     const [operationsDialogOpen, setOperationsDialogOpen] = useState(false);
 
-    const [calculatorConfirmOpen, setCalculatorConfirmOpen] = useState(false);
+    const [selectedQuestionIds, setSelectedQuestionIds] = useState([]);
 
-    const [geogebraConfirmOpen, setGeogebraConfirmOpen] = useState(false);
+    const [bulkQuestionType, setBulkQuestionType] = useState("");
 
-    const [equationsConfirmOpen, setEquationsConfirmOpen] = useState(false);
+    const [bulkLevelId, setBulkLevelId] = useState("");
+
+    const [bulkCalculatorAllowed, setBulkCalculatorAllowed] = useState(false);
+
+    const [bulkGeogebraAllowed, setBulkGeogebraAllowed] = useState(false);
+
+    const [bulkPriority, setBulkPriority] = useState(false);
+
+    const [bulkSaving, setBulkSaving] = useState(false);
+
+    const [questionLevels, setQuestionLevels] = useState([]);
+
+    const [syncAnswerOptionsConfirmOpen, setSyncAnswerOptionsConfirmOpen] = useState(false);
 
     const [answerCheckResult, setAnswerCheckResult] = useState(null);
 
@@ -85,21 +104,48 @@ export default function BlockContent({
 
     const answerReviewStorageKey = `answer-review:block-${block.id}`;
 
-    useEffect(() => {
-        setCurrentBlock(block);
-    }, [block]);
+    const selectedQuestions = (currentBlock?.questions || []).filter(question =>
+        selectedQuestionIds.includes(question.id)
+    );
 
-    useEffect(() => {
-        const savedReviews = sessionStorage.getItem(answerReviewStorageKey);
-        setReviewedAnswerQuestions(savedReviews ? JSON.parse(savedReviews) : {});
-    }, [answerReviewStorageKey]);
+    const toggleQuestionSelection = (questionId) => {
+        setSelectedQuestionIds(previous =>
+            previous.includes(questionId)
+                ? previous.filter(id => id !== questionId)
+                : [...previous, questionId]
+        );
+    };
 
-    useEffect(() => {
-        loadBlock();
-    }, [block.id, blockRefreshKey, groupId]);
+    const selectAllQuestions = () => {
+        setSelectedQuestionIds((currentBlock?.questions || []).map(question => question.id));
+    };
+
+    const clearQuestionSelection = () => {
+        setSelectedQuestionIds([]);
+    };
+
+    const syncBulkEditorFromSelection = (questions) => {
+        const firstQuestion = questions[0];
+
+        if (!firstQuestion) {
+            return;
+        }
+
+        setBulkQuestionType(firstQuestion.question_type || "");
+        setBulkLevelId(firstQuestion.level_id || firstQuestion.series_level_id || "");
+        setBulkCalculatorAllowed(Boolean(firstQuestion.calculator_allowed));
+        setBulkGeogebraAllowed(Boolean(firstQuestion.geogebra_allowed));
+        setBulkPriority(Boolean(firstQuestion.is_priority));
+    };
+
+    const openOperations = () => {
+        syncBulkEditorFromSelection(selectedQuestions.length > 0
+            ? selectedQuestions
+            : currentBlock?.questions || []);
+        setOperationsDialogOpen(true);
+    };
 
     const loadBlock = async () => {
-
         const response = await fetch(
             `${API_URL}/api/blocks/${block.id}/${groupId ? `?groupId=${groupId}` : ""}`,
             {
@@ -112,13 +158,30 @@ export default function BlockContent({
         return data;
     };
 
+    useEffect(() => {
+        setCurrentBlock(block);
+    }, [block]);
+
+    useEffect(() => {
+        loadBlock();
+    }, [block.id, blockRefreshKey, groupId]);
+
+    useEffect(() => {
+        const loadQuestionLevels = async () => {
+            const response = await fetch(`${API_URL}/api/question-levels`, {
+                headers: authHeaders()
+            });
+
+            if (response.ok) {
+                setQuestionLevels(await response.json());
+            }
+        };
+
+        loadQuestionLevels();
+    }, []);
+
     const createQuestion = async () => {
-
-        const lastQuestion =
-            currentBlock.questions[
-                currentBlock.questions.length - 1
-            ];
-
+        const lastQuestion = currentBlock.questions[currentBlock.questions.length - 1];
         const response = await fetch(
             `${API_URL}/api/blocks/${currentBlock.id}/questions`,
             {
@@ -129,65 +192,43 @@ export default function BlockContent({
                 },
                 body: JSON.stringify({
                     question_type: lastQuestion?.question_type ?? 1,
-                    answer_config:
-                        lastQuestion?.answer_config ??
-                        {}
+                    answer_config: lastQuestion?.answer_config ?? {}
                 })
             }
         );
 
         if (!response.ok) {
-
-            const text = await response.text();
-
-            toast.error(text);
-
+            toast.error(await response.text());
             return;
         }
 
         await loadBlock();
-
-        toast.success(
-            "Uppgift skapad"
-        );
-
+        toast.success("Uppgift skapad");
     };
 
-    const updateQuestionLevel =
-        async (
-            questionId,
-            seriesLevelId
-        ) => {
-
-            const response =
-                await fetch(
-                    `${API_URL}/api/questions/${questionId}/series-level`,
-                    {
-                        method: "PUT",
-                        headers: {
-                            ...authHeaders(),
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({
-                            series_level_id: Number(seriesLevelId)
-                        })
-                    }
-                );
-
-            if (!response.ok) {
-                toast.error(
-                    "Kunde inte ändra nivå"
-                );
-                return;
+    const updateQuestionLevel = async (questionId, seriesLevelId) => {
+        const response = await fetch(
+            `${API_URL}/api/questions/${questionId}/series-level`,
+            {
+                method: "PUT",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    series_level_id: Number(seriesLevelId)
+                })
             }
+        );
 
-            await loadBlock();
+        if (!response.ok) {
+            toast.error("Kunde inte ändra nivå");
+            return;
+        }
 
-            toast.success(
-                "Nivå uppdaterad"
-            );
-
-        };
+        await loadBlock();
+        toast.success("Nivå uppdaterad");
+    };
 
     const setQuestionCalculatorPermission =
         async (question, allowed) => {
@@ -297,49 +338,21 @@ export default function BlockContent({
             );
         };
 
-    const calculatorToggleQuestions = currentBlock?.questions || [];
+    const saveBulkQuestionChanges = async () => {
+        if (selectedQuestions.length === 0) {
+            toast.info("Välj minst en uppgift");
+            return;
+        }
 
-    const calculatorToggleNewValue = !calculatorToggleQuestions.every(
-        question => Boolean(question.calculator_allowed)
-    );
+        setBulkSaving(true);
+        let failedCount = 0;
 
-    const toggleCalculatorForAllQuestions =
-        () => {
-
-            if (calculatorToggleQuestions.length === 0) {
-                return;
-            }
-
-            setCalculatorConfirmOpen(true);
-
-        };
-
-    const geogebraToggleQuestions = currentBlock?.questions || [];
-
-    const geogebraToggleNewValue = !geogebraToggleQuestions.every(
-        question => Boolean(question.geogebra_allowed)
-    );
-
-    const toggleGeoGebraForAllQuestions =
-        () => {
-
-            if (geogebraToggleQuestions.length === 0) {
-                return;
-            }
-
-            setGeogebraConfirmOpen(true);
-
-        };
-
-    const runCalculatorToggle =
-        async () => {
-
-            const questions = calculatorToggleQuestions;
-            const newValue = calculatorToggleNewValue;
-
-            setCalculatorConfirmOpen(false);
-
-            for (const question of questions) {
+        try {
+            for (const question of selectedQuestions) {
+                const answerConfig =
+                    typeof question.answer_config === "string"
+                        ? JSON.parse(question.answer_config || "{}")
+                        : question.answer_config || {};
 
                 const response = await fetch(
                     `${API_URL}/api/questions/${question.id}`,
@@ -350,80 +363,22 @@ export default function BlockContent({
                             "Content-Type": "application/json"
                         },
                         body: JSON.stringify({
-                            calculator_allowed: newValue
+                            question: question.question,
+                            question_type: bulkQuestionType,
+                            answer_config: answerConfig,
+                            level_id: bulkLevelId || null,
+                            calculator_allowed: bulkCalculatorAllowed,
+                            geogebra_allowed: bulkGeogebraAllowed
                         })
                     }
                 );
 
                 if (!response.ok) {
-                    toast.error(`Kunde inte uppdatera uppgift #${question.id}`);
+                    failedCount++;
+                    continue;
                 }
 
-            }
-
-            await loadBlock();
-
-            toast.success(
-                newValue
-                    ? "Miniräknare tillåten för alla uppgifter"
-                    : "Miniräknare borttagen för alla uppgifter"
-            );
-
-        };
-
-    const runGeoGebraToggle =
-        async () => {
-
-            const questions = geogebraToggleQuestions;
-            const newValue = geogebraToggleNewValue;
-
-            setGeogebraConfirmOpen(false);
-
-            for (const question of questions) {
-
-                const response = await fetch(
-                    `${API_URL}/api/questions/${question.id}`,
-                    {
-                        method: "PUT",
-                        headers: {
-                            ...authHeaders(),
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({
-                            geogebra_allowed: newValue
-                        })
-                    }
-                );
-
-                if (!response.ok) {
-                    toast.error(`Kunde inte uppdatera uppgift #${question.id}`);
-                }
-
-            }
-
-            await loadBlock();
-
-            toast.success(
-                newValue
-                    ? "GeoGebra tillåten för alla uppgifter"
-                    : "GeoGebra borttagen för alla uppgifter"
-            );
-
-        };
-
-    const prioritizeAllQuestions =
-        async () => {
-            const questions = currentBlock?.questions || [];
-
-            if (questions.length === 0) {
-                toast.info("Blocket innehåller inga uppgifter");
-                return;
-            }
-
-            let failedCount = 0;
-
-            for (const question of questions) {
-                const response = await fetch(
+                const priorityResponse = await fetch(
                     `${API_URL}/api/questions/${question.id}/priority`,
                     {
                         method: "PUT",
@@ -434,12 +389,12 @@ export default function BlockContent({
                         body: JSON.stringify({
                             block_id: currentBlock.id,
                             ...(groupId ? { group_id: groupId } : {}),
-                            priority: true
+                            priority: bulkPriority
                         })
                     }
                 );
 
-                if (!response.ok) {
+                if (!priorityResponse.ok) {
                     failedCount++;
                 }
             }
@@ -448,16 +403,16 @@ export default function BlockContent({
             setOperationsDialogOpen(false);
 
             if (failedCount > 0) {
-                toast.error(`${failedCount} uppgifter kunde inte prioriteras`);
-                return;
+                toast.error(`${failedCount} ändringar kunde inte sparas`);
+            } else {
+                toast.success(`${selectedQuestions.length} uppgifter uppdaterades`);
             }
-
-            toast.success(
-                groupId
-                    ? "Alla uppgifter prioriteras för gruppen"
-                    : "Alla uppgifter prioriteras i blocket"
-            );
-        };
+        } catch (error) {
+            toast.error(error.message || "Kunde inte uppdatera uppgifterna");
+        } finally {
+            setBulkSaving(false);
+        }
+    };
 
     const duplicateQuestion =
         async (questionId) => {
@@ -607,11 +562,11 @@ export default function BlockContent({
     };
 
     const synchronizeBlockAnswerOptions = () => {
-        setEquationsConfirmOpen("sync-answer-options");
+        setSyncAnswerOptionsConfirmOpen(true);
     };
 
     const runSynchronizeBlockAnswerOptions = async () => {
-        setEquationsConfirmOpen(false);
+        setSyncAnswerOptionsConfirmOpen(false);
 
         const numericQuestions = (currentBlock?.questions || [])
             .filter(question => question.question_type === "numeric_input");
@@ -630,66 +585,6 @@ export default function BlockContent({
         } catch (error) {
             toast.error(error.message || "Kunde inte synkronisera svarsalternativen");
         }
-    };
-
-    const applyEquationsPreset = () => {
-
-        setEquationsConfirmOpen(true);
-
-    };
-
-    const runEquationsPreset = async () => {
-
-        const questions = currentBlock?.questions || [];
-
-        setEquationsConfirmOpen(false);
-
-        for (const question of questions) {
-
-            const config =
-                typeof question.answer_config === "string"
-                    ? JSON.parse(question.answer_config || "{}")
-                    : question.answer_config || {};
-
-            const correctAnswerCount =
-                (question.options || [])
-                    .filter(isCorrectOption).length;
-
-            const updatedQuestionText =
-                syncNumericInputs(question.question, correctAnswerCount);
-
-            const response = await fetch(
-                `${API_URL}/api/questions/${question.id}`,
-                {
-                    method: "PUT",
-                    headers: {
-                        ...authHeaders(),
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        question: updatedQuestionText,
-                        question_type: "equation",
-                        level_id: question.level_id,
-                        answer_config: {
-                            ...config,
-                            order_independent: true
-                        }
-                    })
-                }
-            );
-
-            if (!response.ok) {
-                toast.error(`Kunde inte uppdatera uppgift #${question.id}`);
-            }
-
-        }
-
-        await loadBlock();
-
-        toast.success("Uppgifterna är nu markerade som ekvationer");
-
-        setOperationsDialogOpen(false);
-
     };
 
     const checkAnswerKeys = () => {
@@ -831,9 +726,11 @@ export default function BlockContent({
 
                         <Button
                             variant="outline"
-                            onClick={() => setOperationsDialogOpen(true)}
+                            onClick={openOperations}
                         >
-                            Operationer
+                            Operationer{selectedQuestionIds.length > 0
+                                ? ` (${selectedQuestionIds.length} valda)`
+                                : ""}
                         </Button>
 
                         <Button
@@ -864,6 +761,14 @@ export default function BlockContent({
                                 items-start
                             "
                         >
+
+                            <input
+                                type="checkbox"
+                                aria-label={`Välj uppgift #${question.id}`}
+                                checked={selectedQuestionIds.includes(question.id)}
+                                onChange={() => toggleQuestionSelection(question.id)}
+                                className="mt-1 h-4 w-4 shrink-0"
+                            />
 
                             <div className="flex min-w-0 flex-1 flex-col gap-3">
 
@@ -1180,33 +1085,100 @@ export default function BlockContent({
 
                     </DialogHeader>
 
-                    <Button
-                        variant="outline"
-                        onClick={prioritizeAllQuestions}
-                    >
-                        Prioritera alla uppgifter
-                    </Button>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Ändra valda uppgifter</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                                <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                                    <span>{selectedQuestions.length} av {currentBlock?.questions?.length || 0} valda</span>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={selectAllQuestions}
+                                        >
+                                            Välj alla
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={clearQuestionSelection}
+                                        >
+                                            Rensa
+                                        </Button>
+                                    </div>
+                                </div>
 
-                    <Button
-                        variant="outline"
-                        onClick={toggleCalculatorForAllQuestions}
-                    >
-                        Miniräknare för alla uppgifter
-                    </Button>
+                                <select
+                                    className="border rounded px-2 py-1 text-sm w-full"
+                                    value={bulkQuestionType}
+                                    disabled={bulkSaving}
+                                    onChange={(e) => setBulkQuestionType(e.target.value)}
+                                >
+                                    {Object.values(QUESTION_TYPES).map(type => (
+                                        <option key={type.value} value={type.value}>
+                                            {type.label}
+                                        </option>
+                                    ))}
+                                </select>
 
-                    <Button
-                        variant="outline"
-                        onClick={toggleGeoGebraForAllQuestions}
-                    >
-                        GeoGebra för alla uppgifter
-                    </Button>
+                                <select
+                                    className="border rounded px-2 py-1 text-sm w-full"
+                                    value={bulkLevelId}
+                                    disabled={bulkSaving}
+                                    onChange={(e) => setBulkLevelId(e.target.value)}
+                                >
+                                    <option value="">Välj nivå...</option>
+                                    {questionLevels.map(level => (
+                                        <option key={level.id} value={level.id}>
+                                            {level.name}
+                                        </option>
+                                    ))}
+                                </select>
 
-                    <Button
-                        variant="outline"
-                        onClick={applyEquationsPreset}
-                    >
-                        Är ekvationer
-                    </Button>
+                                <label className="flex items-center gap-2 text-sm">
+                                    <input
+                                        type="checkbox"
+                                        checked={bulkCalculatorAllowed}
+                                        disabled={bulkSaving}
+                                        onChange={(e) => setBulkCalculatorAllowed(e.target.checked)}
+                                    />
+                                    Miniräknare tillåten
+                                </label>
+
+                                <label className="flex items-center gap-2 text-sm">
+                                    <input
+                                        type="checkbox"
+                                        checked={bulkGeogebraAllowed}
+                                        disabled={bulkSaving}
+                                        onChange={(e) => setBulkGeogebraAllowed(e.target.checked)}
+                                    />
+                                    GeoGebra CAS tillåten
+                                </label>
+
+                                <label className="flex items-center gap-2 text-sm">
+                                    <input
+                                        type="checkbox"
+                                        checked={bulkPriority}
+                                        disabled={bulkSaving}
+                                        onChange={(e) => setBulkPriority(e.target.checked)}
+                                    />
+                                    Prioriterad
+                                </label>
+
+                                <Button
+                                    type="button"
+                                    className="w-full"
+                                    disabled={bulkSaving || selectedQuestions.length === 0}
+                                    onClick={saveBulkQuestionChanges}
+                                >
+                                    {bulkSaving ? "Sparar..." : "Spara på valda uppgifter"}
+                                </Button>
+                            </CardContent>
+                        </Card>
 
                     <Button
                         variant="outline"
@@ -1223,18 +1195,15 @@ export default function BlockContent({
                     </Button>
 
                     <DialogFooter>
-
                         <Button
                             variant="outline"
                             onClick={() => setOperationsDialogOpen(false)}
                         >
                             Stäng
                         </Button>
-
                     </DialogFooter>
 
                 </DialogContent>
-
             </Dialog>
 
             <Dialog
@@ -1328,52 +1297,9 @@ export default function BlockContent({
             </Dialog>
 
             <ConfirmDialog
-                open={calculatorConfirmOpen}
-                onOpenChange={setCalculatorConfirmOpen}
-                title={
-                    calculatorToggleNewValue
-                        ? "Tillåt miniräknare för alla uppgifter?"
-                        : "Ta bort miniräknare för alla uppgifter?"
-                }
-                description={
-                    calculatorToggleNewValue
-                        ? `Miniräknare tillåts för alla ${calculatorToggleQuestions.length} uppgifter i blocket.`
-                        : `Miniräknare tas bort för alla ${calculatorToggleQuestions.length} uppgifter i blocket.`
-                }
-                confirmLabel={calculatorToggleNewValue ? "Tillåt" : "Ta bort"}
-                onConfirm={runCalculatorToggle}
-            />
-
-            <ConfirmDialog
-                open={geogebraConfirmOpen}
-                onOpenChange={setGeogebraConfirmOpen}
-                title={geogebraToggleNewValue
-                    ? "Tillåt GeoGebra för alla uppgifter?"
-                    : "Ta bort GeoGebra för alla uppgifter?"}
-                description={geogebraToggleNewValue
-                    ? "GeoGebra blir tillåten som hjälpmedel på alla uppgifter i blocket."
-                    : "GeoGebra blir inte längre tillåten på någon uppgift i blocket."}
-                confirmLabel="Bekräfta"
-                onConfirm={runGeoGebraToggle}
-            />
-
-            <ConfirmDialog
-                open={equationsConfirmOpen === true}
-                onOpenChange={setEquationsConfirmOpen}
-                title="Markera alla uppgifter som ekvationer?"
-                description={
-                    `Markera alla ${(currentBlock?.questions || []).length} uppgifter i blocket som ekvationer? ` +
-                    "Detta sätter frågetyp till numeriska svarsrutor, använder rätta svarsalternativ som facit " +
-                    "och aktiverar \"Svarsordning saknar betydelse\" vid flera rötter."
-                }
-                confirmLabel="Markera"
-                onConfirm={runEquationsPreset}
-            />
-
-            <ConfirmDialog
-                open={equationsConfirmOpen === "sync-answer-options"}
+                open={syncAnswerOptionsConfirmOpen}
                 onOpenChange={(open) => {
-                    if (!open) setEquationsConfirmOpen(false);
+                    if (!open) setSyncAnswerOptionsConfirmOpen(false);
                 }}
                 title="Synkronisera svarsalternativ för alla frågor i blocket?"
                 description="Felmarkerade alternativ tas bort från alla numeriska uppgifter i blocket och svarsrutorna synkroniseras med kvarvarande rätta svar. Vanliga flervalsfrågor påverkas inte."

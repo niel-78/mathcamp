@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
+import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -28,6 +29,7 @@ import {
 } from "lucide-react";
 
 const StudentDashboard = () => {
+    const { logout } = useAuth();
     const [assessmentKey, setExamKey] = useState("");
     const [attemptId, setAttemptId] = useState(null);
     const [assessmentConfig, setExamConfig] = useState(null);
@@ -69,11 +71,7 @@ const StudentDashboard = () => {
             const data = await response.json();
 
             setGroups(data);
-            setSelectedGroupId(
-                data[0]?.id
-                    ? String(data[0].id)
-                    : ""
-            );
+            setSelectedGroupId(data[0]?.id ? String(data[0].id) : "");
 
         };
 
@@ -98,12 +96,6 @@ const StudentDashboard = () => {
 
         const data = await res.json();
 
-        if (!res.ok) {
-            setErrorMessage(data.error);
-            setErrorOpen(true);
-            return;
-        }
-
         const joinRes = await fetch(
             `${API_URL}/api/group-assessment-lobby/join`,
             {
@@ -127,6 +119,9 @@ const StudentDashboard = () => {
         }
 
         setGroupExam(data);
+        if (data.group_id) {
+            setSelectedGroupId(String(data.group_id));
+        }
         setView("waiting-room");
     };
 
@@ -147,6 +142,11 @@ const StudentDashboard = () => {
 
         const data = await res.json();
         const navigation = performance.getEntriesByType("navigation")[0];
+
+        if (res.status === 401) {
+            await logout();
+            return;
+        }
 
         if (data.resume && navigation?.type === "reload") {
             logEvent(data.attempt_id, "page_refresh");
@@ -188,22 +188,23 @@ const StudentDashboard = () => {
 
         try {
 
-            const [attemptsResponse, abilitiesResponse] = await Promise.all([
-                fetch(
-                    `${API_URL}/api/students/me/groups/${selectedGroupId}/attempts`,
-                    {
-                        headers: authHeaders()
-                    }
-                ),
-                fetch(
-                    `${API_URL}/api/students/me/groups/${selectedGroupId}/abilities`,
-                    {
-                        headers: authHeaders()
-                    }
-                )
-            ]);
-
+            const attemptsResponse = await fetch(
+                `${API_URL}/api/students/me/groups/${selectedGroupId}/attempts`,
+                {
+                    headers: authHeaders()
+                }
+            );
             const attemptsData = await attemptsResponse.json();
+            const selectedAttemptId = attemptsData[0]?.id;
+            const abilitiesQuery = selectedAttemptId
+                ? `?attemptId=${selectedAttemptId}`
+                : "";
+            const abilitiesResponse = await fetch(
+                `${API_URL}/api/students/me/groups/${selectedGroupId}/abilities${abilitiesQuery}`,
+                {
+                    headers: authHeaders()
+                }
+            );
             const abilitiesData = await abilitiesResponse.json();
 
             if (!attemptsResponse.ok) {
@@ -330,9 +331,9 @@ const StudentDashboard = () => {
         );
 
         return (
-            <div className="flex min-h-[100dvh] min-w-0 flex-col">
+            <div className="flex h-[100dvh] min-h-0 min-w-0 flex-col">
                 <Header groups={groups} />
-                <main className="min-w-0 flex-1 overflow-y-auto bg-background p-3 text-foreground sm:p-6">
+                <main className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-background p-3 text-foreground sm:p-6">
                     <div className="mx-auto w-full min-w-0 max-w-6xl space-y-4">
                         <div className="flex flex-wrap items-start justify-between gap-2">
                             <Button
@@ -517,14 +518,14 @@ const StudentDashboard = () => {
 
     if (view === "investments") {
         return (
-            <div className="flex min-h-[100dvh] min-w-0 flex-col">
+            <div className="flex h-[100dvh] min-h-0 min-w-0 flex-col">
                 <Header groups={groups} />
-                <div className="border-b bg-muted/20 p-3 sm:p-4">
+                <div className="flex shrink-0 flex-col items-start border-b bg-muted/20 p-3 sm:p-4">
                     <Button variant="ghost" onClick={() => setView("start")} className="gap-2 text-xs">
                         <ArrowLeft className="h-4 w-4" /> Tillbaka till huvudmeny
                     </Button>
                 </div>
-                <div className="min-w-0 flex-1 overflow-auto">
+                <div className="min-h-0 min-w-0 flex-1 overflow-auto">
                     <CompetitionTab
                         groupId={selectedGroupId}
                     /> 
@@ -535,7 +536,7 @@ const StudentDashboard = () => {
 
     if (view === "key-entry") {
         return (
-            <div className="flex min-h-[100dvh] min-w-0 flex-col">
+            <div className="flex h-[100dvh] min-h-0 min-w-0 flex-col">
                 <Header groups={groups} />
                 <Main>
                     <div className="w-full max-w-md space-y-4 rounded-xl border bg-card p-4 shadow-sm sm:p-6">
@@ -549,10 +550,13 @@ const StudentDashboard = () => {
                         </Label>
                         
                         <Input
-                            placeholder="T.ex. PROV-1234"
+                            placeholder="T.ex 112233"
                             value={assessmentKey}
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
                             id="assessmentKey"
-                            onChange={(e) => setExamKey(e.target.value)}
+                            onChange={(e) => setExamKey(e.target.value.replace(/\D/g, ""))}
                         />
                         
                         <Button onClick={findExam} className="w-full">
@@ -571,18 +575,11 @@ const StudentDashboard = () => {
 
     // HUVUDMENY (START-VYN)
     return (
-        <div className="flex min-h-[100dvh] min-w-0 flex-col">
+        <div className="flex h-[100dvh] min-h-0 min-w-0 flex-col">
             <Header groups={groups} />
 
             <Main>
             <div className="w-full max-w-lg space-y-6 rounded-xl border bg-white p-4 text-center shadow-sm sm:p-8">
-                    <div>
-                        <h2 className="text-2xl font-extrabold text-foreground sm:text-3xl">Välkommen!</h2>
-                        <p className="text-sm text-muted-foreground mt-1">
-                            Välj vad du vill göra härnäst.
-                        </p>
-                    </div>
-
                     <div className="space-y-2 text-left">
                         <Label  htmlFor="studentGroup"
                                 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase text-left px-1">

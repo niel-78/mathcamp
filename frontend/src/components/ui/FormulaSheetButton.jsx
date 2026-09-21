@@ -27,7 +27,7 @@ function getFormulaSheetUrl(group) {
         return "/formula-sheets/formelblad-matematik-4-fortsattning-niva-2.pdf";
     }
 
-    if (/matematik\s*2\s*[abc]|ma\s*2\s*[abc]|matmat0?2[abc]|\b2\s*[abc]\b/i.test(course)) {
+    if (/matematik(?:\s+\d+)?(?:\s*5000\s*\+)?\s*2\s*[abc]|ma\s*2\s*[abc]|matmat0?2[abc]|\b2\s*[abc]\b/i.test(course)) {
         return "/formula-sheets/formelblad-matematik-2abc-2021.pdf";
     }
 
@@ -231,7 +231,7 @@ class FormulaPdfErrorBoundary extends React.Component {
     }
 }
 
-export default function FormulaSheetButton({ group = {}, title = "Formelblad" }) {
+export default function FormulaSheetButton({ group = {}, title = "Formelblad", iconOnly = false }) {
     const [activeFormula, setActiveFormula] = useState(null);
     const [penEnabled, setPenEnabled] = useState(false);
     const [eraseEnabled, setEraseEnabled] = useState(false);
@@ -270,7 +270,7 @@ export default function FormulaSheetButton({ group = {}, title = "Formelblad" })
         >
             <section
                 ref={formulaRef}
-                className="fixed left-4 top-16 z-[10001] w-[min(900px,calc(100vw-2rem))] rounded-lg border bg-background p-3 shadow-2xl"
+                className="fixed left-4 top-16 z-[9997] w-[min(900px,calc(100vw-2rem))] rounded-lg border bg-background p-3 shadow-2xl"
                 aria-label={`Formelblad ${activeFormula.course}`}
             >
                 <div className="formula-sheet-drag-handle mb-3 flex cursor-move items-center justify-between gap-3 rounded-md border bg-muted/30 px-3 py-2">
@@ -319,6 +319,9 @@ export default function FormulaSheetButton({ group = {}, title = "Formelblad" })
             <Button
                 type="button"
                 variant="outline"
+                size={iconOnly ? "icon" : "default"}
+                aria-label={title}
+                title={title}
                 className={activeFormula
                     ? "border-green-600 bg-green-600 text-white hover:bg-green-700 hover:text-white"
                     : "bg-white"}
@@ -335,7 +338,7 @@ export default function FormulaSheetButton({ group = {}, title = "Formelblad" })
                 }}
             >
                 <BookOpen className="h-4 w-4" />
-                {title}
+                {!iconOnly && title}
             </Button>
             {formulaPanel}
         </>

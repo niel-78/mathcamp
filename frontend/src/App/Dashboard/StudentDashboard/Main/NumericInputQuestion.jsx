@@ -61,6 +61,8 @@ export default function NumericInputQuestion({
         ? Math.max(correctAnswerCount, 1)
         : markerCount;
     const hasInlineMarkers = markerCount > 0;
+    const isMobile = typeof window !== "undefined" &&
+        window.matchMedia("(max-width: 767px)").matches;
 
     const renderInput = (index) => (
         <Input
@@ -68,7 +70,11 @@ export default function NumericInputQuestion({
                 inputRefs.current[index] = element;
             }}
             type="text"
-            inputMode="decimal"
+            inputMode="none"
+            readOnly={isMobile}
+            onTouchStart={event => {
+                if (isMobile) event.preventDefault();
+            }}
             className={`answer-input inline-block ${segments[index]?.split("\n").at(-1).trim() ? "ml-1" : ""} mr-1 align-middle border border-slate-500 rounded-md bg-white`}
             style={{
                 width: `${Math.max(
@@ -126,6 +132,17 @@ export default function NumericInputQuestion({
                     (_, i) => parsed[i] ?? ""
                 );
 
+        const [isMobile, setIsMobile] = useState(false);
+
+        useEffect(() => {
+            const mediaQuery = window.matchMedia("(max-width: 767px)");
+            const updateMobile = () => setIsMobile(mediaQuery.matches);
+
+            updateMobile();
+            mediaQuery.addEventListener("change", updateMobile);
+
+            return () => mediaQuery.removeEventListener("change", updateMobile);
+        }, []);
             }
 
         } catch (error) {
@@ -224,7 +241,11 @@ export default function NumericInputQuestion({
                                             inputRefs.current[index] = element;
                                         }}
                                         type="text"
-                                        inputMode="text"
+                                        inputMode="none"
+                                        readOnly={isMobile}
+                                        onTouchStart={event => {
+                                            if (isMobile) event.preventDefault();
+                                        }}
                                         autoCapitalize="none"
                                         autoCorrect="off"
                                         className="answer-input inline-block w-24 mx-1 align-middle"

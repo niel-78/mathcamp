@@ -34,6 +34,10 @@ export default function CreateClassroomDialog({
 
     const [sourceLayoutId, setSourceLayoutId] = useState("");
 
+    const selectedLayout = layouts.find(
+        layout => String(layout.id) === String(sourceLayoutId)
+    );
+
     useEffect(() => {
         loadLayouts();
     }, []);
@@ -120,7 +124,13 @@ export default function CreateClassroomDialog({
                     onValueChange={setSourceLayoutId}
                 >
                     <SelectTrigger className="w-full min-w-[300px]">
-                        <SelectValue placeholder="Ingen" />
+                        <SelectValue placeholder="Ingen">
+                            {selectedLayout
+                                ? `${selectedLayout.classroom_name} - ${selectedLayout.name}`
+                                : sourceLayoutId === "none"
+                                    ? "Ingen"
+                                    : undefined}
+                        </SelectValue>
                     </SelectTrigger>
 
                     <SelectContent>

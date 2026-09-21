@@ -83,6 +83,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
     const [expandedStudents, setExpandedStudents] = useState({});
     const [createStudentDialog, setCreateStudentDialog] = useState(null);
     const [passwordDialog, setPasswordDialog] = useState(null);
+        const [staffPasswordDialog, setStaffPasswordDialog] = useState(null);
     const [renameStudentDialog, setRenameStudentDialog] = useState(null);
     const [archiveStudentDialog, setArchiveStudentDialog] = useState(null);
     const [books, setBooks] = useState([]);
@@ -934,40 +935,6 @@ export default function LeftCol( {openTab, hoverTarget} ) {
             URL.revokeObjectURL(url);
         };
 
-    const downloadStudentTemplate =
-        async () => {
-
-            const response =
-                await fetch(
-                    `${API_URL}/api/groups/student-import-template`,
-                    {
-                        headers: authHeaders()
-                    }
-                );
-
-            if (!response.ok) {
-                return;
-            }
-
-            const blob =
-                await response.blob();
-
-            const url =
-                URL.createObjectURL(blob);
-
-            const a =
-                document.createElement("a");
-
-            a.href = url;
-
-            a.download =
-                "elever-mall.xlsx";
-
-            a.click();
-
-            URL.revokeObjectURL(url);
-        };
-
     return (
         <>
             <UserProfile />
@@ -1060,6 +1027,13 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                         name
                     });
                 }}
+                onResetStaffPassword={(userId, name, schoolId) => {
+                    setStaffPasswordDialog({
+                        userId,
+                        name,
+                        schoolId,
+                    });
+                }}
 
                 onRenameStudent={(student) => {
                     setRenameStudentDialog(student);
@@ -1133,9 +1107,6 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                 }
                 onDownloadCriteriaTemplate={
                     downloadCriteriaTemplate
-                }
-                onDownloadStudentTemplate={
-                    downloadStudentTemplate
                 }
                 onCreateBookRoot={() => {
                     setCreateBookDialog(true);
@@ -1415,7 +1386,6 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                 })
                                             }
                                             onContextMenu={(e) => {
-
                                                 e.preventDefault();
 
                                                 setContextMenu({
@@ -1509,7 +1479,6 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                 toggleStudents(group.id)
                                             }
                                             onContextMenu={(e) => {
-
                                                 e.preventDefault();
 
                                                 setContextMenu({
@@ -2480,7 +2449,12 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                                     e.preventDefault();
                                                                     setContextMenu({
                                                                         type: "staff-member",
+                                                                        schoolId: school.id,
+                                                                        schoolName: school.name,
                                                                         staffId: staffMember.id,
+                                                                        firstName: staffMember.first_name,
+                                                                        lastName: staffMember.last_name,
+                                                                        userName: staffMember.username,
                                                                         staffName: `${staffMember.first_name} ${staffMember.last_name}`,
                                                                         x: e.clientX,
                                                                         y: e.clientY
@@ -2567,8 +2541,10 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                                                                 setContextMenu({
                                                                     type: "classroom",
+                                                                    canManage: canManageSchool(school),
                                                                     classroomId:
                                                                         classroom.id,
+                                                                    schoolId: school.id,
                                                                     classroomName:
                                                                         classroom.name,
                                                                     x: e.clientX,
@@ -2699,6 +2675,10 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                             cursor-pointer
                                                         "
                                                         onContextMenu={(e) => {
+
+                                                            if (!canManageSchool(school)) {
+                                                                return;
+                                                            }
 
                                                             e.preventDefault();
 
@@ -3003,6 +2983,18 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                 open={!!passwordDialog}
                 onOpenChange={() =>
                     setPasswordDialog(null)
+                }
+            />
+
+            <ResetPasswordDialog
+                student={staffPasswordDialog}
+                open={!!staffPasswordDialog}
+                passwordUrl={staffPasswordDialog
+                    ? `${API_URL}/api/schools/${staffPasswordDialog.schoolId}/staff/${staffPasswordDialog.userId}/password`
+                    : null}
+                entityLabel="Personal"
+                onOpenChange={() =>
+                    setStaffPasswordDialog(null)
                 }
             />
 

@@ -532,7 +532,7 @@ export default function Calculator({
             <section
                 ref={calculatorRef}
                 aria-label={activeTool === "geogebra" ? "GeoGebra CAS" : "Miniräknare"}
-                className="fixed z-[9999] rounded-lg border bg-background shadow-lg"
+                className="fixed z-[9997] rounded-lg border bg-background shadow-lg"
                 style={{
                     top: `${panelAnchor.top}px`,
                     right: `${panelAnchor.right}px`,

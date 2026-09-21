@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 import BaseTabLayout from "@/components/layouts/BaseTabLayout";
@@ -21,6 +22,8 @@ import {
 } from "lucide-react";
 
 export default function CompetitionTab({ competitionId, groupId, title }) {
+    const { user } = useAuth();
+    const isTeacherView = ["teacher", "admin", "super"].includes(user?.role);
     const [activeId, setActiveId] = useState(competitionId);
     const [groupDataList, setGroupDataList] = useState([]);
     const [competition, setCompetition] = useState(null);
@@ -62,18 +65,29 @@ export default function CompetitionTab({ competitionId, groupId, title }) {
         });
     }, [competitionId, groupId]);
 
-    // 2. Hämta detaljer för den aktiva tävlingen när activeId ändras
+    // 2. Hämta detaljer och uppdatera lärarens topplista var tionde sekund
     useEffect(() => {
         if (!activeId) return;
-        loadCompetitionDetails(activeId);
-    }, [activeId]);
 
-    const loadCompetitionDetails = async (idToFetch) => {
+        loadCompetitionDetails(activeId);
+
+        if (!isTeacherView) return;
+
+        const refreshTimer = setInterval(() => {
+            loadCompetitionDetails(activeId, false);
+        }, 10000);
+
+        return () => clearInterval(refreshTimer);
+    }, [activeId, isTeacherView]);
+
+    const loadCompetitionDetails = async (idToFetch, showLoading = true) => {
         const targetId = idToFetch || activeId;
         if (!targetId) return;
 
         try {
-            setLoading(true);
+            if (showLoading) {
+                setLoading(true);
+            }
             const res = await fetch(`${API_URL}/api/competitions/${targetId}`, {
                 headers: authHeaders(),
             });
@@ -86,7 +100,9 @@ export default function CompetitionTab({ competitionId, groupId, title }) {
         } catch (err) {
             console.error("Fel vid hämtning av tävling:", err);
         } finally {
-            setLoading(false);
+            if (showLoading) {
+                setLoading(false);
+            }
         }
     };
 
@@ -117,7 +133,7 @@ export default function CompetitionTab({ competitionId, groupId, title }) {
 
     const checkIsOpen = (comp) => {
         if (!comp) return false;
-        if (comp.schedule_type === "scheduled") {
+        if (["single", "scheduled"].includes(comp.schedule_type)) {
             const now = new Date();
             return new Date(comp.start_date) <= now && new Date(comp.end_date) >= now;
         }
@@ -215,10 +231,21 @@ export default function CompetitionTab({ competitionId, groupId, title }) {
     // Beräkna innehav och koppla mot aktuellt marknadspris från MARKET_ASSETS
     const myHoldings = (myParticipant?.holdings || []).map(h => {
         const marketAsset = MARKET_ASSETS.find(a => a.ticker === h.ticker);
+        const currentPrice = marketAsset ? marketAsset.price : h.avg_price;
+        const investedValue = Number(h.shares || 0) * Number(h.avg_price || 0);
+        const currentValue = Number(h.shares || 0) * Number(currentPrice || 0);
+        const valueChange = currentValue - investedValue;
+
         return {
             ...h,
-            // Använd live-pris från marknaden om det finns, annars snittpris
-            current_price: marketAsset ? marketAsset.price : h.avg_price
+            // Använd live-pris från marknaden om det finns, annars snittpris.
+            current_price: currentPrice,
+            invested_value: investedValue,
+            current_value: currentValue,
+            value_change: valueChange,
+            value_change_percent: investedValue
+                ? (valueChange / investedValue) * 100
+                : 0
         };
     });
 
@@ -257,13 +284,13 @@ export default function CompetitionTab({ competitionId, groupId, title }) {
                                 variant="ghost" 
                                 size="sm" 
                                 onClick={() => { setActiveId(null); setCompetition(null); }}
-                                className="text-xs text-gray-600"
+                                className="order-last text-xs text-gray-600 sm:order-first"
                             >
                                 ← Tillbaka till alla tävlingar
                             </Button>
                         )}
                         {isParticipant ? (
-                            <div className="flex bg-gray-200 p-1 rounded-lg">
+                            <div className="order-first flex bg-gray-200 p-1 rounded-lg sm:order-last">
                                 <button
                                     className={`px-3 py-1 text-xs font-medium rounded-md transition ${
                                         subTab === "overview" ? "bg-white shadow text-black" : "text-gray-600"
@@ -294,6 +321,7 @@ export default function CompetitionTab({ competitionId, groupId, title }) {
                                 variant="default"
                                 onClick={handleJoinCompetition}
                                 disabled={joining}
+                                className="order-first sm:order-last"
                             >
                                 {joining ? "Ansluter..." : "Gå med i tävlingen"}
                             </Button>
@@ -365,6 +393,11 @@ export default function CompetitionTab({ competitionId, groupId, title }) {
                                                 <div className="space-y-2">
                                                     {sortedParticipants.map((p, idx) => {
                                                         const totalValue = calculateTotalValue(p);
+                                                        const startingBudget = Number(competition.starting_budget || 0);
+                                                        const result = totalValue - startingBudget;
+                                                        const resultPercent = startingBudget
+                                                            ? (result / startingBudget) * 100
+                                                            : 0;
                                                         return (
                                                             <div
                                                                 key={p.id}
@@ -386,6 +419,17 @@ export default function CompetitionTab({ competitionId, groupId, title }) {
                                                                 <div className="text-right">
                                                                     <div className="font-bold text-primary">
                                                                         {totalValue.toLocaleString("sv-SE", { maximumFractionDigits: 0 })} kr
+                                                                    </div>
+                                                                    <div className={`text-sm font-semibold ${
+                                                                        result > 0
+                                                                            ? "text-green-700"
+                                                                            : result < 0
+                                                                                ? "text-red-700"
+                                                                                : "text-gray-500"
+                                                                    }`}>
+                                                                        Resultat: {result > 0 ? "+" : ""}
+                                                                        {result.toLocaleString("sv-SE", { maximumFractionDigits: 0 })} kr ({resultPercent > 0 ? "+" : ""}
+                                                                        {resultPercent.toLocaleString("sv-SE", { maximumFractionDigits: 2 })}%)
                                                                     </div>
                                                                     <div className="text-xs text-gray-400">
                                                                         (Varav {Number(p.cash_balance).toLocaleString("sv-SE", { maximumFractionDigits: 0 })} kr är disponibla)
@@ -466,17 +510,18 @@ export default function CompetitionTab({ competitionId, groupId, title }) {
                             </div>
 
                             {/* Innehavstabell */}
-                            <div className="border rounded-lg bg-white overflow-hidden shadow-sm">
+                            <div className="border rounded-lg bg-white overflow-x-auto shadow-sm">
                                 <div className="p-4 border-b bg-gray-50 font-semibold text-sm">
                                     Dina Innehav
                                 </div>
-                                <table className="w-full text-left text-sm">
+                                <table className="competition-mobile-table w-full text-left text-sm">
                                     <thead className="border-b text-gray-500 text-xs uppercase font-semibold bg-gray-50/50">
                                         <tr>
                                             <th className="px-4 py-3">Tillgång</th>
                                             <th className="px-4 py-3 text-right">Antal</th>
                                             <th className="px-4 py-3 text-right">Gj.snittpris</th>
                                             <th className="px-4 py-3 text-right">Nuvarande Värde</th>
+                                            <th className="px-4 py-3 text-right">Förändring sedan köp</th>
                                             <th className="px-4 py-3 text-center">Åtgärd</th>
                                         </tr>
                                     </thead>
@@ -484,20 +529,40 @@ export default function CompetitionTab({ competitionId, groupId, title }) {
                                         {myHoldings.length > 0 ? (
                                             myHoldings.map((holding) => (
                                                 <tr key={holding.ticker} className="hover:bg-gray-50 transition">
-                                                    <td className="px-4 py-3">
+                                                    <td className="px-4 py-3" data-label="Tillgång">
                                                         <div className="font-semibold">{holding.name || holding.ticker}</div>
                                                         <div className="text-xs text-gray-500">{holding.ticker}</div>
                                                     </td>
-                                                    <td className="px-4 py-3 text-right font-medium">
+                                                    <td className="px-4 py-3 text-right font-medium" data-label="Antal">
                                                         {holding.shares} st
                                                     </td>
-                                                    <td className="px-4 py-3 text-right">
+                                                    <td className="px-4 py-3 text-right" data-label="Gj.snittpris">
                                                         {Number(holding.avg_price || 0).toLocaleString("sv-SE")} SEK
                                                     </td>
-                                                    <td className="px-4 py-3 text-right font-semibold">
-                                                        {(holding.shares * (holding.current_price || 0)).toLocaleString("sv-SE")} SEK
+                                                    <td className="px-4 py-3 text-right font-semibold" data-label="Nuvarande värde">
+                                                        {holding.current_value.toLocaleString("sv-SE")} SEK
                                                     </td>
-                                                    <td className="px-4 py-3 text-center">
+                                                    <td
+                                                        data-label="Förändring sedan köp"
+                                                        className={`px-4 py-3 text-right font-semibold ${
+                                                            holding.value_change > 0
+                                                                ? "text-green-700"
+                                                                : holding.value_change < 0
+                                                                    ? "text-red-700"
+                                                                    : "text-gray-500"
+                                                        }`}
+                                                    >
+                                                        {holding.value_change > 0 ? "+" : ""}
+                                                        {holding.value_change.toLocaleString("sv-SE")} SEK
+                                                        <div className="text-xs font-medium">
+                                                            ({holding.value_change_percent > 0 ? "+" : ""}
+                                                            {holding.value_change_percent.toLocaleString("sv-SE", {
+                                                                minimumFractionDigits: 2,
+                                                                maximumFractionDigits: 2
+                                                            })}%)
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-center" data-label="Åtgärd">
                                                         <Button
                                                             size="sm"
                                                             variant="outline"
@@ -511,7 +576,7 @@ export default function CompetitionTab({ competitionId, groupId, title }) {
                                             ))
                                         ) : (
                                             <tr>
-                                                <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                                                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
                                                     Du äger inga aktier eller fonder ännu. Gå till "Handla" för att göra ditt första köp!
                                                 </td>
                                             </tr>
@@ -571,8 +636,8 @@ export default function CompetitionTab({ competitionId, groupId, title }) {
                                 />
                             </div>
 
-                            <div className="border rounded-lg bg-white overflow-hidden shadow-sm">
-                                <table className="w-full text-left text-sm">
+                            <div className="border rounded-lg bg-white overflow-x-auto shadow-sm">
+                                <table className="competition-mobile-table w-full text-left text-sm">
                                     <thead className="bg-gray-50 border-b text-gray-500 text-xs uppercase font-semibold">
                                         <tr>
                                             <th className="px-4 py-3">Tillgång</th>
@@ -588,11 +653,11 @@ export default function CompetitionTab({ competitionId, groupId, title }) {
                                                 const isPositive = asset.change >= 0;
                                                 return (
                                                     <tr key={asset.ticker} className="hover:bg-gray-50 transition">
-                                                        <td className="px-4 py-3">
+                                                        <td className="px-4 py-3" data-label="Tillgång">
                                                             <div className="font-semibold text-gray-900">{asset.name}</div>
                                                             <div className="text-xs text-gray-500">{asset.ticker}</div>
                                                         </td>
-                                                        <td className="px-4 py-3">
+                                                        <td className="px-4 py-3" data-label="Typ">
                                                             {asset.type === "stock" ? (
                                                                 <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-medium">
                                                                     <Building2 className="h-3 w-3" /> Aktie
@@ -603,10 +668,10 @@ export default function CompetitionTab({ competitionId, groupId, title }) {
                                                                 </span>
                                                             )}
                                                         </td>
-                                                        <td className="px-4 py-3 text-right font-medium">
+                                                        <td className="px-4 py-3 text-right font-medium" data-label="Senaste kurs">
                                                             {asset.price.toLocaleString("sv-SE")} SEK
                                                         </td>
-                                                        <td className="px-4 py-3 text-right">
+                                                        <td className="px-4 py-3 text-right" data-label="Idag">
                                                             <span className={`inline-flex items-center font-medium ${
                                                                 isPositive ? "text-emerald-600" : "text-rose-600"
                                                             }`}>
@@ -618,7 +683,7 @@ export default function CompetitionTab({ competitionId, groupId, title }) {
                                                                 {isPositive ? `+${asset.change}%` : `${asset.change}%`}
                                                             </span>
                                                         </td>
-                                                        <td className="px-4 py-3 text-center">
+                                                        <td className="px-4 py-3 text-center" data-label="Åtgärd">
                                                             <Button
                                                                 size="sm"
                                                                 disabled={!isOpen}

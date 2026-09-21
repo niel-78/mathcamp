@@ -82,6 +82,7 @@ export default function LessonAssessmentDialog({
 
     const [includeCompletion, setIncludeCompletion] = useState(true);
     const [includeTraining, setIncludeTraining] = useState(true);
+    const [allowSubmitAfterSeed, setAllowSubmitAfterSeed] = useState(false);
     const [activeTab, setActiveTab] = useState("sections");
 
     const isEditMode = !!groupAssessmentId;
@@ -354,6 +355,9 @@ export default function LessonAssessmentDialog({
 
             }
         );
+        setAllowSubmitAfterSeed(
+            existingConfig?.attempt?.allowSubmitAfterSeed ?? false
+        );
 
     }
 
@@ -427,7 +431,8 @@ export default function LessonAssessmentDialog({
             include_completion:
                 includeCompletion,
             include_training:
-                includeTraining
+                includeTraining,
+            allow_submit_after_seed: allowSubmitAfterSeed
         };
 
         try {
@@ -596,7 +601,8 @@ export default function LessonAssessmentDialog({
                             include_completion:
                                 includeCompletion,
                             include_training:
-                                includeTraining
+                                includeTraining,
+                            allow_submit_after_seed: allowSubmitAfterSeed
                         })
                     }
                 );
@@ -741,7 +747,7 @@ export default function LessonAssessmentDialog({
                                     Frågor
                                 </TabsTrigger>
                                 <TabsTrigger value="settings">
-                                    Inställningar
+                                    Genomförande
                                 </TabsTrigger>
                             </TabsList>
 
@@ -1058,6 +1064,14 @@ export default function LessonAssessmentDialog({
                                 <Switch
                                     checked={includeTraining}
                                     onCheckedChange={setIncludeTraining}
+                                />
+                            </label>
+
+                            <label className="flex items-center justify-between gap-4 text-sm font-medium">
+                                <span>Tillåt att lämna in efter basdel</span>
+                                <Switch
+                                    checked={allowSubmitAfterSeed}
+                                    onCheckedChange={setAllowSubmitAfterSeed}
                                 />
                             </label>
                         </div>

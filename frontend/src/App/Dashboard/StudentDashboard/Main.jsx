@@ -6,7 +6,9 @@ export default function Main({
         <main
             className="
                 flex-1
+                min-h-0
                 min-w-0
+                student-main
                 overflow-y-auto
                 flex
                 items-center

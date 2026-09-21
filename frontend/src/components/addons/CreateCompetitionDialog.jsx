@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 import { Button } from "@/components/ui/button";
@@ -14,10 +14,13 @@ export default function CreateCompetitionDialog({
     open,
     onOpenChange,
     groupId,
-    onCreated
+    onCreated,
+    competition = null
 }) {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
+    const [competitionStartDate, setCompetitionStartDate] = useState("");
+    const [competitionEndDate, setCompetitionEndDate] = useState("");
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [startingBudget, setStartingBudget] = useState(100000);
@@ -33,13 +36,60 @@ export default function CreateCompetitionDialog({
     const [requireReasoning, setRequireReasoning] = useState(false);
     const [loading, setLoading] = useState(false);
 
+    const formatDateTimeLocal = (value) => {
+        if (!value) return "";
+
+        const date = new Date(value);
+        const pad = (part) => String(part).padStart(2, "0");
+
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    };
+
+    useEffect(() => {
+        if (!open) return;
+
+        if (!competition) {
+            setTitle("");
+            setDescription("");
+            setCompetitionStartDate("");
+            setCompetitionEndDate("");
+            setStartDate("");
+            setEndDate("");
+            setScheduleType("single");
+            setStartingBudget(100000);
+            setMaxStockWeight(20);
+            setTradingFee(0);
+            setRequireReasoning(false);
+            return;
+        }
+
+        setTitle(competition.title || "");
+        setDescription(competition.description || "");
+        setCompetitionStartDate(formatDateTimeLocal(competition.competition_start_date));
+        setCompetitionEndDate(formatDateTimeLocal(competition.competition_end_date));
+        setStartDate(formatDateTimeLocal(competition.start_date));
+        setEndDate(formatDateTimeLocal(competition.end_date));
+        setScheduleType(competition.schedule_type || "single");
+        setRecurInterval(competition.recur_interval || "daily");
+        setRecurStartTime(competition.recur_start_time?.substring(0, 5) || "09:00");
+        setRecurEndTime(competition.recur_end_time?.substring(0, 5) || "15:00");
+        setStartingBudget(competition.starting_budget ?? 100000);
+        setMaxStockWeight(Number(competition.max_stock_weight ?? 0.2) * 100);
+        setTradingFee(competition.trading_fee ?? 0);
+        setRequireReasoning(Boolean(competition.require_reasoning));
+    }, [open, competition]);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
 
         try {
-            const response = await fetch(`${API_URL}/api/competitions`, {
-                method: "POST",
+            const response = await fetch(
+                competition
+                    ? `${API_URL}/api/competitions/${competition.id}`
+                    : `${API_URL}/api/competitions`,
+                {
+                method: competition ? "PATCH" : "POST",
                 headers: {
                     ...authHeaders(),
                     "Content-Type": "application/json"
@@ -48,6 +98,8 @@ export default function CreateCompetitionDialog({
                     groupId,
                     title,
                     description,
+                    competitionStartDate,
+                    competitionEndDate,
                     scheduleType,
                     startDate: scheduleType === "single" ? startDate : null,
                     endDate: scheduleType === "single" ? endDate : null,
@@ -68,14 +120,6 @@ export default function CreateCompetitionDialog({
                 return;
             }
 
-            // Återställ formulär
-            setTitle("");
-            setDescription("");
-            setStartDate("");
-            setEndDate("");
-            setScheduleType("single");
-            setRequireReasoning(false);
-
             onCreated();
             onOpenChange(false);
         } catch (error) {
@@ -89,7 +133,11 @@ export default function CreateCompetitionDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[550px]">
                 <DialogHeader>
-                    <DialogTitle>Skapa ny investeringstävling</DialogTitle>
+                    <DialogTitle>
+                        {competition
+                            ? "Redigera investeringstävling"
+                            : "Skapa ny investeringstävling"}
+                    </DialogTitle>
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-4 py-2">
@@ -114,6 +162,33 @@ export default function CreateCompetitionDialog({
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                         />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-medium mb-1">
+                                Tävlingen startar
+                            </label>
+                            <input
+                                type="datetime-local"
+                                required
+                                className="w-full border rounded p-2 text-sm bg-white"
+                                value={competitionStartDate}
+                                onChange={(e) => setCompetitionStartDate(e.target.value)}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium mb-1">
+                                Tävlingen slutar
+                            </label>
+                            <input
+                                type="datetime-local"
+                                required
+                                className="w-full border rounded p-2 text-sm bg-white"
+                                value={competitionEndDate}
+                                onChange={(e) => setCompetitionEndDate(e.target.value)}
+                            />
+                        </div>
                     </div>
 
                     {/* Schemaläggning av handel */}
@@ -147,7 +222,7 @@ export default function CreateCompetitionDialog({
                         {scheduleType === "single" && (
                             <div className="grid grid-cols-2 gap-4 pt-2">
                                 <div>
-                                    <label className="block text-xs font-medium mb-1">Startdatum & tid</label>
+                                    <label className="block text-xs font-medium mb-1">Handel startar</label>
                                     <input
                                         type="datetime-local"
                                         required
@@ -157,7 +232,7 @@ export default function CreateCompetitionDialog({
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-medium mb-1">Slutdatum & tid</label>
+                                    <label className="block text-xs font-medium mb-1">Handel slutar</label>
                                     <input
                                         type="datetime-local"
                                         required
@@ -279,7 +354,11 @@ export default function CreateCompetitionDialog({
                             Avbryt
                         </Button>
                         <Button type="submit" disabled={loading}>
-                            {loading ? "Skapar..." : "Skapa tävling"}
+                            {loading
+                                ? "Sparar..."
+                                : competition
+                                    ? "Spara ändringar"
+                                    : "Skapa tävling"}
                         </Button>
                     </DialogFooter>
                 </form>

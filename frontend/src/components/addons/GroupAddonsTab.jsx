@@ -4,6 +4,7 @@ import BaseTabLayout from "@/components/layouts/BaseTabLayout";
 import { Button } from "@/components/ui/button";
 import { authHeaders } from "@/api/authHeaders";
 import CreateCompetitionDialog from "@/components/addons/CreateCompetitionDialog";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function GroupAddonsTab({
     groupId,
@@ -51,6 +52,25 @@ export default function GroupAddonsTab({
         }
     };
 
+    const toggleCompetitionVisibility = async (competitionId, currentIsVisible) => {
+        try {
+            const response = await fetch(`${API_URL}/api/competitions/${competitionId}/toggle-visibility`, {
+                method: "PATCH",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ isVisible: !currentIsVisible })
+            });
+
+            if (response.ok) {
+                loadCompetitions();
+            }
+        } catch (error) {
+            console.error("Kunde inte ändra tävlingens synlighet:", error);
+        }
+    };
+
     return (
         <>
             <BaseTabLayout
@@ -83,8 +103,15 @@ export default function GroupAddonsTab({
 
                                 return (
                                     <div key={comp.id} className="border p-4 rounded-lg shadow-sm bg-white space-y-3">
-                                        <div className="flex justify-between items-start">
-                                            <h3 className="font-semibold text-lg">{comp.title}</h3>
+                                        <div className="flex justify-between items-start gap-3">
+                                            <div className="flex min-w-0 items-center gap-2">
+                                                <h3 className="font-semibold text-lg">{comp.title}</h3>
+                                                {!comp.is_visible && (
+                                                    <span className="shrink-0 rounded bg-gray-200 px-2 py-1 text-xs font-medium text-gray-700">
+                                                        Dold
+                                                    </span>
+                                                )}
+                                            </div>
                                             <span className={`px-2 py-1 text-xs rounded font-medium ${
                                                 isCurrentlyOpen ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
                                             }`}>
@@ -101,7 +128,7 @@ export default function GroupAddonsTab({
                                             <div>Styrning: <strong>{isScheduled ? "Schemalagd" : "Manuell"}</strong></div>
                                         </div>
 
-                                        <div className="flex gap-2 pt-2">
+                                        <div className="flex gap-2 pt-2 flex-wrap">
                                             <Button
                                                 size="sm"
                                                 onClick={() => openTab({
@@ -112,6 +139,19 @@ export default function GroupAddonsTab({
                                                 })}
                                             >
                                                 Öppna tävling
+                                            </Button>
+
+                                            <Button
+                                                size="sm"
+                                                variant={comp.is_visible ? "outline" : "secondary"}
+                                                onClick={() => toggleCompetitionVisibility(comp.id, Boolean(comp.is_visible))}
+                                                title={comp.is_visible ? "Dölj tävlingen för gruppen" : "Visa tävlingen för gruppen"}
+                                            >
+                                                {comp.is_visible ? (
+                                                    <><EyeOff className="h-4 w-4 mr-1" /> Dölj för gruppen</>
+                                                ) : (
+                                                    <><Eye className="h-4 w-4 mr-1" /> Visa för gruppen</>
+                                                )}
                                             </Button>
 
                                             {/* Visas bara om tävlingen har manuell styrning */}
