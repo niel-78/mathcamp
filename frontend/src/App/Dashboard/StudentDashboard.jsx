@@ -17,6 +17,7 @@ import PlanningBoard from "@/components/planning/PlanningBoard";
 import { toast } from "sonner";
 import { logEvent } from "@/utils/logEvent";
 import { resolveFormulaSheetGroup } from "@/utils/formulaSheetGroup";
+import { activeExamSessionStorageKey } from "@/hooks/useAutoLogout";
 import {
     KeyRound,
     Trophy,
@@ -52,6 +53,21 @@ const StudentDashboard = () => {
         selectedGroupId,
         groupExam
     });
+
+    useEffect(() => {
+
+        if (["waiting-room", "assessment", "locked"].includes(view)) {
+            sessionStorage.setItem(activeExamSessionStorageKey, "true");
+            return;
+        }
+
+        sessionStorage.removeItem(activeExamSessionStorageKey);
+
+    }, [view]);
+
+    useEffect(() => () => {
+        sessionStorage.removeItem(activeExamSessionStorageKey);
+    }, []);
 
     useEffect(() => {
 
@@ -95,6 +111,12 @@ const StudentDashboard = () => {
         );
 
         const data = await res.json();
+
+        if (!res.ok) {
+            setErrorMessage(data.error || "Kunde inte hitta provtillfället.");
+            setErrorOpen(true);
+            return;
+        }
 
         const joinRes = await fetch(
             `${API_URL}/api/group-assessment-lobby/join`,

@@ -13,6 +13,36 @@ body {
         text-foreground;
 }
 
+.diagnostic-question-panel {
+    view-transition-name: diagnostic-question-panel;
+}
+
+::view-transition-old(diagnostic-question-panel) {
+    animation: diagnostic-question-out 240ms ease-in both;
+}
+
+::view-transition-new(diagnostic-question-panel) {
+    animation: diagnostic-question-in 320ms ease-out both;
+}
+
+@keyframes diagnostic-question-out {
+    to {
+        opacity: 0;
+        transform: translateX(-7%);
+    }
+}
+
+@keyframes diagnostic-question-in {
+    from {
+        opacity: 0;
+        transform: translateX(7%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
 .card {
     @apply
         bg-card

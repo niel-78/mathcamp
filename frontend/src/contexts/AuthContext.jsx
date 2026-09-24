@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
-import { authHeaders } from "@/api/authHeaders";
+import { authHeaders, clearRememberedAuthToken } from "@/api/authHeaders";
 import { API_URL } from "@/config";
-import useAutoLogout from "@/hooks/useAutoLogout";
+import useAutoLogout, { activeExamSessionStorageKey } from "@/hooks/useAutoLogout";
 import { useAppSettings } from "@/contexts/AppSettingsContext";
 
 const AuthContext = createContext();
@@ -44,7 +44,9 @@ export function AuthProvider({ children }) {
             .then(async res => {
 
                 if (!res.ok) {
-                    throw new Error("Unauthorized");
+                    const error = new Error("Unauthorized");
+                    error.status = res.status;
+                    throw error;
                 }
 
                 return res.json();
@@ -61,8 +63,19 @@ export function AuthProvider({ children }) {
 
                 console.error(error);
 
+                // Keep the token through transient network/server errors. Only a confirmed
+                // 401 means the session is invalid.
+                if (
+                    error.status !== 401 ||
+                    sessionStorage.getItem(activeExamSessionStorageKey) === "true"
+                ) {
+                    setLoading(false);
+                    return;
+                }
+
                 localStorage.removeItem("token");
                 sessionStorage.removeItem("token");
+                clearRememberedAuthToken();
                 clearUserScopedLocalStorage();
 
                 setUser(null);
@@ -108,6 +121,7 @@ export function AuthProvider({ children }) {
 
             localStorage.removeItem("token");
             sessionStorage.removeItem("token");
+            clearRememberedAuthToken();
             clearUserScopedLocalStorage();
             setUser(null);
 

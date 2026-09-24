@@ -747,6 +747,56 @@ router.put("/:id", async (req, res) => {
             });
         }
 
+        const hasTextAnswer =
+            typeof text_answer === "string"
+                ? text_answer.trim().length > 0
+                : text_answer !== null && text_answer !== undefined;
+
+        const hasSelectedOptions =
+            Array.isArray(selected_option_ids) &&
+            selected_option_ids.length > 0;
+
+        if (!hasTextAnswer && !hasSelectedOptions) {
+            await connection.query(
+                `
+                DELETE ao
+                FROM answer_options ao
+                INNER JOIN assessment_answers aa
+                    ON aa.id = ao.answer_id
+                WHERE aa.attempt_id = ?
+                    AND aa.question_id = ?
+                `,
+                [id, question_id]
+            );
+
+            await connection.query(
+                `
+                DELETE FROM assessment_answers
+                WHERE attempt_id = ?
+                    AND question_id = ?
+                `,
+                [id, question_id]
+            );
+
+            await connection.query(
+                `
+                UPDATE attempt_questions
+                SET answered_at = NULL
+                WHERE attempt_id = ?
+                    AND question_id = ?
+                `,
+                [id, question_id]
+            );
+
+            await connection.commit();
+
+            return res.json({
+                success: true,
+                correct: null,
+                nextQuestion: null
+            });
+        }
+
         /*
          * Upsert answer
          */
@@ -800,7 +850,11 @@ router.put("/:id", async (req, res) => {
             ]
         );
 
-        const answerId = answerRows[0].id;
+        const answerId = answerRows[0]?.id;
+
+        if (!answerId) {
+            throw new Error("Kunde inte hitta det sparade svaret.");
+        }
 
         /*
          * Ersätt alla tidigare val

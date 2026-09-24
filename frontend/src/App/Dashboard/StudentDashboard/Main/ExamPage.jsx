@@ -27,14 +27,41 @@ import QuestionView from "./QuestionView.jsx";
 import ExamNavigation from "./ExamNavigation";
 import Calculator from "@/components/ui/Calculator";
 import FormulaSheetButton from "@/components/ui/FormulaSheetButton";
+import { activeExamSessionStorageKey } from "@/hooks/useAutoLogout";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { MessageSquareWarning, Settings } from "lucide-react";
+import {
+    ResizableHandle,
+    ResizablePanel,
+    ResizablePanelGroup
+} from "@/components/ui/resizable";
+import { Columns2, MessageSquareWarning, PanelLeft, Settings } from "lucide-react";
 import { getSavedShowQuestionInfo } from "@/utils/questionSettings";
 
 const questionTextSizeStorageKey = "math-camp-question-text-size";
 const showQuestionInfoStorageKey = "math-camp-show-question-info";
 const showCountdownStorageKey = "math-camp-show-countdown";
+
+function getFormulaSheetUrl(group) {
+    const course = [group?.level_code, group?.level_name, group?.subject_name]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+    if (/forts[aä]ttning\s*(niv[aå]\s*)?1|forts\s*(niv[aå]\s*)?1|matematik\s*3|ma\s*3|matmat0?3[bc]|\b3\s*[bc]\b/i.test(course)) {
+        return "/formula-sheets/formelblad-matematik-3bc-fortsattning-niva-1.pdf";
+    }
+
+    if (/forts[aä]ttning\s*(niv[aå]\s*)?2|forts\s*(niv[aå]\s*)?2|matematik\s*4|ma\s*4|matmat0?4|\b4\b/i.test(course)) {
+        return "/formula-sheets/formelblad-matematik-4-fortsattning-niva-2.pdf";
+    }
+
+    if (/matematik\s*2|ma\s*2|matmat0?2[abc]|\b2\s*[abc]\b/i.test(course)) {
+        return "/formula-sheets/formelblad-matematik-2abc-2021.pdf";
+    }
+
+    return "/formula-sheets/formelblad-matematik-1abc.pdf";
+}
 
 const questionTextSizeOptions = [
     { value: "normal", label: "Normal", className: "text-base" },
@@ -54,7 +81,7 @@ function getSavedQuestionTextSize() {
         // Use the default when localStorage is unavailable.
     }
 
-    return "normal";
+    return "large";
 }
 
 function getSavedShowCountdown() {
@@ -101,15 +128,27 @@ export default function ExamPage({
         useState(() => getSavedShowQuestionInfo());
     const [showCountdown, setShowCountdown] =
         useState(getSavedShowCountdown);
+    const [splitView, setSplitView] = useState(false);
     const [reportedQuestionIds, setReportedQuestionIds] =
         useState(new Set());
     const isSubmittingRef = useRef(false);
+    const handledTerminalStatusRef = useRef(null);
 
 
     const [dynamicQuestions, setDynamicQuestions] =
         useState([]);
     const hasRestoredIndexRef =
         useRef(false);
+
+    useEffect(() => {
+
+        sessionStorage.setItem(activeExamSessionStorageKey, "true");
+
+        return () => {
+            sessionStorage.removeItem(activeExamSessionStorageKey);
+        };
+
+    }, []);
 
     const {
         attempt,
@@ -203,6 +242,20 @@ export default function ExamPage({
             return;
         }
 
+        if (
+            attempt.status !== "locked" &&
+            attempt.status !== "submitted"
+        ) {
+            handledTerminalStatusRef.current = null;
+            return;
+        }
+
+        if (handledTerminalStatusRef.current === attempt.status) {
+            return;
+        }
+
+        handledTerminalStatusRef.current = attempt.status;
+
         if (attempt.status === "locked") {
 
             toast.error(
@@ -263,8 +316,24 @@ export default function ExamPage({
         attempt?.assessment?.type ===
         "diagnostic";
 
+    const changeQuestionIndex = (updater) => {
+        if (
+            isDiagnostic &&
+            typeof document.startViewTransition === "function"
+        ) {
+            document.startViewTransition(() => {
+                setIndex(updater);
+            });
+            return;
+        }
+
+        setIndex(updater);
+    };
+
     const isTeacherTest =
-        attempt?.mode === "test";
+        String(attempt?.mode || "").toLowerCase() === "test";
+
+    const canSplitExam = true;
 
     const isSoftEnded =
         attempt?.teacher_end_mode === "soft";
@@ -462,7 +531,7 @@ export default function ExamPage({
                 isAdaptive &&
                 result?.nextQuestion
             ) {
-                setIndex(current =>
+                changeQuestionIndex(current =>
                     current + 1
                 );
             }
@@ -505,7 +574,7 @@ export default function ExamPage({
                 isAdaptive &&
                 result?.nextQuestion
             ) {
-                setIndex(current =>
+                changeQuestionIndex(current =>
                     current + 1
                 );
             }
@@ -566,7 +635,7 @@ export default function ExamPage({
                 isAdaptive &&
                 result?.nextQuestion
             ) {
-                setIndex(current =>
+                changeQuestionIndex(current =>
                     current + 1
                 );
             }
@@ -589,7 +658,7 @@ export default function ExamPage({
             dynamicQuestions.length - 1
         ) {
 
-            setIndex(
+            changeQuestionIndex(
                 current =>
                     current + 1
             );
@@ -600,7 +669,7 @@ export default function ExamPage({
 
     const prev = () => {
 
-        setIndex(current =>
+        changeQuestionIndex(current =>
             Math.max(
                 0,
                 current - 1
@@ -686,13 +755,27 @@ export default function ExamPage({
 
         };
 
+    const isSplitTestView = canSplitExam && splitView;
+
     return (
         <div className="h-[100dvh] min-w-0 overflow-x-hidden overflow-y-auto">
 
-            <div className="exam-shell flex min-w-0 justify-center px-2 py-3 sm:px-6 sm:py-8">
+            <div className={isSplitTestView
+                ? "exam-shell flex h-full min-h-full min-w-0 flex-col gap-3 px-2 py-3 sm:px-6 sm:py-8"
+                : "exam-shell flex min-w-0 justify-center px-2 py-3 sm:px-6 sm:py-8"}>
 
-                <Card className="w-full min-w-0 max-w-4xl">
-
+                <ResizablePanelGroup
+                    direction="horizontal"
+                    className={isSplitTestView
+                        ? "min-h-full min-w-0 flex-1 gap-3"
+                        : "min-w-0 w-full justify-center"}
+                >
+                    <ResizablePanel
+                        defaultSize={isSplitTestView ? 60 : 100}
+                        minSize={isSplitTestView ? 35 : 100}
+                        className={isSplitTestView ? "min-w-0" : "max-w-4xl"}
+                    >
+                        <Card className="h-full w-full min-w-0 overflow-y-auto">
                     <CardContent className="exam-card-content min-w-0 space-y-6 p-3 sm:p-8">
 
                         <div className="student-header flex min-w-0 flex-row flex-nowrap items-center gap-3">
@@ -702,15 +785,33 @@ export default function ExamPage({
 
                             <div className="ml-auto flex min-w-0 shrink-0 flex-col items-end gap-2">
                                 <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
-                                    <FormulaSheetButton group={formulaGroup} iconOnly />
-                                    <Calculator
-                                        key={current.id}
-                                        attemptId={attemptId}
-                                        questionId={current.id}
-                                        showCalculator={calculatorAllowed}
-                                        showGeoGebra={geogebraAllowed}
-                                        compactLabels
-                                    />
+                                    <div className="flex items-center gap-2 rounded-md border bg-muted/20 px-2 py-1">
+                                        <span className="text-xs font-medium text-muted-foreground">
+                                            Hjälpmedel
+                                        </span>
+                                        <FormulaSheetButton group={formulaGroup} iconOnly />
+                                        <Calculator
+                                            key={current.id}
+                                            attemptId={attemptId}
+                                            questionId={current.id}
+                                            showCalculator={calculatorAllowed}
+                                            showGeoGebra={geogebraAllowed}
+                                            compactLabels
+                                        />
+                                    </div>
+                                    {canSplitExam && (
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            className="inline-flex"
+                                            onClick={() => setSplitView(value => !value)}
+                                            aria-label={splitView ? "Visa provet i en kolumn" : "Dela provet i två kolumner"}
+                                            title={splitView ? "Visa provet i en kolumn" : "Dela provet i två kolumner"}
+                                        >
+                                            {splitView ? <Columns2 className="h-4 w-4" /> : <PanelLeft className="h-4 w-4" />}
+                                        </Button>
+                                    )}
                                     <Button
                                         type="button"
                                         variant="outline"
@@ -745,6 +846,7 @@ export default function ExamPage({
                         <ExamHeader
                         />
 
+                        <div className="diagnostic-question-panel">
                         {isDiagnostic && (
                             <div className="flex items-center justify-between rounded-md border bg-muted/20 px-4 py-2.5 text-sm">
                                 <span className="font-medium text-foreground">
@@ -808,6 +910,7 @@ export default function ExamPage({
                         </div>
 
                         <div className="flex justify-end">
+
                             <Button
                                 type="button"
                                 variant="ghost"
@@ -866,10 +969,44 @@ export default function ExamPage({
                                     : "Lämna in prov"
                             }
                         />
+                        </div>
 
                     </CardContent>
 
                 </Card>
+
+                    </ResizablePanel>
+
+                {isSplitTestView && (
+                    <>
+                        <ResizableHandle withHandle />
+                        <ResizablePanel defaultSize={40} minSize={25} className="min-w-0">
+                    <aside className="relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border bg-background shadow-sm">
+                        <div className="flex items-center justify-between border-b px-3 py-2">
+                            <span className="text-sm font-medium">Formelblad</span>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setSplitView(false)}
+                            >
+                                <PanelLeft className="h-4 w-4" />
+                                En kolumn
+                            </Button>
+                        </div>
+                        <div className="flex min-h-0 flex-1 flex-col p-3">
+                            <iframe
+                                title="Formelblad"
+                                src={getFormulaSheetUrl(formulaGroup)}
+                                className="h-full min-h-0 w-full flex-1 rounded border"
+                            />
+                        </div>
+                    </aside>
+                        </ResizablePanel>
+                    </>
+                )}
+
+                </ResizablePanelGroup>
 
             </div>
 

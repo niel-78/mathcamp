@@ -327,6 +327,14 @@ export default function ContextMenu(props) {
 
                 return (
                     <BookMenu
+                        onOpenPlanningQueue={() => {
+                            props.onOpenBookPlanningQueue?.(
+                                contextMenu.bookId,
+                                contextMenu.bookTitle
+                            );
+
+                            setContextMenu(null);
+                        }}
                         onImportStructure={() => {
                             props.onImportBookStructure?.(
                                 contextMenu.bookId,

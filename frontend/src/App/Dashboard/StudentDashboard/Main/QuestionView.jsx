@@ -94,12 +94,12 @@ export default function QuestionView({
     }
 
     return (
-        <>
+        <div className="mx-auto mt-10 w-full max-w-3xl rounded-lg border bg-card p-5 text-left shadow-sm sm:p-7">
             <MathQuestionMedia
                 media={question.media}
                 attemptId={attemptId}
             />
             {questionContent}
-        </>
+        </div>
     );
 }

@@ -25,6 +25,10 @@ export default function CreateBlockFromExcelDialog({
     const [importMode, setImportMode] = useState("file");
     const [csvText, setCsvText] = useState("");
     const [result, setResult] = useState(null);
+    const [csvValidation, setCsvValidation] = useState({
+        status: "idle",
+        message: ""
+    });
     const [loading, setLoading] = useState(false);
     const [importProgress, setImportProgress] = useState({
         percent: 0,
@@ -115,6 +119,69 @@ export default function CreateBlockFromExcelDialog({
 
         loadAbilitySeries();
     }, [open]);
+
+    useEffect(() => {
+        if (importMode !== "csv" || !csvText.trim()) {
+            return;
+        }
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(async () => {
+            setCsvValidation({ status: "checking", message: "Kontrollerar CSV..." });
+
+            try {
+                const response = await fetch(
+                    `${API_URL}/api/blocks/import/validate`,
+                    {
+                        method: "POST",
+                        headers: {
+                            ...authHeaders(),
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            csvText,
+                            abilityId: abilityId || selectedAbilityId || undefined
+                        }),
+                        signal: controller.signal
+                    }
+                );
+                const contentType = response.headers.get("content-type") || "";
+                const data = contentType.includes("application/json")
+                    ? await response.json()
+                    : null;
+
+                if (!response.ok) {
+                    throw new Error(
+                        data?.error ||
+                        `CSV-valideringen misslyckades (${response.status}).`
+                    );
+                }
+
+                if (!data) {
+                    throw new Error(
+                        "CSV-valideringen svarade inte med JSON. Starta om backend-servern."
+                    );
+                }
+
+                setCsvValidation({
+                    status: "valid",
+                    message: `${data.questionCount} frågor redo att importeras`
+                });
+            } catch (error) {
+                if (error.name !== "AbortError") {
+                    setCsvValidation({
+                        status: "invalid",
+                        message: error.message || "CSV-texten kunde inte valideras."
+                    });
+                }
+            }
+        }, 400);
+
+        return () => {
+            clearTimeout(timeoutId);
+            controller.abort();
+        };
+    }, [abilityId, csvText, importMode, selectedAbilityId]);
 
     const selectedSeries = abilitySeries.find(
         (series) => String(series.id) === String(selectedSeriesId)
@@ -372,7 +439,10 @@ export default function CreateBlockFromExcelDialog({
                     <Button
                         type="button"
                         variant={importMode === "file" ? "default" : "outline"}
-                        onClick={() => setImportMode("file")}
+                        onClick={() => {
+                            setImportMode("file");
+                            setCsvValidation({ status: "idle", message: "" });
+                        }}
                     >
                         Excel-fil
                     </Button>
@@ -380,7 +450,10 @@ export default function CreateBlockFromExcelDialog({
                     <Button
                         type="button"
                         variant={importMode === "csv" ? "default" : "outline"}
-                        onClick={() => setImportMode("csv")}
+                        onClick={() => {
+                            setImportMode("csv");
+                            setCsvValidation({ status: "idle", message: "" });
+                        }}
                     >
                         Klistra in CSV-text
                     </Button>
@@ -397,13 +470,32 @@ export default function CreateBlockFromExcelDialog({
                         }
                     />
                 ) : (
-                    <textarea
-                        value={csvText}
-                        onChange={(e) => setCsvText(e.target.value)}
-                        placeholder="Klistra in CSV-data (kommaseparerad, samma kolumner som Excel-mallen)"
-                        rows={10}
-                        className="w-full rounded border p-2 font-mono text-sm"
-                    />
+                    <>
+                        <textarea
+                            value={csvText}
+                            onChange={(e) => {
+                                setCsvText(e.target.value);
+                                setCsvValidation({ status: "idle", message: "" });
+                            }}
+                            placeholder="Klistra in CSV-data (kommaseparerad, samma kolumner som Excel-mallen)"
+                            rows={10}
+                            className="w-full rounded border p-2 font-mono text-sm"
+                        />
+
+                        {csvValidation.status !== "idle" && (
+                            <div
+                                className={
+                                    csvValidation.status === "valid"
+                                        ? "rounded-md border border-green-500 bg-green-500/10 p-3 text-sm"
+                                        : csvValidation.status === "invalid"
+                                            ? "max-h-48 overflow-y-auto whitespace-pre-wrap break-words rounded-md border border-red-500 bg-red-500/10 p-3 text-sm"
+                                            : "text-sm text-muted-foreground"
+                                }
+                            >
+                                {csvValidation.message}
+                            </div>
+                        )}
+                    </>
                 )}
 
                 <Button
@@ -411,6 +503,7 @@ export default function CreateBlockFromExcelDialog({
                     disabled={
                         loading ||
                         (importMode === "file" ? !file : !csvText.trim()) ||
+                        (importMode === "csv" && csvValidation.status !== "valid") ||
                         (!abilityId && !selectedAbilityId && !newAbilityName.trim())
                     }
                 >
@@ -438,7 +531,7 @@ export default function CreateBlockFromExcelDialog({
                     <div
                         className={
                             result.error
-                                ? "rounded-md border border-red-500 bg-red-500/10 p-3"
+                                ? "max-h-48 overflow-y-auto whitespace-pre-wrap break-words rounded-md border border-red-500 bg-red-500/10 p-3"
                                 : "rounded-md border border-green-500 bg-green-500/10 p-3"
                         }
                     >

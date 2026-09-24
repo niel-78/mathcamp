@@ -270,6 +270,7 @@ export default function FormulaSheetButton({ group = {}, title = "Formelblad", i
         >
             <section
                 ref={formulaRef}
+                data-exam-tool-window="true"
                 className="fixed left-4 top-16 z-[9997] w-[min(900px,calc(100vw-2rem))] rounded-lg border bg-background p-3 shadow-2xl"
                 aria-label={`Formelblad ${activeFormula.course}`}
             >

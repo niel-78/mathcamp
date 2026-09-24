@@ -1,17 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
-import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 export function useExamAttempt(attemptId) {
-    const { logout } = useAuth();
-
     const [attempt, setAttempt] = useState(null);
     const [questions, setQuestions] = useState([]);
     const [assessment_answers, setAnswers] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const unauthorizedRef = useRef(false);
 
     useEffect(() => {
 
@@ -31,6 +29,12 @@ export function useExamAttempt(attemptId) {
                 );
 
                 const data = await res.json();
+
+                if (res.status === 401) {
+                    unauthorizedRef.current = true;
+                    setError("Sessionen har gått ut. Logga in igen.");
+                    return;
+                }
 
                 if (!res.ok) {
                     throw new Error(
@@ -86,6 +90,10 @@ export function useExamAttempt(attemptId) {
 
         const checkStatus = async () => {
 
+            if (unauthorizedRef.current) {
+                return;
+            }
+
             try {
 
                 const response =
@@ -95,6 +103,12 @@ export function useExamAttempt(attemptId) {
                             headers: authHeaders()
                         }
                     );
+
+                if (response.status === 401) {
+                    unauthorizedRef.current = true;
+                    toast.error("Kunde inte verifiera sessionen. Försök spara igen om en stund.");
+                    return;
+                }
 
                 if (!response.ok) {
                     return;
@@ -168,7 +182,8 @@ export function useExamAttempt(attemptId) {
                 await res.json();
 
             if (res.status === 401) {
-                await logout();
+                unauthorizedRef.current = true;
+                toast.error("Kunde inte verifiera sessionen. Svaret sparades inte.");
                 return null;
             }
 

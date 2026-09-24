@@ -5,6 +5,7 @@ import WeekView from "./WeekView";
 import CompactWeekView from "./CompactWeekView";
 import ListView from "./ListView";
 import MonthView from "./MonthView";
+import MatrixView from "./MatrixView";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
@@ -41,7 +42,6 @@ export default function PlanningBoard({
     const [events, setEvents] = useState(EMPTY_EVENTS);
     const showCompactView = !isMobile;
     const showMonthView = !isMobile;
-    const [lessonAssessments, setLessonAssessments] = useState({});
     const [showEvents] = useState(true);
     const visibleEvents = isPublic ? initialEvents : events;
 
@@ -56,49 +56,10 @@ export default function PlanningBoard({
     }, []);
 
     useEffect(() => {
-        if (isMobile && (viewMode === "compact" || viewMode === "month")) {
+        if (isMobile && (viewMode === "compact" || viewMode === "month" || viewMode === "matrix")) {
             setViewMode("week");
         }
     }, [isMobile, viewMode]);
-
-    useEffect(() => {
-        if (viewMode !== "month" || lessons.length === 0) {
-            return;
-        }
-
-        const lessonIds = lessons.map(lesson => lesson.id).join(",");
-        const endpoint = isPublic
-            ? `${API_URL}/api/public/lessons/group-assessments?lessonIds=${lessonIds}`
-            : `${API_URL}/api/lessons/group-assessments?lessonIds=${lessonIds}`;
-
-        const loadLessonAssessments = async () => {
-            const response = await fetch(
-                endpoint,
-                {
-                    headers: isPublic ? {} : authHeaders()
-                }
-            );
-
-            if (!response.ok) {
-                return;
-            }
-
-            const data = await response.json();
-            const assessmentsByLesson = {};
-
-            for (const assessment of data) {
-                if (!assessmentsByLesson[assessment.lesson_id]) {
-                    assessmentsByLesson[assessment.lesson_id] = [];
-                }
-
-                assessmentsByLesson[assessment.lesson_id].push(assessment);
-            }
-
-            setLessonAssessments(assessmentsByLesson);
-        };
-
-        loadLessonAssessments();
-    }, [isPublic, lessons, viewMode]);
 
     useEffect(() => {
 
@@ -193,7 +154,7 @@ export default function PlanningBoard({
                 new Date(prev);
 
             if (
-                viewMode === "month"
+                viewMode === "month" || viewMode === "matrix"
             ) {
 
                 date.setMonth(
@@ -222,7 +183,7 @@ export default function PlanningBoard({
                 new Date(prev);
 
             if (
-                viewMode === "month"
+                viewMode === "month" || viewMode === "matrix"
             ) {
 
                 date.setMonth(
@@ -247,7 +208,8 @@ export default function PlanningBoard({
 
         <div className="planning-board space-y-4">
 
-            <div className="planning-board-period flex gap-2">
+            {viewMode !== "matrix" && (
+                <div className="planning-board-period flex gap-2">
 
                 <Button
                     variant="outline"
@@ -288,7 +250,8 @@ export default function PlanningBoard({
                     <ChevronRight className="h-4 w-4" aria-hidden="true" />
                 </Button>
 
-            </div>
+                </div>
+            )}
 
             <div
                 className="
@@ -331,6 +294,20 @@ export default function PlanningBoard({
                             }
                         >
                             Slim
+                        </Button>
+                    )}
+
+                    {!isMobile && (
+                        <Button
+                            variant={
+                                viewMode === "matrix"
+                                    ? "default"
+                                    : "outline"
+                            }
+                            aria-pressed={viewMode === "matrix"}
+                            onClick={() => setViewMode("matrix")}
+                        >
+                            Matris
                         </Button>
                     )}
 
@@ -431,9 +408,23 @@ export default function PlanningBoard({
                     events={visibleEvents}
                     showEvents={showEvents}
                     selectedDate={selectedDate}
-                    lessonAssessments={lessonAssessments}
                     onDeleteLesson={onDeleteLesson}
                     readOnly={readOnly}
+                />
+            )}
+            {showMonthView && viewMode === "matrix" && (
+                <MatrixView
+                    lessons={lessons}
+                    events={visibleEvents}
+                    showEvents={showEvents}
+                    openTab={openTab}
+                    onEditLesson={onEditLesson}
+                    onCancelLesson={onCancelLesson}
+                    onDeleteLesson={onDeleteLesson}
+                    startDiagnosticTest={startDiagnosticTest}
+                    readOnly={readOnly}
+                    isPublic={isPublic}
+                    hideCompletions={hideCompletions}
                 />
             )}
 

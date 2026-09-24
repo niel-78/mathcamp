@@ -23,6 +23,7 @@ import ArchivedQuestionsTab from "./Main/ArchivedQuestionsTab";
 import ArchivedBlocksTab from "./Main/ArchivedBlocksTab";
 import GroupSchedulesTab from "./Main/GroupSchedulesTab";
 import PlanningQueueTab from "./Main/PlanningQueueTab"
+import BookPlanningQueueTab from "./Main/BookPlanningQueueTab";
 import PresentationsTab from "./Main/PresentationsTab";
 import PresentationEditorTab from "@/components/ui/PresentationEditorTab";
 import PresentationPlayerTab from "@/components/ui/PresentationPlayerTab";
@@ -412,6 +413,12 @@ export default function Main({
                             groupId={currentTab.groupId}
                         />
 
+                    )}
+                    {currentTab?.type === "book-planning-queue" && (
+                        <BookPlanningQueueTab
+                            bookId={currentTab.bookId}
+                            bookTitle={currentTab.bookTitle}
+                        />
                     )}
                     {currentTab?.type === "archived-questions" && (
 

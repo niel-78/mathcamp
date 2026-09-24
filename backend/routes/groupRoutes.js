@@ -1617,14 +1617,19 @@ router.put("/:id/planning-sections", requireAuth,
                 group_planning_sections (
                     group_id,
                     section_id,
-                    sort_order
+                    sort_order,
+                    priority
                 )
-                VALUES (?, ?, ?)
+                VALUES (?, ?, ?, ?)
                 `,
                 [
                     req.params.id,
                     sectionIds[i],
-                    i + 1
+                    i + 1,
+                    Array.isArray(req.body.prioritizedSectionIds) &&
+                    req.body.prioritizedSectionIds.includes(sectionIds[i])
+                        ? 1
+                        : 0
                 ]
             );
 
@@ -1682,9 +1687,15 @@ router.get("/:groupId/planning-sections/edit", requireAuth,
 
                     CASE
                         WHEN gps.id IS NULL
-                        THEN FALSE
+                        THEN s.included_by_default
                         ELSE TRUE
-                    END AS selected
+                    END AS selected,
+
+                    CASE
+                        WHEN gps.id IS NULL
+                        THEN s.planning_priority
+                        ELSE gps.priority
+                    END AS priority
 
                 FROM sections s
 

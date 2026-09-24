@@ -333,6 +333,59 @@ router.get("/:id/sections", async (req, res) => {
     }
 });
 
+// GET /api/books/:id/planning-sections/edit
+router.get("/:id/planning-sections/edit", requireAuth, requireRole("super"), async (req, res) => {
+    const [rows] = await db.query(
+        `
+            SELECT
+                s.id,
+                c.chapter_number,
+                sc.subchapter_number,
+                s.title,
+                s.included_by_default AS selected,
+                s.planning_priority AS priority
+            FROM sections s
+            JOIN subchapters sc ON sc.id = s.subchapter_id
+            JOIN chapters c ON c.id = sc.chapter_id
+            WHERE c.book_id = ?
+            ORDER BY c.sort_order, sc.sort_order, s.sort_order
+        `,
+        [req.params.id]
+    );
+
+    res.json({ sections: rows });
+});
+
+// PUT /api/books/:id/planning-sections
+router.put("/:id/planning-sections", requireAuth, requireRole("super"), async (req, res) => {
+    const sections = Array.isArray(req.body.sections)
+        ? req.body.sections
+        : [];
+
+    for (const section of sections) {
+        await db.query(
+            `
+                UPDATE sections s
+                JOIN subchapters sc ON sc.id = s.subchapter_id
+                JOIN chapters c ON c.id = sc.chapter_id
+                SET
+                    s.included_by_default = ?,
+                    s.planning_priority = ?
+                WHERE s.id = ?
+                AND c.book_id = ?
+            `,
+            [
+                section.selected ? 1 : 0,
+                section.priority ? 1 : 0,
+                section.id,
+                req.params.id
+            ]
+        );
+    }
+
+    res.sendStatus(204);
+});
+
 // GET /api/books/sections/:sectionId
 router.get("/sections/:sectionId", async (req, res) => {
     try {

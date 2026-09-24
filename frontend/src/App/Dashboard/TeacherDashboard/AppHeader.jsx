@@ -124,11 +124,12 @@ export default function AppHeader({
                 {group && (
                 <Button
                     variant="outline"
+                    size="icon"
                     onClick={() => setFormulaOpen(value => !value)}
-                    className="whitespace-nowrap"
+                    aria-label="Formelblad"
+                    title="Formelblad"
                 >
                     <BookOpen className="h-4 w-4" />
-                    <span className="hidden sm:inline">Formelblad</span>
                 </Button>
                 )}
 

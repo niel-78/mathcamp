@@ -86,17 +86,25 @@ router.get("/",
                     SELECT
                         ls.lesson_id,
                         s.*,
+                        COALESCE(gps.priority, s.planning_priority) AS group_planning_priority,
                         ls.id AS lesson_section_id,
                         ls.pinned,
                         p.id AS presentation_id
 
                     FROM lesson_sections ls
 
+                    JOIN lessons l
+                        ON l.id = ls.lesson_id
+
                     JOIN sections s
                         ON s.id = ls.section_id
 
                     LEFT JOIN presentations p
                         ON p.section_id = s.id
+
+                    LEFT JOIN group_planning_sections gps
+                        ON gps.group_id = l.group_id
+                        AND gps.section_id = s.id
 
                     WHERE ls.lesson_id IN (${sectionPlaceholders})
 
@@ -854,6 +862,7 @@ router.get("/teacher",
                         `
                         SELECT
                             s.*,
+                            COALESCE(gps.priority, s.planning_priority) AS group_planning_priority,
                             ls.id AS lesson_section_id,
                             ls.lesson_id,
                             ls.pinned
@@ -862,6 +871,13 @@ router.get("/teacher",
 
                         JOIN sections s
                             ON s.id = ls.section_id
+
+                        JOIN lessons l
+                            ON l.id = ls.lesson_id
+
+                        LEFT JOIN group_planning_sections gps
+                            ON gps.group_id = l.group_id
+                            AND gps.section_id = s.id
 
                         WHERE ls.lesson_id
                             IN (${placeholders})

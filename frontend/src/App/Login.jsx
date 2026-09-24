@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth, clearUserScopedLocalStorage } from "@/contexts/AuthContext";
 import { API_URL, APP_VERSION } from "@/config";
+import { rememberAuthToken } from "@/api/authHeaders";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
@@ -16,6 +17,7 @@ export default function Login() {
     const completeLogin = useCallback((data) => {
         clearUserScopedLocalStorage();
         const token = data.token.replace(/^Bearer\s+/i, "");
+        rememberAuthToken(token);
         localStorage.setItem("token", token);
         sessionStorage.setItem("token", token);
         setUser(data.user);

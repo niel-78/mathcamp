@@ -27,22 +27,22 @@ INSERT INTO question_levels
 )
 VALUES
 (
-    'Repetition',
+    '1',
     'Träning av tidigare genomgångna moment',
     1
 ),
 (
-    'Grundläggande',
+    '2',
     'Grundnivå som alla elever förväntas behärska',
     2
 ),
 (
-    'Påbyggnad',
+    '3',
     'Mer utmanande uppgifter som kräver djupare förståelse',
     3
 ),
 (
-    'Avancerad',
+    '4',
     'Komplexa uppgifter med hög problemlösningsgrad',
     4
 );

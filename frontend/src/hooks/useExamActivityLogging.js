@@ -3,12 +3,14 @@ import { useEffect, useRef } from "react";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 import { logEvent } from "@/utils/logEvent";
+import { isFocusInsideExamTool } from "@/utils/examToolFocus";
 
 export default function useExamActivityLogging(
     attemptId
 ) {
 
     const isAwayRef = useRef(false);
+    const isToolFocusedRef = useRef(false);
     const blurTimerRef = useRef(null);
 
     useEffect(() => {
@@ -20,13 +22,26 @@ export default function useExamActivityLogging(
         const handleBlur = () => {
 
             blurTimerRef.current = window.setTimeout(() => {
-                if (!isAwayRef.current) {
-                    isAwayRef.current = true;
+
+                if (isAwayRef.current || isToolFocusedRef.current) {
+                    return;
+                }
+
+                // Focus moving into the GeoGebra iframe/calculator/formula sheet also fires a window blur.
+                if (isFocusInsideExamTool()) {
+                    isToolFocusedRef.current = true;
                     logEvent(
                         attemptId,
-                        "window_blur"
+                        "tool_window_focus"
                     );
+                    return;
                 }
+
+                isAwayRef.current = true;
+                logEvent(
+                    attemptId,
+                    "window_blur"
+                );
             }, 100);
 
         };
@@ -34,6 +49,11 @@ export default function useExamActivityLogging(
         const handleFocus = () => {
 
             window.clearTimeout(blurTimerRef.current);
+
+            if (isToolFocusedRef.current) {
+                isToolFocusedRef.current = false;
+                return;
+            }
 
             if (isAwayRef.current) {
                 isAwayRef.current = false;
@@ -139,6 +159,7 @@ export default function useExamActivityLogging(
 
             window.clearTimeout(blurTimerRef.current);
             isAwayRef.current = false;
+            isToolFocusedRef.current = false;
 
             window.removeEventListener(
                 "blur",

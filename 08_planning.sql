@@ -116,6 +116,8 @@ CREATE TABLE group_planning_sections (
 
     sort_order INT NOT NULL,
 
+    priority TINYINT(1) NOT NULL DEFAULT 0,
+
     created_at DATETIME NOT NULL
         DEFAULT CURRENT_TIMESTAMP,
 

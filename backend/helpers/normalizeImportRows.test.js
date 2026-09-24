@@ -39,6 +39,31 @@ test("normalizes single_choice rows into question and option batches", () => {
     );
 });
 
+test("accepts semicolon-separated correct answers for multiple_choice rows", () => {
+    // Guards against XLSX misreading a CSV value like "4,5" as the number 45.
+    const result = normalizeImportRows({
+        rows: [
+            {
+                Fråga: "Vilka linjer är parallella?",
+                Frågetyp: "multiple_choice",
+                Nivå: 1,
+                "Korrekta alternativ": "4;5",
+                "Alternativ 1": "A",
+                "Alternativ 2": "B",
+                "Alternativ 3": "C",
+                "Alternativ 4": "D",
+                "Alternativ 5": "E"
+            }
+        ],
+        blockId: 60,
+        userId: 66
+    });
+
+    assert.equal(result.questions[0].options.length, 5);
+    assert.ok(result.questions[0].options.some(option => option.text === "D" && option.isCorrect === 1));
+    assert.ok(result.questions[0].options.some(option => option.text === "E" && option.isCorrect === 1));
+});
+
 test("normalizes multiple_choice and numeric_input rows", () => {
     const rows = [
         {

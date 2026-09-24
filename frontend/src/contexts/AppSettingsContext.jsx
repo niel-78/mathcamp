@@ -23,7 +23,15 @@ export function AppSettingsProvider({
             fetch(
                 `${API_URL}/api/app-settings`
             )
-                .then(res => res.json())
+                .then(res => {
+
+                    if (!res.ok) {
+                        throw new Error(`Failed to load app settings (${res.status})`);
+                    }
+
+                    return res.json();
+
+                })
                 .then(data => {
 
                     const settings =
@@ -33,6 +41,9 @@ export function AppSettingsProvider({
 
                     setAppSettings(settings);
 
+                })
+                .catch(error => {
+                    console.error("Failed to load app settings:", error);
                 });
 
         }, []);

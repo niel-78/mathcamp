@@ -1,6 +1,6 @@
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { useState } from "react";
-import { AlertCircle, BookOpen, GraduationCap, GripVertical, Plus, Star, X } from "lucide-react";
+import { AlertCircle, BookOpen, ChevronDown, ChevronRight, GraduationCap, GripVertical, Plus, Star, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import MathContent from "@/components/ui/MathContent";
@@ -11,6 +11,12 @@ import QuestionImagePreview from "@/components/ui/QuestionImagePreview";
 import { getBlockIssues } from "@/utils/getQuestionIssues";
 
 export { getBlockIssues };
+
+function DisclosureIcon({ open }) {
+    const Icon = open ? ChevronDown : ChevronRight;
+
+    return <Icon className="mr-1 inline-block h-4 w-4" aria-hidden="true" />;
+}
 
 export default function BlockCard({
     block,
@@ -303,10 +309,7 @@ export default function BlockCard({
                                 hover:text-primary
                             "
                         >
-                            {showReferences
-                                ? "▼"
-                                : "▶"}
-                            {" "}
+                            <DisclosureIcon open={showReferences} />
                             Referenser
                             ({referenceCount})
                         </Button>
@@ -511,8 +514,7 @@ export default function BlockCard({
                                     setShowPoints(!showPoints)
                                 }
                             >
-                                {showPoints ? "▼" : "▶"}
-                                {" "}
+                                <DisclosureIcon open={showPoints} />
                                 Poäng
                                 ({totalPoints} p)
                             </Button>

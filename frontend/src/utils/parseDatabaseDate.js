@@ -11,7 +11,7 @@ export function parseDatabaseDate(value) {
         databaseDatePattern.test(value)
     ) {
         return new Date(
-            `${value.replace(" ", "T")}Z`
+            value.replace(" ", "T")
         );
     }
 

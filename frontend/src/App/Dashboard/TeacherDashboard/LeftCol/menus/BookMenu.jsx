@@ -2,12 +2,19 @@ import { Button } from "@/components/ui/button";
 
 export default function BookMenu({
     onImportStructure,
-    onDownloadTemplate
+    onDownloadTemplate,
+    onOpenPlanningQueue
 }) {
 
     return (
 
         <>
+            <Button
+                variant="ghost"
+                onClick={onOpenPlanningQueue}
+            >
+                Öppna planeringskö
+            </Button>
             <Button
                 variant="inline"
                 className="context-menu-button"

@@ -198,10 +198,6 @@ export default function NumericInputQuestion({
 
     return (
         <>
-            <h2>
-                Fråga {question.sort_order}
-            </h2>
-
             <div className={`leading-8 ${questionTextClassName} text-left`}>
 
                 {isEquation ? (

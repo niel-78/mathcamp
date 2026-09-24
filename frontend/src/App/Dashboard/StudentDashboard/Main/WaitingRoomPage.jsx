@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 
@@ -11,11 +11,16 @@ export default function WaitingRoomPage({
     const [status, setStatus] = useState(
         groupExam.assessment_status
     );
+    const handledStartRef = useRef(false);
 
     useEffect(() => {
 
         const interval = setInterval(
             async () => {
+
+                if (handledStartRef.current) {
+                    return;
+                }
 
                 const response =
                     await fetch(
@@ -40,6 +45,8 @@ export default function WaitingRoomPage({
                     data.attempt_status === "locked"
                 ) {
 
+                    handledStartRef.current = true;
+
                     clearInterval(
                         interval
                     );
@@ -57,6 +64,8 @@ export default function WaitingRoomPage({
                     data.admitted
                 ) {
 
+                    handledStartRef.current = true;
+
                     clearInterval(
                         interval
                     );
@@ -69,8 +78,9 @@ export default function WaitingRoomPage({
             3000
         );
 
-        return () =>
+        return () => {
             clearInterval(interval);
+        };
 
     }, []);
 

@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import generatePassword from "../utils/generatePassword.js";
 import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
+import { resolveAttemptAbilityIds } from "../utils/resolveAttemptAbilityIds.js";
 import {
     normalizeExamEvents,
     summarizeSuspiciousExamBehavior
@@ -601,11 +602,7 @@ router.get("/me/groups/:groupId/abilities", async (req, res) => {
         const parsedConfig = typeof attemptConfig?.config === "string"
             ? JSON.parse(attemptConfig.config || "{}")
             : attemptConfig?.config || {};
-        const configuredIds = Object.keys(
-            parsedConfig.abilityQuestionCounts || {}
-        )
-            .map(Number)
-            .filter(Number.isInteger);
+        const configuredIds = resolveAttemptAbilityIds(parsedConfig);
 
         if (configuredIds.length > 0) {
             testAbilityIds = configuredIds;

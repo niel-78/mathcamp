@@ -1,10 +1,17 @@
 import { useEffect, useState } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { API_URL } from "@/config";
 import { authHeaders } from "@/api/authHeaders";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import UserProfile from "@/components/ui/UserProfile";
 import SharePlanningDialog from "./LeftCol/SharePlanningDialog";
+
+function TreeDisclosureIcon({ open }) {
+    const Icon = open ? ChevronDown : ChevronRight;
+
+    return <Icon className="mr-1 inline-block h-4 w-4" aria-hidden="true" />;
+}
 import CreateGroupDialog from "./LeftCol/CreateGroupDialog";
 import RenameGroupDialog from "./LeftCol/RenameGroupDialog";
 import GroupAbilitySeriesDialog from "./LeftCol/GroupAbilitySeriesDialog";
@@ -1120,6 +1127,15 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                         bookTitle
                     });
                 }}
+                onOpenBookPlanningQueue={(bookId, bookTitle) => {
+                    openTab({
+                        id: `book-planning-queue-${bookId}`,
+                        type: "book-planning-queue",
+                        title: `${bookTitle} - Planeringskö`,
+                        bookId,
+                        bookTitle
+                    });
+                }}
 
 
                 onCreateAbilitySeries={() => {
@@ -1261,7 +1277,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                             });
                         }}
                 >    
-                    {show.groups ? "▼" : "▶"} Grupper
+                    <TreeDisclosureIcon open={show.groups} /> Grupper
                 </Button>
 
                 {show.groups && (
@@ -1303,11 +1319,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                                         }}
                                     >
-                                        {expandedGroups[group.id]
-                                            ? "▼"
-                                            : "▶"}
-
-                                        {" "}
+                                        <TreeDisclosureIcon open={expandedGroups[group.id]} />
 
                                         {group.name}
                                     </Button>
@@ -1410,7 +1422,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                         toggleBookSections(group.id)
                                                     }
                                                 >
-                                                    {expandedBookSections[group.id] ? "▼" : "▶"} Sektioner
+                                                    <TreeDisclosureIcon open={expandedBookSections[group.id]} /> Sektioner
                                                 </div>
 
                                                 {expandedBookSections[group.id] && (
@@ -1443,7 +1455,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                     className="tree-file cursor-pointer"
                                                     onClick={() => toggleBookAbilities(group.id,group.book_id)}
                                                 >
-                                                    {expandedBookAbilities[group.id] ? "▼" : "▶"} Förmågor
+                                                    <TreeDisclosureIcon open={expandedBookAbilities[group.id]} /> Förmågor
                                                 </div>
 
                                                 {expandedBookAbilities[group.id] && (
@@ -1461,7 +1473,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                                     }))
                                                                 }
                                                             >
-                                                                {expandedAbilities[ability.id] ? "▼" : "▶"}{" "}
+                                                                <TreeDisclosureIcon open={expandedAbilities[ability.id]} />
                                                                 {ability.name}
                                                             </div>
 
@@ -1491,11 +1503,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                                             }}
                                         >
-                                            {expandedStudents[group.id]
-                                                ? "▼"
-                                                : "▶"}
-
-                                            {" "}
+                                            <TreeDisclosureIcon open={expandedStudents[group.id]} />
                                             Elever
                                         </div>
 
@@ -1557,10 +1565,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                 }))
                                             }
                                         >
-                                            {expandedGroupClassrooms[group.id]
-                                                ? "▼"
-                                                : "▶"}
-                                            {" "}
+                                            <TreeDisclosureIcon open={expandedGroupClassrooms[group.id]} />
                                             Klassrum
                                         </div>
 
@@ -1583,15 +1588,9 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                                     }))
                                                                 }
                                                             >
-                                                                {
-                                                                    expandedGroupClassroomItems[
-                                                                        classroom.id
-                                                                    ]
-                                                                        ? "▼"
-                                                                        : "▶"
-                                                                }
-
-                                                                {" "}
+                                                                <TreeDisclosureIcon
+                                                                    open={expandedGroupClassroomItems[classroom.id]}
+                                                                />
 
                                                                 {classroom.name}
                                                             </div>
@@ -1681,7 +1680,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                         size="lg"
                         onClick={() => toggle("assessments")}
                 >
-                    {show.assessments ? "▼" : "▶"} Prov
+                    <TreeDisclosureIcon open={show.assessments} /> Prov
                 </Button>
 
 
@@ -1692,7 +1691,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                         toggle("subjects")
                     }
                 >
-                    {show.subjects ? "▼" : "▶"} Ämnen
+                    <TreeDisclosureIcon open={show.subjects} /> Ämnen
                 </Button>
 
                 {show.subjects && (
@@ -1726,10 +1725,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                                     }}
                                 >
-                                    {expandedSubjects[subject.id]
-                                        ? "▼"
-                                        : "▶"}
-                                    {" "}
+                                    <TreeDisclosureIcon open={expandedSubjects[subject.id]} />
                                     {subject.name}
                                 </div>
 
@@ -1762,10 +1758,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                         });
                                                     }}
                                                 >
-                                                    {expandedLevels[level.id]
-                                                        ? "▼"
-                                                        : "▶"}
-                                                    {" "}
+                                                    <TreeDisclosureIcon open={expandedLevels[level.id]} />
                                                     {level.name}
                                                 </div>
 
@@ -1796,12 +1789,9 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                                 });
                                                             }}
                                                         >
-                                                            {
-                                                                expandedAreas[`content-${level.id}`]
-                                                                    ? "▼"
-                                                                    : "▶"
-                                                            }
-                                                            {" "}
+                                                            <TreeDisclosureIcon
+                                                                open={expandedAreas[`content-${level.id}`]}
+                                                            />
                                                             Centralt innehåll
                                                         </div>
 
@@ -1819,12 +1809,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                                                     toggleArea(area.id)
                                                                                 }
                                                                             >
-                                                                                {
-                                                                                    expandedAreas[area.id]
-                                                                                        ? "▼"
-                                                                                        : "▶"
-                                                                                }
-                                                                                {" "}
+                                                                                <TreeDisclosureIcon open={expandedAreas[area.id]} />
                                                                                 {area.title}
                                                                             </div>
 
@@ -1881,11 +1866,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                                                             }}
                                                         >
-                                                            {expandedCompetencies[level.id]
-                                                                ? "▼"
-                                                                : "▶"}
-
-                                                            {" "}
+                                                            <TreeDisclosureIcon open={expandedCompetencies[level.id]} />
 
                                                             Betygskriterier
                                                         </div>
@@ -1911,15 +1892,9 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                                                 }))
                                                                             }
                                                                         >
-                                                                            {
-                                                                                expandedAbilities[
-                                                                                    `${level.id}-${competency.id}`
-                                                                                ]
-                                                                                    ? "▼"
-                                                                                    : "▶"
-                                                                            }
-
-                                                                            {" "}
+                                                                            <TreeDisclosureIcon
+                                                                                open={expandedAbilities[`${level.id}-${competency.id}`]}
+                                                                            />
 
                                                                             {competency.name}
                                                                         </div>
@@ -1952,15 +1927,9 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                                                                     )
                                                                                                 }
                                                                                             >
-                                                                                                {
-                                                                                                    expandedGrades[
-                                                                                                        `${level.id}-${competency.id}-${descriptor.grade}`
-                                                                                                    ]
-                                                                                                        ? "▼"
-                                                                                                        : "▶"
-                                                                                                }
-
-                                                                                                {" "}
+                                                                                                <TreeDisclosureIcon
+                                                                                                    open={expandedGrades[`${level.id}-${competency.id}-${descriptor.grade}`]}
+                                                                                                />
 
                                                                                                 Betyg {descriptor.grade}
                                                                                             </div>
@@ -2042,7 +2011,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                     }}
                 >
-                    {show.books ? "▼" : "▶"} Böcker
+                    <TreeDisclosureIcon open={show.books} /> Böcker
                 </Button>
 
                 {show.books && (
@@ -2080,11 +2049,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                                     }}
                                 >
-                                    {expandedBooks[book.id]
-                                        ? "▼"
-                                        : "▶"}
-
-                                    {" "}
+                                    <TreeDisclosureIcon open={expandedBooks[book.id]} />
 
                                     {book.title}
 
@@ -2108,11 +2073,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                         }))
                                                     }
                                                 >
-                                                    {expandedChapters[chapter.id]
-                                                        ? "▼"
-                                                        : "▶"}
-
-                                                    {" "}
+                                                    <TreeDisclosureIcon open={expandedChapters[chapter.id]} />
 
                                                     {chapter.chapter_number}
 
@@ -2146,15 +2107,9 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                                             )
                                                                         }
                                                                     >
-                                                                        {
-                                                                            expandedSubchapters[
-                                                                                subchapter.id
-                                                                            ]
-                                                                                ? "▼"
-                                                                                : "▶"
-                                                                        }
-
-                                                                        {" "}
+                                                                        <TreeDisclosureIcon
+                                                                            open={expandedSubchapters[subchapter.id]}
+                                                                        />
 
                                                                         {
                                                                             subchapter.subchapter_number
@@ -2237,7 +2192,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                     }}
                                     >
-                    {show.abilities ? "▼" : "▶"} Förmågor
+                    <TreeDisclosureIcon open={show.abilities} /> Förmågor
                 </Button>
 
                 {show.abilities && (
@@ -2290,15 +2245,9 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                 >
 
 
-                                    {
-                                        expandedAbilitySeries[
-                                            series.id
-                                        ]
-                                            ? "▼"
-                                            : "▶"
-                                    }
-
-                                    {" "}
+                                    <TreeDisclosureIcon
+                                        open={expandedAbilitySeries[series.id]}
+                                    />
 
                                     {series.name}
 
@@ -2361,7 +2310,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                         setShowSchools(prev => !prev)
                     }
                 >
-                    {showSchools ? "▼" : "▶"} Skolor
+                    <TreeDisclosureIcon open={showSchools} /> Skolor
                 </Button>
 
                 {showSchools && (
@@ -2374,9 +2323,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                         toggleSchool(school.id)
                                     }
                                 >
-                                    {expandedSchools[school.id]
-                                        ? "▼"
-                                        : "▶"}{" "}
+                                    <TreeDisclosureIcon open={expandedSchools[school.id]} />
                                     {school.name}
                                 </Button>
 
@@ -2407,13 +2354,9 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                 });
                                             }}
                                                                             >
-                                            {expandedSchoolClassrooms[
-                                                school.id
-                                            ]
-                                                ? "▼"
-                                                : "▶"}
-
-                                            {" "}
+                                            <TreeDisclosureIcon
+                                                open={expandedSchoolClassrooms[school.id]}
+                                            />
 
                                             Klassrum
                                         </div>
@@ -2435,7 +2378,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                         });
                                                     }}
                                                 >
-                                                    {expandedSchoolStaff[school.id] ? "▼" : "▶"} Personal
+                                                    <TreeDisclosureIcon open={expandedSchoolStaff[school.id]} /> Personal
                                                 </div>
 
                                                 {expandedSchoolStaff[school.id] && (
@@ -2479,9 +2422,9 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                         )
                                                     }
                                                 >
-                                                    {expandedSchoolStudents[
-                                                        school.id
-                                                    ] ? "▼" : "▶"} Elever
+                                                    <TreeDisclosureIcon
+                                                        open={expandedSchoolStudents[school.id]}
+                                                    /> Elever
                                                 </div>
 
                                                 {expandedSchoolStudents[
@@ -2552,15 +2495,9 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                                                 });
                                                             }}
                                                         >
-                                                            {
-                                                                expandedGroupClassrooms[
-                                                                    classroom.id
-                                                                ]
-                                                                    ? "▼"
-                                                                    : "▶"
-                                                            }
-
-                                                            {" "}
+                                                            <TreeDisclosureIcon
+                                                                open={expandedGroupClassrooms[classroom.id]}
+                                                            />
 
                                                             {classroom.name}
                                                         </div>
@@ -2643,15 +2580,9 @@ export default function LeftCol( {openTab, hoverTarget} ) {
 
                                             }}
                                         >
-                                            {
-                                                expandedSchoolScheduleExceptions[
-                                                    school.id
-                                                ]
-                                                    ? "▼"
-                                                    : "▶"
-                                            }
-
-                                            {" "}
+                                            <TreeDisclosureIcon
+                                                open={expandedSchoolScheduleExceptions[school.id]}
+                                            />
 
                                             Schemabrytande dagar
                                         </div>
@@ -2723,9 +2654,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                             )
                         }
                     >
-                        <span>
-                            {archiveOpen ? "▼" : "▶"}
-                        </span>
+                        <TreeDisclosureIcon open={archiveOpen} />
 
                         <span>Arkiv</span>
 
@@ -2828,8 +2757,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                     )
                                 }
                             >
-                                {settingsOpen ? "▼" : "▶"}
-                                {" "}
+                                <TreeDisclosureIcon open={settingsOpen} />
                                 Inställningar
                             </div>
 
@@ -2843,8 +2771,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                             )
                                         }
                                     >
-                                        {assessmentSettingsOpen ? "▼" : "▶"}
-                                        {" "}
+                                        <TreeDisclosureIcon open={assessmentSettingsOpen} />
                                         Assessments
                                     </div>
 
@@ -2878,7 +2805,7 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                         className="tree-folder"
                         onClick={() => setTrashOpen(previous => !previous)}
                     >
-                        <span>{trashOpen ? "▼" : "▶"}</span>
+                        <TreeDisclosureIcon open={trashOpen} />
                         <span>Papperskorg</span>
                     </div>
 

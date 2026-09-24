@@ -67,6 +67,8 @@ CREATE TABLE sections (
 
     included_by_default BOOLEAN NOT NULL DEFAULT TRUE,
 
+    planning_priority BOOLEAN NOT NULL DEFAULT FALSE,
+
     page_number INT,
 
     sort_order INT NOT NULL,

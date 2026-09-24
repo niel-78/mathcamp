@@ -119,7 +119,7 @@ router.post("/", async (req, res) => {
 
         if (shouldLock) {
 
-            await db.query(
+            const [lockResult] = await db.query(
                 `
                 UPDATE assessment_attempts
                 SET status = 'locked'
@@ -129,23 +129,27 @@ router.post("/", async (req, res) => {
                 [attempt_id]
             );
 
-            await db.query(
-                `
-                INSERT INTO assessment_events (
-                    attempt_id,
-                    event_type,
-                    event_data
-                )
-                VALUES (?, ?, ?)
-                `,
-                [
-                    attempt_id,
-                    "attempt_locked",
-                    JSON.stringify({
-                        reason: event_type
-                    })
-                ]
-            );
+            if (lockResult.affectedRows > 0) {
+
+                await db.query(
+                    `
+                    INSERT INTO assessment_events (
+                        attempt_id,
+                        event_type,
+                        event_data
+                    )
+                    VALUES (?, ?, ?)
+                    `,
+                    [
+                        attempt_id,
+                        "attempt_locked",
+                        JSON.stringify({
+                            reason: event_type
+                        })
+                    ]
+                );
+
+            }
 
         }
 
@@ -185,9 +189,9 @@ router.get("/attempt/:attemptId/lock-reason",
         }
 
         const data =
-            JSON.parse(
-                event.event_data || "{}"
-            );
+            typeof event.event_data === "string"
+                ? JSON.parse(event.event_data || "{}")
+                : event.event_data || {};
 
         res.json({
             reason: data.reason

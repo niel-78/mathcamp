@@ -229,9 +229,14 @@ export default function LessonSection({
 
                     <div className="flex items-center gap-2 flex-wrap">
                         <span>{section.title}</span>
-                        {section.page_number != null && (
+                        {Number(section.page_number) > 0 && (
                             <span className="text-xs text-muted-foreground">
-                                (sid {section.page_number}{section.end_page && section.end_page !== section.page_number ? `-${section.end_page}` : ""})
+                                (sid {section.page_number}{Number(section.end_page) > Number(section.page_number) ? `-${section.end_page}` : ""})
+                            </span>
+                        )}
+                        {Boolean(section.group_planning_priority ?? section.planning_priority) && (
+                            <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-900">
+                                Prioriterad (viktig för E)
                             </span>
                         )}
                     </div>

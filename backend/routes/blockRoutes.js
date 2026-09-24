@@ -22,6 +22,33 @@ const upload = multer({
     storage: multer.memoryStorage()
 });
 
+const importHeaders = [
+    "Fråga",
+    "Frågetyp",
+    "Nivå",
+    "Korrekta alternativ",
+    "Miniräknare tillåten",
+    "Alternativ 1",
+    "Alternativ 2",
+    "Alternativ 3",
+    "Alternativ 4",
+    "Alternativ 5"
+];
+
+function readImportRows(workbook) {
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+    if (rows.some(row => row.Fråga || row.fråga || row.Question || row.question)) {
+        return rows;
+    }
+
+    return XLSX.utils.sheet_to_json(sheet, {
+        header: importHeaders,
+        defval: ""
+    });
+}
+
 router.use(requireAuth);
 router.use(requireRole("teacher","super"));
 
@@ -81,8 +108,7 @@ async function processBlockImportJob({
         const workbook = csvText
             ? XLSX.read(csvText, { type: "string" })
             : XLSX.read(fileBuffer);
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(sheet);
+        const rows = readImportRows(workbook);
 
         const [levels] = ability?.series_id
             ? await db.query(
@@ -1705,6 +1731,68 @@ router.post("/:blockId/points", requireAuth,
 );
 
 // POST /api/blocks/import
+router.post("/import/validate", async (req, res) => {
+    try {
+        const csvText = req.body?.csvText;
+
+        if (!csvText?.trim()) {
+            return res.status(400).json({
+                error: "Ingen CSV-text angiven"
+            });
+        }
+
+        const workbook = XLSX.read(csvText, { type: "string" });
+    const rows = readImportRows(workbook);
+
+        let abilityLevels = [];
+
+        if (req.body.abilityId) {
+            const [[ability]] = await db.query(
+                `
+                SELECT series_id
+                FROM abilities
+                WHERE id = ?
+                AND deleted_at IS NULL
+                `,
+                [req.body.abilityId]
+            );
+
+            if (!ability) {
+                return res.status(400).json({
+                    error: "Förmågan hittades inte"
+                });
+            }
+
+            [abilityLevels] = await db.query(
+                `
+                SELECT id
+                FROM ability_series_levels
+                WHERE series_id = ?
+                ORDER BY sort_order
+                `,
+                [ability.series_id]
+            );
+        }
+
+        const { questions } = normalizeImportRows({
+            rows,
+            blockId: null,
+            userId: req.user.id,
+            abilityLevels
+        });
+
+        return res.json({
+            valid: true,
+            questionCount: questions.length
+        });
+    } catch (error) {
+        return res.status(400).json({
+            valid: false,
+            error: error.message || "CSV-texten kunde inte valideras"
+        });
+    }
+});
+
 router.post("/import", upload.single("file"), async (req, res) => {
     try {
         const csvText = req.file ? null : req.body.csvText;

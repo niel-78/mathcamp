@@ -40,12 +40,8 @@ export default function TextQuestion({
 
     return (
         <>
-            <h2>
-                Fråga {question.sort_order}
-            </h2>
-
             {hasInlineMarker ? (
-                <div className={`leading-8 ${questionTextClassName}`}>
+                <div className={`mb-6 leading-8 ${questionTextClassName} text-left`}>
                     {segments.map((segment, index) => (
                         <span key={index}>
                             {segment && (
@@ -78,7 +74,7 @@ export default function TextQuestion({
             ) : (
                 <MathContent
                     value={question.question}
-                    className={questionTextClassName}
+                    className={`${questionTextClassName} mb-6 block text-left font-medium`}
                 />
             )}
             <MathPreview value={text} />

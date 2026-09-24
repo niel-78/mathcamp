@@ -18,6 +18,9 @@ export const eventLabels = {
     window_focus:
         "Fick fokus",
 
+    tool_window_focus:
+        "GeoGebrafönster fokuserat",
+
     exam_left:
         "Utanför provfönstret",
 

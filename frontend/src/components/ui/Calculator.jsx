@@ -17,6 +17,7 @@ const calculatorKeys = [
 
 const calculatorPositionStorageKey = "math-camp-calculator-position";
 const calculatorSizeStorageKey = "math-camp-calculator-size";
+const userActivityEventName = "math-camp-user-activity";
 const geogebraScriptUrl = "https://www.geogebra.org/apps/deployggb.js";
 const defaultGeoGebraSize = {
     width: 720,
@@ -75,10 +76,15 @@ function formatResult(value) {
     return String(value).replace(".", ",");
 }
 
+function notifyUserActivity() {
+    window.dispatchEvent(new Event(userActivityEventName));
+}
+
 export default function Calculator({
     showCalculator = true,
     showGeoGebra = true,
     compactLabels = false,
+    inline = false,
     attemptId = null,
     questionId = null
 }) {
@@ -87,10 +93,11 @@ export default function Calculator({
     const geogebraContainerRef = useRef(null);
     const geogebraAppletRef = useRef(null);
     const lastSavedGeoGebraXml = useRef("");
+    const geogebraUnauthorizedRef = useRef(false);
     const savedPosition = useRef(getSavedPosition());
     const savedSize = useRef(getSavedSize());
     const geogebraContainerId = `geogebra-${useId().replace(/:/g, "")}`;
-    const [open, setOpen] = useState(false);
+    const [open, setOpen] = useState(inline);
     const [activeTool, setActiveTool] = useState(showGeoGebra && !showCalculator ? "geogebra" : "calculator");
     const [expression, setExpression] = useState("");
     const [result, setResult] = useState("");
@@ -126,6 +133,12 @@ export default function Calculator({
             return false;
         }
 
+        if (geogebraUnauthorizedRef.current) {
+            return true;
+        }
+
+        geogebraUnauthorizedRef.current = true;
+
         let message = "GeoGebra kunde inte verifiera din inloggning. Konstruktionen sparades inte.";
 
         try {
@@ -138,6 +151,7 @@ export default function Calculator({
         }
 
         toast.error(message);
+        setGeogebraReady(false);
         return true;
     };
 
@@ -268,6 +282,14 @@ export default function Calculator({
         }
 
         const interval = window.setInterval(() => {
+            if (geogebraUnauthorizedRef.current) {
+                return;
+            }
+
+            if (canPersistGeoGebra) {
+                notifyUserActivity();
+            }
+
             const applet = geogebraAppletRef.current;
             const currentXml = applet?.getXML?.();
 
@@ -279,7 +301,7 @@ export default function Calculator({
         }, 5000);
 
         return () => window.clearInterval(interval);
-    }, [activeTool, geogebraName, geogebraReady, open]);
+    }, [activeTool, canPersistGeoGebra, geogebraName, geogebraReady, open]);
 
     const append = (value) => {
         setExpression(current => `${current}${value}`);
@@ -532,11 +554,16 @@ export default function Calculator({
             <section
                 ref={calculatorRef}
                 aria-label={activeTool === "geogebra" ? "GeoGebra CAS" : "Miniräknare"}
-                className="fixed z-[9997] rounded-lg border bg-background shadow-lg"
+                data-exam-tool-window="true"
+                className={inline
+                    ? "w-full rounded-lg border bg-background shadow-lg"
+                    : "fixed z-[9997] rounded-lg border bg-background shadow-lg"}
                 style={{
-                    top: `${panelAnchor.top}px`,
-                    right: `${panelAnchor.right}px`,
-                    width: activeTool === "geogebra" ? `${savedSize.current.width}px` : "18rem",
+                    ...(inline ? {} : {
+                        top: `${panelAnchor.top}px`,
+                        right: `${panelAnchor.right}px`,
+                        width: activeTool === "geogebra" ? `${savedSize.current.width}px` : "18rem"
+                    }),
                     maxWidth: "calc(100vw - 2rem)"
                 }}
             >
@@ -661,7 +688,7 @@ export default function Calculator({
                 )}
             </section>
         </Draggable>,
-        document.body
+        inline ? anchorRef.current : document.body
     );
 
     return (
@@ -671,7 +698,7 @@ export default function Calculator({
                 ? "relative flex flex-row items-center gap-2"
                 : "relative flex flex-col items-end gap-2"}
         >
-            {renderToolToggleRow()}
+            {!inline && renderToolToggleRow()}
             {toolPanel}
         </div>
     );

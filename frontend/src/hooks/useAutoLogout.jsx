@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { toast } from "sonner";
 
+export const activeExamSessionStorageKey = "math-camp-active-exam";
+
 export default function useAutoLogout(
     logout,
     timeoutMinutes = 30
@@ -10,13 +12,28 @@ export default function useAutoLogout(
 
         let timer;
 
+        const handleTimeout = () => {
+
+            if (sessionStorage.getItem(activeExamSessionStorageKey) === "true") {
+                resetTimer();
+                return;
+            }
+
+            toast.error(
+                "Du har loggats ut på grund av inaktivitet."
+            );
+
+            logout();
+
+        };
+
         const resetTimer = () => {
 
             clearTimeout(timer);
 
             timer = setTimeout(() => {
 
-                logout();
+                handleTimeout();
 
             }, timeoutMinutes * 60 * 1000);
 
@@ -27,7 +44,8 @@ export default function useAutoLogout(
             "mousedown",
             "keydown",
             "scroll",
-            "touchstart"
+            "touchstart",
+            "math-camp-user-activity"
         ];
 
         events.forEach(event =>
@@ -36,16 +54,6 @@ export default function useAutoLogout(
                 resetTimer
             )
         );
-
-        timer = setTimeout(() => {
-
-            toast.error(
-                "Du har loggats ut på grund av inaktivitet."
-            );
-
-            logout();
-
-        }, timeoutMinutes * 60 * 1000);
 
         resetTimer();
 

@@ -58,6 +58,11 @@ export default function PlanningQueueTab({
                     s => s.id
                 );
 
+        const prioritizedSectionIds =
+            sections
+                .filter(section => section.selected && section.priority)
+                .map(section => section.id);
+
         const response =
             await fetch(
                 `${API_URL}/api/groups/${groupId}/planning-sections`,
@@ -70,6 +75,7 @@ export default function PlanningQueueTab({
                     },
                     body: JSON.stringify({
                         sectionIds,
+                        prioritizedSectionIds,
                         pages_per_lesson: pagesPerLesson
                     })
                 }
@@ -170,6 +176,14 @@ export default function PlanningQueueTab({
 
     };
 
+    const togglePriority = (sectionId, checked) => {
+        setSections(prev => prev.map(section =>
+            section.id === sectionId
+                ? { ...section, priority: !!checked }
+                : section
+        ));
+    };
+
     const applyDefaults = () => {
 
         setSections(
@@ -177,8 +191,8 @@ export default function PlanningQueueTab({
                 prev.map(
                     section => ({
                         ...section,
-                        selected:
-                            !!section.included_by_default
+                            selected: !!section.included_by_default,
+                            priority: !!section.planning_priority
                     })
                 )
         );
@@ -281,7 +295,7 @@ export default function PlanningQueueTab({
                     title="Sektioner"
                 >
 
-                    <div className="space-y-2">
+                    <div className="w-full space-y-2 text-left">
 
                         <label
                             className="
@@ -309,7 +323,7 @@ export default function PlanningQueueTab({
                         {sections.map(
                             section => (
 
-                                <label
+                                <div
                                     key={section.id}
                                     className="
                                         card
@@ -353,9 +367,20 @@ export default function PlanningQueueTab({
                                             {section.title}
                                         </div>
 
+                                        <label className="mt-2 flex items-center gap-2 text-sm">
+                                            <Checkbox
+                                                checked={Boolean(section.priority)}
+                                                disabled={!section.selected}
+                                                onCheckedChange={checked =>
+                                                    togglePriority(section.id, checked)
+                                                }
+                                            />
+                                            Prioriterad (viktig för E)
+                                        </label>
+
                                     </div>
 
-                                </label>
+                                </div>
 
                             )
                         )}

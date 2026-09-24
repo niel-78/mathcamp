@@ -132,7 +132,7 @@ export default function BlockContent({
         }
 
         setBulkQuestionType(firstQuestion.question_type || "");
-        setBulkLevelId(firstQuestion.level_id || firstQuestion.series_level_id || "");
+        setBulkLevelId(firstQuestion.level_id || "");
         setBulkCalculatorAllowed(Boolean(firstQuestion.calculator_allowed));
         setBulkGeogebraAllowed(Boolean(firstQuestion.geogebra_allowed));
         setBulkPriority(Boolean(firstQuestion.is_priority));
@@ -232,11 +232,6 @@ export default function BlockContent({
 
     const setQuestionCalculatorPermission =
         async (question, allowed) => {
-            const answerConfig =
-                typeof question.answer_config === "string"
-                    ? JSON.parse(question.answer_config || "{}")
-                    : question.answer_config || {};
-
             const response = await fetch(
                 `${API_URL}/api/questions/${question.id}`,
                 {
@@ -246,10 +241,6 @@ export default function BlockContent({
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        question: question.question,
-                        question_type: question.question_type,
-                        answer_config: answerConfig,
-                        level_id: question.level_id,
                         calculator_allowed: allowed
                     })
                 }
@@ -270,11 +261,6 @@ export default function BlockContent({
 
     const setQuestionGeoGebraPermission =
         async (question, allowed) => {
-            const answerConfig =
-                typeof question.answer_config === "string"
-                    ? JSON.parse(question.answer_config || "{}")
-                    : question.answer_config || {};
-
             const response = await fetch(
                 `${API_URL}/api/questions/${question.id}`,
                 {
@@ -284,10 +270,6 @@ export default function BlockContent({
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        question: question.question,
-                        question_type: question.question_type,
-                        answer_config: answerConfig,
-                        level_id: question.level_id,
                         geogebra_allowed: allowed
                     })
                 }

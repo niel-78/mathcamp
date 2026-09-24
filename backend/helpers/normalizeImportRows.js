@@ -62,12 +62,14 @@ function parseBoolean(value) {
 }
 
 function parseCorrectAnswers(value, questionType) {
+    // Choice types accept both separators: a plain "," list like "4,5" can be
+    // misread as the number 45 when a CSV round-trips through XLSX parsing.
     const delimiter =
         questionType === "numeric_input" ||
         questionType === "equation" ||
         questionType === "text"
             ? ";"
-            : ",";
+            : /[,;]/;
 
     return String(value ?? "")
         .split(delimiter)

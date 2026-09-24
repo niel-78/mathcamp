@@ -8,7 +8,6 @@ export default function MonthView({
     events = [],
     showEvents,
     selectedDate,
-    lessonAssessments = {},
     onDeleteLesson,
     readOnly = false
 }) {
@@ -274,25 +273,14 @@ export default function MonthView({
                                                     }
                                                     : undefined}
                                             >
-                                                <div
-                                                    className="
-                                                        flex
-                                                        justify-between
-                                                        gap-2
-                                                    "
-                                                >
+                                                <div className="flex justify-between gap-2">
                                                     <span>
                                                         {dayjs(lesson.starts_at).format("HH:mm")}
                                                         -
                                                         {dayjs(lesson.ends_at).format("HH:mm")}
                                                     </span>
 
-                                                    <span
-                                                        className="
-                                                            truncate
-                                                            font-medium
-                                                        "
-                                                    >
+                                                    <span className="truncate font-medium">
                                                         {lesson.group_name}
                                                     </span>
                                                 </div>
@@ -316,19 +304,6 @@ export default function MonthView({
                                                         ))}
                                                     </div>
                                                 )}
-
-                                                {lessonAssessments[lesson.id]?.map(assessment => (
-                                                    <div
-                                                        key={`assessment-${assessment.id}`}
-                                                        className={assessment.type === "diagnostic"
-                                                            ? "mt-1 truncate px-1 text-[11px] font-bold"
-                                                            : "mt-1 truncate rounded bg-emerald-100 px-1 text-[11px] text-emerald-900"}
-                                                    >
-                                                        {assessment.type === "diagnostic"
-                                                            ? "Diagnos"
-                                                            : assessment.title || assessment.type}
-                                                    </div>
-                                                ))}
                                             </div>
 
                                         )

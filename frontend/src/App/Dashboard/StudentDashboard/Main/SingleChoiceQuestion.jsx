@@ -10,16 +10,12 @@ export default function SingleChoiceQuestion({
 
     return (
         <>
-            <h2>
-                Fråga {question.sort_order}
-            </h2>
-
             <MathContent
                 value={question.question}
-                className={questionTextClassName}
+                className={`${questionTextClassName} mb-7 block text-left font-medium`}
             />
 
-            <div className="assessment_answers flex flex-wrap gap-2">
+            <div className="assessment_answers flex flex-col items-start gap-3 text-left">
 
                 {question.options?.map(opt => (
 
@@ -30,6 +26,7 @@ export default function SingleChoiceQuestion({
                                 ? "default"
                                 : "outline"
                             }
+                            className="h-auto min-h-12 w-full max-w-2xl justify-start whitespace-normal px-4 py-3 text-left text-lg"
                             onClick={() => {
                                 onChange(opt.id)
                             }}

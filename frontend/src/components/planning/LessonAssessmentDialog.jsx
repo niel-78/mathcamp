@@ -265,6 +265,9 @@ export default function LessonAssessmentDialog({
                 data.defaultIncludeTraining ??
                 true
             );
+            setAllowSubmitAfterSeed(
+                existingConfig?.attempt?.allowSubmitAfterSeed ?? false
+            );
 
             const preselectedBlockIds =
                 Array.isArray(existingConfig?.selected_block_ids)
@@ -354,9 +357,6 @@ export default function LessonAssessmentDialog({
                 return next;
 
             }
-        );
-        setAllowSubmitAfterSeed(
-            existingConfig?.attempt?.allowSubmitAfterSeed ?? false
         );
 
     }
