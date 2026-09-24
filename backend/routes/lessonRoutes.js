@@ -1083,6 +1083,66 @@ router.post("/:id/group-assessments",
 
             }
 
+            if (type === "worksheet") {
+
+                const [[assessment]] =
+                    await connection.query(
+                        `
+                        SELECT id
+                        FROM assessments
+                        WHERE type = 'worksheet'
+                        AND subject_id = 1
+                        AND archived_at IS NULL
+                        AND deleted_at IS NULL
+                        LIMIT 1
+                        `
+                    );
+
+                if (assessment) {
+                    assessmentId = assessment.id;
+                } else {
+                    const [[level]] =
+                        await connection.query(
+                            `
+                            SELECT id
+                            FROM levels
+                            WHERE subject_id = 1
+                            ORDER BY sort_order, id
+                            LIMIT 1
+                            `
+                        );
+
+                    if (!level) {
+                        throw new Error(
+                            "Ingen nivå hittades för arbetsblad."
+                        );
+                    }
+
+                    const [assessmentResult] =
+                        await connection.query(
+                            `
+                            INSERT INTO assessments (
+                                type,
+                                title,
+                                subject_id,
+                                level_id,
+                                created_by,
+                                updated_by
+                            )
+                            VALUES ('worksheet', 'Arbetsblad', 1, ?, ?, ?)
+                            `,
+                            [
+                                level.id,
+                                req.user.id,
+                                req.user.id
+                            ]
+                        );
+
+                    assessmentId = assessmentResult.insertId;
+                }
+
+            }
+
             const typeSettings =
                 await getAssessmentTypeSettings(
                     type

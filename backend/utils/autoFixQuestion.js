@@ -1,4 +1,5 @@
 import db from "../db.js";
+import { parse as parseMathExpression } from "mathjs";
 
 function gcd(a, b) {
     return b === 0 ? a : gcd(b, a % b);
@@ -337,6 +338,166 @@ export function solveEquation(text) {
     return null;
 }
 
+function parseLinearSystemLine(line) {
+    const sides = line.replace(/\s+/g, "").split("=");
+    if (sides.length !== 2) return null;
+
+    const coefficients = { x: 0, y: 0, constant: 0 };
+    for (const [side, multiplier] of [[sides[0], 1], [sides[1], -1]]) {
+        const terms = side.match(/[+-]?[^+-]+/g) || [];
+        for (const term of terms) {
+            const variable = /([+-]?\d*)(x|y)$/.exec(term);
+            if (variable) {
+                const coefficient = variable[1] === "" || variable[1] === "+"
+                    ? 1
+                    : variable[1] === "-" ? -1 : Number(variable[1]);
+                coefficients[variable[2]] += multiplier * coefficient;
+            } else if (/^[+-]?\d+$/.test(term)) {
+                coefficients.constant -= multiplier * Number(term);
+            } else {
+                return null;
+            }
+        }
+    }
+
+    return coefficients;
+}
+
+export function solveLinearSystem(text) {
+    const casesMatch = /\\begin\{cases\}([\s\S]*?)\\end\{cases\}/.exec(String(text || ""));
+    if (!casesMatch) return null;
+
+    const equations = casesMatch[1]
+        .split(/\\\\/)
+        .map(line => parseLinearSystemLine(line))
+        .filter(Boolean);
+    if (equations.length !== 2) return null;
+
+    const [first, second] = equations;
+    const determinant = first.x * second.y - second.x * first.y;
+    if (determinant === 0) return null;
+
+    return [
+        new Frac(first.constant * second.y - second.constant * first.y, determinant),
+        new Frac(first.x * second.constant - second.x * first.constant, determinant)
+    ];
+}
+
+function expressionSource(text) {
+    const mathMatch = /\$([^$]+)\$/.exec(String(text || ""));
+    return (mathMatch ? mathMatch[1] : String(text || ""))
+        .replace(/\\left|\\right/g, "")
+        .replace(/\\cdot|\\times/g, "*")
+        .replace(/\s+/g, " ")
+        .trim()
+        .replace(/^[^=]*=\s*/, "")
+        .replace(/(\d|[A-Za-z]|\))(?=\()/g, "$1*")
+        .replace(/(\d)([A-Za-z])/g, "$1*$2")
+        .replace(/\)(?=\()/g, ")*");
+}
+
+function polynomialAdd(left, right, sign = 1) {
+    const result = new Map(left);
+    for (const [key, value] of right) {
+        const next = (result.get(key) || 0) + sign * value;
+        if (next === 0) result.delete(key);
+        else result.set(key, next);
+    }
+    return result;
+}
+
+function polynomialMultiply(left, right) {
+    const result = new Map();
+    for (const [leftKey, leftValue] of left) {
+        for (const [rightKey, rightValue] of right) {
+            const powers = {};
+            for (const part of `${leftKey}|${rightKey}`.split("|")) {
+                if (!part) continue;
+                const [variable, exponent] = part.split(":");
+                powers[variable] = (powers[variable] || 0) + Number(exponent);
+            }
+            const key = Object.entries(powers)
+                .filter(([, exponent]) => exponent !== 0)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([variable, exponent]) => `${variable}:${exponent}`)
+                .join("|");
+            result.set(key, (result.get(key) || 0) + leftValue * rightValue);
+        }
+    }
+    return result;
+}
+
+function polynomialPower(value, exponent) {
+    if (!Number.isInteger(exponent) || exponent < 0) throw new Error("Unsupported exponent");
+    let result = new Map([["", 1]]);
+    for (let index = 0; index < exponent; index++) {
+        result = polynomialMultiply(result, value);
+    }
+    return result;
+}
+
+function evaluatePolynomialNode(node) {
+    if (node.isConstantNode) return new Map([["", Number(node.value)]]);
+    if (node.isSymbolNode) return new Map([[`${node.name}:1`, 1]]);
+    if (node.isParenthesisNode) return evaluatePolynomialNode(node.content);
+
+    if (node.isOperatorNode && node.args.length === 1) {
+        const value = evaluatePolynomialNode(node.args[0]);
+        return node.op === "-" ? polynomialAdd(new Map(), value, -1) : value;
+    }
+
+    if (!node.isOperatorNode || node.args.length !== 2) {
+        throw new Error("Unsupported expression node");
+    }
+
+    const left = evaluatePolynomialNode(node.args[0]);
+    const right = evaluatePolynomialNode(node.args[1]);
+    if (node.op === "+") return polynomialAdd(left, right);
+    if (node.op === "-") return polynomialAdd(left, right, -1);
+    if (node.op === "*") return polynomialMultiply(left, right);
+    if (node.op === "^") {
+        if (right.size !== 1 || !right.has("")) throw new Error("Unsupported exponent");
+        return polynomialPower(left, [...right.values()][0]);
+    }
+    throw new Error("Unsupported operator");
+}
+
+function formatPolynomial(polynomial) {
+    const terms = [...polynomial.entries()]
+        .filter(([, coefficient]) => coefficient !== 0)
+        .map(([key, coefficient]) => ({
+            key,
+            coefficient,
+            degree: key ? key.split("|").reduce((sum, part) => sum + Number(part.split(":")[1]), 0) : 0
+        }))
+        .sort((left, right) => right.degree - left.degree || left.key.localeCompare(right.key));
+
+    if (terms.length === 0) return "0";
+
+    return terms.map(({ key, coefficient }, index) => {
+        const variables = key
+            ? key.split("|").map(part => {
+                const [variable, exponent] = part.split(":");
+                return exponent === "1" ? variable : `${variable}^${exponent}`;
+            }).join("*")
+            : "";
+        const absolute = Math.abs(coefficient);
+        const body = variables
+            ? `${absolute === 1 ? "" : absolute + "*"}${variables}`
+            : String(absolute);
+        if (index === 0) return coefficient < 0 ? `-${body}` : body;
+        return coefficient < 0 ? ` - ${body}` : ` + ${body}`;
+    }).join("");
+}
+
+export function evaluateExpression(text) {
+    try {
+        return formatPolynomial(evaluatePolynomialNode(parseMathExpression(expressionSource(text))));
+    } catch {
+        return null;
+    }
+}
+
 export function buildNumericDistractors(correctFrac, count = 3, existingKeys = new Set()) {
     const pool = [
         new Frac(correctFrac.n + correctFrac.d, correctFrac.d),   // +1
@@ -381,6 +542,55 @@ function formatFracOption(frac) {
     return `$${frac.toDisplay()}$`;
 }
 
+function parseAnswerConfig(answerConfig) {
+    if (typeof answerConfig === "string") {
+        try {
+            return JSON.parse(answerConfig || "{}");
+        } catch {
+            return {};
+        }
+    }
+
+    return answerConfig || {};
+}
+
+function buildAnswerConfig(questionType, options, currentConfig) {
+    if (!["numeric_input", "equation", "expression", "text"].includes(questionType)) {
+        return null;
+    }
+
+    const correctAnswers = options
+        .filter(option => option.is_correct)
+        .map(option => option.text)
+        .filter(answer => String(answer ?? "").trim() !== "");
+
+    if (correctAnswers.length === 0) return null;
+
+    const answerConfig = { ...currentConfig };
+    if (
+        answerConfig.default_answer === undefined ||
+        answerConfig.default_answer === null ||
+        String(answerConfig.default_answer).trim() === ""
+    ) {
+        answerConfig.default_answer = correctAnswers[0];
+    }
+
+    if (questionType === "numeric_input" || questionType === "equation") {
+        if (JSON.stringify(answerConfig.correctAnswers || []) !== JSON.stringify(correctAnswers)) {
+            answerConfig.correctAnswers = correctAnswers;
+        }
+        if (correctAnswers.length > 1) {
+            answerConfig.order_independent = true;
+        }
+    }
+
+    return answerConfig;
+}
+
+function answerConfigChanged(currentConfig, nextConfig) {
+    return JSON.stringify(currentConfig) !== JSON.stringify(nextConfig);
+}
+
 /**
  * Auto-fixes a single question in the database.
  */
@@ -416,10 +626,56 @@ export async function autoFixQuestion(questionId, userId = 1) {
     );
 
     const changes = [];
+    const systemAnswers = solveLinearSystem(question.question);
+
+    if (systemAnswers) {
+        const usedOptionIds = new Set();
+        for (const answer of systemAnswers) {
+            const matchingOption = options.find(option => {
+                const parsed = parseOptionToFrac(option.text);
+                return parsed && parsed.toKey() === answer.toKey() && !usedOptionIds.has(option.id);
+            });
+
+            if (matchingOption) {
+                usedOptionIds.add(matchingOption.id);
+                if (!matchingOption.is_correct) {
+                    await db.query(
+                        `UPDATE options SET is_correct = 1, updated_by = ?, updated_at = NOW() WHERE id = ?`,
+                        [userId, matchingOption.id]
+                    );
+                    matchingOption.is_correct = 1;
+                    changes.push(`Markerade systemsvaret ${matchingOption.text} som korrekt.`);
+                }
+            } else {
+                const newText = answer.toDisplay();
+                const [res] = await db.query(
+                    `INSERT INTO options (question_id, text, is_correct, created_by, updated_by) VALUES (?, ?, 1, ?, ?)`,
+                    [question.id, newText, userId, userId]
+                );
+                options.push({ id: res.insertId, question_id: question.id, text: newText, is_correct: 1 });
+                usedOptionIds.add(res.insertId);
+                changes.push(`Lade till systemsvaret ${newText} som korrekt.`);
+            }
+        }
+
+        for (const option of options) {
+            if (option.is_correct && !usedOptionIds.has(option.id)) {
+                await db.query(
+                    `UPDATE options SET is_correct = 0, updated_by = ?, updated_at = NOW() WHERE id = ?`,
+                    [userId, option.id]
+                );
+                option.is_correct = 0;
+                changes.push(`Avmarkerade felaktigt systemsvar ${option.text}.`);
+            }
+        }
+    }
 
     // 1. Check if arithmetic / equation evaluation gives a solution
     const arithmeticResult = evaluateArithmetic(question.question);
     const equationRoots = solveEquation(question.question);
+    const expressionResult = question.question_type === "expression"
+        ? evaluateExpression(question.question)
+        : null;
 
     let calculatedCorrectFrac = arithmeticResult;
     if (!calculatedCorrectFrac && equationRoots && equationRoots.length === 1) {
@@ -495,12 +751,40 @@ export async function autoFixQuestion(questionId, userId = 1) {
                     }
                 }
             }
+        } else if (expressionResult) {
+            const [res] = await db.query(
+                `INSERT INTO options (question_id, text, is_correct, created_by, updated_by) VALUES (?, ?, 1, ?, ?)`,
+                [question.id, expressionResult, userId, userId]
+            );
+            options.push({ id: res.insertId, question_id: question.id, text: expressionResult, is_correct: 1 });
+            changes.push(`Lade till facit ${expressionResult}.`);
         } else if (options.length > 0) {
             // Fallback: if no math evaluation, mark first option as correct
             const firstOpt = options[0];
             await db.query(`UPDATE options SET is_correct = 1, updated_by = ?, updated_at = NOW() WHERE id = ?`, [userId, firstOpt.id]);
             firstOpt.is_correct = 1;
             changes.push(`Markerade första alternativet "${firstOpt.text}" som rätt svar.`);
+        }
+    }
+
+    if (options.some(option => option.is_correct)) {
+        const currentAnswerConfig = parseAnswerConfig(question.answer_config);
+        const answerConfig = buildAnswerConfig(
+            question.question_type,
+            options,
+            currentAnswerConfig
+        );
+
+        if (answerConfig && answerConfigChanged(currentAnswerConfig, answerConfig)) {
+            await db.query(
+                `
+                UPDATE questions
+                SET answer_config = ?, updated_by = ?, updated_at = NOW()
+                WHERE id = ?
+                `,
+                [JSON.stringify(answerConfig), userId, question.id]
+            );
+            changes.push("Lade till svaret i frågans svarskonfiguration.");
         }
     }
 
@@ -554,7 +838,11 @@ export async function autoFixQuestion(questionId, userId = 1) {
     // C. Clean up legacy numeric input markers
     if (question.question_type === "numeric_input") {
         const updatedCorrectCount = options.filter(o => o.is_correct).length;
-        const syncedText = syncNumericInputs(question.question, updatedCorrectCount);
+        let syncedText = syncNumericInputs(question.question, updatedCorrectCount);
+        const markerCount = (syncedText.match(/\{\{input\}\}/g) || []).length;
+        if (markerCount < updatedCorrectCount) {
+            syncedText = `${syncedText}\n${"{{input}}\n".repeat(updatedCorrectCount - markerCount).trim()}`.trim();
+        }
 
         if (updatedCorrectCount > 0 && syncedText !== (question.question || "")) {
             let answerConfig = {};

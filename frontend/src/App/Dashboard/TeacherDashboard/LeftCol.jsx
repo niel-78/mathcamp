@@ -2790,6 +2790,19 @@ export default function LeftCol( {openTab, hoverTarget} ) {
                                             >
                                                 Diagnos
                                             </div>
+                                            <div
+                                                className="tree-file"
+                                                onClick={() =>
+                                                    openTab({
+                                                        id: "assessment-settings-worksheet",
+                                                        title: "Assessments - Arbetsblad",
+                                                        type: "assessment-settings",
+                                                        assessmentType: "worksheet"
+                                                    })
+                                                }
+                                            >
+                                                Arbetsblad
+                                            </div>
                                         </div>
                                     )}
                                 </div>

@@ -44,6 +44,9 @@ export function getQuestionIssues(
     const configuredCorrectAnswers = Array.isArray(answerConfig?.correctAnswers)
         ? answerConfig.correctAnswers.filter(answer => String(answer ?? "").trim() !== "")
         : [];
+    const configuredVariables = Array.isArray(answerConfig?.variables)
+        ? answerConfig.variables.filter(variable => String(variable?.answer ?? "").trim() !== "")
+        : [];
 
     const hasDefaultAnswer =
         answerConfig?.default_answer !== undefined &&
@@ -62,6 +65,7 @@ export function getQuestionIssues(
     } else if (
         question.question_type === "numeric_input" ||
         question.question_type === "equation" ||
+        question.question_type === "linear_system" ||
         question.question_type === "expression" ||
         question.question_type === "text"
     ) {
@@ -90,14 +94,25 @@ export function getQuestionIssues(
     // {{input}} är en valfri äldre inline-markör.
     if (
         question.question_type === "numeric_input" ||
-        question.question_type === "equation"
+        question.question_type === "equation" ||
+        question.question_type === "linear_system"
     ) {
-        const expectedCount = correctOptions.length || configuredCorrectAnswers.length || (hasDefaultAnswer ? 1 : 0);
+        const expectedCount = question.question_type === "linear_system"
+            ? configuredVariables.length
+            : correctOptions.length || configuredCorrectAnswers.length || (hasDefaultAnswer ? 1 : 0);
         if (expectedCount === 0) {
             issues.push({
                 type: "input_count_mismatch",
                 questionId: question.id,
                 message: "Saknar facit för numerisk svarsruta"
+            });
+        }
+
+        if (question.question_type === "linear_system" && configuredVariables.length < 2) {
+            issues.push({
+                type: "input_count_mismatch",
+                questionId: question.id,
+                message: "Ett ekvationssystem måste ha minst två namngivna svar."
             });
         }
 

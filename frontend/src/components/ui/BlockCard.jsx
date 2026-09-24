@@ -32,6 +32,7 @@ export default function BlockCard({
     onAddAbility,
     abilityOptions = [],
     abilitySourceLabel = "Förmågor",
+    contextAbilityId,
     onEditPoint,
     canRemoveFromExam,
     orderNumber
@@ -54,13 +55,29 @@ export default function BlockCard({
                     : "block",
 
             blockId: block.id,
-            block
+            block,
+            abilityId: contextAbilityId ? Number(contextAbilityId) : null
+        }
+    });
+
+    const {
+        setNodeRef: setDropRef,
+        isOver
+    } = useDroppable({
+        id: contextAbilityId
+            ? `ability-block-${contextAbilityId}-${block.id}`
+            : `${dragPrefix}-block-target-${block.id}`,
+        data: {
+            type: "ability-block",
+            blockId: block.id,
+            abilityId: contextAbilityId ? Number(contextAbilityId) : null
         }
     });
 
     const setRefs = (node) => {
 
         setDragRef(node);
+        setDropRef(node);
 
     };
 
@@ -89,6 +106,12 @@ export default function BlockCard({
         question => Boolean(question.is_priority)
     ).length ?? 0;
     const pointsCount = block.point_count ?? block.points?.length ?? 0;
+    const contextAbilityProgression = contextAbilityId
+        ? block.abilities?.find(ability =>
+            Number(ability.id) === Number(contextAbilityId)
+        )?.progression
+        : null;
+    const abilityProgression = block.ability_progression ?? contextAbilityProgression;
 
     const books = block.books?.length > 0
         ? block.books
@@ -140,7 +163,7 @@ export default function BlockCard({
             className="w-full"
         >
 
-            <div className={`card h-full ${issues.length > 0 ? "border-amber-300/80 bg-amber-50/10" : ""}`}>
+            <div className={`card h-full ${issues.length > 0 ? "border-amber-300/80 bg-amber-50/10" : ""} ${isOver && contextAbilityId ? "ring-2 ring-primary/60" : ""}`}>
 
                 <div className="flex justify-end mb-2">
 
@@ -263,6 +286,12 @@ export default function BlockCard({
                         >
                             <Star size={12} />
                             Prioriterade: {priorityQuestionCount}
+                            {abilityProgression !== undefined && abilityProgression !== null && (
+                                <>
+                                    {" · "}
+                                    Progression: {abilityProgression}
+                                </>
+                            )}
                         </Badge>
                     </div>
 

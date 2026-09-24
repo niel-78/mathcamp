@@ -76,7 +76,8 @@ CREATE TABLE questions (
         'single_choice',
         'multiple_choice',
         'numeric_input',
-        'equation'
+        'equation',
+        'linear_system'
     ),
 
     level_id INT NULL,
@@ -238,6 +239,8 @@ CREATE TABLE block_abilities (
     block_id INT NOT NULL,
 
     ability_id INT NOT NULL,
+
+    progression INT NOT NULL DEFAULT 1,
 
     PRIMARY KEY (
         block_id,

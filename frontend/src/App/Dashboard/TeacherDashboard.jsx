@@ -295,6 +295,50 @@ export default function TeacherDashboard() {
             return;
         }
 
+        if (
+            active.data.current?.type === "block" &&
+            active.data.current?.abilityId &&
+            over.data.current?.type === "ability-block" &&
+            Number(active.data.current.abilityId) === Number(over.data.current.abilityId)
+        ) {
+
+            const draggedBlockId =
+                Number(active.data.current.blockId);
+
+            const targetBlockId =
+                Number(over.data.current.blockId);
+
+            const abilityId =
+                Number(over.data.current.abilityId);
+
+            if (draggedBlockId === targetBlockId) {
+                return;
+            }
+
+            const response = await fetch(
+                `${API_URL}/api/blocks/abilities/${abilityId}/reorder`,
+                {
+                    method: "POST",
+                    headers: {
+                        ...authHeaders(),
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        draggedBlockId,
+                        targetBlockId
+                    })
+                }
+            );
+
+            if (!response.ok) {
+                toast.error("Kunde inte ändra progressionen");
+                return;
+            }
+
+            setBlockRefreshKey(prev => prev + 1);
+            return;
+        }
+
         /*
         Lägga boksektion i lektionsplanering
         */

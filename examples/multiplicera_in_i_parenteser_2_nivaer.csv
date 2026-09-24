@@ -1,0 +1,51 @@
+Fråga,Frågetyp,Nivå,Svar,Miniräknare tillåten
+Multiplicera in och förenkla: $2(x - 4)$. Svar: {{input}},text,1,$2x - 8$,Nej
+Multiplicera in och förenkla: $3(2x - 1)$. Svar: {{input}},text,1,$6x - 3$,Nej
+Multiplicera in och förenkla: $4(3x + 2)$. Svar: {{input}},text,1,$12x + 8$,Nej
+Multiplicera in och förenkla: $5(-x + 6)$. Svar: {{input}},text,1,$-5x + 30$,Nej
+Multiplicera in och förenkla: $6(-2x + 3)$. Svar: {{input}},text,1,$-12x + 18$,Nej
+Multiplicera in och förenkla: $2(4x)$. Svar: {{input}},text,1,$8x$,Nej
+Multiplicera in och förenkla: $3(-3x - 2)$. Svar: {{input}},text,1,$-9x - 6$,Nej
+Multiplicera in och förenkla: $4(x + 5)$. Svar: {{input}},text,1,$4x + 20$,Nej
+Multiplicera in och förenkla: $5(2x - 5)$. Svar: {{input}},text,1,$10x - 25$,Nej
+Multiplicera in och förenkla: $6(3x - 1)$. Svar: {{input}},text,1,$18x - 6$,Nej
+Multiplicera in och förenkla: $7(-x + 4)$. Svar: {{input}},text,1,$-7x + 28$,Nej
+Multiplicera in och förenkla: $2(5x + 1)$. Svar: {{input}},text,1,$10x + 2$,Nej
+Multiplicera in och förenkla: $3(4x - 6)$. Svar: {{input}},text,1,$12x - 18$,Nej
+Multiplicera in och förenkla: $4(-2x)$. Svar: {{input}},text,1,$-8x$,Nej
+Multiplicera in och förenkla: $5(-3x + 2)$. Svar: {{input}},text,1,$-15x + 10$,Nej
+Multiplicera in och förenkla: $6(x - 3)$. Svar: {{input}},text,1,$6x - 18$,Nej
+Multiplicera in och förenkla: $7(2x + 5)$. Svar: {{input}},text,1,$14x + 35$,Nej
+Multiplicera in och förenkla: $2(-4x - 1)$. Svar: {{input}},text,1,$-8x - 2$,Nej
+Multiplicera in och förenkla: $3(5x - 4)$. Svar: {{input}},text,1,$15x - 12$,Nej
+Multiplicera in och förenkla: $4(2x + 6)$. Svar: {{input}},text,1,$8x + 24$,Nej
+Multiplicera in och förenkla: $5(x)$. Svar: {{input}},text,1,$5x$,Nej
+Multiplicera in och förenkla: $6(-x - 5)$. Svar: {{input}},text,1,$-6x - 30$,Nej
+Multiplicera in och förenkla: $7(3x + 1)$. Svar: {{input}},text,1,$21x + 7$,Nej
+Multiplicera in och förenkla: $2(-5x + 3)$. Svar: {{input}},text,1,$-10x + 6$,Nej
+Multiplicera in och förenkla: $3(-2x + 4)$. Svar: {{input}},text,1,$-6x + 12$,Nej
+Multiplicera in och förenkla: $3x - 2x(5x - 1) + 7(x - 3)$. Svar: {{input}},text,2,$-10x^2 + 12x - 21$,Nej
+Multiplicera in och förenkla: $3y(2x + 3)$. Svar: {{input}},text,2,$6xy + 9y$,Nej
+Multiplicera in och förenkla: $6x(x - 2)$. Svar: {{input}},text,2,$6x^2 - 12x$,Nej
+Multiplicera in och förenkla: $5x(x + 6)$. Svar: {{input}},text,2,$5x^2 + 30x$,Nej
+Multiplicera in och förenkla: $6y(2x)$. Svar: {{input}},text,2,$12xy$,Nej
+Multiplicera in och förenkla: $2y(4x + 1)$. Svar: {{input}},text,2,$8xy + 2y$,Nej
+Multiplicera in och förenkla: $-4x + 3x(2x + 1) - 5(3x - 2)$. Svar: {{input}},text,2,$6x^2 - 16x + 10$,Nej
+Multiplicera in och förenkla: $4y(5x)$. Svar: {{input}},text,2,$20xy$,Nej
+Multiplicera in och förenkla: $5x(2x - 5)$. Svar: {{input}},text,2,$10x^2 - 25x$,Nej
+Multiplicera in och förenkla: $6x(3x + 4)$. Svar: {{input}},text,2,$18x^2 + 24x$,Nej
+Multiplicera in och förenkla: $7x(2x)$. Svar: {{input}},text,2,$14x^2$,Nej
+Multiplicera in och förenkla: $2y(5x + 1)$. Svar: {{input}},text,2,$10xy + 2y$,Nej
+Multiplicera in och förenkla: $6y(4x - 1)$. Svar: {{input}},text,2,$24xy - 6y$,Nej
+Multiplicera in och förenkla: $2x - 3x(4x + 2) + 6(x - 4)$. Svar: {{input}},text,2,$-12x^2 + 2x - 24$,Nej
+Multiplicera in och förenkla: $4x(2x + 3)$. Svar: {{input}},text,2,$8x^2 + 12x$,Nej
+Multiplicera in och förenkla: $6y(x - 3)$. Svar: {{input}},text,2,$6xy - 18y$,Nej
+Multiplicera in och förenkla: $8x(5x)$. Svar: {{input}},text,2,$40x^2$,Nej
+Multiplicera in och förenkla: $-5x + 2x(3x - 1) + 4(2x + 1)$. Svar: {{input}},text,2,$6x^2 + x + 4$,Nej
+Multiplicera in och förenkla: $5y(2x)$. Svar: {{input}},text,2,$10xy$,Nej
+Multiplicera in och förenkla: $8y(3x + 2)$. Svar: {{input}},text,2,$24xy + 16y$,Nej
+Multiplicera in och förenkla: $5y(x + 4)$. Svar: {{input}},text,2,$5xy + 20y$,Nej
+Multiplicera in och förenkla: $6y(x)$. Svar: {{input}},text,2,$6xy$,Nej
+Multiplicera in och förenkla: $7x(3x + 1)$. Svar: {{input}},text,2,$21x^2 + 7x$,Nej
+Multiplicera in och förenkla: $4x - 2x(5x + 3) - 7(x + 2)$. Svar: {{input}},text,2,$-10x^2 - 9x - 14$,Nej
+Multiplicera in och förenkla: $5x(3x)$. Svar: {{input}},text,2,$15x^2$,Nej

@@ -29,6 +29,7 @@ import OptionList
 
 import { gradeAnswer } from "@/utils/grading/gradeAnswer";
 import { scoreNumericInput } from "@/utils/grading/gradeNumericInput";
+import { scoreLinearSystem } from "@/utils/grading/gradeLinearSystem";
 
 import AnswerConfigEditor
     from "@/components/ui/AnswerConfigEditor";
@@ -63,7 +64,7 @@ function getNumericDefaultAnswer(question) {
     const answerConfig = parseAnswerConfig(question.answer_config);
 
     if (
-        !["numeric_input", "equation"].includes(question.question_type) ||
+        !["numeric_input", "equation", "linear_system"].includes(question.question_type) ||
         question.options?.length > 0 ||
         answerConfig?.default_answer === undefined ||
         answerConfig.default_answer === ""
@@ -175,7 +176,7 @@ export default function QuestionCard({
     const hasPreviewAnswer =
         question.question_type === "multiple_choice"
             ? Array.isArray(previewAnswer) && previewAnswer.length > 0
-            : ["numeric_input", "equation"].includes(question.question_type)
+            : ["numeric_input", "equation", "linear_system"].includes(question.question_type)
                 ? (() => {
 
                     try {
@@ -195,6 +196,14 @@ export default function QuestionCard({
         }
 
         const config = parseAnswerConfig(question.answer_config);
+
+        if (question.question_type === "linear_system") {
+            const score = scoreLinearSystem(previewAnswer, config);
+            return {
+                correct: score.correct,
+                pointsFraction: score.pointsFraction
+            };
+        }
 
         if (["numeric_input", "equation"].includes(question.question_type)) {
 
@@ -959,7 +968,7 @@ export default function QuestionCard({
 
                         <CardContent>
 
-                            {["numeric_input", "equation"].includes(question.question_type) && (
+                            {["numeric_input", "equation", "linear_system"].includes(question.question_type) && (
 
                                 <p
                                     className="

@@ -100,6 +100,7 @@ export default function AbilityTab({
                 <BlockLibrary
                     blocks={blocks}
                     dragPrefix="ability"
+                    contextAbilityId={abilityId}
                     openTab={openTab}
                     onReload={loadBlocks}
                 />

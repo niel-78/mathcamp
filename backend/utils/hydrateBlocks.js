@@ -247,6 +247,8 @@ export default async function hydrateBlocks(blocks, groupId = null) {
             SELECT
                 a.*,
 
+                ba.progression,
+
                 aps.name AS series_name,
 
                 s.id AS subject_id,
@@ -265,7 +267,7 @@ export default async function hydrateBlocks(blocks, groupId = null) {
 
             WHERE ba.block_id = ?
 
-            ORDER BY a.name
+            ORDER BY ba.progression, a.name
             `,
             [block.id]
         );

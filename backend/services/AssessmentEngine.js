@@ -3,6 +3,7 @@
 import db from "../db.js";
 import { gradeAnswer } from "../utils/grading/gradeAnswer.js";
 import { scoreNumericInput } from "../utils/grading/gradeNumericInput.js";
+import { scoreLinearSystem } from "../utils/grading/gradeLinearSystem.js";
 
 export default class AssessmentEngine {
 
@@ -932,6 +933,9 @@ export default class AssessmentEngine {
         const useDifferentQuestionsInBlock =
             questionSelection.useDifferentQuestionsInBlock !== false;
 
+        const followProgressionOrder =
+            questionSelection.followProgressionOrder === true;
+
         const plan =
             await this.getDiagnosticSeedPlan(
                 lessonId,
@@ -940,7 +944,8 @@ export default class AssessmentEngine {
                 questionsPerAbility,
                 abilityQuestionCounts,
                 1,
-                useDifferentQuestionsInBlock
+                useDifferentQuestionsInBlock,
+                followProgressionOrder
             );
 
         const questions =
@@ -948,7 +953,7 @@ export default class AssessmentEngine {
                 item => item.question
             );
 
-        if (shuffleQuestions) {
+        if (shuffleQuestions && !followProgressionOrder) {
             questions.sort(() => Math.random() - 0.5);
         }
 
@@ -1069,6 +1074,22 @@ export default class AssessmentEngine {
             });
 
             pointsFraction = correct ? 1 : 0;
+
+        } else if (question.question_type === "linear_system") {
+
+            const config =
+                typeof question.answer_config === "string"
+                    ? JSON.parse(question.answer_config)
+                    : question.answer_config;
+
+            const score = scoreLinearSystem(
+                answer.text_answer,
+                config
+            );
+
+            correct = score.correct;
+            pointsFraction = score.pointsFraction;
+            masteryMultiplier = score.masteryMultiplier;
 
         } else if (
             question.question_type === "numeric_input" ||
@@ -1561,7 +1582,8 @@ export default class AssessmentEngine {
         questionsPerAbility = 1,
         abilityQuestionCounts = {},
         completionQuestionsPerAbility = 1,
-        useDifferentQuestionsInBlock = true
+        useDifferentQuestionsInBlock = true,
+        followProgressionOrder = false
     ) {
 
         const selectedBlockIdSet =
@@ -1582,7 +1604,8 @@ export default class AssessmentEngine {
             await db.query(
                 `
                 SELECT
-                    group_id
+                    group_id,
+                    starts_at
                 FROM lessons
                 WHERE id = ?
                 `,
@@ -1756,6 +1779,8 @@ export default class AssessmentEngine {
                     b.id,
                     b.title AS block_title,
 
+                    ba.progression AS block_progression,
+
                     a.id AS ability_id,
                     a.name AS block_name,
 
@@ -1784,36 +1809,31 @@ export default class AssessmentEngine {
                     ON a.id = ba.ability_id
 
                 WHERE l.group_id = ?
-                AND DATE(l.starts_at) < CURDATE()
+                AND DATE(l.starts_at) <= DATE(?)
                 AND b.deleted_at IS NULL
                 AND b.archived_at IS NULL
 
                 ORDER BY
                     s.title,
+                    ba.progression,
                     b.id,
                     a.name
                 `,
-                [lesson.group_id]
+                [lesson.group_id, lesson.starts_at]
             );
 
         const questions = [];
 
-        // Deduplicate blocks and keep only those with abilities
+        // Blocks originate directly from the selected sections (block_sections),
+        // an ability link is optional and only used to override the level below.
         const uniqueBlocks = [];
         const seenBlockIds = new Set();
-        
+
         for (const block of blocks) {
-            // Skip blocks without abilities (NULL ability_id from LEFT JOIN)
-            if (!block.ability_id) {
+            if (seenBlockIds.has(block.id)) {
                 continue;
             }
-            
-            // Skip duplicate block entries (keep first one with each ability)
-            const key = `${block.id}-${block.ability_id}`;
-            if (seenBlockIds.has(key)) {
-                continue;
-            }
-            seenBlockIds.add(key);
+            seenBlockIds.add(block.id);
             uniqueBlocks.push(block);
         }
 
@@ -1835,6 +1855,18 @@ export default class AssessmentEngine {
 
         }
 
+        // Fallback level for blocks without an ability: the easiest generic
+        // question level (question_levels), tied to the question/section itself.
+        const [[defaultQuestionLevel]] =
+            await db.query(
+                `
+                SELECT id, name
+                FROM question_levels
+                ORDER BY sort_order
+                LIMIT 1
+                `
+            );
+
         const blockGroups = new Map();
 
         for (const block of uniqueBlocks) {
@@ -1846,68 +1878,92 @@ export default class AssessmentEngine {
                 continue;
             }
 
-            const key = `${block.section_id}-${block.ability_id}`;
-            if (!blockGroups.has(key)) {
-                blockGroups.set(key, []);
+            if (!blockGroups.has(block.id)) {
+                blockGroups.set(block.id, []);
             }
-            blockGroups.get(key).push(block);
+            blockGroups.get(block.id).push(block);
         }
 
         for (const groupBlocks of blockGroups.values()) {
 
+            if (followProgressionOrder) {
+                groupBlocks.sort((a, b) =>
+                    Number(a.block_progression || 1) -
+                        Number(b.block_progression || 1) ||
+                    Number(a.id) - Number(b.id)
+                );
+            }
+
             const firstBlock = groupBlocks[0];
-            const [[ability]] =
-                await db.query(
-                    `
-                    SELECT
-                        ba.ability_id,
-                        a.series_id
 
-                    FROM block_abilities ba
+            // The question's own level (level_id) is the default; a block's
+            // linked ability, when present, may override it (series_level_id).
+            let levelColumn = "level_id";
+            let levelId = defaultQuestionLevel?.id ?? null;
+            let levelName = defaultQuestionLevel?.name ?? null;
 
-                    INNER JOIN abilities a
-                        ON a.id = ba.ability_id
+            if (firstBlock.ability_id) {
 
-                    WHERE ba.block_id = ?
-                    AND ba.ability_id = ?
+                const [[ability]] =
+                    await db.query(
+                        `
+                        SELECT
+                            ba.ability_id,
+                            a.series_id
 
-                    LIMIT 1
-                    `,
-                    [firstBlock.id, firstBlock.ability_id]
-                );
+                        FROM block_abilities ba
 
-            if (!ability) {
+                        INNER JOIN abilities a
+                            ON a.id = ba.ability_id
+
+                        WHERE ba.block_id = ?
+                        AND ba.ability_id = ?
+
+                        LIMIT 1
+                        `,
+                        [firstBlock.id, firstBlock.ability_id]
+                    );
+
+                if (ability) {
+
+                    const [[firstLevel]] =
+                        await db.query(
+                            `
+                            SELECT
+                                id,
+                                name
+
+                            FROM ability_series_levels
+
+                            WHERE series_id = ?
+
+                            ORDER BY sort_order
+
+                            LIMIT 1
+                            `,
+                            [ability.series_id]
+                        );
+
+                    if (firstLevel) {
+                        levelColumn = "series_level_id";
+                        levelId = firstLevel.id;
+                        levelName = firstLevel.name;
+                    }
+
+                }
+
+            }
+
+            if (levelId === null) {
                 continue;
             }
 
-            const [[firstLevel]] =
-                await db.query(
-                    `
-                    SELECT
-                        id,
-                        name
-
-                    FROM ability_series_levels
-
-                    WHERE series_id = ?
-
-                    ORDER BY sort_order
-
-                    LIMIT 1
-                    `,
-                    [ability.series_id]
-                );
-
-            if (!firstLevel) {
-                continue;
-            }
-
-            const countForAbility =
+            const countForBlock =
                 abilityQuestionCounts?.[firstBlock.ability_id] ??
                 abilityQuestionCounts?.[String(firstBlock.ability_id)] ??
                 questionsPerAbility;
 
-            const limit = Math.max(1, Number(countForAbility) || 1);
+            const limit = Math.max(1, Number(countForBlock) || 1);
             const questionsByBlock = [];
 
             for (const block of groupBlocks) {
@@ -1936,7 +1992,7 @@ export default class AssessmentEngine {
                             AND bqp.block_id = q.block_id
 
                         WHERE q.block_id = ?
-                        AND q.series_level_id = ?
+                        AND q.${levelColumn} = ?
 
                         AND q.archived_at IS NULL
                         AND q.deleted_at IS NULL
@@ -1973,7 +2029,7 @@ export default class AssessmentEngine {
                         [
                             lesson.group_id,
                             block.id,
-                            firstLevel.id,
+                            levelId,
                             userId,
                             userId,
                             limit
@@ -2005,7 +2061,7 @@ export default class AssessmentEngine {
                             AND bqp.block_id = q.block_id
 
                         WHERE q.block_id = ?
-                        AND q.series_level_id = ?
+                        AND q.${levelColumn} = ?
 
                         AND q.archived_at IS NULL
                         AND q.deleted_at IS NULL
@@ -2027,7 +2083,7 @@ export default class AssessmentEngine {
                         [
                             lesson.group_id,
                             block.id,
-                            firstLevel.id,
+                            levelId,
                             limit
                         ]
                     );
@@ -2049,8 +2105,11 @@ export default class AssessmentEngine {
                     question.selection_reason =
                         this.buildSelectionReason({
                             sectionName: block.section_name,
-                            abilityName: block.block_name,
-                            levelName: firstLevel.name
+                            abilityName:
+                                levelColumn === "series_level_id"
+                                    ? block.block_name
+                                    : null,
+                            levelName
                         });
 
                     questions.push({
@@ -2062,8 +2121,11 @@ export default class AssessmentEngine {
                         ability_id: block.ability_id,
                         block_name: block.block_name,
 
-                        series_level_id: firstLevel.id,
-                        series_level_name: firstLevel.name,
+                        series_level_id:
+                            levelColumn === "series_level_id"
+                                ? levelId
+                                : null,
+                        series_level_name: levelName,
 
                         question
                     });

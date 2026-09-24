@@ -37,6 +37,7 @@ export default function QuestionView({
 
         case 'numeric_input':
         case 'equation':
+        case 'linear_system':
             questionContent = (
                 <NumericInputQuestion
                     question={question}

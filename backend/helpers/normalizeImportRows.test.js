@@ -203,6 +203,45 @@ test("normalizes equation rows as dynamic unordered numeric answers", () => {
     );
 });
 
+test("normalizes linear systems as named x and y answers", () => {
+    const result = normalizeImportRows({
+        rows: [
+            {
+                Fråga: "Lös systemet. Skriv x = {{input}} och y = {{input}}.",
+                Frågetyp: "linear_system",
+                Nivå: 1,
+                Svar: "-9; -5"
+            }
+        ],
+        blockId: 45,
+        userId: 66
+    });
+
+    assert.deepEqual(result.questions[0].answerConfig.variables, [
+        { name: "x", answer: "-9" },
+        { name: "y", answer: "-5" }
+    ]);
+    assert.equal(result.questions[0].questionType, "linear_system");
+});
+
+test("rejects equal values in linear systems", () => {
+    assert.throws(
+        () => normalizeImportRows({
+            rows: [
+                {
+                    Fråga: "Lös systemet.",
+                    Frågetyp: "linear_system",
+                    Nivå: 1,
+                    Svar: "-6; -6"
+                }
+            ],
+            blockId: 45,
+            userId: 66
+        }),
+        /olika värden/
+    );
+});
+
 test("stores Svar as a correct option for text rows", () => {
     const result = normalizeImportRows({
         rows: [

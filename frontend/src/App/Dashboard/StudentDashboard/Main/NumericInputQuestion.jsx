@@ -38,6 +38,11 @@ export default function NumericInputQuestion({
     }
 
     const isEquation = question.question_type === "equation";
+    const isLinearSystem = question.question_type === "linear_system";
+    const isVariableQuestion = isEquation || isLinearSystem;
+    const variables = Array.isArray(answerConfig.variables)
+        ? answerConfig.variables
+        : [];
     const orderIndependent =
         isEquation || Boolean(answerConfig.order_independent);
     const markerCount = Math.max(segments.length - 1, 0);
@@ -57,8 +62,8 @@ export default function NumericInputQuestion({
         : (question.options || [])
             .filter(isCorrectOption)
             .map(option => option.text);
-    const fieldCount = isEquation
-        ? Math.max(correctAnswerCount, 1)
+    const fieldCount = isVariableQuestion
+        ? (isLinearSystem ? Math.max(variables.length, 2) : Math.max(correctAnswerCount, 1))
         : markerCount;
     const hasInlineMarkers = markerCount > 0;
     const isMobile = typeof window !== "undefined" &&
@@ -112,7 +117,7 @@ export default function NumericInputQuestion({
 
         if (!raw) {
             return Array(
-                isEquation ? 1 : fieldCount
+                isVariableQuestion ? fieldCount : fieldCount
             ).fill("");
         }
 
@@ -126,7 +131,7 @@ export default function NumericInputQuestion({
                     {
                         length: Math.max(
                             fieldCount,
-                            isEquation ? parsed.length : fieldCount
+                            isVariableQuestion ? Math.max(fieldCount, parsed.length) : fieldCount
                         )
                     },
                     (_, i) => parsed[i] ?? ""
@@ -150,7 +155,7 @@ export default function NumericInputQuestion({
         }
 
         return Array(
-            isEquation ? 1 : fieldCount
+            fieldCount
         ).fill("");
 
     };
@@ -200,7 +205,7 @@ export default function NumericInputQuestion({
         <>
             <div className={`leading-8 ${questionTextClassName} text-left`}>
 
-                {isEquation ? (
+                {isVariableQuestion ? (
 
                     <>
                         <span
@@ -225,13 +230,11 @@ export default function NumericInputQuestion({
                                     key={index}
                                     className="block"
                                 >
-                                    {values.length === 1 ? (
-                                        "x ="
-                                    ) : (
-                                        <>
-                                            x<sub>{index + 1}</sub> =
-                                        </>
-                                    )}
+                                    {isLinearSystem
+                                        ? `${variables[index]?.name || (index === 0 ? "x" : "y")} =`
+                                        : values.length === 1
+                                            ? "x ="
+                                            : <>x<sub>{index + 1}</sub> =</>}
                                     <Input
                                         ref={element => {
                                             inputRefs.current[index] = element;

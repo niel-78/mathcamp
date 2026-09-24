@@ -286,6 +286,22 @@ export default function LessonCard({
                                     Lägg till exit ticket
                                 </DropdownMenuItem>
 
+                                <DropdownMenuItem
+                                    onClick={() => {
+
+                                        setAssessmentType(
+                                            "worksheet"
+                                        );
+
+                                        setAssessmentDialogOpen(
+                                            true
+                                        );
+
+                                    }}
+                                >
+                                    Lägg till arbetsblad
+                                </DropdownMenuItem>
+
                                 {/* <DropdownMenuItem
                                     onClick={() => {
 
@@ -409,6 +425,7 @@ export default function LessonCard({
                                 readOnly={readOnly}
                                 isPublic={isPublic}
                                 hideCompletions={hideCompletions}
+                                startDiagnosticTest={startDiagnosticTest}
                             />
                         )}
                     </div>

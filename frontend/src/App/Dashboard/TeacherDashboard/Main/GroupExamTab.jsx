@@ -70,7 +70,9 @@ export default function GroupExamTab({
                     shuffleOptions:
                         data.config?.question_selection?.shuffleOptions ?? true,
                     useDifferentQuestionsInBlock:
-                        data.config?.question_selection?.useDifferentQuestionsInBlock ?? true
+                        data.config?.question_selection?.useDifferentQuestionsInBlock ?? true,
+                    followProgressionOrder:
+                        data.config?.question_selection?.followProgressionOrder ?? false
                 },
                 navigation: {
                     ...data.config?.navigation,
@@ -453,6 +455,11 @@ export default function GroupExamTab({
                 [section]: {
                     ...prev.config?.[section],
                     [key]: value,
+                    ...(section === "question_selection" &&
+                        key === "followProgressionOrder" &&
+                        value
+                        ? { shuffleQuestions: false }
+                        : {})
                 },
             },
         }));
@@ -871,7 +878,11 @@ export default function GroupExamTab({
 
                             <Switch
                                 checked={
-                                    !!groupExam.config?.question_selection?.shuffleQuestions
+                                    !!groupExam.config?.question_selection?.shuffleQuestions &&
+                                    !groupExam.config?.question_selection?.followProgressionOrder
+                                }
+                                disabled={
+                                    !!groupExam.config?.question_selection?.followProgressionOrder
                                 }
                                 onCheckedChange={(checked) =>
                                     updateConfig(
@@ -911,6 +922,23 @@ export default function GroupExamTab({
                                     updateConfig(
                                         "question_selection",
                                         "useDifferentQuestionsInBlock",
+                                        checked
+                                    )
+                                }
+                            />
+
+                        </Field>
+
+                        <Field label="Följ progressionsordning">
+
+                            <Switch
+                                checked={
+                                    !!groupExam.config?.question_selection?.followProgressionOrder
+                                }
+                                onCheckedChange={(checked) =>
+                                    updateConfig(
+                                        "question_selection",
+                                        "followProgressionOrder",
                                         checked
                                     )
                                 }

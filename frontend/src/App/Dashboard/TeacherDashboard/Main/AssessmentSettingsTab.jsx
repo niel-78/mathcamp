@@ -21,24 +21,35 @@ const diagnosticDefaults = {
         completionQuestionsPerAbility: 1,
         trainingQuestionsPerAbility: 1,
         includeCompletion: true,
-        includeTraining: true
+        includeTraining: true,
+        allowSubmitAfterSeed: false
     },
     question_selection: {
         shuffleQuestions: true,
         shuffleOptions: true,
-        useDifferentQuestionsInBlock: true
+        useDifferentQuestionsInBlock: true,
+        followProgressionOrder: false
     },
     monitoring: {},
     navigation: {
-        allowGoToPreviousQuestion: false
+        allowGoToPreviousQuestion: false,
+        allowGoToPreviousAdaptiveQuestion: false
     }
 };
+
+const worksheetDefaults = diagnosticDefaults;
 
 const assessmentSettingTabs = [
     {
         type: "diagnostic",
         label: "Diagnos",
         defaults: diagnosticDefaults,
+        normalize: normalizeDiagnosticConfig
+    },
+    {
+        type: "worksheet",
+        label: "Arbetsblad",
+        defaults: worksheetDefaults,
         normalize: normalizeDiagnosticConfig
     }
 ];
@@ -139,7 +150,10 @@ function normalizeDiagnosticConfig(config = {}) {
                 diagnosticDefaults.attempt.includeCompletion,
             includeTraining:
                 config.attempt?.includeTraining ??
-                diagnosticDefaults.attempt.includeTraining
+                diagnosticDefaults.attempt.includeTraining,
+            allowSubmitAfterSeed:
+                config.attempt?.allowSubmitAfterSeed ??
+                diagnosticDefaults.attempt.allowSubmitAfterSeed
         },
         question_selection: {
             shuffleQuestions:
@@ -150,7 +164,10 @@ function normalizeDiagnosticConfig(config = {}) {
                 diagnosticDefaults.question_selection.shuffleOptions,
             useDifferentQuestionsInBlock:
                 config.question_selection?.useDifferentQuestionsInBlock ??
-                diagnosticDefaults.question_selection.useDifferentQuestionsInBlock
+                diagnosticDefaults.question_selection.useDifferentQuestionsInBlock,
+            followProgressionOrder:
+                config.question_selection?.followProgressionOrder ??
+                diagnosticDefaults.question_selection.followProgressionOrder
         },
         monitoring: {
             lock_page_refresh:
@@ -167,7 +184,10 @@ function normalizeDiagnosticConfig(config = {}) {
         navigation: {
             allowGoToPreviousQuestion:
                 config.navigation?.allowGoToPreviousQuestion ??
-                diagnosticDefaults.navigation.allowGoToPreviousQuestion
+                diagnosticDefaults.navigation.allowGoToPreviousQuestion,
+            allowGoToPreviousAdaptiveQuestion:
+                config.navigation?.allowGoToPreviousAdaptiveQuestion ??
+                diagnosticDefaults.navigation.allowGoToPreviousAdaptiveQuestion
         }
     };
 
@@ -261,7 +281,12 @@ export default function AssessmentSettingsTab({
                 ...previous,
                 [section]: {
                     ...previous?.[section],
-                    [key]: value
+                    [key]: value,
+                    ...(section === "question_selection" &&
+                        key === "followProgressionOrder" &&
+                        value
+                        ? { shuffleQuestions: false }
+                        : {})
                 }
             })
         );
@@ -277,35 +302,37 @@ export default function AssessmentSettingsTab({
             const normalizedConfig =
                 activeAssessmentTab.normalize(config);
 
-            const cleanedConfig = {
-                ...normalizedConfig,
-                attempt: {
-                    ...normalizedConfig.attempt,
-                    minQuestionCount:
-                        Number.isInteger(Number(normalizedConfig.attempt?.minQuestionCount)) &&
-                        Number(normalizedConfig.attempt?.minQuestionCount) >= 0
-                            ? Number(normalizedConfig.attempt?.minQuestionCount)
-                            : diagnosticDefaults.attempt.minQuestionCount,
-                    maxQuestionCount:
-                        Number(normalizedConfig.attempt?.maxQuestionCount) ||
-                        diagnosticDefaults.attempt.maxQuestionCount,
-                    promoteAfterQuestions:
-                        Number(normalizedConfig.attempt?.promoteAfterQuestions) ||
-                        diagnosticDefaults.attempt.promoteAfterQuestions,
-                    demoteAfterQuestions:
-                        Number(normalizedConfig.attempt?.demoteAfterQuestions) ||
-                        diagnosticDefaults.attempt.demoteAfterQuestions,
-                    questionsPerAbility:
-                        Number(normalizedConfig.attempt?.questionsPerAbility) ||
-                        diagnosticDefaults.attempt.questionsPerAbility,
-                    completionQuestionsPerAbility:
-                        Number(normalizedConfig.attempt?.completionQuestionsPerAbility) ||
-                        diagnosticDefaults.attempt.completionQuestionsPerAbility,
-                    trainingQuestionsPerAbility:
-                        Number(normalizedConfig.attempt?.trainingQuestionsPerAbility) ||
-                        diagnosticDefaults.attempt.trainingQuestionsPerAbility
+            const cleanedConfig = ["diagnostic", "worksheet"].includes(activeAssessmentTab.type)
+                ? {
+                    ...normalizedConfig,
+                    attempt: {
+                        ...normalizedConfig.attempt,
+                        minQuestionCount:
+                            Number.isInteger(Number(normalizedConfig.attempt?.minQuestionCount)) &&
+                            Number(normalizedConfig.attempt?.minQuestionCount) >= 0
+                                ? Number(normalizedConfig.attempt?.minQuestionCount)
+                                : diagnosticDefaults.attempt.minQuestionCount,
+                        maxQuestionCount:
+                            Number(normalizedConfig.attempt?.maxQuestionCount) ||
+                            diagnosticDefaults.attempt.maxQuestionCount,
+                        promoteAfterQuestions:
+                            Number(normalizedConfig.attempt?.promoteAfterQuestions) ||
+                            diagnosticDefaults.attempt.promoteAfterQuestions,
+                        demoteAfterQuestions:
+                            Number(normalizedConfig.attempt?.demoteAfterQuestions) ||
+                            diagnosticDefaults.attempt.demoteAfterQuestions,
+                        questionsPerAbility:
+                            Number(normalizedConfig.attempt?.questionsPerAbility) ||
+                            diagnosticDefaults.attempt.questionsPerAbility,
+                        completionQuestionsPerAbility:
+                            Number(normalizedConfig.attempt?.completionQuestionsPerAbility) ||
+                            diagnosticDefaults.attempt.completionQuestionsPerAbility,
+                        trainingQuestionsPerAbility:
+                            Number(normalizedConfig.attempt?.trainingQuestionsPerAbility) ||
+                            diagnosticDefaults.attempt.trainingQuestionsPerAbility
+                    }
                 }
-            };
+                : normalizedConfig;
 
             const response =
                 await fetch(
@@ -395,7 +422,7 @@ export default function AssessmentSettingsTab({
                     ))}
                 </div>
 
-                <CardSection title="Diagnos">
+                <CardSection title={activeAssessmentTab.label}>
 
                     <div className="space-y-4">
 
@@ -629,13 +656,17 @@ export default function AssessmentSettingsTab({
 
                 </CardSection>
 
-                <CardSection title="Diagnosbeteende">
+                <CardSection title={`${activeAssessmentTab.label}beteende`}>
 
                     <div className="space-y-4">
 
                         <Field label="Slumpa frågeordning">
                             <Switch
-                                checked={!!config.question_selection?.shuffleQuestions}
+                                checked={
+                                    !!config.question_selection?.shuffleQuestions &&
+                                    !config.question_selection?.followProgressionOrder
+                                }
+                                disabled={!!config.question_selection?.followProgressionOrder}
                                 onCheckedChange={(checked) =>
                                     updateConfig(
                                         "question_selection",
@@ -672,6 +703,19 @@ export default function AssessmentSettingsTab({
                             />
                         </Field>
 
+                        <Field label="Följ progressionsordning">
+                            <Switch
+                                checked={!!config.question_selection?.followProgressionOrder}
+                                onCheckedChange={(checked) =>
+                                    updateConfig(
+                                        "question_selection",
+                                        "followProgressionOrder",
+                                        checked
+                                    )
+                                }
+                            />
+                        </Field>
+
                         <Field label="Tillåt att gå tillbaka i basdelen">
                             <Switch
                                 checked={!!config.navigation?.allowGoToPreviousQuestion}
@@ -679,6 +723,32 @@ export default function AssessmentSettingsTab({
                                     updateConfig(
                                         "navigation",
                                         "allowGoToPreviousQuestion",
+                                        checked
+                                    )
+                                }
+                            />
+                        </Field>
+
+                        <Field label="Tillåt att lämna in efter basdel">
+                            <Switch
+                                checked={!!config.attempt?.allowSubmitAfterSeed}
+                                onCheckedChange={(checked) =>
+                                    updateConfig(
+                                        "attempt",
+                                        "allowSubmitAfterSeed",
+                                        checked
+                                    )
+                                }
+                            />
+                        </Field>
+
+                        <Field label="Tillåt att gå tillbaka i adaptiv del">
+                            <Switch
+                                checked={!!config.navigation?.allowGoToPreviousAdaptiveQuestion}
+                                onCheckedChange={(checked) =>
+                                    updateConfig(
+                                        "navigation",
+                                        "allowGoToPreviousAdaptiveQuestion",
                                         checked
                                     )
                                 }

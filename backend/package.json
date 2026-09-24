@@ -7,10 +7,13 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
+    "migrate:block-ability-progressions": "node migrations/add-block-ability-progressions.js",
     "migrate:competition-visibility": "node migrations/add-competition-visibility.js",
     "migrate:assessment-image-notes": "node migrations/add-assessment-question-image-notes.js",
     "migrate:login-link-tokens": "node migrations/add-login-link-tokens.js",
     "migrate:student-email-addresses": "node migrations/add-student-email-addresses.js",
+    "migrate:linear-system-question-type": "node migrations/add-linear-system-question-type.js",
+    "migrate:existing-linear-systems": "node migrations/migrate-existing-linear-systems.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

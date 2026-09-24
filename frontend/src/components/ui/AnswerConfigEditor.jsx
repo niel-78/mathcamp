@@ -121,7 +121,8 @@ export default function AnswerConfigEditor({
 
     const isNumericQuestionType =
         questionType === QUESTION_TYPES.NUMERIC_INPUT.value ||
-        questionType === QUESTION_TYPES.EQUATION.value;
+        questionType === QUESTION_TYPES.EQUATION.value ||
+        questionType === QUESTION_TYPES.LINEAR_SYSTEM.value;
 
     const saveSettings = async () => {
 

@@ -37,7 +37,8 @@ export default function LessonAssessments({
     openTab,
     readOnly = false,
     isPublic = false,
-    hideCompletions = false
+    hideCompletions = false,
+    startDiagnosticTest
 }) {
 
     const [
@@ -443,6 +444,7 @@ export default function LessonAssessments({
                 await loadAssessments();
             }}
             openTab={openTab}
+            startDiagnosticTest={startDiagnosticTest}
         />
 
         </>

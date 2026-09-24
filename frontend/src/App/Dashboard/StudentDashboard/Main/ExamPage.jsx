@@ -35,7 +35,7 @@ import {
     ResizablePanel,
     ResizablePanelGroup
 } from "@/components/ui/resizable";
-import { Columns2, MessageSquareWarning, PanelLeft, Settings } from "lucide-react";
+import { Columns2, MessageSquareWarning, PanelLeft, Settings, X } from "lucide-react";
 import { getSavedShowQuestionInfo } from "@/utils/questionSettings";
 
 const questionTextSizeStorageKey = "math-camp-question-text-size";
@@ -119,6 +119,8 @@ export default function ExamPage({
     const [reportSubmitting, setReportSubmitting] =
         useState(false);
     const [emptyAnswerDialogOpen, setEmptyAnswerDialogOpen] =
+        useState(false);
+    const [cancelTestDialogOpen, setCancelTestDialogOpen] =
         useState(false);
     const [settingsOpen, setSettingsOpen] =
         useState(false);
@@ -755,6 +757,32 @@ export default function ExamPage({
 
         };
 
+    const cancelTestAttempt =
+        async () => {
+
+            try {
+
+                await fetch(
+                    `${API_URL}/api/assessment-attempts/${attemptId}/terminate`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            ...authHeaders()
+                        },
+                        body: JSON.stringify({ mode: "hard" })
+                    }
+                );
+
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setCancelTestDialogOpen(false);
+                onExit();
+            }
+
+        };
+
     const isSplitTestView = canSplitExam && splitView;
 
     return (
@@ -785,6 +813,18 @@ export default function ExamPage({
 
                             <div className="ml-auto flex min-w-0 shrink-0 flex-col items-end gap-2">
                                 <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
+                                    {isTeacherTest && (
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                                            onClick={() => setCancelTestDialogOpen(true)}
+                                        >
+                                            <X className="h-4 w-4" />
+                                            Avbryt testet
+                                        </Button>
+                                    )}
                                     <div className="flex items-center gap-2 rounded-md border bg-muted/20 px-2 py-1">
                                         <span className="text-xs font-medium text-muted-foreground">
                                             Hjälpmedel
@@ -1079,6 +1119,37 @@ export default function ExamPage({
                             }}
                         >
                             Fortsätt
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog
+                open={cancelTestDialogOpen}
+                onOpenChange={setCancelTestDialogOpen}
+            >
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Avbryta testet?</DialogTitle>
+                        <DialogDescription>
+                            Testet avslutas direkt utan att alla frågor behöver besvaras.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setCancelTestDialogOpen(false)}
+                        >
+                            Fortsätt testa
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            onClick={cancelTestAttempt}
+                        >
+                            Avbryt testet
                         </Button>
                     </DialogFooter>
                 </DialogContent>

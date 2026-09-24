@@ -526,6 +526,73 @@ export default function LessonAssessmentDialog({
 
     }
 
+    async function handleCreateSimpleAssessment() {
+
+        try {
+
+            setSaving(true);
+
+            const response =
+                await fetch(
+                    `${API_URL}/api/lessons/${lessonId}/group-assessments`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type":
+                                "application/json",
+                            ...authHeaders()
+                        },
+                        body: JSON.stringify({
+                            type: assessmentType,
+                            mode: "normal"
+                        })
+                    }
+                );
+
+            if (!response.ok) {
+                throw new Error(
+                    "Kunde inte skapa lektionshändelsen."
+                );
+            }
+
+            const data = await response.json();
+
+            toast.success(
+                assessmentType === "worksheet"
+                    ? "Arbetsblad skapat"
+                    : "Lektionshändelse skapad"
+            );
+
+            onSaved?.();
+            onOpenChange(false);
+
+            if (data.group_assessment_id) {
+                openTab?.({
+                    id: `group-assessment-${data.group_assessment_id}`,
+                    title: assessmentType === "worksheet"
+                        ? "Arbetsblad"
+                        : `Provtillfälle #${data.group_assessment_id}`,
+                    type: "group-assessment",
+                    groupExamId: data.group_assessment_id,
+                    assessmentType
+                });
+            }
+
+        } catch (error) {
+
+            toast.error(
+                error.message ||
+                "Kunde inte skapa lektionshändelsen."
+            );
+
+        } finally {
+
+            setSaving(false);
+
+        }
+
+    }
+
     async function handleTestDiagnostic() {
 
         const normalizedAbilityCounts = {};
@@ -648,16 +715,6 @@ export default function LessonAssessmentDialog({
 
             }
 
-            console.log(
-                "Opening attempt:",
-                startData.attempt_id
-            );
-
-            console.log(
-                "startDiagnosticTest:",
-                startDiagnosticTest
-            );
-
             startDiagnosticTest?.(
                 startData.attempt_id
             );
@@ -679,10 +736,56 @@ export default function LessonAssessmentDialog({
     }
 
 
-    if (
-        assessmentType !==
-        "diagnostic"
-    ) {
+    if (assessmentType === "worksheet") {
+
+        return (
+
+            <Dialog
+                open={open}
+                onOpenChange={onOpenChange}
+            >
+
+                <DialogContent>
+
+                    <DialogHeader>
+
+                        <DialogTitle>
+                            Skapa arbetsblad
+                        </DialogTitle>
+
+                    </DialogHeader>
+
+                    <div className="space-y-4 text-sm text-muted-foreground">
+                        <p>
+                            Arbetsbladet skapas som en lektionshändelse och använder standardinställningarna för arbetsblad.
+                        </p>
+                    </div>
+
+                    <div className="flex justify-end gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => onOpenChange(false)}
+                        >
+                            Avbryt
+                        </Button>
+
+                        <Button
+                            disabled={saving}
+                            onClick={handleCreateSimpleAssessment}
+                        >
+                            Skapa arbetsblad
+                        </Button>
+                    </div>
+
+                </DialogContent>
+
+            </Dialog>
+
+        );
+
+    }
+
+    if (assessmentType !== "diagnostic") {
 
         return null;
 
@@ -847,6 +950,7 @@ export default function LessonAssessmentDialog({
 
                                             const sectionId = Number(section.id);
                                             const isSelected = selectedSectionIds.includes(sectionId);
+                                            const blockCount = section.blocks?.length ?? 0;
 
                                             return (
                                                 <label
@@ -888,11 +992,17 @@ export default function LessonAssessmentDialog({
                                                         )}
                                                     </div>
 
-                                                    {section.pageNumber != null && (
-                                                        <span className="text-xs text-muted-foreground">
-                                                            Sid {section.pageNumber}
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground whitespace-nowrap">
+                                                            {blockCount} block
                                                         </span>
-                                                    )}
+
+                                                        {section.pageNumber != null && (
+                                                            <span className="text-xs text-muted-foreground">
+                                                                Sid {section.pageNumber}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </label>
                                             );
 

@@ -49,6 +49,19 @@ function readImportRows(workbook) {
     });
 }
 
+async function getNextBlockAbilityProgression(connection = db, abilityId) {
+    const [[row]] = await connection.query(
+        `
+        SELECT COALESCE(MAX(progression), 0) + 1 AS nextProgression
+        FROM block_abilities
+        WHERE ability_id = ?
+        `,
+        [abilityId]
+    );
+
+    return Number(row.nextProgression || 1);
+}
+
 router.use(requireAuth);
 router.use(requireRole("teacher","super"));
 
@@ -159,11 +172,16 @@ async function processBlockImportJob({
                 `
                 INSERT INTO block_abilities (
                     block_id,
-                    ability_id
+                    ability_id,
+                    progression
                 )
-                VALUES (?, ?)
+                VALUES (?, ?, ?)
                 `,
-                [blockId, ability.id]
+                [
+                    blockId,
+                    ability.id,
+                    await getNextBlockAbilityProgression(db, ability.id)
+                ]
             );
         }
 
@@ -458,12 +476,12 @@ async function hydrateLightBlocks(blocks) {
 
     const [abilityRows] = await db.query(
         `
-        SELECT ba.block_id, a.id, a.name
+        SELECT ba.block_id, ba.progression, a.id, a.name
         FROM block_abilities ba
         JOIN abilities a
             ON a.id = ba.ability_id
         WHERE ba.block_id IN (?)
-        ORDER BY ba.block_id, a.name
+        ORDER BY ba.block_id, ba.progression, a.name
         `,
         [blockIds]
     );
@@ -548,7 +566,8 @@ async function hydrateLightBlocks(blocks) {
         }
         abilitiesByBlock.get(blockId).push({
             id: row.id,
-            name: row.name
+            name: row.name,
+            progression: row.progression
         });
     }
 
@@ -1101,7 +1120,8 @@ router.get("/abilities/:abilityId", async (req, res) => {
     const [blocks] = await db.query(
         `
         SELECT
-            b.*
+            b.*,
+            ba.progression AS ability_progression
         FROM blocks b
 
         INNER JOIN block_abilities ba
@@ -1123,7 +1143,7 @@ router.get("/abilities/:abilityId", async (req, res) => {
                 )
             )
 
-        ORDER BY b.id
+        ORDER BY ba.progression, b.id
         `,
         [
             req.params.abilityId,
@@ -1289,6 +1309,8 @@ router.get("/", async (req, res) => {
 
                 WHERE b.deleted_at IS NULL
                 AND b.archived_at IS NULL
+
+                ORDER BY b.id
                 `
             );
 
@@ -1342,6 +1364,8 @@ router.get("/", async (req, res) => {
                         )
 
                     )
+
+                ORDER BY b.id
                 `,
                 [
                     req.user.id,
@@ -1567,8 +1591,6 @@ router.post("/", async (req, res) => {
 
 });
 
-
-// PUT /api/blocks/:id
 router.put("/:blockId", async (req, res) => {
 
     const { name } = req.body;
@@ -1857,6 +1879,262 @@ router.get("/import/jobs/:jobId", async (req, res) => {
     });
 });
 
+// POST /api/blocks/:id/split
+router.post("/:id/split",
+    async (req, res) => {
+
+        const connection = await db.getConnection();
+
+        try {
+
+            const blockId = Number(req.params.id);
+            const questionIds = [...new Set(
+                (Array.isArray(req.body?.questionIds) ? req.body.questionIds : [])
+                    .map(questionId => Number(questionId))
+                    .filter(Number.isInteger)
+            )];
+
+            if (!Number.isInteger(blockId) || blockId <= 0) {
+                return res.status(400).json({
+                    error: "Ogiltigt block."
+                });
+            }
+
+            if (questionIds.length === 0) {
+                return res.status(400).json({
+                    error: "Välj minst en uppgift att flytta."
+                });
+            }
+
+            await connection.beginTransaction();
+
+            const [[block]] = await connection.query(
+                `
+                SELECT *
+                FROM blocks
+                WHERE id = ?
+                    AND deleted_at IS NULL
+                    AND archived_at IS NULL
+                FOR UPDATE
+                `,
+                [blockId]
+            );
+
+            if (!block) {
+                await connection.rollback();
+                return res.status(404).json({
+                    error: "Blocket hittades inte."
+                });
+            }
+
+            const canEdit =
+                req.user.role === "super" ||
+                block.created_by === req.user.id;
+
+            if (!canEdit) {
+                await connection.rollback();
+                return res.status(403).json({
+                    error: "Du saknar behörighet att dela blocket."
+                });
+            }
+
+            const [allQuestions] = await connection.query(
+                `
+                SELECT id, question
+                FROM questions
+                WHERE block_id = ?
+                    AND deleted_at IS NULL
+                    AND archived_at IS NULL
+                ORDER BY id
+                FOR UPDATE
+                `,
+                [blockId]
+            );
+
+            const questionIdsInBlock = new Set(
+                allQuestions.map(question => Number(question.id))
+            );
+
+            if (
+                questionIds.some(questionId => !questionIdsInBlock.has(questionId))
+            ) {
+                await connection.rollback();
+                return res.status(400).json({
+                    error: "Alla valda uppgifter måste tillhöra blocket."
+                });
+            }
+
+            if (questionIds.length >= allQuestions.length) {
+                await connection.rollback();
+                return res.status(400).json({
+                    error: "Minst en uppgift måste vara kvar i originalblocket."
+                });
+            }
+
+            const firstMovedQuestion = allQuestions.find(question =>
+                questionIds.includes(Number(question.id))
+            );
+
+            const [blockResult] = await connection.query(
+                `
+                INSERT INTO blocks (
+                    created_by,
+                    updated_by,
+                    school_id,
+                    visibility,
+                    title
+                )
+                VALUES (?, ?, ?, ?, ?)
+                `,
+                [
+                    block.created_by,
+                    req.user.id,
+                    block.school_id,
+                    block.visibility,
+                    firstMovedQuestion?.question?.substring(0, 100) || block.title
+                ]
+            );
+
+            const newBlockId = blockResult.insertId;
+
+            await connection.query(
+                `
+                INSERT INTO block_points (
+                    block_id,
+                    central_content_id,
+                    competency_descriptor_id,
+                    points,
+                    comment
+                )
+                SELECT
+                    ?,
+                    central_content_id,
+                    competency_descriptor_id,
+                    points,
+                    comment
+                FROM block_points
+                WHERE block_id = ?
+                `,
+                [newBlockId, blockId]
+            );
+
+            await connection.query(
+                `
+                INSERT INTO block_sections (
+                    block_id,
+                    section_id
+                )
+                SELECT
+                    ?,
+                    section_id
+                FROM block_sections
+                WHERE block_id = ?
+                `,
+                [newBlockId, blockId]
+            );
+
+            const [blockAbilities] = await connection.query(
+                `
+                SELECT ability_id
+                FROM block_abilities
+                WHERE block_id = ?
+                `,
+                [blockId]
+            );
+
+            for (const blockAbility of blockAbilities) {
+                await connection.query(
+                    `
+                    INSERT INTO block_abilities (
+                        block_id,
+                        ability_id,
+                        progression
+                    )
+                    VALUES (?, ?, ?)
+                    `,
+                    [
+                        newBlockId,
+                        blockAbility.ability_id,
+                        await getNextBlockAbilityProgression(
+                            connection,
+                            blockAbility.ability_id
+                        )
+                    ]
+                );
+            }
+
+            await connection.query(
+                `
+                INSERT IGNORE INTO block_question_priorities (
+                    block_id,
+                    question_id
+                )
+                SELECT
+                    ?,
+                    question_id
+                FROM block_question_priorities
+                WHERE block_id = ?
+                    AND question_id IN (?)
+                `,
+                [newBlockId, blockId, questionIds]
+            );
+
+            await connection.query(
+                `
+                DELETE FROM block_question_priorities
+                WHERE block_id = ?
+                    AND question_id IN (?)
+                `,
+                [blockId, questionIds]
+            );
+
+            await connection.query(
+                `
+                UPDATE questions
+                SET
+                    block_id = ?,
+                    updated_by = ?
+                WHERE block_id = ?
+                    AND id IN (?)
+                `,
+                [newBlockId, req.user.id, blockId, questionIds]
+            );
+
+            await connection.query(
+                `
+                UPDATE blocks
+                SET updated_by = ?
+                WHERE id IN (?, ?)
+                `,
+                [req.user.id, blockId, newBlockId]
+            );
+
+            await connection.commit();
+
+            res.status(201).json({
+                id: newBlockId,
+                originalBlockId: blockId
+            });
+
+        } catch (error) {
+
+            await connection.rollback();
+
+            console.error(error);
+
+            res.status(500).json({
+                error: error.message || "Kunde inte dela blocket."
+            });
+
+        } finally {
+
+            connection.release();
+
+        }
+
+    }
+);
+
 // GET /api/blocks/:id/point-metadata
 router.get("/:id/point-metadata",
     async (req, res) => {
@@ -2092,23 +2370,35 @@ router.post("/:id/copy",
             /*
             * Kopiera förmågor
             */
-            await connection.query(
+            const [blockAbilities] = await connection.query(
                 `
-                INSERT INTO block_abilities (
-                    block_id,
-                    ability_id
-                )
-                SELECT
-                    ?,
-                    ability_id
+                SELECT ability_id
                 FROM block_abilities
                 WHERE block_id = ?
                 `,
-                [
-                    newBlockId,
-                    block.id
-                ]
+                [block.id]
             );
+
+            for (const blockAbility of blockAbilities) {
+                await connection.query(
+                    `
+                    INSERT INTO block_abilities (
+                        block_id,
+                        ability_id,
+                        progression
+                    )
+                    VALUES (?, ?, ?)
+                    `,
+                    [
+                        newBlockId,
+                        blockAbility.ability_id,
+                        await getNextBlockAbilityProgression(
+                            connection,
+                            blockAbility.ability_id
+                        )
+                    ]
+                );
+            }
 
             const [questions] =
                 await connection.query(
@@ -2416,13 +2706,15 @@ router.post("/:id/export",
                     `
                     INSERT IGNORE INTO block_abilities (
                         block_id,
-                        ability_id
+                        ability_id,
+                        progression
                     )
-                    VALUES (?, ?)
+                    VALUES (?, ?, ?)
                     `,
                     [
                         block.id,
-                        ability_id
+                        ability_id,
+                        await getNextBlockAbilityProgression(connection, ability_id)
                     ]
                 );
 
@@ -2509,13 +2801,15 @@ router.post("/:id/export",
                 `
                 INSERT INTO block_abilities (
                     block_id,
-                    ability_id
+                    ability_id,
+                    progression
                 )
-                VALUES (?, ?)
+                VALUES (?, ?, ?)
                 `,
                 [
                     newBlockId,
-                    ability_id
+                    ability_id,
+                    await getNextBlockAbilityProgression(connection, ability_id)
                 ]
             );
 
@@ -2683,12 +2977,13 @@ router.get("/:id/abilities",
         const [rows] = await db.query(
             `
             SELECT
-                a.*
+                a.*,
+                ba.progression
             FROM abilities a
             JOIN block_abilities ba
                 ON ba.ability_id = a.id
             WHERE ba.block_id = ?
-            ORDER BY a.name
+            ORDER BY ba.progression, a.name
             `,
             [req.params.id]
         );
@@ -2706,17 +3001,124 @@ router.post("/:id/abilities/:abilityId",
             `
             INSERT IGNORE INTO block_abilities (
                 block_id,
-                ability_id
+                ability_id,
+                progression
             )
-            VALUES (?, ?)
+            VALUES (?, ?, ?)
             `,
             [
                 req.params.id,
-                req.params.abilityId
+                req.params.abilityId,
+                await getNextBlockAbilityProgression(db, req.params.abilityId)
             ]
         );
 
         res.sendStatus(204);
+
+    }
+);
+
+//POST /api/blocks/abilities/:abilityId/reorder
+router.post("/abilities/:abilityId/reorder",
+    async (req, res) => {
+
+        const abilityId = Number(req.params.abilityId);
+        const draggedBlockId = Number(req.body?.draggedBlockId);
+        const targetBlockId = Number(req.body?.targetBlockId);
+
+        if (
+            !Number.isInteger(abilityId) ||
+            !Number.isInteger(draggedBlockId) ||
+            !Number.isInteger(targetBlockId) ||
+            abilityId <= 0 ||
+            draggedBlockId <= 0 ||
+            targetBlockId <= 0
+        ) {
+            return res.status(400).json({
+                error: "Ogiltig blockordning."
+            });
+        }
+
+        const connection = await db.getConnection();
+
+        try {
+            await connection.beginTransaction();
+
+            const [blocks] = await connection.query(
+                `
+                SELECT
+                    ba.block_id,
+                    ba.progression,
+                    b.created_by
+                FROM block_abilities ba
+                JOIN blocks b
+                    ON b.id = ba.block_id
+                WHERE ba.ability_id = ?
+                    AND b.deleted_at IS NULL
+                    AND b.archived_at IS NULL
+                ORDER BY ba.progression, ba.block_id
+                FOR UPDATE
+                `,
+                [abilityId]
+            );
+
+            const draggedIndex = blocks.findIndex(block =>
+                Number(block.block_id) === draggedBlockId
+            );
+            const targetIndex = blocks.findIndex(block =>
+                Number(block.block_id) === targetBlockId
+            );
+
+            if (draggedIndex === -1 || targetIndex === -1) {
+                await connection.rollback();
+                return res.status(404).json({
+                    error: "Blocket finns inte i förmågan."
+                });
+            }
+
+            const draggedBlock = blocks[draggedIndex];
+            const canEdit =
+                req.user.role === "super" ||
+                draggedBlock.created_by === req.user.id;
+
+            if (!canEdit) {
+                await connection.rollback();
+                return res.status(403).json({
+                    error: "Du saknar behörighet att ändra progressionen."
+                });
+            }
+
+            const reorderedBlocks = [...blocks];
+            const [movedBlock] = reorderedBlocks.splice(draggedIndex, 1);
+            reorderedBlocks.splice(targetIndex, 0, movedBlock);
+
+            for (let index = 0; index < reorderedBlocks.length; index++) {
+                await connection.query(
+                    `
+                    UPDATE block_abilities
+                    SET progression = ?
+                    WHERE ability_id = ?
+                        AND block_id = ?
+                    `,
+                    [
+                        index + 1,
+                        abilityId,
+                        reorderedBlocks[index].block_id
+                    ]
+                );
+            }
+
+            await connection.commit();
+            res.sendStatus(204);
+        } catch (error) {
+            await connection.rollback();
+            console.error(error);
+            res.status(500).json({
+                error: error.message || "Kunde inte ändra progressionen."
+            });
+        } finally {
+            connection.release();
+        }
 
     }
 );

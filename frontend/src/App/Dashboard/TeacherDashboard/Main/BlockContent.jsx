@@ -94,6 +94,8 @@ export default function BlockContent({
 
     const [bulkSaving, setBulkSaving] = useState(false);
 
+    const [splitSaving, setSplitSaving] = useState(false);
+
     const [questionLevels, setQuestionLevels] = useState([]);
 
     const [syncAnswerOptionsConfirmOpen, setSyncAnswerOptionsConfirmOpen] = useState(false);
@@ -393,6 +395,65 @@ export default function BlockContent({
             toast.error(error.message || "Kunde inte uppdatera uppgifterna");
         } finally {
             setBulkSaving(false);
+        }
+    };
+
+    const splitSelectedQuestions = async () => {
+        if (selectedQuestions.length === 0) {
+            toast.info("Välj minst en uppgift");
+            return;
+        }
+
+        if (selectedQuestions.length >= (currentBlock?.questions?.length || 0)) {
+            toast.info("Minst en uppgift måste vara kvar i originalblocket");
+            return;
+        }
+
+        setSplitSaving(true);
+
+        try {
+            const response = await fetch(
+                `${API_URL}/api/blocks/${currentBlock.id}/split`,
+                {
+                    method: "POST",
+                    headers: {
+                        ...authHeaders(),
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        questionIds: selectedQuestions.map(question => question.id)
+                    })
+                }
+            );
+
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                throw new Error(data.error || "Kunde inte dela blocket");
+            }
+
+            const data = await response.json();
+
+            setSelectedQuestionIds([]);
+            setOperationsDialogOpen(false);
+            await loadBlock();
+
+            if (data.id) {
+                openTab(
+                    {
+                        id: `block-${data.id}`,
+                        title: `Block #${data.id}`,
+                        type: "block",
+                        blockId: data.id
+                    },
+                    area
+                );
+            }
+
+            toast.success(`${selectedQuestions.length} uppgifter flyttades till ett nytt block`);
+        } catch (error) {
+            toast.error(error.message || "Kunde inte dela blocket");
+        } finally {
+            setSplitSaving(false);
         }
     };
 
@@ -1159,6 +1220,24 @@ export default function BlockContent({
                                 >
                                     {bulkSaving ? "Sparar..." : "Spara på valda uppgifter"}
                                 </Button>
+
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="w-full"
+                                    disabled={
+                                        splitSaving ||
+                                        selectedQuestions.length === 0 ||
+                                        selectedQuestions.length >= (currentBlock?.questions?.length || 0)
+                                    }
+                                    onClick={splitSelectedQuestions}
+                                >
+                                    {splitSaving ? "Flyttar..." : "Flytta valda till nytt block"}
+                                </Button>
+
+                                <p className="text-xs text-muted-foreground">
+                                    Det nya blocket får samma sektioner och förmågor och visas med den första flyttade uppgiften.
+                                </p>
                             </CardContent>
                         </Card>
 

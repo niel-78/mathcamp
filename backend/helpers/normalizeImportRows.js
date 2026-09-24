@@ -17,9 +17,18 @@ function validateImportQuestion({
         errors.push("multiple_choice måste ha minst ett korrekt alternativ");
     }
 
+    if (questionType === "linear_system") {
+        if (correctAnswers.length !== 2) {
+            errors.push("linear_system måste ha exakt två svar, ett för x och ett för y");
+        } else if (correctAnswers[0] === correctAnswers[1]) {
+            errors.push("linear_system måste ha olika värden för x och y");
+        }
+    }
+
     if (
         questionType === "numeric_input" ||
         questionType === "equation" ||
+        questionType === "linear_system" ||
         questionType === "text"
     ) {
         if (correctAnswers.length === 0) {
@@ -85,7 +94,8 @@ export function normalizeImportRows({
     rows,
     blockId,
     userId,
-    abilityLevels = []
+    abilityLevels = [],
+    questionLevels = []
 }) {
     const questions = [];
     const validationErrors = [];
@@ -116,6 +126,7 @@ export function normalizeImportRows({
         );
 
         const seriesLevelId = abilityLevels[levelNumber - 1]?.id || null;
+        const levelId = questionLevels[levelNumber - 1]?.id || null;
 
         const calculatorAllowed = parseBoolean(
             row["Miniräknare tillåten"] ??
@@ -171,13 +182,23 @@ export function normalizeImportRows({
 
         if (
             questionType === "numeric_input" ||
-            questionType === "equation"
+            questionType === "equation" ||
+            questionType === "linear_system"
         ) {
+            const variableNames = (String(question).match(/([a-zA-Z])\s*=\s*\{\{input\}\}/g) || [])
+                .map(match => match.match(/([a-zA-Z])/)[1]);
+
             answerConfig = {
                 grading_mode: "numeric_input",
                 default_answer: correctAnswers[0] || "",
-                order_independent:
-                    questionType === "equation" || orderIndependent
+                order_independent: questionType === "equation" || orderIndependent,
+                ...(questionType === "linear_system"
+                    ? {
+                        variables: (variableNames.length > 0 ? variableNames : ["x", "y"])
+                            .map((name, index) => ({ name, answer: correctAnswers[index] || "" })),
+                        require_distinct_values: true
+                    }
+                    : {})
             };
         }
 
@@ -213,7 +234,8 @@ export function normalizeImportRows({
 
         if (
             questionType === "numeric_input" ||
-            questionType === "equation"
+            questionType === "equation" ||
+            questionType === "linear_system"
         ) {
             for (const correctAnswer of correctAnswers) {
                 options.push({
@@ -237,6 +259,7 @@ export function normalizeImportRows({
             question,
             questionType,
             seriesLevelId,
+            levelId,
             calculatorAllowed,
             geogebraAllowed,
             imageUrl,

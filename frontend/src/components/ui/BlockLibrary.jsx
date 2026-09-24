@@ -13,6 +13,7 @@ export default function BlockLibrary({
     onDelete,
     onReload,
     dragPrefix,
+    contextAbilityId,
     deleteLabel = "Ta bort block"
     ,abilityOptions = []
     ,abilitySourceLabel = "Förmågor"
@@ -148,6 +149,7 @@ export default function BlockLibrary({
                 <BlockCard
                     key={block.id}
                     dragPrefix={dragPrefix}
+                    contextAbilityId={contextAbilityId}
                     block={block}
                     openTab={openTab}
                     onDelete={onDelete}

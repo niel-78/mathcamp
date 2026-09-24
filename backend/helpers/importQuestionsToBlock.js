@@ -47,11 +47,22 @@ export default async function importQuestionsToBlock({
 
     }
 
+    // The generic level (Repetition/Grundläggande/...) is tied to the question
+    // itself and is set regardless of whether the block has an ability.
+    const [questionLevels] = await db.query(
+        `
+        SELECT id
+        FROM question_levels
+        ORDER BY sort_order
+        `
+    );
+
     const { questions } = normalizeImportRows({
         rows,
         blockId,
         userId,
-        abilityLevels: levels
+        abilityLevels: levels,
+        questionLevels
     });
 
     for (const question of questions) {
@@ -64,19 +75,21 @@ export default async function importQuestionsToBlock({
                     question,
                     question_type,
                     series_level_id,
+                    level_id,
                     calculator_allowed,
                     geogebra_allowed,
                     created_by,
                     updated_by,
                     answer_config
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `,
                 [
                     blockId,
                     question.question,
                     question.questionType,
                     question.seriesLevelId,
+                    question.levelId,
                     question.calculatorAllowed ? 1 : 0,
                     question.geogebraAllowed ? 1 : 0,
                     userId,

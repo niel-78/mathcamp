@@ -22,6 +22,10 @@ export const QUESTION_TYPES = {
     EQUATION: {
         value: "equation",
         label: "Ekvation (valfritt antal svar)"
+    },
+    LINEAR_SYSTEM: {
+        value: "linear_system",
+        label: "Ekvationssystem (x och y)"
     }
 };
 
