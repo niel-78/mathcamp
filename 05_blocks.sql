@@ -77,7 +77,8 @@ CREATE TABLE questions (
         'multiple_choice',
         'numeric_input',
         'equation',
-        'linear_system'
+        'linear_system',
+        'factorization'
     ),
 
     level_id INT NULL,

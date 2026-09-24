@@ -6,6 +6,7 @@ import requireRole from "../middleware/requireRole.js";
 import AssessmentEngine from "../services/AssessmentEngine.js";
 import { gradeAnswer } from "../utils/grading/gradeAnswer.js";
 import { scoreNumericInput } from "../utils/grading/gradeNumericInput.js";
+import { scoreFactorization } from "../utils/grading/gradeFactorization.js";
 import { buildExamSession } from "../utils/buildExamSession.js";
 
 
@@ -2378,7 +2379,17 @@ router.get("/:id/results", async (req, res) => {
             let correct = false;
             let points = 0;
 
-            if (
+            if (question.question_type === "factorization") {
+
+                const score = scoreFactorization(
+                    question.text_answer,
+                    correctOptions[0]?.text
+                );
+
+                correct = score.correct;
+                points = score.pointsFraction;
+
+            } else if (
                 question.question_type === "expression" ||
                 question.question_type === "text"
             ) {

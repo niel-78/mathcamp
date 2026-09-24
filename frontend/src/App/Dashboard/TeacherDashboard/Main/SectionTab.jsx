@@ -227,7 +227,14 @@ export default function SectionTab({
 
                 actions={
                     <div className="flex gap-2">
-
+                        <Button
+                            variant="outline"
+                            onClick={() =>
+                                setCreateBlockOpen(true)
+                            }
+                        >
+                            Skapa eget block
+                        </Button>
                         <Button
                             variant="outline"
                             onClick={() =>
@@ -235,14 +242,6 @@ export default function SectionTab({
                             }
                         >
                             Skapa block från Excel
-                        </Button>
-
-                        <Button
-                            onClick={() =>
-                                setCreateBlockOpen(true)
-                            }
-                        >
-                            Skapa eget block
                         </Button>
                         <Button
                             variant="outline"

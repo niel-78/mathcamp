@@ -19,6 +19,7 @@ export default function QuestionView({
     switch (question.question_type) {
 
         case 'expression':
+        case 'factorization':
         case 'text':
             questionContent = (
                 <TextQuestion

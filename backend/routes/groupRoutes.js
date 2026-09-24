@@ -9,6 +9,7 @@ import requireAuth from "../middleware/requireAuth.js";
 import requireRole from "../middleware/requireRole.js";
 import { gradeAnswer } from "../utils/grading/gradeAnswer.js";
 import { scoreNumericInput } from "../utils/grading/gradeNumericInput.js";
+import { scoreFactorization } from "../utils/grading/gradeFactorization.js";
 
 const router = express.Router();
 
@@ -470,6 +471,17 @@ router.get("/:id/results", async (req, res) => {
                 const config = typeof answer.answer_config === "string"
                     ? JSON.parse(answer.answer_config || "{}")
                     : answer.answer_config || {};
+
+                if (answer.question_type === "factorization") {
+                    const correctText = answer.correct_text
+                        ?.split("||")[0];
+                    const score = scoreFactorization(
+                        answer.text_answer,
+                        correctText
+                    );
+                    correctCount += score.pointsFraction;
+                    continue;
+                }
 
                 if (
                     answer.question_type === "expression" ||

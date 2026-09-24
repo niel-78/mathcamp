@@ -4,6 +4,7 @@ import db from "../db.js";
 import { gradeAnswer } from "../utils/grading/gradeAnswer.js";
 import { scoreNumericInput } from "../utils/grading/gradeNumericInput.js";
 import { scoreLinearSystem } from "../utils/grading/gradeLinearSystem.js";
+import { scoreFactorization } from "../utils/grading/gradeFactorization.js";
 
 export default class AssessmentEngine {
 
@@ -1040,7 +1041,29 @@ export default class AssessmentEngine {
         let pointsFraction = 0;
         let masteryMultiplier = null;
 
-        if (
+        if (question.question_type === "factorization") {
+
+            const [[correctOption]] = await connection.query(
+                `
+                SELECT text
+                FROM options
+                WHERE question_id = ?
+                AND is_correct = 1
+                LIMIT 1
+                `,
+                [questionId]
+            );
+
+            const score = scoreFactorization(
+                answer.text_answer,
+                correctOption?.text
+            );
+
+            correct = score.correct;
+            pointsFraction = score.pointsFraction;
+            masteryMultiplier = score.masteryMultiplier;
+
+        } else if (
             question.question_type === "expression" ||
             question.question_type === "text"
         ) {

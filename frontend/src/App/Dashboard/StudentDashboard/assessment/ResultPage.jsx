@@ -130,7 +130,7 @@ export default function ResultPage({
                                     Ditt svar
                                 </strong>
 
-                                {["expression", "text"].includes(result.question_type) ? (
+                                {["expression", "factorization", "text"].includes(result.question_type) ? (
 
                                     <MathContent
                                         value={

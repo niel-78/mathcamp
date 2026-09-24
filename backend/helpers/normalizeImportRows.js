@@ -29,6 +29,7 @@ function validateImportQuestion({
         questionType === "numeric_input" ||
         questionType === "equation" ||
         questionType === "linear_system" ||
+        questionType === "factorization" ||
         questionType === "text"
     ) {
         if (correctAnswers.length === 0) {
@@ -176,7 +177,7 @@ export function normalizeImportRows({
 
         let answerConfig = {};
 
-        if (questionType === "text") {
+        if (questionType === "text" || questionType === "factorization") {
             answerConfig = { correctAnswers };
         }
 
@@ -223,7 +224,7 @@ export function normalizeImportRows({
             }
         }
 
-        if (questionType === "text") {
+        if (questionType === "text" || questionType === "factorization") {
             for (const correctAnswer of correctAnswers) {
                 options.push({
                     text: correctAnswer,

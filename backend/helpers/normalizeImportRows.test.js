@@ -262,6 +262,27 @@ test("stores Svar as a correct option for text rows", () => {
     );
 });
 
+test("stores Svar as a correct option for factorization rows", () => {
+    const result = normalizeImportRows({
+        rows: [
+            {
+                Fråga: "Faktorisera $x^3 - 11x^2$",
+                Frågetyp: "factorization",
+                Nivå: 2,
+                Svar: "x^2(x - 11)"
+            }
+        ],
+        blockId: 51,
+        userId: 66
+    });
+
+    assert.equal(result.questions[0].questionType, "factorization");
+    assert.deepEqual(
+        result.questions[0].options.map(option => [option.text, option.isCorrect]),
+        [["x^2(x - 11)", 1]]
+    );
+});
+
 test("preserves decimal commas in text answer keys", () => {
     const result = normalizeImportRows({
         rows: [

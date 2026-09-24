@@ -3,6 +3,10 @@ export const QUESTION_TYPES = {
         value: "expression",
         label: "Uttryckssvar"
     },
+    FACTORIZATION: {
+        value: "factorization",
+        label: "Faktorisering"
+    },
     TEXT: {
         value: "text",
         label: "Ren text"

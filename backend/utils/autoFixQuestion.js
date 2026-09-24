@@ -1,5 +1,6 @@
 import db from "../db.js";
 import { parse as parseMathExpression } from "mathjs";
+import { factorizeExpression } from "../../shared/grading/factorization.js";
 
 function gcd(a, b) {
     return b === 0 ? a : gcd(b, a % b);
@@ -288,10 +289,14 @@ export function parseOptionToFrac(text) {
 export function solveEquation(text) {
     if (!text || typeof text !== "string") return null;
 
+    const mathMatch = /\$([^$]+)\$/.exec(text);
+
     // Matches: x^2 - 5x = 0, x^2 = 25, 2x + 4 = 10, etc.
-    const clean = text
+    const clean = (mathMatch ? mathMatch[1] : text)
         .replace(/^(Lös ekvationen|Bestäm lösningarna till ekvationen|Lös):\s*/i, "")
         .replace(/^\$+|\$+$/g, "")
+        .replace(/[−–—]/g, "-")
+        .replace(/²/g, "^2")
         .trim();
 
     // 1. x^2 - a*x = 0  -> roots 0, a
@@ -483,7 +488,7 @@ function formatPolynomial(polynomial) {
             : "";
         const absolute = Math.abs(coefficient);
         const body = variables
-            ? `${absolute === 1 ? "" : absolute + "*"}${variables}`
+            ? `${absolute === 1 ? "" : absolute}${variables}`
             : String(absolute);
         if (index === 0) return coefficient < 0 ? `-${body}` : body;
         return coefficient < 0 ? ` - ${body}` : ` + ${body}`;
@@ -555,7 +560,7 @@ function parseAnswerConfig(answerConfig) {
 }
 
 function buildAnswerConfig(questionType, options, currentConfig) {
-    if (!["numeric_input", "equation", "expression", "text"].includes(questionType)) {
+    if (!["numeric_input", "equation", "expression", "factorization", "text"].includes(questionType)) {
         return null;
     }
 
@@ -676,6 +681,9 @@ export async function autoFixQuestion(questionId, userId = 1) {
     const expressionResult = question.question_type === "expression"
         ? evaluateExpression(question.question)
         : null;
+    const factorizationResult = question.question_type === "factorization"
+        ? factorizeExpression(question.question, parseMathExpression)
+        : null;
 
     let calculatedCorrectFrac = arithmeticResult;
     if (!calculatedCorrectFrac && equationRoots && equationRoots.length === 1) {
@@ -719,6 +727,7 @@ export async function autoFixQuestion(questionId, userId = 1) {
                 question.question_type === "numeric_input" ||
                 question.question_type === "equation" ||
                 question.question_type === "expression" ||
+                question.question_type === "factorization" ||
                 question.question_type === "text"
             ) {
                 const newText = calculatedCorrectFrac.toDisplay();
@@ -758,6 +767,13 @@ export async function autoFixQuestion(questionId, userId = 1) {
             );
             options.push({ id: res.insertId, question_id: question.id, text: expressionResult, is_correct: 1 });
             changes.push(`Lade till facit ${expressionResult}.`);
+        } else if (factorizationResult) {
+            const [res] = await db.query(
+                `INSERT INTO options (question_id, text, is_correct, created_by, updated_by) VALUES (?, ?, 1, ?, ?)`,
+                [question.id, factorizationResult, userId, userId]
+            );
+            options.push({ id: res.insertId, question_id: question.id, text: factorizationResult, is_correct: 1 });
+            changes.push(`Lade till faktoriserat facit ${factorizationResult}.`);
         } else if (options.length > 0) {
             // Fallback: if no math evaluation, mark first option as correct
             const firstOpt = options[0];

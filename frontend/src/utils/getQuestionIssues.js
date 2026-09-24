@@ -67,6 +67,7 @@ export function getQuestionIssues(
         question.question_type === "equation" ||
         question.question_type === "linear_system" ||
         question.question_type === "expression" ||
+        question.question_type === "factorization" ||
         question.question_type === "text"
     ) {
         if (correctOptions.length === 0) {

@@ -36,6 +36,7 @@
 | `numeric_input` | Numerisk(a) svarsruta(or) | `options` (en rad per svarsruta, `is_correct=1`, ordnade efter `id`) | `gradeNumericInput` / `scoreNumericInput` (se §5) |
 | `equation` | Ekvation (valfritt antal svar) | `options` (en rad per rot/lösning, `is_correct=1`) | samma som `numeric_input`, men **alltid** `order_independent = true` och antal svarsrutor = antal korrekta alternativ (inga `{{input}}`-markörer krävs i texten) |
 | `linear_system` | Linjärt ekvationssystem | `answer_config.variables` med namngivna svar (`x`, `y` osv.) | variabelbunden numerisk rättning med validering av distinkta värden |
+| `factorization` | Faktorisering | `options` (1 rad `is_correct=1`) | algebraisk ekvivalens + kontroll av faktorstruktur; fullt faktoriserat ger 1 poäng, delvis faktoriserat 0,5 poäng |
 
 `linear_system` är en separat frågetyp för linjära ekvationssystem. Den ska inte behandlas som
 en variant av `numeric_input`, eftersom varje svar kopplas till en namngiven variabel (`x`, `y`)
@@ -131,6 +132,29 @@ variabler har samma värde; en sådan fråga behöver ändras matematiskt innan 
 Vid migrering från befintliga system som låg som `numeric_input` används ordningen i frågetexten
 (`x = {{input}}` och `y = {{input}}`) för att namnge de befintliga svaren. Migrering sker bara
 efter oberoende kontroll av att varje lösning hör till rätt variabel.
+
+### 5.2 `factorization`
+
+`factorization` använder ett vanligt textsvar, men rättas i tre steg:
+
+1. Elevsvaret måste vara algebraiskt ekvivalent med facit.
+2. Ett ekvivalent men ofaktoriserat svar ger 0 poäng.
+3. En påbörjad faktorisering med en fortfarande reducerbar faktor ger 0,5 poäng. Ett uttryck där
+  alla faktorer är irreducibla inom det stödda området ger 1 poäng.
+
+Exempel för $x^3-11x^2$:
+
+| Elevsvar | Poängandel |
+|---|---:|
+| `x^2(x-11)` | 1 |
+| `(x-11)x^2` | 1 |
+| `x(x^2-11x)` | 0,5 |
+| `x^3-11x^2` | 0 |
+
+Automatisk faktorisering och strukturkontroll stöder för närvarande envariabelpolynom med
+heltalskoefficienter: gemensam numerisk/monomial faktor samt linjära faktorer med heltalsrötter.
+Facit skrivs med implicit multiplikation mellan koefficient och variabel, exempelvis `11x^2`,
+aldrig `11*x^2`.
 
 ---
 

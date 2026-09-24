@@ -262,22 +262,23 @@ export default function BlockBankTab({
                         <Button
                             variant="outline"
                             onClick={() =>
-                                setImportBlocksOpen(
-                                    true
-                                )
-                            }
-                        >
-                            Importera från Excel
-                        </Button>
-
-                        <Button
-                            onClick={() =>
                                 setCreateBlockOpen(
                                     true
                                 )
                             }
                         >
                             Skapa eget block
+                        </Button>
+
+                        <Button
+                            variant="outline"
+                            onClick={() =>
+                                setImportBlocksOpen(
+                                    true
+                                )
+                            }
+                        >
+                            Importera från Excel
                         </Button>
 
                     </div>

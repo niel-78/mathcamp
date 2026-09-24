@@ -293,7 +293,7 @@ function solvePolynomialEquation(question) {
 }
 
 export function checkQuestionAnswer(question) {
-    if (!question || ["expression", "text"].includes(question.question_type)) {
+    if (!question || ["expression", "factorization", "text"].includes(question.question_type)) {
         return { status: "unsupported", message: "Textfrågor kontrolleras inte automatiskt." };
     }
 

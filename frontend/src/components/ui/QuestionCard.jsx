@@ -30,6 +30,7 @@ import OptionList
 import { gradeAnswer } from "@/utils/grading/gradeAnswer";
 import { scoreNumericInput } from "@/utils/grading/gradeNumericInput";
 import { scoreLinearSystem } from "@/utils/grading/gradeLinearSystem";
+import { scoreFactorization } from "@/utils/grading/gradeFactorization";
 
 import AnswerConfigEditor
     from "@/components/ui/AnswerConfigEditor";
@@ -211,6 +212,20 @@ export default function QuestionCard({
                 previewAnswer,
                 correctOptions.map(option => option.text),
                 config
+            );
+
+            return {
+                correct: score.correct,
+                pointsFraction: score.pointsFraction
+            };
+
+        }
+
+        if (question.question_type === "factorization") {
+
+            const score = scoreFactorization(
+                previewAnswer,
+                correctOptions[0]?.text
             );
 
             return {

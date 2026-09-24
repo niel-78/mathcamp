@@ -13,6 +13,7 @@ import {
     updateImportJob,
     removeImportJob
 } from "../helpers/importJobStore.js";
+import { autoFixMultipleQuestions } from "../utils/autoFixQuestion.js";
 
 import { getAppSettings } from "../utils/getAppSettings.js";
 
@@ -1426,11 +1427,28 @@ router.post("/", async (req, res) => {
 
         const {
             question,
+            questions,
+            questionType = "numeric_input",
+            levelId = null,
+            calculatorAllowed = false,
+            geogebraAllowed = false,
+            calculateAnswers = true,
             points = [],
+            centralContentIds = [],
             sectionIds = [],
             assessmentId,
             visibility = "school"
         } = req.body;
+
+        const questionTexts = (Array.isArray(questions) ? questions : [question])
+            .map(value => String(value ?? "").trim())
+            .filter(Boolean);
+
+        if (questionTexts.length === 0) {
+            return res.status(400).json({
+                error: "Minst en fråga måste anges."
+            });
+        }
 
         if (
             visibility === "global" &&
@@ -1454,9 +1472,7 @@ router.post("/", async (req, res) => {
                 [req.user.id]
             );
 
-        const blockTitle = question
-            ? question.substring(0, 100)
-            : "Nytt block";
+        const blockTitle = questionTexts[0].substring(0, 100);
 
         const [blockResult] = await db.query(
             `
@@ -1511,27 +1527,43 @@ router.post("/", async (req, res) => {
 
         }
 
-        const [questionResult] = await db.query(
-            `
-            INSERT INTO questions (
-                question,
-                block_id,
-                question_type,
-                created_by,
-                updated_by,
-                answer_config
-            )
-            VALUES (?, ?, ?, ?, ?, ?)
-            `,
-            [
-                question,
-                blockId,
-                1,
-                req.user.id,
-                req.user.id,
-                null
-            ]
-        );
+        const questionIds = [];
+
+        for (const questionText of questionTexts) {
+            const [questionResult] = await db.query(
+                `
+                INSERT INTO questions (
+                    question,
+                    block_id,
+                    question_type,
+                    level_id,
+                    calculator_allowed,
+                    geogebra_allowed,
+                    created_by,
+                    updated_by,
+                    answer_config
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                `,
+                [
+                    questionText,
+                    blockId,
+                    questionType,
+                    levelId || null,
+                    calculatorAllowed ? 1 : 0,
+                    geogebraAllowed ? 1 : 0,
+                    req.user.id,
+                    req.user.id,
+                    JSON.stringify({})
+                ]
+            );
+
+            questionIds.push(questionResult.insertId);
+        }
+
+        if (calculateAnswers) {
+            await autoFixMultipleQuestions(questionIds, req.user.id);
+        }
 
         for (const pointRow of points) {
 
@@ -1555,6 +1587,20 @@ router.post("/", async (req, res) => {
 
         }
 
+        for (const centralContentId of centralContentIds) {
+            await db.query(
+                `
+                INSERT INTO block_points (
+                    block_id,
+                    central_content_id,
+                    points
+                )
+                VALUES (?, ?, 1)
+                `,
+                [blockId, centralContentId]
+            );
+        }
+
 
         for (const sectionId of sectionIds) {
 
@@ -1576,7 +1622,8 @@ router.post("/", async (req, res) => {
 
         res.status(201).json({
             id: blockId,
-            questionId: questionResult.insertId
+            questionId: questionIds[0],
+            questionIds
         });
 
 
