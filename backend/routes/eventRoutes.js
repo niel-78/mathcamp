@@ -1,7 +1,57 @@
 import express from "express";
 import db from "../db.js";
+import requireAuth from "../middleware/requireAuth.js";
 
 const router = express.Router();
+
+router.post("/session", requireAuth, async (req, res) => {
+    const allowedEventTypes = new Set([
+        "calendar_view",
+        "assessment_view",
+        "exam_started",
+        "logged_out"
+    ]);
+    const { event_type: eventType, event_data: eventData } = req.body || {};
+
+    if (!allowedEventTypes.has(eventType)) {
+        return res.status(400).json({
+            error: "Ogiltig sessionshändelse."
+        });
+    }
+
+    const token = req.headers.authorization?.replace(/^Bearer\s+/i, "");
+    const [[session]] = await db.query(
+        `
+        SELECT id
+        FROM user_sessions
+        WHERE session_token = ?
+            AND user_id = ?
+        ORDER BY logged_in_at DESC
+        LIMIT 1
+        `,
+        [token, req.user.id]
+    );
+
+    if (!session) {
+        return res.status(401).json({
+            error: "Aktiv session hittades inte."
+        });
+    }
+
+    await db.query(
+        `
+        INSERT INTO user_session_events (
+            session_id,
+            event_type,
+            event_data
+        )
+        VALUES (?, ?, ?)
+        `,
+        [session.id, eventType, JSON.stringify(eventData || {})]
+    );
+
+    res.status(201).json({ success: true });
+});
 
 /*
 GET    /api/events

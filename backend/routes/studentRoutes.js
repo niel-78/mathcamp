@@ -15,6 +15,77 @@ const router = express.Router();
 router.use(requireAuth);
 
 router.get(
+    "/recent-logins",
+    requireRole("teacher", "super"),
+    async (req, res) => {
+        const requestedLimit = Math.min(
+            Math.max(Number(req.query.limit) || 20, 1),
+            100
+        );
+        const requestedOffset = Math.max(Number(req.query.offset) || 0, 0);
+        const queryLimit = requestedLimit + 1;
+
+        const [rows] = await db.query(
+            `
+            SELECT
+                us.id AS session_id,
+                us.user_id AS student_id,
+                us.logged_in_at,
+                us.logged_out_at,
+                u.first_name,
+                u.last_name,
+                MIN(g.id) AS group_id,
+                MIN(g.name) AS group_name
+            FROM user_sessions us
+            INNER JOIN users u
+                ON u.id = us.user_id
+            LEFT JOIN group_students gs
+                ON gs.user_id = us.user_id
+                AND gs.deleted_at IS NULL
+            LEFT JOIN \`groups\` g
+                ON g.id = gs.group_id
+            LEFT JOIN group_permissions gp
+                ON gp.group_id = g.id
+                AND gp.user_id = ?
+            LEFT JOIN school_teachers st
+                ON st.school_id = g.school_id
+                AND st.teacher_id = ?
+            WHERE us.logged_in_at >= NOW() - INTERVAL 1 DAY
+                AND u.role = 'student'
+                AND u.deleted_at IS NULL
+                AND (
+                    ? = 'super'
+                    OR gp.user_id IS NOT NULL
+                    OR st.is_admin = TRUE
+                )
+            GROUP BY
+                us.id,
+                us.user_id,
+                us.logged_in_at,
+                us.logged_out_at,
+                u.first_name,
+                u.last_name
+            ORDER BY us.logged_in_at DESC
+            LIMIT ${queryLimit} OFFSET ${requestedOffset}
+            `,
+            [
+                req.user.id,
+                req.user.id,
+                req.user.role
+            ]
+        );
+
+        const hasMore = rows.length > requestedLimit;
+        const sessions = hasMore ? rows.slice(0, requestedLimit) : rows;
+
+        res.json({
+            sessions,
+            hasMore
+        });
+    }
+);
+
+router.get(
     "/follow-up-assessments",
     requireRole("teacher", "super"),
     async (req, res) => {
@@ -1490,11 +1561,42 @@ router.get("/:studentId/events", async (req, res) => {
     const groupId = req.query.groupId != null && req.query.groupId !== ""
         ? Number(req.query.groupId)
         : null;
+    const sessionId = req.query.sessionId != null && req.query.sessionId !== ""
+        ? Number(req.query.sessionId)
+        : null;
 
     if (groupId !== null && !Number.isInteger(groupId)) {
         return res.status(400).json({
             error: "Ogiltigt grupp-id."
         });
+    }
+
+    if (sessionId !== null && !Number.isInteger(sessionId)) {
+        return res.status(400).json({
+            error: "Ogiltigt sessions-id."
+        });
+    }
+
+    let sessionEvents = [];
+
+    if (sessionId !== null) {
+        [sessionEvents] = await db.query(
+            `
+            SELECT
+                usev.id,
+                usev.event_type,
+                usev.event_data,
+                usev.created_at,
+                NULL AS assessment_title,
+                NULL AS attempt_id
+            FROM user_session_events usev
+            INNER JOIN user_sessions us
+                ON us.id = usev.session_id
+            WHERE usev.session_id = ?
+                AND us.user_id = ?
+            `,
+            [sessionId, req.params.studentId]
+        );
     }
 
     const params = [
@@ -1530,7 +1632,11 @@ router.get("/:studentId/events", async (req, res) => {
 
     sql += "ORDER BY ee.created_at DESC";
 
-    const [rows] = await db.query(sql, params);
+    const [assessmentEvents] = await db.query(sql, params);
+    const rows = [...sessionEvents, ...assessmentEvents]
+        .sort((first, second) =>
+            new Date(second.created_at) - new Date(first.created_at)
+        );
 
     res.json(rows);
 

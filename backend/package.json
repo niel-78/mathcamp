@@ -11,6 +11,7 @@
     "migrate:competition-visibility": "node migrations/add-competition-visibility.js",
     "migrate:assessment-image-notes": "node migrations/add-assessment-question-image-notes.js",
     "migrate:login-link-tokens": "node migrations/add-login-link-tokens.js",
+    "migrate:user-session-events": "node migrations/add-user-session-events.js",
     "migrate:student-email-addresses": "node migrations/add-student-email-addresses.js",
     "migrate:linear-system-question-type": "node migrations/add-linear-system-question-type.js",
     "migrate:factorization-question-type": "node migrations/add-factorization-question-type.js",

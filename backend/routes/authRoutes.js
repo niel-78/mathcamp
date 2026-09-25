@@ -289,15 +289,38 @@ router.post("/logout",
         const token =
             req.headers.authorization?.replace(/^Bearer\s+/i, "");
 
-        await db.query(
+        const [[session]] = await db.query(
             `
-            UPDATE user_sessions
-            SET
-                logged_out_at = NOW()
+            SELECT id
+            FROM user_sessions
             WHERE session_token = ?
+            LIMIT 1
             `,
             [token]
         );
+
+        if (session) {
+            await db.query(
+                `
+                INSERT INTO user_session_events (
+                    session_id,
+                    event_type,
+                    event_data
+                )
+                VALUES (?, 'logged_out', ?)
+                `,
+                [session.id, JSON.stringify({})]
+            );
+
+            await db.query(
+                `
+                UPDATE user_sessions
+                SET logged_out_at = NOW()
+                WHERE id = ?
+                `,
+                [session.id]
+            );
+        }
 
         res.json({
             success: true

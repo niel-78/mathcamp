@@ -43,7 +43,8 @@ router.get("/", async (req, res) => {
             e.title AS assessment_title,
             e.type AS assessment_type,
             g.name AS group_name,
-            ep.role
+            ep.role,
+            l.starts_at AS lesson_starts_at
         FROM group_assessments ge
 
         JOIN assessments e
@@ -52,11 +53,20 @@ router.get("/", async (req, res) => {
         JOIN \`groups\` g
             ON g.id = ge.group_id
 
+        LEFT JOIN lesson_group_assessments lga
+            ON lga.group_assessment_id = ge.id
+
+        LEFT JOIN lessons l
+            ON l.id = lga.lesson_id
+
         LEFT JOIN assessment_permissions ep
             ON ep.assessment_id = ge.assessment_id
             AND ep.user_id = ?
 
         WHERE ge.deleted_at IS NULL
+            AND e.deleted_at IS NULL
+            AND e.archived_at IS NULL
+            AND e.status != 'archived'
             AND (
                 ep.user_id IS NOT NULL
                 OR ? = 'super'

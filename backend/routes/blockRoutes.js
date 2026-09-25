@@ -1433,6 +1433,7 @@ router.post("/", async (req, res) => {
             calculatorAllowed = false,
             geogebraAllowed = false,
             calculateAnswers = true,
+            abilityId = null,
             points = [],
             centralContentIds = [],
             sectionIds = [],
@@ -1598,6 +1599,24 @@ router.post("/", async (req, res) => {
                 VALUES (?, ?, 1)
                 `,
                 [blockId, centralContentId]
+            );
+        }
+
+        if (abilityId) {
+            await db.query(
+                `
+                INSERT INTO block_abilities (
+                    block_id,
+                    ability_id,
+                    progression
+                )
+                VALUES (?, ?, ?)
+                `,
+                [
+                    blockId,
+                    abilityId,
+                    await getNextBlockAbilityProgression(db, abilityId)
+                ]
             );
         }
 
